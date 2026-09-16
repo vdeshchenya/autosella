@@ -5641,18 +5641,19 @@ logger = logging.getLogger(__name__)
 _default_kwargs = dict(
     minimum=dict(
         delta0=1e-1,
-        # Growth-only textbook policy (Nocedal & Wright ch. 4): after a step
-        # whose energy drop was at least 75 % of the model's prediction --
-        # including drops *larger* than predicted, which Sella's symmetric
-        # window (0.75, 1.33) excluded -- the radius grows x1.5 up to
-        # delta_max (max internal component, A or rad). The shrink rule is
-        # unchanged. Targets the trust-limited reorientation/sliding phase
-        # of dimers that rotate by 40-90 deg and translate 1-2 A.
-        sigma_inc=1.5,
+        sigma_inc=1.15,
         sigma_dec=0.90,
         rho_inc=4./3.,
         rho_dec=100,
-        delta_max=0.5,
+        # Connected (single-fragment) systems: growth-only textbook policy
+        # (Nocedal & Wright ch. 4) -- after a step whose energy drop was at
+        # least 75 % of the model's prediction, including drops *larger*
+        # than predicted, the radius grows x1.5 up to delta_max_mol (max
+        # internal component, A or rad). Multi-fragment systems (soft,
+        # anharmonic intermolecular surfaces) keep Sella's symmetric
+        # window (0.75, 1.33) with x1.15 growth; the shrink rule is shared.
+        sigma_inc_mol=1.5,
+        delta_max_mol=0.5,
         method='qn',
         eig=False
     ),
@@ -5810,18 +5811,13 @@ class Sella(Optimizer):
         else:
             self.delta = delta0 * self.pes.get_Ufree().shape[1]
         self.delta_cell = delta0
-        # Separate radius for the fragment translation/rotation internals
-        # (soft, anharmonic intermolecular surfaces): it follows Sella's
-        # original symmetric-window policy, while self.delta (bonds,
-        # angles, dihedrals) uses the growth-only policy of _default_kwargs.
-        self.delta_tr = delta0
-        self.sigma_inc_tr = 1.15
 
         self.sigma_inc = sigma_inc if sigma_inc is not None else default['sigma_inc']
         self.sigma_dec = sigma_dec if sigma_dec is not None else default['sigma_dec']
         self.rho_inc = rho_inc if rho_inc is not None else default['rho_inc']
         self.rho_dec = rho_dec if rho_dec is not None else default['rho_dec']
-        self.delta_max = default.get('delta_max', np.inf)
+        self.sigma_inc_mol = default.get('sigma_inc_mol', self.sigma_inc)
+        self.delta_max_mol = default.get('delta_max_mol', np.inf)
         self.method = method if method is not None else default['method']
         self.eig = eig if eig is not None else default['eig']
 
@@ -5921,12 +5917,9 @@ class Sella(Optimizer):
         self.trajectory = self.pes.traj
 
     def _has_tr_internals(self):
-        """True when the max-internal-step radius is used with fragment
-        translation/rotation coordinates that carry their own radius."""
+        """True when the internal coordinate set currently contains
+        fragment translation/rotation coordinates (multi-fragment system)."""
         if not self.internal or getattr(self.pes, 'int', None) is None:
-            return False
-        if not (isinstance(self.rs, type)
-                and issubclass(self.rs, MaxInternalStep)):
             return False
         return (self.pes.int.ntrans + self.pes.int.nrotations) > 0
 
@@ -5951,10 +5944,6 @@ class Sella(Optimizer):
             self.rs, MaxInternalStep
         ):
             rs_kwargs['wc'] = self.delta / self.delta_cell
-        if self._has_tr_internals():
-            # max |s_i| * wx <= delta  <=>  |s_i| <= delta_tr for the
-            # translation/rotation coordinates.
-            rs_kwargs['wx'] = self.delta / self.delta_tr
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -6039,51 +6028,26 @@ class Sella(Optimizer):
                 smag_int = smag
                 smag_cell = 0
 
-            smag_tr = 0.
-            split_tr = self._has_tr_internals()
-            if split_tr:
-                # Unweighted magnitudes of the covalent and of the
-                # translation/rotation parts of the step; each radius grows
-                # from its own components.
-                n_tr = self.pes.int.ntrans
-                n_rot = self.pes.int.nrotations
-                s_abs = np.abs(s)
-                cov = s_abs[n_tr:len(s_abs) - n_rot]
-                tr = np.concatenate((s_abs[:n_tr], s_abs[len(s_abs) - n_rot:]))
-                smag_int = float(cov.max()) if cov.size else 0.
-                smag_tr = float(tr.max()) if tr.size else 0.
-
             if rho < 1./self.rho_dec or rho > self.rho_dec:
-                if split_tr:
-                    # Sella's rule (new radius = 0.9 x the failed step) applied
-                    # as one common factor to both radii, so that the radius
-                    # of the part that did not limit the step is not
-                    # collapsed to its (tiny) component.
-                    frac = max(smag_int / self.delta,
-                               smag_tr / self.delta_tr) * self.sigma_dec
-                    self.delta = max(frac * self.delta, self.delta_min)
-                    self.delta_tr = max(frac * self.delta_tr, self.delta_min)
-                else:
-                    self.delta = max(smag_int * self.sigma_dec, self.delta_min)
+                self.delta = max(smag_int * self.sigma_dec, self.delta_min)
                 if smag_cell > 0:
                     self.delta_cell = max(self.delta_cell * self.sigma_dec,
                                           self.delta_min)
-            elif rho > 1./self.rho_inc and (self.ord == 0
-                                            or rho < self.rho_inc):
-                # Minimization: growth-only -- any step that realised
-                # >= 75 % of the predicted drop (or more than predicted)
-                # earns a larger radius, capped at delta_max. Saddle
-                # searches keep the symmetric window.
-                self.delta = min(max(self.sigma_inc * smag_int, self.delta),
-                                 self.delta_max)
+            elif (self.ord == 0 and rho > 1./self.rho_inc
+                  and not self._has_tr_internals()):
+                # Connected molecule: growth-only policy -- any step that
+                # realised >= 75 % of the predicted drop (or more than
+                # predicted) earns a larger radius, capped at delta_max_mol.
+                self.delta = min(max(self.sigma_inc_mol * smag_int, self.delta),
+                                 self.delta_max_mol)
                 if smag_cell > 0:
                     self.delta_cell = max(self.sigma_inc * smag_cell,
                                           self.delta_cell)
-                if smag_tr > 0 and rho < self.rho_inc:
-                    # Fragment translations/rotations keep Sella's cautious
-                    # policy: x1.15 inside the symmetric window only.
-                    self.delta_tr = max(self.sigma_inc_tr * smag_tr,
-                                        self.delta_tr)
+            elif 1./self.rho_inc < rho < self.rho_inc:
+                self.delta = max(self.sigma_inc * smag_int, self.delta)
+                if smag_cell > 0:
+                    self.delta_cell = max(self.sigma_inc * smag_cell,
+                                          self.delta_cell)
             self.rho = rho
         else:
             self.rho = 1.
