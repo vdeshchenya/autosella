@@ -3950,17 +3950,31 @@ class Internals(BaseInternals):
         Ct: float = 2.85,
         Dt: float = 0.57,
         Et: float = 4.00,
+        proper: bool = True,
     ) -> float:
         _, bbc = dihedral.split()[0].split()
         idx = np.asarray(bbc.indices, dtype=np.int32)
         rcovbc = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rbc = bbc.calc(self.all_atoms)
         L = nbonds[idx].sum() - 2
+        bo = np.exp(-Ct * (rbc - rcovbc) / units.Bohr)
         h0 = (
-            At + Bt * L**Dt * np.exp(-Ct * (rbc - rcovbc) / units.Bohr)
+            At + Bt * L**Dt * bo
             / (rbc * rcovbc / units.Bohr**2)**Et
         )
-        return h0 * units.Hartree
+        if not proper:
+            # Improper dihedral (umbrella mode at a centre without proper
+            # dihedrals): not a rotation about its "central" bond, so it keeps
+            # the plain Fischer-Almlof value.
+            return h0 * units.Hartree
+        # Bond-order factor: the same exponential the Fischer-Almlof formula
+        # uses once.  Applied a second time it makes short (double, aromatic,
+        # amide, ester) bonds ~2-3x stiffer than sp3 single bonds of the same
+        # atoms, which together with the 1/sqrt(n) redundancy sharing in
+        # guess_hessian keeps those torsions at the original per-dihedral
+        # stiffness while sp3-sp3 rotations are softened towards their
+        # physical ~0.02 Ha/rad^2.
+        return h0 * bo * units.Hartree
 
     def _h0_fragment(
         self,
@@ -3984,14 +3998,21 @@ class Internals(BaseInternals):
         dispersion-bound fragments therefore get soft coordinates (steps limited
         by the trust radius, not by a stiff guess) while ion pairs and hydrogen
         bonds get stiff ones. h0_min (Hartree) is a floor for numerical safety.
+
+        add_dummy_to_internals appends dummy-atom indices (>= natoms) to the
+        fragment coordinates of a fragment that contains a near-linear angle,
+        so indices are taken from all_positions and contacts are restricted
+        to real atoms; the rotation centroid includes the dummies, matching
+        the definition of the Rotation coordinate.
         """
-        pos = np.asarray(self.atoms.positions, dtype=np.float64)
+        pos = np.asarray(self.all_positions, dtype=np.float64)
         numbers = np.asarray(self.atoms.numbers)
-        idx = np.asarray(coord.indices, dtype=np.int32)
-        mask = np.ones(len(pos), dtype=bool)
+        idx_all = np.asarray(coord.indices, dtype=np.int32)
+        idx = idx_all[idx_all < self.natoms]
+        mask = np.ones(self.natoms, dtype=bool)
         mask[idx] = False
         other = np.where(mask)[0]
-        if len(other) == 0:
+        if len(other) == 0 or len(idx) == 0:
             return h0_min * units.Hartree
         dvec = pos[other][np.newaxis, :, :] - pos[idx][:, np.newaxis, :]
         r = np.maximum(np.linalg.norm(dvec, axis=2), 1e-8)
@@ -4006,7 +4027,7 @@ class Internals(BaseInternals):
         else:
             e = np.zeros(3, dtype=np.float64)
             e[coord.kwargs['axis']] = 1.
-            g = np.cross(e, pos[idx] - pos[idx].mean(0))
+            g = np.cross(e, pos[idx] - pos[idx_all].mean(0))
         proj = np.einsum('ijk,ik->ij', u, g)
         h0 = float(np.sum(k * proj**2))
         return max(h0, h0_min * units.Hartree)
@@ -4032,11 +4053,44 @@ class Internals(BaseInternals):
             h0[idx] = self._h0_angle(angle)
             idx += 1
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
+        bonded = set()
+        for bond in self.internals['bonds']:
+            i, j = bond.indices
+            bonded.add(frozenset((int(i), int(j))))
+
+        def is_proper(dihedral):
+            # A proper dihedral a-b-c-d has d bonded to c and measures the
+            # rotation about b-c.  The improper dihedrals find_all_dihedrals
+            # adds at three-/four-neighbour centres without proper dihedrals
+            # (n0, centre, n1, n2) have n2 bonded to the centre instead; they
+            # describe the umbrella mode and are treated like the original.
+            a, b, c, d = (int(j) for j in dihedral.indices)
+            return frozenset((c, d)) in bonded
+
+        # The Fischer-Almlof torsional constant describes the rotation about
+        # the central bond as a whole.  A redundant set carries n dihedrals
+        # around the same bond, and a rigid rotation changes all of them
+        # together, so assigning the full constant to every dihedral makes
+        # that rotation n times too stiff.  Share the constant by scaling each
+        # dihedral with 1/sqrt(n) (a compromise between the per-dihedral value
+        # and an exact 1/n split, which would be too soft for double bonds).
+        ndih = {}
+        for dihedral in self.internals['dihedrals']:
+            if any(j in dummy_set for j in dihedral.indices):
+                continue
+            if not is_proper(dihedral):
+                continue
+            key = frozenset(int(j) for j in dihedral.indices[1:3])
+            ndih[key] = ndih.get(key, 0) + 1
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
                 h0[idx] = 0.5 * units.Hartree
+            elif not is_proper(dihedral):
+                h0[idx] = self._h0_dihedral(dihedral, nbonds, proper=False)
             else:
-                h0[idx] = self._h0_dihedral(dihedral, nbonds)
+                key = frozenset(int(j) for j in dihedral.indices[1:3])
+                h0[idx] = (self._h0_dihedral(dihedral, nbonds)
+                           / np.sqrt(ndih[key]))
             idx += 1
         for rot in self.internals['rotations']:
             if self.allow_fragments:
