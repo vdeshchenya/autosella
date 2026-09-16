@@ -4041,47 +4041,25 @@ class Internals(BaseInternals):
         h0 = float(np.sum(k * proj**2))
         return max(h0, h0_min * units.Hartree)
 
-    def _h0_nonlocal_contacts(
-        self,
-        Ab: float = 0.3601,
-        Bb: float = 1.944,
-        min_path: int = 5,
-        max_excess: float = 3.0,
-    ) -> Optional[np.ndarray]:
-        """Curvature of the non-local intramolecular contacts, expressed in
-        the internal coordinates (nint x nint, same units as the diagonal
-        guess: eV/Angstrom^2 for bonds, eV/rad^2 for angles/dihedrals).
-
-        Bonds, angles and dihedrals carry the 1-2, 1-3 and 1-4 curvature,
-        and the Fischer-Almlof torsional constant is fitted to rotational
-        barriers, so it also stands for the 1-5 through-space repulsion
-        around the central bond.  Nothing in the redundant set describes
-        the contacts that hold a folded chain or an intramolecular hydrogen
-        bond together (atoms five or more bonds apart that sit 2-4 A from
-        each other), so the model is too soft along the torsional
-        combinations that compress them.  Following Lindh's all-pair model
-        Hessian, every such pair (same fragment, graph distance >= min_path,
-        r < r_cov,i + r_cov,j + max_excess) is treated as a weak pseudo-bond
-        with the same stretch curvature k_ij(r) that _h0_bond and
-        _h0_fragment use (at a van der Waals contact this is ~2-3e-4
-        Ha/Bohr^2, the Lennard-Jones curvature at the minimum; for an
-        H...O contact at 1.9 A it is ~0.012 Ha/Bohr^2), and the Cartesian
-        quadratic form sum_ij k_ij (u_ij . (dx_j - dx_i))^2 is expressed in
-        the internal coordinates through the pseudo-inverse Jacobian:
-        H = D^T K D with D_pq = u_ij . (Binv_j - Binv_i)_q.  A rigid motion
-        of a fragment leaves its internal distances unchanged, so the
-        fragment translation/rotation coordinates get no contribution and
-        the contact-derived TR block of _h0_fragment is untouched.
-        """
+    def _nonlocal_pairs(self, min_path: int) -> Tuple[np.ndarray, np.ndarray]:
+        """Atom pairs of the same covalent fragment at graph distance
+        >= min_path (upper triangle, real atoms only).  The covalent graph
+        of an Internals object is fixed after construction, so the result
+        is cached; a rebuild creates a new object."""
         natoms = self.natoms
-        pos = np.asarray(self.atoms.positions, dtype=np.float64)
-        numbers = np.asarray(self.atoms.numbers)
+        bonds = tuple(sorted(
+            (int(bond.indices[0]), int(bond.indices[1]))
+            for bond in self.internals['bonds']
+            if int(bond.indices[0]) < natoms and int(bond.indices[1]) < natoms
+        ))
+        key = (natoms, min_path, bonds)
+        cache = getattr(self, '_nonlocal_pairs_cache', None)
+        if cache is not None and cache[0] == key:
+            return cache[1]
         adj = [[] for _ in range(natoms)]
-        for bond in self.internals['bonds']:
-            i, j = (int(k) for k in bond.indices)
-            if i < natoms and j < natoms:
-                adj[i].append(j)
-                adj[j].append(i)
+        for i, j in bonds:
+            adj[i].append(j)
+            adj[j].append(i)
         # Fragment labels (connected components of the covalent graph).
         label = -np.ones(natoms, dtype=np.int32)
         nlabels = 0
@@ -4115,8 +4093,47 @@ class Internals(BaseInternals):
                     break
         ii, jj = np.triu_indices(natoms, k=1)
         keep = (label[ii] == label[jj]) & (dist[ii, jj] >= min_path)
-        ii = ii[keep]
-        jj = jj[keep]
+        result = (ii[keep], jj[keep])
+        self._nonlocal_pairs_cache = (key, result)
+        return result
+
+    def _h0_nonlocal_contacts(
+        self,
+        Ab: float = 0.3601,
+        Bb: float = 1.944,
+        min_path: int = 5,
+        max_excess: float = 3.0,
+        Binv: Optional[np.ndarray] = None,
+    ) -> Optional[np.ndarray]:
+        """Curvature of the non-local intramolecular contacts, expressed in
+        the internal coordinates (nint x nint, same units as the diagonal
+        guess: eV/Angstrom^2 for bonds, eV/rad^2 for angles/dihedrals).
+
+        Bonds, angles and dihedrals carry the 1-2, 1-3 and 1-4 curvature,
+        and the Fischer-Almlof torsional constant is fitted to rotational
+        barriers, so it also stands for the 1-5 through-space repulsion
+        around the central bond.  Nothing in the redundant set describes
+        the contacts that hold a folded chain or an intramolecular hydrogen
+        bond together (atoms five or more bonds apart that sit 2-4 A from
+        each other), so the model is too soft along the torsional
+        combinations that compress them.  Following Lindh's all-pair model
+        Hessian, every such pair (same fragment, graph distance >= min_path,
+        r < r_cov,i + r_cov,j + max_excess) is treated as a weak pseudo-bond
+        with the same stretch curvature k_ij(r) that _h0_bond and
+        _h0_fragment use (at a van der Waals contact this is ~2-3e-4
+        Ha/Bohr^2, the Lennard-Jones curvature at the minimum; for an
+        H...O contact at 1.9 A it is ~0.012 Ha/Bohr^2), and the Cartesian
+        quadratic form sum_ij k_ij (u_ij . (dx_j - dx_i))^2 is expressed in
+        the internal coordinates through the pseudo-inverse Jacobian:
+        H = D^T K D with D_pq = u_ij . (Binv_j - Binv_i)_q.  A rigid motion
+        of a fragment leaves its internal distances unchanged, so the
+        fragment translation/rotation coordinates get no contribution and
+        the contact-derived TR block of _h0_fragment is untouched.
+        """
+        natoms = self.natoms
+        pos = np.asarray(self.atoms.positions, dtype=np.float64)
+        numbers = np.asarray(self.atoms.numbers)
+        ii, jj = self._nonlocal_pairs(min_path)
         if len(ii) == 0:
             return None
         dvec = pos[jj] - pos[ii]
@@ -4132,11 +4149,14 @@ class Internals(BaseInternals):
         u = dvec / r[:, np.newaxis]
         k = Ab * np.exp(-Bb * (r - rcov[close]) / units.Bohr)
         k *= units.Hartree / units.Bohr**2
-        B = self.jacobian()
-        if B.size == 0:
+        if Binv is None:
+            B = self.jacobian()
+            if B.size == 0:
+                return None
+            Binv = np.linalg.pinv(B, rcond=1e-6)
+        elif Binv.size == 0:
             return None
-        Binv = np.linalg.pinv(B, rcond=1e-6)
-        Binv = Binv.reshape((-1, 3, B.shape[0]))[:natoms]
+        Binv = Binv.reshape((-1, 3, Binv.shape[-1]))[:natoms]
         D = np.einsum('pk,pkq->pq', u, Binv[jj] - Binv[ii])
         return (D * k[:, np.newaxis]).T @ D
 
@@ -4209,9 +4229,13 @@ class Internals(BaseInternals):
         H0 = np.diag(np.abs(h0))
         # Non-local contact curvature (folded chains, intramolecular
         # hydrogen bonds): a positive semi-definite pair term in the
-        # internal coordinates, see _h0_nonlocal_contacts.
+        # internal coordinates, see _h0_nonlocal_contacts.  The term is
+        # kept so that InternalPES can move it along with the geometry.
         Hnb = self._h0_nonlocal_contacts()
-        if Hnb is not None and Hnb.shape == H0.shape:
+        if Hnb is not None and Hnb.shape != H0.shape:
+            Hnb = None
+        self._h0_nonlocal_last = Hnb
+        if Hnb is not None:
             H0 = H0 + Hnb
         return H0
 
@@ -4763,8 +4787,15 @@ class InternalPES(PES):
             P = Q @ Q.T
             H0 = P @ self.int.guess_hessian() @ P
             self.set_H(H0, initialized=False)
+            # The non-local contact term of the guess is geometry
+            # dependent; remember it so that _update_H can move it along
+            # with the atoms (see _track_nonlocal_contacts).
+            self._nb_prev = getattr(self.int, '_h0_nonlocal_last', None)
+            self._track_nb = True
         else:
             self.set_H(H0, initialized=True)
+            self._nb_prev = None
+            self._track_nb = False
 
         # Flag used to indicate that new internal coordinates are required
         self.bad_int = None
@@ -5292,6 +5323,52 @@ class InternalPES(PES):
         ratio = PES.kick(self, dx, diag=diag, **diag_kwargs)
 
         return ratio
+
+    def _track_nonlocal_contacts(self) -> None:
+        """Move the analytic non-local contact term of the model Hessian
+        to the current geometry: H <- H + A(x) - A(x_prev).
+
+        The guess Hessian is diag(h0) + A(x0), where A is the contact
+        curvature of _h0_nonlocal_contacts.  The quasi-Newton updates learn
+        along the steps taken, but a molecule that folds during the run
+        forms contacts (and intramolecular hydrogen bonds) that did not
+        exist at x0, and their curvature acts in directions the secant
+        pairs have not sampled.  Replacing A(x_prev) by A(x) before every
+        secant update keeps the analytic part of the model at the current
+        geometry (including the change of frame through the current
+        pseudo-inverse Jacobian) while the learned correction is kept; the
+        subsequent update re-imposes the secant conditions on the shifted
+        matrix.  Near the minimum the geometry hardly changes and the shift
+        vanishes.
+        """
+        if not getattr(self, '_track_nb', False) or self.H.B is None:
+            return
+        try:
+            Hnb = self.int._h0_nonlocal_contacts(Binv=self._get_Binv())
+        except (ValueError, np.linalg.LinAlgError):
+            return
+        prev = self._nb_prev
+        shape = self.H.B.shape
+        if Hnb is not None and Hnb.shape != shape:
+            return
+        if prev is not None and prev.shape != shape:
+            self._nb_prev = Hnb
+            return
+        if Hnb is None and prev is None:
+            return
+        dA = np.zeros(shape, dtype=np.float64)
+        if Hnb is not None:
+            dA += Hnb
+        if prev is not None:
+            dA -= prev
+        if not np.all(np.isfinite(dA)):
+            return
+        self.H.set_B(self.H.B + dA)
+        self._nb_prev = Hnb
+
+    def _update_H(self, dx, dg):
+        self._track_nonlocal_contacts()
+        PES._update_H(self, dx, dg)
 
     def write_traj(self):
         if self.traj is not None:
