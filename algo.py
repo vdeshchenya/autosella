@@ -4245,6 +4245,7 @@ class PES:
         # the internals are rebuilt and the Hessian guess is reset.
         self.secant_memory = 4
         self.secant_dep_tol = 0.3
+        self.secant_cons_tol = 0.25
         self._secant_pairs = []
 
     apos = property(lambda self: self.atoms.positions.copy())
@@ -4471,6 +4472,23 @@ class PES:
                 r -= (q @ r) * q
             rn = np.linalg.norm(r)
             if rn < self.secant_dep_tol:
+                continue
+            # Quadratic consistency with every newer pair kept so far: a
+            # symmetric Hessian requires s_new.y_old == s_old.y_new. Pairs
+            # that violate it (strongly anharmonic soft modes, or a step
+            # taken before the coordinates rebuilt their gradient transport)
+            # are dropped instead of being averaged in by symmetrize_Y2.
+            c_old = abs(s @ y)
+            consistent = True
+            for s_new, y_new in zip(S_cols, Y_cols):
+                c_new = abs(s_new @ y_new)
+                a = s_new @ y
+                b = s @ y_new
+                scale = np.sqrt(c_old * c_new) + 1e-12
+                if abs(a - b) > self.secant_cons_tol * scale:
+                    consistent = False
+                    break
+            if not consistent:
                 continue
             basis.append(r / rn)
             S_cols.append(s)
