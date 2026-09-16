@@ -5573,7 +5573,8 @@ class MaxInternalStep(BaseRestrictedStep):
     synonyms = ['mis', 'max internal step']
 
     def __init__(
-        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1., **kwargs
+        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1.,
+        cart_ratio=None, **kwargs
     ):
         if pes.int is None:
             raise ValueError(
@@ -5586,6 +5587,12 @@ class MaxInternalStep(BaseRestrictedStep):
         self.wd = wd
         self.wo = wo
         self.wc = wc  # Weight for cell DOF
+        # Optional Cartesian bound: the largest linearised atomic
+        # displacement of the step (Binv @ s, real atoms only) counts as
+        # a step of size |dx_max| / cart_ratio, so it may not exceed
+        # cart_ratio * delta (A). None disables the bound.
+        self.cart_ratio = cart_ratio
+        self._ncart_atoms = 3 * len(pes.atoms)
         self._weights_cache = None
         BaseRestrictedStep.__init__(self, pes, *args, **kwargs)
 
@@ -5596,10 +5603,30 @@ class MaxInternalStep(BaseRestrictedStep):
         sw = np.abs(s * w)
         idx = np.argmax(np.abs(sw))
         val = sw[idx]
+        if dsda is not None:
+            dval = np.sign(s[idx]) * dsda[idx] * w[idx]
+
+        if self.cart_ratio is not None and len(s) > 0:
+            # Linearised Cartesian displacement of the (non-redundant)
+            # internal step; the step lies in range(B), so Binv @ s is
+            # the minimum-norm Cartesian move realising it (no net
+            # translation/rotation).
+            Binv = self.pes._get_Binv()[:self._ncart_atoms]
+            nint = Binv.shape[1]
+            dx = (Binv @ s[:nint]).reshape((-1, 3))
+            dx_norms = np.linalg.norm(dx, axis=1)
+            ia = np.argmax(dx_norms)
+            val_c = dx_norms[ia] / self.cart_ratio
+            if val_c > val:
+                val = val_c
+                if dsda is not None:
+                    ddx = (Binv @ dsda[:nint]).reshape((-1, 3))
+                    dval = (ddx[ia] @ dx[ia]
+                            / max(dx_norms[ia], 1e-12) / self.cart_ratio)
 
         if dsda is None:
             return val
-        return val, np.sign(s[idx]) * dsda[idx] * w[idx]
+        return val, dval
 
     def _get_weights(self):
         """Build the per-DOF weight vector. Cached against
@@ -5668,6 +5695,14 @@ _default_kwargs = dict(
         # two. Multi-fragment systems keep delta0 (their first steps are
         # limited by the fragment-coordinate model, not by the radius).
         delta0_mol=0.25,
+        # Cartesian bound of the internal trust region for connected
+        # systems: the linearised atomic displacement of the step
+        # (Binv @ s, real atoms) may not exceed cart_ratio_mol * delta
+        # (A). The max-internal-component measure is blind to lever arms:
+        # a 0.25 rad twist of a chain of dihedrals swings a distal group by
+        # several A (compounding along the chain), far beyond the region
+        # where the quadratic model knows about non-bonded contacts.
+        cart_ratio_mol=2.0,
         method='qn',
         eig=False
     ),
@@ -5837,6 +5872,7 @@ class Sella(Optimizer):
         self.delta_max_mol = default.get('delta_max_mol', np.inf)
         self.delta_max_tr = default.get('delta_max_tr', self.delta_max_mol)
         self.sigma_dec_mol = default.get('sigma_dec_mol', self.sigma_dec)
+        self.cart_ratio_mol = default.get('cart_ratio_mol', None)
         self.method = method if method is not None else default['method']
         self.eig = eig if eig is not None else default['eig']
 
@@ -5963,6 +5999,13 @@ class Sella(Optimizer):
             self.rs, MaxInternalStep
         ):
             rs_kwargs['wc'] = self.delta / self.delta_cell
+        if (self.ord == 0 and self.cart_ratio_mol is not None
+                and isinstance(self.rs, type)
+                and issubclass(self.rs, MaxInternalStep)
+                and not self._has_tr_internals()):
+            # Connected systems: also bound the linearised atomic
+            # displacement of the internal step (see cart_ratio_mol).
+            rs_kwargs['cart_ratio'] = self.cart_ratio_mol
 
         if self.pes.cons.has_inequalities():
             all_valid = False
