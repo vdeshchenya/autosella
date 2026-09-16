@@ -5660,6 +5660,14 @@ _default_kwargs = dict(
         delta_max_mol=0.5,
         delta_max_tr=0.25,
         sigma_dec_mol=0.5,
+        # Initial radius for connected systems. Most connected molecules of
+        # the sets start far from their minimum (max atomic displacement
+        # over the run >= 1 A for 40-60 % of them, RMSD ~0.9 A), so their
+        # first quasi-Newton steps are trust-limited; from 0.1 the x1.5
+        # growth needs four accepted steps to reach the 0.5 cap, from 0.25
+        # two. Multi-fragment systems keep delta0 (their first steps are
+        # limited by the fragment-coordinate model, not by the radius).
+        delta0_mol=0.25,
         method='qn',
         eig=False
     ),
@@ -5812,6 +5820,9 @@ class Sella(Optimizer):
 
         if delta0 is None:
             delta0 = default['delta0']
+            if (order == 0 and 'delta0_mol' in default
+                    and not self._has_tr_internals()):
+                delta0 = default['delta0_mol']
         if rs in ['mis', 'ras']:
             self.delta = delta0
         else:
