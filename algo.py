@@ -3985,6 +3985,129 @@ class Internals(BaseInternals):
         # physical ~0.02 Ha/rad^2.
         return h0 * bo * units.Hartree
 
+    def _torsion_centre_types(self, adj: List[List[int]]) -> List[str]:
+        """Local hybridisation label of every real atom for the torsional
+        guess, from the element and the covalent neighbour count alone:
+        'pi' for a planar sp2 centre (C or B with three neighbours, N with
+        two neighbours, N with three neighbours one of which is a terminal
+        O or S, i.e. nitro/N-oxide), 'lp' for a lone-pair heteroatom that
+        conjugates with a pi centre (N with three neighbours, O, S or Se
+        with two), and 'sigma' for everything else (sp3 carbon and silicon,
+        ammonium nitrogen, sulfonyl/phosphoryl centres, sp centres, terminal
+        atoms)."""
+        numbers = np.asarray(self.atoms.numbers)
+        types = []
+        for i in range(self.natoms):
+            z = int(numbers[i])
+            n = len(adj[i])
+            label = 'sigma'
+            if z in (5, 6) and n == 3:
+                label = 'pi'
+            elif z == 7:
+                if n == 2:
+                    label = 'pi'
+                elif n == 3:
+                    label = 'lp'
+                    for j in adj[i]:
+                        if int(numbers[j]) in (8, 16) and len(adj[j]) == 1:
+                            label = 'pi'
+                            break
+            elif z in (8, 16, 34) and n == 2:
+                label = 'lp'
+            types.append(label)
+        return types
+
+    @staticmethod
+    def _in_small_ring(b: int, c: int, adj: List[List[int]],
+                       ring_max: int) -> bool:
+        """True when the bond b-c closes a ring of at most ring_max atoms,
+        i.e. c is reachable from b within ring_max - 1 steps without using
+        the bond itself."""
+        seen = {b}
+        front = [b]
+        for _ in range(ring_max - 1):
+            new = []
+            for u_ in front:
+                for v in adj[u_]:
+                    if u_ == b and v == c:
+                        continue
+                    if v == c:
+                        return True
+                    if v not in seen:
+                        seen.add(v)
+                        new.append(v)
+            front = new
+            if not front:
+                break
+        return False
+
+    def _torsion_class_factor(
+        self,
+        b: int,
+        c: int,
+        types: List[str],
+        adj: List[List[int]],
+        bo: float,
+        s_pi_sigma: float = 0.6,
+        s_pi_lp: float = 0.45,
+        s_carbonyl_lp: float = 0.7,
+        s_pi_pi: float = 0.65,
+        bo_lo: float = 1.5,
+        bo_hi: float = 2.2,
+        ring_max: int = 8,
+    ) -> float:
+        """Class-resolved scale of the Fischer-Almlof torsional guess for the
+        rotation about the acyclic bond b-c.
+
+        The Fischer-Almlof torsional constant, once shared over the n
+        redundant dihedrals of a bond (1/sqrt(n) in guess_hessian), puts the
+        rotational stiffness sum_d h_d of an sp3-sp3 bond (n = 9) at
+        0.02-0.03 Ha/rad^2, the physical value of ethane-like rotors
+        (V3 = 3 kcal/mol gives 9/2 V3 = 0.021), and it keeps double and
+        aromatic bonds stiff through the bond-order factor.  Single bonds
+        to a planar sp2 centre have far fewer dihedrals (n = 2-6), so the
+        same sharing leaves them 2-3.5x above their rotational barriers
+        (curvature n^2 V_n / 2 of the leading Fourier term): sp2-sp3 links
+        (propene V3 = 2.0, acetaldehyde 1.2, ethylbenzene V2 ~ 1.3 kcal/mol;
+        0.004-0.014 Ha/rad^2 against a 0.025 guess), sp2 centre to a
+        lone-pair heteroatom (anisole/phenol V2 = 3-3.5, aniline ~4-5,
+        methyl vinyl ether ~4; 0.010-0.017 against 0.034-0.049), sp2-sp2
+        single bonds (styrene V2 ~ 3, butadiene/enones/aryl ketones 5-8,
+        biphenyl ~2; 0.008-0.025 against 0.023-0.033) and carbonyl to a
+        lone-pair heteroatom (esters/acids 10-13, amides/carbamates 15-20
+        kcal/mol; 0.035-0.06 against 0.045-0.095).  Each class is scaled to
+        the stiff end of its physical range (a model that is too soft by 2x
+        makes no progress along the mode at all, one that is too stiff by
+        2x still halves the error per step), and the scale fades back to 1
+        with the bond-order factor between bo_lo and bo_hi so that acyclic
+        double bonds (bo ~2.8), amidinium/guanidinium and other strongly
+        conjugated links keep the full constant.  Bonds in rings of up to
+        ring_max atoms are left alone: their dihedrals describe ring
+        puckering, not a rotation, and the 1/sqrt(n) evidence shows ring
+        torsions want the full constant.
+        """
+        tb, tc = types[b], types[c]
+        if 'pi' not in (tb, tc):
+            return 1.0
+        if 'sigma' in (tb, tc):
+            s = s_pi_sigma
+        elif tb == 'pi' and tc == 'pi':
+            s = s_pi_pi
+        else:
+            # pi centre bonded to a lone-pair heteroatom: carbonyl-like
+            # centres (a terminal O or S neighbour) conjugate strongly.
+            p = b if tb == 'pi' else c
+            numbers = np.asarray(self.atoms.numbers)
+            carbonyl = any(
+                int(numbers[j]) in (8, 16) and len(adj[j]) == 1
+                for j in adj[p]
+            )
+            s = s_carbonyl_lp if carbonyl else s_pi_lp
+        if self._in_small_ring(b, c, adj, ring_max):
+            return 1.0
+        w = min(1.0, max(0.0, (bo - bo_lo) / (bo_hi - bo_lo)))
+        return s + (1.0 - s) * w
+
     def _h0_fragment(
         self,
         coord: Coordinate,
@@ -4210,6 +4333,22 @@ class Internals(BaseInternals):
                 continue
             key = frozenset(int(j) for j in dihedral.indices[1:3])
             ndih[key] = ndih.get(key, 0) + 1
+        # Class-resolved scale of the rotatable-bond torsions (see
+        # _torsion_class_factor), from the covalent graph of the real atoms.
+        # Multi-fragment systems keep the unscaled model: their cost is set
+        # by the intermolecular coordinates, and the intramolecular paths of
+        # the fragments (and with them the basins they reach) stay as before.
+        scale_torsions = (self.ntrans + self.nrotations) == 0
+        adj = [[] for _ in range(self.natoms)]
+        for pair in bonded:
+            i, j = tuple(pair)
+            if i < self.natoms and j < self.natoms:
+                adj[i].append(j)
+                adj[j].append(i)
+        types = self._torsion_centre_types(adj) if scale_torsions else None
+        numbers = np.asarray(self.atoms.numbers)
+        positions = np.asarray(self.atoms.positions, dtype=np.float64)
+        tfac = {}
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
                 h0[idx] = 0.5 * units.Hartree
@@ -4217,7 +4356,18 @@ class Internals(BaseInternals):
                 h0[idx] = self._h0_dihedral(dihedral, nbonds, proper=False)
             else:
                 key = frozenset(int(j) for j in dihedral.indices[1:3])
-                h0[idx] = (self._h0_dihedral(dihedral, nbonds)
+                if key not in tfac:
+                    fac = 1.0
+                    if scale_torsions:
+                        b, c = (int(j) for j in dihedral.indices[1:3])
+                        rbc = np.linalg.norm(positions[c] - positions[b])
+                        rcovbc = (covalent_radii[numbers[b]]
+                                  + covalent_radii[numbers[c]])
+                        bo = np.exp(-2.85 * (rbc - rcovbc) / units.Bohr)
+                        fac = self._torsion_class_factor(
+                            b, c, types, adj, float(bo))
+                    tfac[key] = fac
+                h0[idx] = (tfac[key] * self._h0_dihedral(dihedral, nbonds)
                            / np.sqrt(ndih[key]))
             idx += 1
         for rot in self.internals['rotations']:
