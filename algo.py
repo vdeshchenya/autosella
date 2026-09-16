@@ -5645,18 +5645,20 @@ _default_kwargs = dict(
         sigma_dec=0.90,
         rho_inc=4./3.,
         rho_dec=100,
-        # Connected (single-fragment) systems: growth-only textbook policy
-        # (Nocedal & Wright ch. 4) -- after a step whose energy drop was at
-        # least 75 % of the model's prediction, including drops *larger*
-        # than predicted, the radius grows x1.5 up to delta_max_mol (max
-        # internal component, A or rad). Multi-fragment systems (soft,
-        # anharmonic intermolecular surfaces) keep Sella's symmetric
-        # window (0.75, 1.33) with x1.15 growth. A failed step (rho outside
-        # (0.01, 100)) halves the radius of a connected system (x0.9 was
-        # matched to the x1.15 growth and needs ~15 failures to return
-        # from the cap to delta0); multi-fragment systems keep x0.9.
+        # Minimisation: growth-only textbook policy (Nocedal & Wright
+        # ch. 4) -- after a step whose energy drop was at least 75 % of the
+        # model's prediction, including drops *larger* than predicted, the
+        # radius grows x1.5 up to a cap (max internal component, A or rad):
+        # delta_max_mol for connected (single-fragment) systems,
+        # delta_max_tr when the internal set carries fragment translation/
+        # rotation coordinates (soft, anharmonic intermolecular surfaces
+        # tolerate smaller steps). A failed step (rho outside (0.01, 100))
+        # halves the radius (x0.9 was matched to the x1.15 growth of the
+        # saddle-search window policy and needs ~15 failures to return
+        # from the cap to delta0).
         sigma_inc_mol=1.5,
         delta_max_mol=0.5,
+        delta_max_tr=0.25,
         sigma_dec_mol=0.5,
         method='qn',
         eig=False
@@ -5822,6 +5824,7 @@ class Sella(Optimizer):
         self.rho_dec = rho_dec if rho_dec is not None else default['rho_dec']
         self.sigma_inc_mol = default.get('sigma_inc_mol', self.sigma_inc)
         self.delta_max_mol = default.get('delta_max_mol', np.inf)
+        self.delta_max_tr = default.get('delta_max_tr', self.delta_max_mol)
         self.sigma_dec_mol = default.get('sigma_dec_mol', self.sigma_dec)
         self.method = method if method is not None else default['method']
         self.eig = eig if eig is not None else default['eig']
@@ -6035,21 +6038,22 @@ class Sella(Optimizer):
 
             if rho < 1./self.rho_dec or rho > self.rho_dec:
                 sigma_dec = self.sigma_dec
-                if self.ord == 0 and not self._has_tr_internals():
-                    # Connected molecule: faster shrink matched to the
-                    # growth-only policy below.
+                if self.ord == 0:
+                    # Minimisation: faster shrink matched to the growth-only
+                    # policy below.
                     sigma_dec = self.sigma_dec_mol
                 self.delta = max(smag_int * sigma_dec, self.delta_min)
                 if smag_cell > 0:
                     self.delta_cell = max(self.delta_cell * self.sigma_dec,
                                           self.delta_min)
-            elif (self.ord == 0 and rho > 1./self.rho_inc
-                  and not self._has_tr_internals()):
-                # Connected molecule: growth-only policy -- any step that
-                # realised >= 75 % of the predicted drop (or more than
-                # predicted) earns a larger radius, capped at delta_max_mol.
+            elif self.ord == 0 and rho > 1./self.rho_inc:
+                # Minimisation: growth-only policy -- any step that realised
+                # >= 75 % of the predicted drop (or more than predicted)
+                # earns a larger radius, capped per system type.
+                delta_max = (self.delta_max_tr if self._has_tr_internals()
+                             else self.delta_max_mol)
                 self.delta = min(max(self.sigma_inc_mol * smag_int, self.delta),
-                                 self.delta_max_mol)
+                                 delta_max)
                 if smag_cell > 0:
                     self.delta_cell = max(self.sigma_inc * smag_cell,
                                           self.delta_cell)
