@@ -4237,6 +4237,16 @@ class PES:
 
         self._basis_cache = _LRU2()
 
+        # Limited-memory multi-secant update: the last secant_memory
+        # (dx, dg) pairs of this PES object are imposed simultaneously
+        # (B S = Y~ with the symmetrised Y of update_H), so the model becomes
+        # exact on the span of the recent steps instead of only along the
+        # newest one. The history dies with the PES object, i.e. whenever
+        # the internals are rebuilt and the Hessian guess is reset.
+        self.secant_memory = 4
+        self.secant_dep_tol = 0.3
+        self._secant_pairs = []
+
     apos = property(lambda self: self.atoms.positions.copy())
     dpos = property(lambda self: None)
 
@@ -4427,7 +4437,45 @@ class PES:
     def _update_H(self, dx, dg):
         if self.last['x'] is None or self.last['g'] is None:
             return
-        self.H.update(dx, dg)
+        if self.secant_memory <= 1 or not self.H.initialized:
+            self.H.update(dx, dg)
+            return
+        S, Y = self._collect_secant_pairs(dx, dg)
+        if S is None:
+            return
+        self.H.update(S, Y)
+
+    def _collect_secant_pairs(self, dx, dg):
+        """Return (S, Y) column matrices of the recent secant pairs.
+
+        The newest pair is column 0 (symmetrize_Y2 keeps column 0 exact and
+        adjusts later columns to make S.T @ Y symmetric). Columns are
+        normalised by the step length so that pairs from the approach phase
+        and from the endgame enter with the same weight, and older steps
+        that are (nearly) linearly dependent on newer ones are dropped so
+        that the m x m secant system of _MS_TS_BFGS stays well conditioned.
+        """
+        dx = np.asarray(dx, dtype=np.float64)
+        dg = np.asarray(dg, dtype=np.float64)
+        nrm = np.linalg.norm(dx)
+        if not np.isfinite(nrm) or nrm < 1e-8 or not np.all(np.isfinite(dg)):
+            return None, None
+        self._secant_pairs.insert(0, (dx / nrm, dg / nrm))
+        del self._secant_pairs[self.secant_memory:]
+        basis = []
+        S_cols = []
+        Y_cols = []
+        for s, y in self._secant_pairs:
+            r = s.copy()
+            for q in basis:
+                r -= (q @ r) * q
+            rn = np.linalg.norm(r)
+            if rn < self.secant_dep_tol:
+                continue
+            basis.append(r / rn)
+            S_cols.append(s)
+            Y_cols.append(y)
+        return np.column_stack(S_cols), np.column_stack(Y_cols)
 
     def get_f(self):
         self._update()
