@@ -5641,10 +5641,18 @@ logger = logging.getLogger(__name__)
 _default_kwargs = dict(
     minimum=dict(
         delta0=1e-1,
-        sigma_inc=1.15,
+        # Growth-only textbook policy (Nocedal & Wright ch. 4): after a step
+        # whose energy drop was at least 75 % of the model's prediction --
+        # including drops *larger* than predicted, which Sella's symmetric
+        # window (0.75, 1.33) excluded -- the radius grows x1.5 up to
+        # delta_max (max internal component, A or rad). The shrink rule is
+        # unchanged. Targets the trust-limited reorientation/sliding phase
+        # of dimers that rotate by 40-90 deg and translate 1-2 A.
+        sigma_inc=1.5,
         sigma_dec=0.90,
         rho_inc=4./3.,
         rho_dec=100,
+        delta_max=0.5,
         method='qn',
         eig=False
     ),
@@ -5807,6 +5815,7 @@ class Sella(Optimizer):
         self.sigma_dec = sigma_dec if sigma_dec is not None else default['sigma_dec']
         self.rho_inc = rho_inc if rho_inc is not None else default['rho_inc']
         self.rho_dec = rho_dec if rho_dec is not None else default['rho_dec']
+        self.delta_max = default.get('delta_max', np.inf)
         self.method = method if method is not None else default['method']
         self.eig = eig if eig is not None else default['eig']
 
@@ -6015,8 +6024,14 @@ class Sella(Optimizer):
                 if smag_cell > 0:
                     self.delta_cell = max(self.delta_cell * self.sigma_dec,
                                           self.delta_min)
-            elif 1./self.rho_inc < rho < self.rho_inc:
-                self.delta = max(self.sigma_inc * smag_int, self.delta)
+            elif rho > 1./self.rho_inc and (self.ord == 0
+                                            or rho < self.rho_inc):
+                # Minimization: growth-only -- any step that realised
+                # >= 75 % of the predicted drop (or more than predicted)
+                # earns a larger radius, capped at delta_max. Saddle
+                # searches keep the symmetric window.
+                self.delta = min(max(self.sigma_inc * smag_int, self.delta),
+                                 self.delta_max)
                 if smag_cell > 0:
                     self.delta_cell = max(self.sigma_inc * smag_cell,
                                           self.delta_cell)
