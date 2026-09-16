@@ -3927,6 +3927,7 @@ class Internals(BaseInternals):
         Ba: float = 0.11,
         Ca: float = 0.44,
         Da: float = -0.42,
+        valence_scale: float = 0.5,
     ) -> float:
         bab, bbc = angle.split()
         idxab = np.asarray(bab.indices, dtype=np.int32)
@@ -3939,7 +3940,15 @@ class Internals(BaseInternals):
             Aa + Ba * np.exp(-Ca * (rab + rbc - rcovab - rcovbc) / units.Bohr)
             / (rcovab * rcovbc / units.Bohr**2)**Da
         )
-        return h0 * units.Hartree
+        # The Fischer-Almlof bend formula gives 0.28 (H-C-H), 0.32 (H-C-C),
+        # 0.35 (C-C-C), 0.30 (C-O-H) and 0.40 (C-C=O) Ha/rad^2, about twice
+        # the valence force-field constants for the same primitive angles
+        # (methane 0.53, ethane/propane 0.65-1.0, water/alcohols 0.75,
+        # carbonyls ~1.0 mdyn A/rad^2 = 0.12-0.23 Ha/rad^2, the range of
+        # Schlegel's 0.16/0.25 bend guesses).  The model energy of a
+        # redundant primitive set is a valence force field, so the primitive
+        # diagonal should match the valence constants; halve the guess.
+        return valence_scale * h0 * units.Hartree
 
     def _h0_dihedral(
         self,
