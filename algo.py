@@ -5810,6 +5810,12 @@ class Sella(Optimizer):
         else:
             self.delta = delta0 * self.pes.get_Ufree().shape[1]
         self.delta_cell = delta0
+        # Separate radius for the fragment translation/rotation internals
+        # (soft, anharmonic intermolecular surfaces): it follows Sella's
+        # original symmetric-window policy, while self.delta (bonds,
+        # angles, dihedrals) uses the growth-only policy of _default_kwargs.
+        self.delta_tr = delta0
+        self.sigma_inc_tr = 1.15
 
         self.sigma_inc = sigma_inc if sigma_inc is not None else default['sigma_inc']
         self.sigma_dec = sigma_dec if sigma_dec is not None else default['sigma_dec']
@@ -5914,6 +5920,16 @@ class Sella(Optimizer):
             )
         self.trajectory = self.pes.traj
 
+    def _has_tr_internals(self):
+        """True when the max-internal-step radius is used with fragment
+        translation/rotation coordinates that carry their own radius."""
+        if not self.internal or getattr(self.pes, 'int', None) is None:
+            return False
+        if not (isinstance(self.rs, type)
+                and issubclass(self.rs, MaxInternalStep)):
+            return False
+        return (self.pes.int.ntrans + self.pes.int.nrotations) > 0
+
     def _predict_step(self):
         if not self.initialized:
             self.pes.get_g()
@@ -5935,6 +5951,10 @@ class Sella(Optimizer):
             self.rs, MaxInternalStep
         ):
             rs_kwargs['wc'] = self.delta / self.delta_cell
+        if self._has_tr_internals():
+            # max |s_i| * wx <= delta  <=>  |s_i| <= delta_tr for the
+            # translation/rotation coordinates.
+            rs_kwargs['wx'] = self.delta / self.delta_tr
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -6019,8 +6039,32 @@ class Sella(Optimizer):
                 smag_int = smag
                 smag_cell = 0
 
+            smag_tr = 0.
+            split_tr = self._has_tr_internals()
+            if split_tr:
+                # Unweighted magnitudes of the covalent and of the
+                # translation/rotation parts of the step; each radius grows
+                # from its own components.
+                n_tr = self.pes.int.ntrans
+                n_rot = self.pes.int.nrotations
+                s_abs = np.abs(s)
+                cov = s_abs[n_tr:len(s_abs) - n_rot]
+                tr = np.concatenate((s_abs[:n_tr], s_abs[len(s_abs) - n_rot:]))
+                smag_int = float(cov.max()) if cov.size else 0.
+                smag_tr = float(tr.max()) if tr.size else 0.
+
             if rho < 1./self.rho_dec or rho > self.rho_dec:
-                self.delta = max(smag_int * self.sigma_dec, self.delta_min)
+                if split_tr:
+                    # Sella's rule (new radius = 0.9 x the failed step) applied
+                    # as one common factor to both radii, so that the radius
+                    # of the part that did not limit the step is not
+                    # collapsed to its (tiny) component.
+                    frac = max(smag_int / self.delta,
+                               smag_tr / self.delta_tr) * self.sigma_dec
+                    self.delta = max(frac * self.delta, self.delta_min)
+                    self.delta_tr = max(frac * self.delta_tr, self.delta_min)
+                else:
+                    self.delta = max(smag_int * self.sigma_dec, self.delta_min)
                 if smag_cell > 0:
                     self.delta_cell = max(self.delta_cell * self.sigma_dec,
                                           self.delta_min)
@@ -6035,6 +6079,11 @@ class Sella(Optimizer):
                 if smag_cell > 0:
                     self.delta_cell = max(self.sigma_inc * smag_cell,
                                           self.delta_cell)
+                if smag_tr > 0 and rho < self.rho_inc:
+                    # Fragment translations/rotations keep Sella's cautious
+                    # policy: x1.15 inside the symmetric window only.
+                    self.delta_tr = max(self.sigma_inc_tr * smag_tr,
+                                        self.delta_tr)
             self.rho = rho
         else:
             self.rho = 1.
