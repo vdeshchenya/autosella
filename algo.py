@@ -5651,9 +5651,13 @@ _default_kwargs = dict(
         # than predicted, the radius grows x1.5 up to delta_max_mol (max
         # internal component, A or rad). Multi-fragment systems (soft,
         # anharmonic intermolecular surfaces) keep Sella's symmetric
-        # window (0.75, 1.33) with x1.15 growth; the shrink rule is shared.
+        # window (0.75, 1.33) with x1.15 growth. A failed step (rho outside
+        # (0.01, 100)) halves the radius of a connected system (x0.9 was
+        # matched to the x1.15 growth and needs ~15 failures to return
+        # from the cap to delta0); multi-fragment systems keep x0.9.
         sigma_inc_mol=1.5,
         delta_max_mol=0.5,
+        sigma_dec_mol=0.5,
         method='qn',
         eig=False
     ),
@@ -5818,6 +5822,7 @@ class Sella(Optimizer):
         self.rho_dec = rho_dec if rho_dec is not None else default['rho_dec']
         self.sigma_inc_mol = default.get('sigma_inc_mol', self.sigma_inc)
         self.delta_max_mol = default.get('delta_max_mol', np.inf)
+        self.sigma_dec_mol = default.get('sigma_dec_mol', self.sigma_dec)
         self.method = method if method is not None else default['method']
         self.eig = eig if eig is not None else default['eig']
 
@@ -6029,7 +6034,12 @@ class Sella(Optimizer):
                 smag_cell = 0
 
             if rho < 1./self.rho_dec or rho > self.rho_dec:
-                self.delta = max(smag_int * self.sigma_dec, self.delta_min)
+                sigma_dec = self.sigma_dec
+                if self.ord == 0 and not self._has_tr_internals():
+                    # Connected molecule: faster shrink matched to the
+                    # growth-only policy below.
+                    sigma_dec = self.sigma_dec_mol
+                self.delta = max(smag_int * sigma_dec, self.delta_min)
                 if smag_cell > 0:
                     self.delta_cell = max(self.delta_cell * self.sigma_dec,
                                           self.delta_min)
