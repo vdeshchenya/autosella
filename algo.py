@@ -4041,6 +4041,105 @@ class Internals(BaseInternals):
         h0 = float(np.sum(k * proj**2))
         return max(h0, h0_min * units.Hartree)
 
+    def _h0_nonlocal_contacts(
+        self,
+        Ab: float = 0.3601,
+        Bb: float = 1.944,
+        min_path: int = 5,
+        max_excess: float = 3.0,
+    ) -> Optional[np.ndarray]:
+        """Curvature of the non-local intramolecular contacts, expressed in
+        the internal coordinates (nint x nint, same units as the diagonal
+        guess: eV/Angstrom^2 for bonds, eV/rad^2 for angles/dihedrals).
+
+        Bonds, angles and dihedrals carry the 1-2, 1-3 and 1-4 curvature,
+        and the Fischer-Almlof torsional constant is fitted to rotational
+        barriers, so it also stands for the 1-5 through-space repulsion
+        around the central bond.  Nothing in the redundant set describes
+        the contacts that hold a folded chain or an intramolecular hydrogen
+        bond together (atoms five or more bonds apart that sit 2-4 A from
+        each other), so the model is too soft along the torsional
+        combinations that compress them.  Following Lindh's all-pair model
+        Hessian, every such pair (same fragment, graph distance >= min_path,
+        r < r_cov,i + r_cov,j + max_excess) is treated as a weak pseudo-bond
+        with the same stretch curvature k_ij(r) that _h0_bond and
+        _h0_fragment use (at a van der Waals contact this is ~2-3e-4
+        Ha/Bohr^2, the Lennard-Jones curvature at the minimum; for an
+        H...O contact at 1.9 A it is ~0.012 Ha/Bohr^2), and the Cartesian
+        quadratic form sum_ij k_ij (u_ij . (dx_j - dx_i))^2 is expressed in
+        the internal coordinates through the pseudo-inverse Jacobian:
+        H = D^T K D with D_pq = u_ij . (Binv_j - Binv_i)_q.  A rigid motion
+        of a fragment leaves its internal distances unchanged, so the
+        fragment translation/rotation coordinates get no contribution and
+        the contact-derived TR block of _h0_fragment is untouched.
+        """
+        natoms = self.natoms
+        pos = np.asarray(self.atoms.positions, dtype=np.float64)
+        numbers = np.asarray(self.atoms.numbers)
+        adj = [[] for _ in range(natoms)]
+        for bond in self.internals['bonds']:
+            i, j = (int(k) for k in bond.indices)
+            if i < natoms and j < natoms:
+                adj[i].append(j)
+                adj[j].append(i)
+        # Fragment labels (connected components of the covalent graph).
+        label = -np.ones(natoms, dtype=np.int32)
+        nlabels = 0
+        for i in range(natoms):
+            if label[i] >= 0:
+                continue
+            label[i] = nlabels
+            stack = [i]
+            while stack:
+                u_ = stack.pop()
+                for v in adj[u_]:
+                    if label[v] < 0:
+                        label[v] = nlabels
+                        stack.append(v)
+            nlabels += 1
+        # Graph distance from every atom, capped at min_path (a pair at
+        # distance >= min_path keeps the value min_path).
+        dist = np.full((natoms, natoms), min_path, dtype=np.int32)
+        for i in range(natoms):
+            dist[i, i] = 0
+            front = [i]
+            for depth in range(1, min_path):
+                new = []
+                for u_ in front:
+                    for v in adj[u_]:
+                        if dist[i, v] > depth:
+                            dist[i, v] = depth
+                            new.append(v)
+                front = new
+                if not front:
+                    break
+        ii, jj = np.triu_indices(natoms, k=1)
+        keep = (label[ii] == label[jj]) & (dist[ii, jj] >= min_path)
+        ii = ii[keep]
+        jj = jj[keep]
+        if len(ii) == 0:
+            return None
+        dvec = pos[jj] - pos[ii]
+        r = np.linalg.norm(dvec, axis=1)
+        rcov = covalent_radii[numbers[ii]] + covalent_radii[numbers[jj]]
+        close = r < rcov + max_excess
+        ii = ii[close]
+        jj = jj[close]
+        if len(ii) == 0:
+            return None
+        dvec = dvec[close]
+        r = np.maximum(r[close], 1e-8)
+        u = dvec / r[:, np.newaxis]
+        k = Ab * np.exp(-Bb * (r - rcov[close]) / units.Bohr)
+        k *= units.Hartree / units.Bohr**2
+        B = self.jacobian()
+        if B.size == 0:
+            return None
+        Binv = np.linalg.pinv(B, rcond=1e-6)
+        Binv = Binv.reshape((-1, 3, B.shape[0]))[:natoms]
+        D = np.einsum('pk,pkq->pq', u, Binv[jj] - Binv[ii])
+        return (D * k[:, np.newaxis]).T @ D
+
     def guess_hessian(self, h0cart=70.) -> np.ndarray:
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
@@ -4107,7 +4206,14 @@ class Internals(BaseInternals):
             else:
                 h0[idx] = h0cart
             idx += 1
-        return np.diag(np.abs(h0))
+        H0 = np.diag(np.abs(h0))
+        # Non-local contact curvature (folded chains, intramolecular
+        # hydrogen bonds): a positive semi-definite pair term in the
+        # internal coordinates, see _h0_nonlocal_contacts.
+        Hnb = self._h0_nonlocal_contacts()
+        if Hnb is not None and Hnb.shape == H0.shape:
+            H0 = H0 + Hnb
+        return H0
 
 logger = logging.getLogger(__name__)
 
