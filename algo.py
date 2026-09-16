@@ -3962,13 +3962,64 @@ class Internals(BaseInternals):
         )
         return h0 * units.Hartree
 
+    def _h0_fragment(
+        self,
+        coord: Coordinate,
+        kind: str,
+        Ab: float = 0.3601,
+        Bb: float = 1.944,
+        h0_min: float = 1e-3,
+    ) -> float:
+        """Contact-derived guess curvature for a fragment translation
+        (eV/Angstrom^2) or rotation (eV/rad^2) coordinate.
+
+        Every inter-fragment atom pair (i in the fragment, j outside it) is
+        treated as a weak pseudo-bond with the same Fischer-Almlof stretch
+        curvature k_ij(r) that _h0_bond assigns to real bonds. The diagonal
+        curvature of the rigid-body coordinate q is then
+            sum_ij k_ij (u_ij . dx_i/dq)^2
+        with u_ij the unit vector i->j and dx_i/dq the displacement of atom i
+        per unit q (a Cartesian unit vector for translations, e_axis x (x_i - c)
+        for rotations about the fragment centroid c). Far-apart or
+        dispersion-bound fragments therefore get soft coordinates (steps limited
+        by the trust radius, not by a stiff guess) while ion pairs and hydrogen
+        bonds get stiff ones. h0_min (Hartree) is a floor for numerical safety.
+        """
+        pos = np.asarray(self.atoms.positions, dtype=np.float64)
+        numbers = np.asarray(self.atoms.numbers)
+        idx = np.asarray(coord.indices, dtype=np.int32)
+        mask = np.ones(len(pos), dtype=bool)
+        mask[idx] = False
+        other = np.where(mask)[0]
+        if len(other) == 0:
+            return h0_min * units.Hartree
+        dvec = pos[other][np.newaxis, :, :] - pos[idx][:, np.newaxis, :]
+        r = np.maximum(np.linalg.norm(dvec, axis=2), 1e-8)
+        u = dvec / r[..., np.newaxis]
+        rcov = (covalent_radii[numbers[idx]][:, np.newaxis]
+                + covalent_radii[numbers[other]][np.newaxis, :])
+        k = Ab * np.exp(-Bb * (r - rcov) / units.Bohr)
+        k *= units.Hartree / units.Bohr**2
+        if kind == 'translation':
+            g = np.zeros((len(idx), 3), dtype=np.float64)
+            g[:, coord.kwargs['dim']] = 1.
+        else:
+            e = np.zeros(3, dtype=np.float64)
+            e[coord.kwargs['axis']] = 1.
+            g = np.cross(e, pos[idx] - pos[idx].mean(0))
+        proj = np.einsum('ijk,ik->ij', u, g)
+        h0 = float(np.sum(k * proj**2))
+        return max(h0, h0_min * units.Hartree)
+
     def guess_hessian(self, h0cart=70.) -> np.ndarray:
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
-        h0_tr = 0.05 * units.Hartree
         idx = 0
         for trans in self.internals['translations']:
-            h0[idx] = h0_tr if self.allow_fragments else h0cart
+            if self.allow_fragments:
+                h0[idx] = self._h0_fragment(trans, 'translation')
+            else:
+                h0[idx] = h0cart
             idx += 1
         for bond in self.internals['bonds']:
             h0[idx] = self._h0_bond(bond)
@@ -3988,7 +4039,10 @@ class Internals(BaseInternals):
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
             idx += 1
         for rot in self.internals['rotations']:
-            h0[idx] = h0_tr if self.allow_fragments else h0cart
+            if self.allow_fragments:
+                h0[idx] = self._h0_fragment(rot, 'rotation')
+            else:
+                h0[idx] = h0cart
             idx += 1
         return np.diag(np.abs(h0))
 
@@ -5951,7 +6005,14 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
+    # allow_fragments=True: disconnected fragments (e.g. non-covalent dimers)
+    # get explicit centroid translation + rotation internals (TRIC-style,
+    # Wang & Song 2016) instead of being stitched together by long
+    # inter-fragment pseudo-bonds found by inflating the covalent radii. Their
+    # guess curvatures come from the inter-fragment contacts
+    # (Internals._h0_fragment).
+    opt = Sella(atoms, internal=True, order=0, logfile=None,
+                allow_fragments=True)
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
