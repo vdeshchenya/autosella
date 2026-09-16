@@ -3985,6 +3985,28 @@ class Internals(BaseInternals):
         # physical ~0.02 Ha/rad^2.
         return h0 * bo * units.Hartree
 
+    def _h0_linear_bend(self, centre: int, k_bend: float = 0.10,
+                        k_bend_h: float = 0.05) -> float:
+        """Diagonal guess (eV/rad^2) for the coordinates that describe the
+        bending of a near-linear two-bonded centre A-centre-C through its
+        dummy atom X: the dummy angles A-centre-X and C-centre-X (bend
+        towards X) and the dummy dihedral A-centre-X-C (bend in the plane
+        perpendicular to X, which is the plane of the initial A-centre-C
+        bend), both with unit Jacobian with respect to the bend angle.
+        Linear-bend force constants are far below the Fischer-Almlof bend
+        value (0.31-0.37 Ha/rad^2 for these angles) and below the 0.5
+        Ha/rad^2 Sella assigns to dummy dihedrals: C-C#C and C-C#N bends
+        are 0.28-0.35 mdyn A/rad^2 = 0.06-0.08 Ha/rad^2, cumulene and azide
+        bends (CO2 0.57, allene 0.55, HN3 0.5 mdyn A/rad^2) 0.11-0.13, and
+        the D-H...A bend of a proton-shared hydrogen bond 0.02-0.05.
+        k_bend covers the sp centres, k_bend_h the hydrogen centres; both
+        sit at the stiff end of their range because a quasi-Newton step
+        along a mode whose model stiffness is r times the true one leaves
+        the fraction |1 - 1/r| of the error, so a model twice too stiff
+        (0.5 per step) beats one twice too soft (no progress)."""
+        z = int(self.atoms.numbers[centre])
+        return (k_bend_h if z == 1 else k_bend) * units.Hartree
+
     def _torsion_centre_types(self, adj: List[List[int]]) -> List[str]:
         """Local hybridisation label of every real atom for the torsional
         guess, from the element and the covalent neighbour count alone:
@@ -4300,10 +4322,20 @@ class Internals(BaseInternals):
             i, j = bond.indices
             nbonds[i] += 1
             nbonds[j] += 1
-        for angle in self.internals['angles']:
-            h0[idx] = self._h0_angle(angle)
-            idx += 1
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
+        # Connected systems get the class-resolved soft-mode guesses (the
+        # linear-bend constant below, the rotatable-bond torsion classes).
+        # Multi-fragment systems keep the unscaled model: their cost is set
+        # by the intermolecular coordinates, and the intramolecular paths of
+        # the fragments (and with them the basins they reach) stay as before.
+        connected = (self.ntrans + self.nrotations) == 0
+        for angle in self.internals['angles']:
+            if connected and any(j in dummy_set for j in angle.indices):
+                # Dummy angle A-j-X or C-j-X of a near-linear centre j.
+                h0[idx] = self._h0_linear_bend(int(angle.indices[1]))
+            else:
+                h0[idx] = self._h0_angle(angle)
+            idx += 1
         bonded = set()
         for bond in self.internals['bonds']:
             i, j = bond.indices
@@ -4335,10 +4367,7 @@ class Internals(BaseInternals):
             ndih[key] = ndih.get(key, 0) + 1
         # Class-resolved scale of the rotatable-bond torsions (see
         # _torsion_class_factor), from the covalent graph of the real atoms.
-        # Multi-fragment systems keep the unscaled model: their cost is set
-        # by the intermolecular coordinates, and the intramolecular paths of
-        # the fragments (and with them the basins they reach) stay as before.
-        scale_torsions = (self.ntrans + self.nrotations) == 0
+        scale_torsions = connected
         adj = [[] for _ in range(self.natoms)]
         for pair in bonded:
             i, j = tuple(pair)
@@ -4351,7 +4380,17 @@ class Internals(BaseInternals):
         tfac = {}
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
-                h0[idx] = 0.5 * units.Hartree
+                a, b, c, d = (int(j) for j in dihedral.indices)
+                if connected and (b in dummy_set or c in dummy_set):
+                    # The linear-bend dihedral A-j-X-C built in
+                    # find_all_angles (dummy at an inner position; the
+                    # dihedrals with a terminal dummy are the azimuths of
+                    # the neighbouring substituents about the linear axis
+                    # relative to X and keep the original value).
+                    h0[idx] = self._h0_linear_bend(b if c in dummy_set
+                                                   else c)
+                else:
+                    h0[idx] = 0.5 * units.Hartree
             elif not is_proper(dihedral):
                 h0[idx] = self._h0_dihedral(dihedral, nbonds, proper=False)
             else:
