@@ -7281,6 +7281,8 @@ class Sella(Optimizer):
             pass
 
 
+from scipy.optimize import minimize as _scipy_minimize
+
 _ANGSTROM_TO_NM = 0.1
 
 # MUST equal utils.EV_TO_KJ bit-for-bit. utils builds it as
@@ -7397,6 +7399,324 @@ def _break_start_symmetry(numbers, pos_ang):
     return pos
 
 
+# Rigid-body pre-relaxation ("docking") of neutral multi-fragment starts on a
+# classical intermolecular surrogate.
+#
+# Rationale: when the start of a non-covalent complex lies far from its
+# minimum (fragments an angstrom or two too far apart, or mis-oriented), the
+# quasi-Newton walk covers ~0.1 A per force call -- the fragment modes are
+# soft, their model curvature is a floor, and the trust radius caps the
+# fragment step at 0.25 A -- so ten or more force calls are spent on the
+# approach before the endgame even begins. A point-charge + 12-6 potential
+# knows the shape of that approach without any force call: it is relaxed in
+# the rigid-body coordinates of every fragment (intramolecular geometry
+# frozen), and the quasi-Newton optimisation starts from the relaxed pose,
+# which then only has to be corrected by the surrogate's error. The
+# surrogate is trusted only where the first force call confirms it: the
+# rigid-body projections of its force field and of the true one must point
+# the same way (cosine >= _DOCK_MIN_COS), the relaxation must move the pose
+# by at least _DOCK_MIN_RMSD (a shorter approach is cheaper for the
+# quasi-Newton steps than the extra force call the docked pose costs), and
+# the docked pose must lower the true energy, otherwise the run continues
+# from the original start (its evaluation is cached, no force call is
+# repeated). Ionic complexes are not docked: a non-polarisable point-charge
+# model is unreliable for ions (charge transfer, polarisation), so a start
+# with a fragment carrying a net formal charge (valence rules on the bond
+# graph) or an odd electron count keeps the plain quasi-Newton path.
+_DOCK_MIN_COS = 0.5
+_DOCK_MIN_RMSD = 0.5      # A, all-atom rmsd between the start and the docked pose
+_DOCK_MAX_MOVE = 6.0      # A, largest atomic displacement accepted (runaway guard)
+_DOCK_CHARGE_PER_EN = 0.22  # e per unit Pauling electronegativity difference per bond
+_DOCK_BOND_ORDER_LENGTH = 0.20  # A of bond shortening per extra bond order
+_DOCK_COULOMB = 332.0637  # kcal/mol A e^-2
+_DOCK_POLAR_H_EN = 2.57   # H bonded to an atom at least this electronegative (N, O, S,
+                          # halogens; not C at 2.55) is a hydrogen-bond donor: no 12-6 term
+
+# Pauling electronegativities.
+_PAULING_EN = {1: 2.20, 3: 0.98, 4: 1.57, 5: 2.04, 6: 2.55, 7: 3.04, 8: 3.44,
+               9: 3.98, 11: 0.93, 12: 1.31, 13: 1.61, 14: 1.90, 15: 2.19,
+               16: 2.58, 17: 3.16, 19: 0.82, 20: 1.00, 31: 1.81, 32: 2.01,
+               33: 2.18, 34: 2.55, 35: 2.96, 37: 0.82, 38: 0.95, 49: 1.78,
+               50: 1.96, 51: 2.05, 52: 2.10, 53: 2.66, 55: 0.79, 56: 0.89,
+               81: 1.62, 82: 2.33, 83: 2.02}
+# UFF 12-6 parameters (Rappe et al. 1992): minimum distance x_i (A) and well
+# depth D_i (kcal/mol); combined geometrically.
+_UFF_LJ = {1: (2.886, 0.044), 2: (2.362, 0.056), 3: (2.451, 0.025),
+           4: (2.745, 0.085), 5: (4.083, 0.180), 6: (3.851, 0.105),
+           7: (3.660, 0.069), 8: (3.500, 0.060), 9: (3.364, 0.050),
+           10: (3.243, 0.042), 11: (2.983, 0.030), 12: (3.021, 0.111),
+           13: (4.499, 0.505), 14: (4.295, 0.402), 15: (4.147, 0.305),
+           16: (4.035, 0.274), 17: (3.947, 0.227), 18: (3.868, 0.185),
+           19: (3.812, 0.035), 20: (3.399, 0.238), 31: (4.383, 0.415),
+           32: (4.280, 0.379), 33: (4.230, 0.309), 34: (4.205, 0.291),
+           35: (4.189, 0.251), 36: (4.141, 0.220), 37: (4.114, 0.040),
+           38: (3.641, 0.235), 49: (4.463, 0.599), 50: (4.392, 0.567),
+           51: (4.420, 0.449), 52: (4.470, 0.398), 53: (4.009, 0.339),
+           54: (4.404, 0.332), 55: (4.517, 0.045), 56: (3.703, 0.364),
+           81: (4.347, 0.680), 82: (4.297, 0.663), 83: (4.370, 0.518)}
+_ALKALI = (3, 11, 19, 37, 55)
+_ALKALINE_EARTH = (4, 12, 20, 38, 56)
+_HALOGENS = (9, 17, 35, 53)
+
+
+def _dock_formal_charges(numbers, adj, dist):
+    """Formal charges from the bond graph by valence rules (no bond orders
+    except a C-O / C-S length test): alkali +1, alkaline earth +2, lone
+    halide -1, four-coordinate N / three-coordinate O +1, sulfonium and
+    phosphonium +1, amidinium / guanidinium / imidazolium +1 on the central
+    carbon, alkoxide / phenolate / thiolate / hydroxide -1, the terminal O of
+    carboxylate, carbonate, nitrate, nitrite, sulfinate, sulfonate, sulfate,
+    phosphonate, phosphate and oxo-halide anions share the group charge,
+    N-oxides carry N+ O-, four-coordinate B / Al -1. Anything else is
+    neutral. Returns an array (e) that sums to the (approximate) net charge."""
+    numbers = np.asarray(numbers)
+    natoms = len(numbers)
+    q = np.zeros(natoms)
+    deg = np.array([len(a) for a in adj])
+
+    def terminal(i, z):
+        return [j for j in adj[i] if numbers[j] == z and deg[j] == 1]
+
+    for i in range(natoms):
+        z = numbers[i]
+        d = deg[i]
+        if z in _ALKALI:
+            q[i] += 1.0
+        elif z in _ALKALINE_EARTH:
+            q[i] += 2.0
+        elif z in _HALOGENS and d == 0:
+            q[i] -= 1.0
+        elif z == 7 and d == 4:
+            q[i] += 1.0
+        elif z == 8 and d == 3:
+            q[i] += 1.0
+        elif z == 16 and d == 3 and all(numbers[j] in (1, 6) for j in adj[i]):
+            q[i] += 1.0
+        elif z == 15 and d == 4 and all(numbers[j] in (1, 6) for j in adj[i]):
+            q[i] += 1.0
+        elif z in (5, 13) and d == 4:
+            q[i] -= 1.0
+        elif z == 6 and d == 3:
+            # amidinium / imidazolium (two three-coordinate amine N, third
+            # neighbour C or H) and guanidinium (three); nitro N excluded
+            amine = [j for j in adj[i] if numbers[j] == 7 and deg[j] == 3
+                     and not terminal(j, 8)]
+            others = [j for j in adj[i] if j not in amine]
+            if len(amine) == 3 or (len(amine) == 2 and numbers[others[0]] in (1, 6)):
+                q[i] += 1.0
+        elif z in (8, 16) and d == 1:
+            x = adj[i][0]
+            zx = numbers[x]
+            dx = deg[x]
+            k = len(terminal(x, z))
+            if zx == 1:
+                q[i] -= 1.0                       # hydroxide, hydrosulfide
+            elif zx == 6:
+                if k >= 2:
+                    q[i] -= (k - 1.0) / k          # carboxylate, carbonate
+                elif dx == 4:
+                    q[i] -= 1.0                   # alkoxide, thiolate
+                elif dx == 3:
+                    # C=O 1.20-1.25 A and C=S 1.60-1.68 A even in a
+                    # perturbed start; C-O(-) 1.26-1.30, C-S(-) 1.72-1.76
+                    single = 1.30 if z == 8 else 1.75
+                    if dist[i, x] > single:
+                        q[i] -= 1.0               # phenolate, enolate, thiophenolate
+            elif zx == 7:
+                if dx == 3 and k == 3:
+                    q[i] -= 2.0 / 3.0             # nitrate (N+ below)
+                    q[x] += 1.0 / 3.0
+                elif dx == 3 and k == 2:
+                    q[i] -= 0.5                   # nitro: N+ O- O=
+                    q[x] += 0.5
+                elif dx == 3 and k == 1:
+                    q[i] -= 1.0                   # amine / pyridine N-oxide
+                    q[x] += 1.0
+                elif dx == 4 and k == 1:
+                    q[i] -= 1.0                   # N-oxide of a four-coordinate N (+1 above)
+                elif dx == 2 and k == 2:
+                    q[i] -= 0.5                   # nitrite
+            elif zx == 16:
+                if dx == 4 and k >= 3:
+                    q[i] -= (k - 2.0) / k          # sulfonate, sulfate
+                elif dx == 3 and k >= 2:
+                    q[i] -= (k - 1.0) / k          # sulfinate, sulfite
+            elif zx == 15:
+                if k >= 2:
+                    q[i] -= (k - 1.0) / k          # phosphonate, phosphate
+            elif zx in _HALOGENS:
+                q[i] -= 1.0 / k                   # hypochlorite ... perchlorate
+    return q
+
+
+def _dock_surrogate_terms(numbers, pos, groups):
+    """Inter-fragment pair terms of the surrogate: indices, charge products
+    and 12-6 parameters. Returns None when a fragment carries a net formal
+    charge or an odd electron count (open shell or unrecognised ion)."""
+    numbers = np.asarray(numbers)
+    natoms = len(numbers)
+    rcov = covalent_radii[numbers]
+    dist = np.linalg.norm(pos[:, None, :] - pos[None, :, :], axis=2)
+    bonded = dist <= 1.25 * (rcov[:, None] + rcov[None, :])
+    np.fill_diagonal(bonded, False)
+    adj = [list(np.flatnonzero(bonded[i])) for i in range(natoms)]
+    formal = _dock_formal_charges(numbers, adj, dist)
+    for group in groups:
+        net = formal[group].sum()
+        if abs(net) > 1e-6 or (int(numbers[group].sum()) - int(round(net))) % 2:
+            return None
+    # Partial charges: formal charge plus a bond-polarity transfer of
+    # _DOCK_CHARGE_PER_EN e per unit electronegativity difference and bond
+    # order (order 1 + shortening below the covalent-radius sum in units of
+    # _DOCK_BOND_ORDER_LENGTH, at most 3).
+    chi = np.array([_PAULING_EN.get(int(z), 2.0) for z in numbers])
+    q = formal.copy()
+    for i in range(natoms):
+        for j in adj[i]:
+            order = 1.0 + min(2.0, max(0.0, (rcov[i] + rcov[j] - dist[i, j]) / _DOCK_BOND_ORDER_LENGTH))
+            q[i] += _DOCK_CHARGE_PER_EN * order * (chi[j] - chi[i])
+    lj_x = np.array([_UFF_LJ.get(int(z), (4.0, 0.2))[0] for z in numbers])
+    lj_d = np.array([_UFF_LJ.get(int(z), (4.0, 0.2))[1] for z in numbers])
+    for i in range(natoms):
+        # a polar hydrogen has no 12-6 term (hydrogen bonds close on the
+        # heavy-atom repulsion, as in the point-charge water models)
+        if numbers[i] == 1 and adj[i] and chi[adj[i][0]] >= _DOCK_POLAR_H_EN:
+            lj_d[i] = 0.0
+    label = np.empty(natoms, dtype=int)
+    for k, group in enumerate(groups):
+        label[group] = k
+    ii, jj = np.triu_indices(natoms, 1)
+    keep = label[ii] != label[jj]
+    ii = ii[keep]
+    jj = jj[keep]
+    return (ii, jj, _DOCK_COULOMB * q[ii] * q[jj], np.sqrt(lj_d[ii] * lj_d[jj]),
+            np.sqrt(lj_x[ii] * lj_x[jj]))
+
+
+def _dock_energy_gradient(pos, terms):
+    """Surrogate energy (kcal/mol) and its Cartesian gradient (kcal/mol/A)."""
+    ii, jj, qq, dd, xx = terms
+    vec = pos[ii] - pos[jj]
+    r = np.maximum(np.linalg.norm(vec, axis=1), 0.1)
+    s6 = (xx / r) ** 6
+    energy = np.sum(qq / r + dd * (s6 * s6 - 2.0 * s6))
+    dedr = -qq / r ** 2 - 12.0 * dd * (s6 * s6 - s6) / r
+    fvec = (dedr / r)[:, None] * vec
+    grad = np.zeros_like(pos)
+    np.add.at(grad, ii, fvec)
+    np.add.at(grad, jj, -fvec)
+    return energy, grad
+
+
+def _dock_rigid_field(pos, groups, field):
+    """Least-squares projection of a per-atom vector field onto the rigid-body
+    motions (unit-weight translation + rotation) of every fragment."""
+    out = np.zeros_like(field)
+    for group in groups:
+        r = pos[group] - pos[group].mean(axis=0)
+        f = field[group]
+        inertia = np.sum(r * r) * np.eye(3) - r.T @ r
+        omega = np.linalg.lstsq(inertia, np.cross(r, f).sum(axis=0), rcond=None)[0]
+        out[group] = f.sum(axis=0) / len(group) + np.cross(omega, r)
+    return out
+
+
+def _dock_rotation(omega):
+    """Rotation matrix exp([omega]x) and the right Jacobian J_r of SO(3),
+    d(exp([omega + delta]x)) = exp([omega]x) exp([J_r delta]x) + O(delta^2)."""
+    theta = np.linalg.norm(omega)
+    K = np.array([[0.0, -omega[2], omega[1]],
+                  [omega[2], 0.0, -omega[0]],
+                  [-omega[1], omega[0], 0.0]])
+    if theta < 1e-6:
+        a, b, c = 1.0 - theta ** 2 / 6.0, 0.5 - theta ** 2 / 24.0, 1.0 / 6.0 - theta ** 2 / 120.0
+    else:
+        a = np.sin(theta) / theta
+        b = (1.0 - np.cos(theta)) / theta ** 2
+        c = (theta - np.sin(theta)) / theta ** 3
+    K2 = K @ K
+    return np.eye(3) + a * K + b * K2, np.eye(3) - b * K + c * K2
+
+
+def _dock_relax(pos0, groups, terms):
+    """Minimise the surrogate over the rigid-body coordinates of the fragments
+    (translation t and rotation vector omega about the start centroid, the
+    latter scaled by the radius of gyration so that all parameters are
+    lengths). Returns the relaxed positions."""
+    cents = [pos0[g].mean(axis=0) for g in groups]
+    rgs = [np.sqrt(np.mean(np.sum((pos0[g] - c) ** 2, axis=1))) for g, c in zip(groups, cents)]
+
+    def place(params):
+        pos = np.array(pos0, dtype=float, copy=True)
+        rots = []
+        for k, (g, c, rg) in enumerate(zip(groups, cents, rgs)):
+            t = params[6 * k:6 * k + 3]
+            if rg > 1e-8:
+                omega = params[6 * k + 3:6 * k + 6] / rg
+                R, J = _dock_rotation(omega)
+                pos[g] = (pos0[g] - c) @ R.T + c + t
+            else:
+                R, J = np.eye(3), np.eye(3)
+                pos[g] = pos0[g] + t
+            rots.append((R, J))
+        return pos, rots
+
+    def fun(params):
+        pos, rots = place(params)
+        energy, grad = _dock_energy_gradient(pos, terms)
+        dparams = np.zeros_like(params)
+        for k, (g, c, rg) in enumerate(zip(groups, cents, rgs)):
+            t = params[6 * k:6 * k + 3]
+            dparams[6 * k:6 * k + 3] = grad[g].sum(axis=0)
+            if rg > 1e-8:
+                R, J = rots[k]
+                torque = np.cross(pos[g] - c - t, grad[g]).sum(axis=0)
+                dparams[6 * k + 3:6 * k + 6] = J.T @ (R.T @ torque) / rg
+        return energy, dparams
+
+    res = _scipy_minimize(fun, np.zeros(6 * len(groups)), jac=True, method='L-BFGS-B',
+                          options={'maxiter': 500, 'maxfun': 1000, 'gtol': 1e-5, 'ftol': 1e-12})
+    return place(res.x)[0]
+
+
+def _dock_start(atoms, wrapper):
+    """Dock a neutral multi-fragment start (see the note above). Uses one
+    force call for the gate and one for the docked pose; when the docked pose
+    is rejected, the start evaluation is re-installed in the calculator cache
+    so that the optimizer's first evaluation costs no call."""
+    pos0 = atoms.get_positions()
+    groups = _start_fragments(atoms.numbers, pos0)
+    if len(groups) < 2:
+        return
+    terms = _dock_surrogate_terms(atoms.numbers, pos0, groups)
+    if terms is None:
+        return
+    e0 = atoms.get_potential_energy()
+    f0 = atoms.get_forces()
+    _, g_sur = _dock_energy_gradient(pos0, terms)
+    a = _dock_rigid_field(pos0, groups, f0).ravel()
+    b = _dock_rigid_field(pos0, groups, -g_sur).ravel()
+    na = np.linalg.norm(a)
+    nb = np.linalg.norm(b)
+    if na <= 0.0 or nb <= 0.0 or a @ b < _DOCK_MIN_COS * na * nb:
+        return
+    pos1 = _dock_relax(pos0, groups, terms)
+    move = pos1 - pos0
+    if not np.all(np.isfinite(pos1)):
+        return
+    if np.max(np.linalg.norm(move, axis=1)) > _DOCK_MAX_MOVE:
+        return
+    if np.sqrt(np.mean(np.sum(move ** 2, axis=1))) < _DOCK_MIN_RMSD:
+        return
+    atoms.positions = pos1
+    e1 = atoms.get_potential_energy()
+    if e1 < e0:
+        return
+    atoms.positions = pos0
+    wrapper.atoms = atoms.copy()
+    wrapper.results = {"energy": e0, "forces": f0}
+
+
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
     # Multi-fragment starts leave their symmetry element before the first
@@ -7405,6 +7725,10 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
+    # Neutral multi-fragment starts are docked on the classical surrogate
+    # first (see _dock_start); connected systems and ionic complexes are
+    # untouched and make no force call here.
+    _dock_start(atoms, wrapper)
     # allow_fragments=True: disconnected fragments (e.g. non-covalent dimers)
     # get explicit centroid translation + rotation internals (TRIC-style,
     # Wang & Song 2016) instead of being stitched together by long
@@ -7414,7 +7738,10 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     # (Internals._h0_fragment).
     opt = Sella(atoms, internal=True, order=0, logfile=None,
                 allow_fragments=True)
-    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+    # The optimizer's first evaluation is served from the calculator cache
+    # when the start was already costed by _dock_start, so the step budget is
+    # reduced by the calls made so far beyond that one.
+    for _ in opt.irun(fmax=0, steps=max_force_calls - max(1, wrapper.call_count)):
         if converged():
             break
     # Return the last geometry that was actually EVALUATED, not whatever the
