@@ -4,6 +4,7 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also keep an extra-redundant improper at every 3-coordinate center.
+Geodesic ODE timeouts restore coordinates and halve the internal step.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4685,6 +4686,8 @@ class InternalPES(PES):
         t0 = 0.
         Binv = self._get_Binv()
         self._ode_Binv = Binv
+        pos0 = self.atoms.positions.copy()
+        dpos0 = None if self.dummies is None else self.dummies.positions.copy()
         y0 = np.hstack((self.apos.ravel(), self.dpos.ravel(),
                         Binv @ dx,
                         Binv @ self.curr.get('g', np.zeros_like(dx))))
@@ -4698,11 +4701,16 @@ class InternalPES(PES):
             if self.bad_int is not None:
                 break
             if ode.nfev > 1000:
-                view(self.atoms + self.dummies)
+                self.atoms.positions = pos0
+                if dpos0 is not None:
+                    self.dummies.positions = dpos0
                 raise RuntimeError("Geometry update ODE is taking too long "
                                    "to converge!")
 
         if ode.status == 'failed':
+            self.atoms.positions = pos0
+            if dpos0 is not None:
+                self.dummies.positions = dpos0
             raise RuntimeError("Geometry update ODE failed to converge!")
 
         nxa = 3 * len(self.atoms)
@@ -5800,7 +5808,23 @@ class Sella(Optimizer):
         else:
             self.nsteps_since_diag += 1
 
-        rho = self.pes.kick(s, ev, **self.diagkwargs)
+        rho = None
+        last_ode_error = None
+        for _ode_try in range(6):
+            try:
+                rho = self.pes.kick(s, ev, **self.diagkwargs)
+                last_ode_error = None
+                break
+            except RuntimeError as exc:
+                msg = str(exc)
+                if "ODE is taking too long" not in msg and "ODE failed" not in msg:
+                    raise
+                last_ode_error = exc
+                self.pes.restore()
+                s = 0.5 * s
+                smag = 0.5 * smag
+        if last_ode_error is not None:
+            raise last_ode_error
 
         # Check for bad internals, and if found, reset PES object.
         # This skips the trust radius update.
