@@ -1,8 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals, with MaxInternalStep
-dihedral weight `wd=0.8` only on molecules whose covalent graph is a single fragment
-so torsions may reach 0.125 while stretches stay at 0.1.
+Vendored from the `sella` package (2.5.0). Champion internals, but the
+approximate Hessian uses `BFGS_auto` (standard BFGS while H and SᵀY stay
+positive definite; otherwise TS-BFGS) instead of always TS-BFGS.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -314,7 +314,7 @@ class ApproximateHessian(LinearOperator):
         dim: int,
         ncart: int,
         B0: np.ndarray = None,
-        update_method: str = 'TS-BFGS',
+        update_method: str = 'BFGS_auto',
         symm: int = 2,
         initialized: bool = False,
     ) -> None:
@@ -5738,13 +5738,10 @@ class Sella(Optimizer):
         x0 = self.pes.get_x()
 
         rs_kwargs = {}
-        if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
-            # Connected molecules only: milder torsion cap than cycle 29's 0.15.
-            # wd=0.8 => |s_d| <= 0.1/0.8 = 0.125; dimers keep champion wd=1.
-            if getattr(self, "_allow_dihedral_wd", False):
-                rs_kwargs['wd'] = 0.8
-            if self.optimize_cell:
-                rs_kwargs['wc'] = self.delta / self.delta_cell
+        if self.optimize_cell and isinstance(self.rs, type) and issubclass(
+            self.rs, MaxInternalStep
+        ):
+            rs_kwargs['wc'] = self.delta / self.delta_cell
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5954,9 +5951,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
     opt = Sella(atoms, internal=True, order=0, logfile=None)
-    probe = Internals(atoms.copy(), allow_fragments=True)
-    probe.find_all_bonds()
-    opt._allow_dihedral_wd = not bool(probe.internals["translations"])
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
