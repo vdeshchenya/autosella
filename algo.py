@@ -4317,15 +4317,22 @@ class Internals(BaseInternals):
         self._covalent_graph_cache = (key, result)
         return result
 
-    def _nonlocal_pairs(self, min_path: int) -> Tuple[np.ndarray, np.ndarray]:
+    def _nonlocal_pairs(
+        self,
+        min_path: int,
+        vicinal: bool = False,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Atom pairs of the same covalent fragment at graph distance
         >= min_path, plus every pair of atoms in different fragments
-        (upper triangle, real atoms only).  The covalent graph of an
-        Internals object is fixed after construction, so the result is
-        cached; a rebuild creates a new object."""
+        (upper triangle, real atoms only); with vicinal=True also the 1-4
+        pairs (graph distance 3) of every fragment.  Returns (ii, jj, far)
+        with far marking the pairs at graph distance >= min_path or in
+        different fragments (the non-local contacts proper).  The covalent
+        graph of an Internals object is fixed after construction, so the
+        result is cached; a rebuild creates a new object."""
         natoms = self.natoms
         adj, label = self._covalent_graph()
-        key = (natoms, min_path, tuple(map(tuple, adj)))
+        key = (natoms, min_path, vicinal, tuple(map(tuple, adj)))
         cache = getattr(self, '_nonlocal_pairs_cache', None)
         if cache is not None and cache[0] == key:
             return cache[1]
@@ -4349,8 +4356,11 @@ class Internals(BaseInternals):
         # Atoms in different fragments are at infinite graph distance (the
         # search never reaches them, so dist keeps the cap): every
         # inter-fragment pair qualifies.
-        keep = (label[ii] != label[jj]) | (dist[ii, jj] >= min_path)
-        result = (ii[keep], jj[keep])
+        far = (label[ii] != label[jj]) | (dist[ii, jj] >= min_path)
+        keep = far
+        if vicinal:
+            keep = keep | (dist[ii, jj] == 3)
+        result = (ii[keep], jj[keep], far[keep])
         self._nonlocal_pairs_cache = (key, result)
         return result
 
@@ -4361,11 +4371,13 @@ class Internals(BaseInternals):
         min_path: int = 5,
         max_excess: float = 3.0,
         Binv: Optional[np.ndarray] = None,
+        vicinal: Optional[bool] = None,
     ) -> Optional[np.ndarray]:
         """Curvature of the non-local contacts -- intramolecular and
-        inter-fragment -- expressed in the internal coordinates (nint x
-        nint, same units as the diagonal guess: eV/Angstrom^2 for bonds and
-        fragment translations, eV/rad^2 for angles, dihedrals and fragment
+        inter-fragment -- and, for connected systems, of the vicinal (1-4)
+        pairs, expressed in the internal coordinates (nint x nint, same
+        units as the diagonal guess: eV/Angstrom^2 for bonds and fragment
+        translations, eV/rad^2 for angles, dihedrals and fragment
         rotations).
 
         Bonds, angles and dihedrals carry the 1-2, 1-3 and 1-4 curvature,
@@ -4400,11 +4412,41 @@ class Internals(BaseInternals):
         term does not have); the twist about a contact axis and the
         sliding of dispersion-bound fragments stay at the diagonal floor
         of _h0_fragment.
+
+        The vicinal pairs (graph distance 3, the atoms a and d of every
+        dihedral a-b-c-d) get the same radial term when vicinal is true
+        (default: connected systems).  The torsional constant of a single
+        bond is the through-space repulsion of the substituents on its two
+        ends, and the Fischer-Almlof fit to first-row barriers (ethane 2.9
+        kcal/mol, 0.021 Ha/rad^2 of rotational stiffness) knows only the
+        hydrogen and first-row substituents of its training set: the bond
+        stays at the ethane value whatever sits on it, whereas the
+        barriers grow with the substituents' size (CH3-CCl3 ~5.5, CF3-CF3
+        3.9, C2Cl6 10-15 kcal/mol; butane's anti well is 20 % stiffer
+        than ethane's).  The pair term supplies exactly that dependence,
+        k_ad (dr_ad/dphi)^2 summed over the 1-4 pairs of the bond: nothing
+        for the in-plane pairs of a planar (conjugated) rotor, 5-10 % on an
+        alkyl rotor (ethane +0.001, butane +0.003 Ha/rad^2 -- within the
+        force-field decomposition of the barrier into explicit torsion and
+        1-4 van der Waals terms), 0.010 Ha/rad^2 on CH3-CCl3 (0.023 ->
+        0.033, near the barrier value 0.04) and 0.04 on C2Cl6 (0.022 ->
+        0.065 against ~0.1).
+        Being geometry dependent, it also follows the compression of a 1-4
+        contact during a rotor's relaxation, which the phase-blind torsional
+        constant cannot.  It adds a few per cent to the bends a-b-c and
+        b-c-d and under 3 % to the b-c stretch.  The vicinal pairs are
+        radial only: an X-H...Y pair three bonds apart (the syn hydroxyl of
+        a carboxylic acid, an amide N-H against its own carbonyl) is not a
+        hydrogen bond and gets no contact bends.  Multi-fragment systems
+        keep the non-local pairs alone, so that the intramolecular paths of
+        their fragments (and the basins they reach) stay as they are.
         """
         natoms = self.natoms
         pos = np.asarray(self.atoms.positions, dtype=np.float64)
         numbers = np.asarray(self.atoms.numbers)
-        ii, jj = self._nonlocal_pairs(min_path)
+        if vicinal is None:
+            vicinal = (self.ntrans + self.nrotations) == 0
+        ii, jj, far = self._nonlocal_pairs(min_path, vicinal)
         if len(ii) == 0:
             return None
         dvec = pos[jj] - pos[ii]
@@ -4413,12 +4455,14 @@ class Internals(BaseInternals):
         close = r < rcov + max_excess
         ii = ii[close]
         jj = jj[close]
+        far = far[close]
         if len(ii) == 0:
             return None
         dvec = dvec[close]
         r = np.maximum(r[close], 1e-8)
+        rcov = rcov[close]
         u = dvec / r[:, np.newaxis]
-        k = Ab * np.exp(-Bb * (r - rcov[close]) / units.Bohr)
+        k = Ab * np.exp(-Bb * (r - rcov) / units.Bohr)
         k *= units.Hartree / units.Bohr**2
         if Binv is None:
             B = self.jacobian()
@@ -4430,8 +4474,15 @@ class Internals(BaseInternals):
         Binv = Binv.reshape((-1, 3, Binv.shape[-1]))[:natoms]
         D = np.einsum('pk,pkq->pq', u, Binv[jj] - Binv[ii])
         H = (D * k[:, np.newaxis]).T @ D
-        Hb = self._h0_contact_bends(ii, jj, r, rcov[close], pos, numbers,
-                                    Binv, Bb=Bb)
+        # The contact bends belong to the non-local pairs only.
+        if np.all(far):
+            Hb = self._h0_contact_bends(ii, jj, r, rcov, pos, numbers, Binv,
+                                        Bb=Bb)
+        elif np.any(far):
+            Hb = self._h0_contact_bends(ii[far], jj[far], r[far], rcov[far],
+                                        pos, numbers, Binv, Bb=Bb)
+        else:
+            Hb = None
         if Hb is not None:
             H = H + Hb
         return H
