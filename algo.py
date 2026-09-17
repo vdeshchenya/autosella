@@ -3,8 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. Connected molecules use a Swart
-dihedral guess Hessian; stretches and bends stay Fischer–Almlöf.
+also floor δ at 0.15 after 20 steps. Connected molecules Powell-damp
+TS-BFGS updates when s·y < 0.2 s·B·s.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -327,6 +327,7 @@ class ApproximateHessian(LinearOperator):
         self.update_method = update_method
         self.symm = symm
         self.initialized = initialized
+        self.powell_damp = False
         # Lazy eigendecomposition: only compute when needed
         self._evals = None
         self._evecs = None
@@ -399,7 +400,18 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        self.set_B(update_H(B, dx, dg, method=self.update_method,
+        dx_u = np.asarray(dx, dtype=np.float64)
+        dg_u = np.asarray(dg, dtype=np.float64)
+        if self.powell_damp:
+            Bs = B @ dx_u
+            sBs = float(dx_u @ Bs)
+            sy = float(dx_u @ dg_u)
+            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.2 * sBs:
+                denom = sBs - sy
+                if abs(denom) > 1e-14:
+                    theta = 0.8 * sBs / denom
+                    dg_u = theta * dg_u + (1.0 - theta) * Bs
+        self.set_B(update_H(B, dx_u, dg_u, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
@@ -3232,8 +3244,6 @@ class Constraints(BaseInternals):
             )
 
 class Internals(BaseInternals):
-    use_swart_dihedral_h0_default = False
-
     def __init__(
         self,
         atoms: Atoms,
@@ -3268,7 +3278,6 @@ class Internals(BaseInternals):
                 adder(coord)
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
-        self.use_swart_dihedral_h0 = Internals.use_swart_dihedral_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3284,7 +3293,6 @@ class Internals(BaseInternals):
             new._internals_set[name] = self._internals_set[name].copy()
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
-        new.use_swart_dihedral_h0 = getattr(self, 'use_swart_dihedral_h0', False)
         return new
 
     def add_rotation(
@@ -3913,14 +3921,6 @@ class Internals(BaseInternals):
                 return bad
         return None
 
-    def _swart_rho_bond(self, bond: Bond) -> float:
-        idx = np.asarray(bond.indices, dtype=np.int32)
-        rcov = float(covalent_radii[self.all_atoms.numbers[idx]].sum())
-        rij = float(bond.calc(self.all_atoms))
-        if rcov <= 0.0:
-            return 1.0
-        return float(np.exp(-rij / rcov + 1.0))
-
     def _h0_bond(
         self,
         bond: Bond,
@@ -3964,16 +3964,10 @@ class Internals(BaseInternals):
         Dt: float = 0.57,
         Et: float = 4.00,
     ) -> float:
-        a1, a2 = dihedral.split()
-        b0, b1 = a1.split()
-        _, b2 = a2.split()
-        if getattr(self, 'use_swart_dihedral_h0', False):
-            rho = (self._swart_rho_bond(b0) * self._swart_rho_bond(b1)
-                   * self._swart_rho_bond(b2))
-            return 0.005 * rho * units.Hartree
-        idx = np.asarray(b1.indices, dtype=np.int32)
+        _, bbc = dihedral.split()[0].split()
+        idx = np.asarray(bbc.indices, dtype=np.int32)
         rcovbc = covalent_radii[self.all_atoms.numbers[idx]].sum()
-        rbc = b1.calc(self.all_atoms)
+        rbc = bbc.calc(self.all_atoms)
         L = nbonds[idx].sum() - 2
         h0 = (
             At + Bt * L**Dt * np.exp(-Ct * (rbc - rcovbc) / units.Bohr)
@@ -5980,22 +5974,18 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
+    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    connected = not bool(probe.internals["translations"])
-    if connected:
-        Internals.use_swart_dihedral_h0_default = True
-    try:
-        opt = Sella(atoms, internal=True, order=0, logfile=None)
-        opt._allow_angle_wa = connected
-        if not connected:
-            # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
-            opt.delta_min = 0.02
-        for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
-            if converged():
-                break
-    finally:
-        Internals.use_swart_dihedral_h0_default = False
+    opt._allow_angle_wa = not bool(probe.internals["translations"])
+    if not opt._allow_angle_wa:
+        # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
+        opt.delta_min = 0.02
+    else:
+        opt.pes.H.powell_damp = True
+    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+        if converged():
+            break
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
