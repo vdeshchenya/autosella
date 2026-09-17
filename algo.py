@@ -1,7 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals with a milder
-trust-radius shrink (`sigma_dec=0.95` vs 0.90) after poorly predicted steps.
+Vendored from the `sella` package (2.5.0). Champion internals, but MaxInternalStep
+downweights dihedrals (`wd=2/3`) so a torsion may move up to 0.15 while bond and
+angle components remain capped at `delta0=0.1`.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5737,10 +5738,13 @@ class Sella(Optimizer):
         x0 = self.pes.get_x()
 
         rs_kwargs = {}
-        if self.optimize_cell and isinstance(self.rs, type) and issubclass(
-            self.rs, MaxInternalStep
-        ):
-            rs_kwargs['wc'] = self.delta / self.delta_cell
+        if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
+            # Allow larger torsion steps than stretches/bends: |s_d| <= delta/wd.
+            # With delta0=0.1 and wd=2/3, dihedrals may reach 0.15 while bonds
+            # and angles stay at 0.1 (unlike a global delta0=0.15).
+            rs_kwargs['wd'] = 2.0 / 3.0
+            if self.optimize_cell:
+                rs_kwargs['wc'] = self.delta / self.delta_cell
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5949,7 +5953,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None, sigma_dec=0.95)
+    opt = Sella(atoms, internal=True, order=0, logfile=None)
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
