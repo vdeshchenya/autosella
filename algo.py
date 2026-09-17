@@ -3230,6 +3230,32 @@ class Constraints(BaseInternals):
                 "class.".format(ase_cons.__class__.__name__)
             )
 
+# Reference radii of the model-Hessian stiffness formulas (the Almlof and
+# Fischer-Almlof exponentials in _h0_bond, _h0_angle, _h0_dihedral, the
+# torsion-class bond order and the non-local pair term): the covalent radii,
+# except that the group-1/2 metals use their Shannon ionic radius (CN 6).
+# The Almlof stretch curvature Ab exp(-Bb (r - r_ref)) is that of a covalent
+# single bond (0.36 Ha/Bohr^2) at r = r_ref.  The Cordero "covalent" radius of
+# an s-block metal is calibrated on its ionic contacts (Na 1.66 + O 0.66 =
+# 2.32 A is the Na+...O distance, Li 1.28 + C 0.76 = 2.04 ~ the Li+...C(pi)
+# distance), so every metal-ligand contact -- and every metal-ligand "bond"
+# of a connected system -- gets 0.1-0.4 Ha/Bohr^2, 5-15x the curvature of an
+# ion-dipole or cation-pi contact (0.02-0.07 Ha/Bohr^2 from the 200-500 cm^-1
+# M+...OH2 stretches of hydrated alkali and alkaline-earth ions); the cage of
+# radial pair terms around a cation on a pi face is then also ~10x too stiff
+# sideways, and the tracked pair term re-imposes it at every geometry.  With
+# the ionic radius the same formula gives 0.03-0.06 Ha/Bohr^2 at the observed
+# contact distances.  Halide anions are the opposite case (their covalent
+# radius is the C-X one; Cl-...H at 2.1 A is already 0.8 A outside r_ref) and
+# keep the covalent radius.  The bond criterion of find_all_bonds
+# (connectivity, fragments, the start displacement) keeps the covalent radii,
+# so the coordinate systems are unchanged.
+_STIFFNESS_RADII = np.array(covalent_radii, dtype=np.float64)
+for _z, _r in ((3, 0.76), (11, 1.02), (19, 1.38), (37, 1.52), (55, 1.67),
+               (4, 0.45), (12, 0.72), (20, 1.00), (38, 1.18), (56, 1.35)):
+    _STIFFNESS_RADII[_z] = _r
+del _z, _r
+
 class Internals(BaseInternals):
     def __init__(
         self,
@@ -3915,7 +3941,7 @@ class Internals(BaseInternals):
         Bb: float = 1.944,
     ) -> float:
         idx = np.asarray(bond.indices, dtype=np.int32)
-        rcov = covalent_radii[self.all_atoms.numbers[idx]].sum()
+        rcov = _STIFFNESS_RADII[self.all_atoms.numbers[idx]].sum()
         rij = bond.calc(self.all_atoms)
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
         return h0 * units.Hartree / units.Bohr**2
@@ -3932,8 +3958,8 @@ class Internals(BaseInternals):
         bab, bbc = angle.split()
         idxab = np.asarray(bab.indices, dtype=np.int32)
         idxbc = np.asarray(bbc.indices, dtype=np.int32)
-        rcovab = covalent_radii[self.all_atoms.numbers[idxab]].sum()
-        rcovbc = covalent_radii[self.all_atoms.numbers[idxbc]].sum()
+        rcovab = _STIFFNESS_RADII[self.all_atoms.numbers[idxab]].sum()
+        rcovbc = _STIFFNESS_RADII[self.all_atoms.numbers[idxbc]].sum()
         rab = bab.calc(self.all_atoms)
         rbc = bbc.calc(self.all_atoms)
         h0 = (
@@ -3963,7 +3989,7 @@ class Internals(BaseInternals):
     ) -> float:
         _, bbc = dihedral.split()[0].split()
         idx = np.asarray(bbc.indices, dtype=np.int32)
-        rcovbc = covalent_radii[self.all_atoms.numbers[idx]].sum()
+        rcovbc = _STIFFNESS_RADII[self.all_atoms.numbers[idx]].sum()
         rbc = bbc.calc(self.all_atoms)
         L = nbonds[idx].sum() - 2
         bo = np.exp(-Ct * (rbc - rcovbc) / units.Bohr)
@@ -4284,7 +4310,7 @@ class Internals(BaseInternals):
             return None
         dvec = pos[jj] - pos[ii]
         r = np.linalg.norm(dvec, axis=1)
-        rcov = covalent_radii[numbers[ii]] + covalent_radii[numbers[jj]]
+        rcov = _STIFFNESS_RADII[numbers[ii]] + _STIFFNESS_RADII[numbers[jj]]
         close = r < rcov + max_excess
         ii = ii[close]
         jj = jj[close]
@@ -4461,7 +4487,7 @@ class Internals(BaseInternals):
         B = np.asarray(B, dtype=np.int32)
         W = np.asarray(W, dtype=np.float64)
         ISO = np.asarray(ISO, dtype=bool)
-        rcov_all = covalent_radii[numbers]
+        rcov_all = _STIFFNESS_RADII[numbers]
         a = pos[A] - pos[V]
         b = pos[B] - pos[V]
         ra = np.maximum(np.linalg.norm(a, axis=1), 1e-8)
@@ -4663,8 +4689,8 @@ class Internals(BaseInternals):
                     if scale_torsions:
                         b, c = (int(j) for j in dihedral.indices[1:3])
                         rbc = np.linalg.norm(positions[c] - positions[b])
-                        rcovbc = (covalent_radii[numbers[b]]
-                                  + covalent_radii[numbers[c]])
+                        rcovbc = (_STIFFNESS_RADII[numbers[b]]
+                                  + _STIFFNESS_RADII[numbers[c]])
                         bo = np.exp(-2.85 * (rbc - rcovbc) / units.Bohr)
                         fac = self._torsion_class_factor(
                             b, c, types, adj, float(bo))
