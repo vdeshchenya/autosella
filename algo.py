@@ -3308,6 +3308,52 @@ class Internals(BaseInternals):
             new._active[name] = self._active[name].copy()
         return new
 
+    def shadow_copy(self) -> 'Internals':
+        """A copy with its own Atoms objects (no calculator attached) whose
+        positions can be set freely, sharing the coordinate lists and the
+        covalent graph: InternalPES evaluates the analytic part of the
+        model Hessian at interior points of a step with it.  The fragment
+        rotations get their own Rotation objects (same indices, axis and
+        reference), because evaluating one updates its quaternion-branch
+        state; sync_rotation_state copies that state over before use."""
+        atoms = self.atoms.copy()
+        atoms.calc = None
+        dummies = self.dummies.copy()
+        new = self.__class__(
+            atoms,
+            dummies,
+            self.atol * 180. / np.pi,
+            self.dinds,
+            None,
+            self.allow_fragments,
+        )
+        for name in self._names:
+            new.internals[name] = self.internals[name].copy()
+            new._internals_set[name] = self._internals_set[name].copy()
+            new.forbidden[name] = self.forbidden[name].copy()
+            new._active[name] = self._active[name].copy()
+        rotations = []
+        for rot in self.internals['rotations']:
+            new_rot = Rotation(rot.indices, rot.kwargs['axis'],
+                               rot.kwargs['refpos'])
+            new_rot.kwargs['refpos'] = rot.kwargs['refpos'].copy()
+            rotations.append(new_rot)
+        new.internals['rotations'] = rotations
+        new.sync_rotation_state(self)
+        new.fragment_atom_groups = self.fragment_atom_groups
+        return new
+
+    def sync_rotation_state(self, src: 'Internals') -> None:
+        """Copy the quaternion-branch state of the fragment rotations of
+        src (a shadow_copy source with the same rotation list)."""
+        mine = self.internals['rotations']
+        theirs = src.internals['rotations']
+        if len(mine) != len(theirs):
+            return
+        for rot, srot in zip(mine, theirs):
+            q = getattr(srot, 'q_prev', None)
+            rot.q_prev = None if q is None else np.array(q, copy=True)
+
     def add_rotation(
         self,
         indices: Union[Tuple[int, ...], Rotation] = None,
@@ -5094,7 +5140,8 @@ class PES:
         analytic geometry-dependent part T(x) (InternalPES: the stretch
         diagonal of the bonds and the non-local contact block), the pair
         is moved to the current point x with that part,
-        y_j -> y_j + (T(x) - T_avg,j) s_j, T_avg,j = (T(x_j) + T(x_j+1)) / 2,
+        y_j -> y_j + (T(x) - T_avg,j) s_j, T_avg,j the path average of T
+        over the segment (InternalPES._analytic_model_average),
         so that the secant conditions imposed on the shifted model describe
         the local curvature at x instead of the average over each old
         segment (which the update would otherwise re-impose along the
@@ -5326,13 +5373,16 @@ class InternalPES(PES):
         self._qr_cache = _LRU2()
         self._Hc_cache = _LRU2()
 
-        # Connected systems: the whole analytic part of the model (stretch
-        # diagonal and contact block) follows the geometry and the secant
-        # pairs are transported with it, see _track_analytic_model.
-        # Multi-fragment systems keep the contact-block tracking alone.
-        self._transport = (self._track_nb
-                           and (self.int.ntrans + self.int.nrotations) == 0)
+        # The whole analytic part of the model (stretch diagonal and
+        # contact block) follows the geometry and the secant pairs are
+        # transported with it, see _track_analytic_model.
+        self._transport = bool(self._track_nb)
         self._an_prev = self._analytic_model() if self._transport else None
+        self._pos_prev = None
+        self._shadow = None
+        if self._transport:
+            self._pos_prev = (self.atoms.positions.copy(),
+                              self.dummies.positions.copy())
 
     dpos = property(lambda self: self.dummies.positions.copy())
 
@@ -5855,7 +5905,8 @@ class InternalPES(PES):
 
     def _track_nonlocal_contacts(self) -> None:
         """Move the analytic non-local contact term of the model Hessian
-        to the current geometry: H <- H + A(x) - A(x_prev).
+        to the current geometry: H <- H + A(x) - A(x_prev) (the fallback of
+        _update_H when the full transport of _track_analytic_model is off).
 
         The guess Hessian is diag(h0) + A(x0), where A is the contact
         curvature of _h0_nonlocal_contacts.  The quasi-Newton updates learn
@@ -5897,20 +5948,18 @@ class InternalPES(PES):
         self.H.set_B(self.H.B + dA)
         self._nb_prev = Hnb
 
-    def _analytic_model(self) -> Optional[np.ndarray]:
-        """The geometry-dependent analytic part T(x) of the model Hessian
-        at the current geometry (nint x nint): the Almlof stretch diagonal
-        of the bonds, projected like the guess (P diag(d) P with P = Q Q^T
-        the projector onto the range of the Jacobian), plus the non-local
-        contact block of _h0_nonlocal_contacts.
-        """
+    @staticmethod
+    def _analytic_model_from(int_obj, Q, Binv) -> Optional[np.ndarray]:
+        """T(x) of the Internals object int_obj at its current positions,
+        given the orthonormal range basis Q and the pseudo-inverse Binv of
+        its Jacobian (see _analytic_model)."""
+        if Q is None or Binv is None:
+            return None
         try:
-            Binv = self._get_Binv()
-            Hnb = self.int._h0_nonlocal_contacts(Binv=Binv)
-            Q, _ = self._get_jacobian_qr()
+            Hnb = int_obj._h0_nonlocal_contacts(Binv=Binv)
         except (ValueError, np.linalg.LinAlgError):
             return None
-        d = self.int._h0_stretch_diagonal()
+        d = int_obj._h0_stretch_diagonal()
         if d is None or Q.ndim != 2 or Q.shape[0] != d.shape[0]:
             return None
         T = Q @ ((Q.T * d) @ Q) @ Q.T
@@ -5920,11 +5969,94 @@ class InternalPES(PES):
             return None
         return T
 
+    def _analytic_model(self) -> Optional[np.ndarray]:
+        """The geometry-dependent analytic part T(x) of the model Hessian
+        at the current geometry (nint x nint): the Almlof stretch diagonal
+        of the bonds, projected like the guess (P diag(d) P with P = Q Q^T
+        the projector onto the range of the Jacobian), plus the non-local
+        contact block of _h0_nonlocal_contacts.
+        """
+        try:
+            Binv = self._get_Binv()
+            Q, _ = self._get_jacobian_qr()
+        except (ValueError, np.linalg.LinAlgError):
+            return None
+        return self._analytic_model_from(self.int, Q, Binv)
+
+    @staticmethod
+    def _model_frame(B):
+        """(Q, Binv) of a Jacobian B without the caches: the reduced QR
+        (SVD truncation when rank deficient), as _get_jacobian_qr and
+        _get_Binv do for the current geometry."""
+        if B.ndim != 2 or B.size == 0:
+            return None, None
+        Q, R = np.linalg.qr(B, mode='reduced')
+        rdiag = np.abs(np.diag(R))
+        if len(rdiag) > 0 and rdiag.min() < 1e-6 * rdiag.max():
+            Ui, Si, VTi = np.linalg.svd(B, full_matrices=False)
+            nnred = int(np.sum(Si > 1e-6))
+            if nnred == 0:
+                return None, None
+            Q = Ui[:, :nnred]
+            Binv = VTi[:nnred].T @ (Ui[:, :nnred] / Si[:nnred]).T
+        elif R.shape[0] == R.shape[1]:
+            Binv = solve_triangular(R, Q.T, check_finite=False)
+        else:
+            Binv = np.linalg.pinv(B, rcond=1e-6)
+        return Q, Binv
+
+    def _analytic_model_at(self, pos_prev, dpos_prev, frac) -> Optional[np.ndarray]:
+        """T on the Cartesian straight line from the previous geometry
+        (pos_prev, dpos_prev: atoms and dummies) to the current one, at the
+        fraction frac of the step, evaluated with a shadow copy of the
+        internal coordinates."""
+        pos_now = self.atoms.positions
+        dpos_now = self.dummies.positions
+        if pos_prev.shape != pos_now.shape or dpos_prev.shape != dpos_now.shape:
+            return None
+        if self._shadow is None:
+            self._shadow = self.int.shadow_copy()
+        shadow = self._shadow
+        if (len(shadow.atoms) != len(pos_now)
+                or len(shadow.dummies) != len(dpos_now)):
+            return None
+        shadow.sync_rotation_state(self.int)
+        shadow.atoms.positions[:] = pos_prev + frac * (pos_now - pos_prev)
+        if len(dpos_now):
+            shadow.dummies.positions[:] = dpos_prev + frac * (dpos_now - dpos_prev)
+        try:
+            Q, Binv = self._model_frame(shadow.jacobian())
+        except (ValueError, np.linalg.LinAlgError):
+            return None
+        return self._analytic_model_from(shadow, Q, Binv)
+
+    def _analytic_model_average(self, T_prev, T_now, pos_prev, dpos_prev):
+        """Path average of T over the step just taken: composite Simpson
+        on the Cartesian straight line, with enough panels (at most four)
+        that no panel spans more than 0.4 A of atomic displacement, i.e.
+        at most 0.8 A of any distance -- b dr <= 3 for the exponent
+        b = 3.7/A of the stretch and contact terms, where Simpson's error
+        is below 1 % of the larger end value.  Falls back to the endpoint
+        average when an interior point is unavailable.
+        """
+        pos_now = self.atoms.positions
+        if pos_prev.shape != pos_now.shape:
+            return 0.5 * (T_prev + T_now)
+        dmax = float(np.max(np.linalg.norm(pos_now - pos_prev, axis=1))) if len(pos_now) else 0.
+        npanel = int(min(4, max(1, np.ceil(dmax / 0.4))))
+        acc = T_prev + T_now
+        for i in range(1, 2 * npanel):
+            T_i = self._analytic_model_at(pos_prev, dpos_prev, i / (2. * npanel))
+            if T_i is None or T_i.shape != T_now.shape:
+                return 0.5 * (T_prev + T_now)
+            acc = acc + (4.0 if i % 2 else 2.0) * T_i
+        return acc / (6.0 * npanel)
+
     def _track_analytic_model(self, dx):
         """Move the analytic part T(x) of the model Hessian to the current
         geometry, H <- H + T(x) - T(x_prev), and return (T(x), tbar) for
-        the transport of the secant pairs (tbar = (T(x_prev) + T(x)) dx / 2,
-        the analytic contribution averaged over the step just taken).
+        the transport of the secant pairs (tbar = T_avg dx, the analytic
+        contribution averaged over the step just taken).
 
         _track_nonlocal_contacts does this for the contact block alone.
         Here the stretch diagonal moves too: the Almlof exponential is the
@@ -5939,6 +6071,28 @@ class InternalPES(PES):
         curvature at x.  Where the geometry (bond lengths, contacts, frame)
         does not change between two points, T does not either and the
         update is the plain multi-secant one.
+
+        T_avg is Simpson's rule over the step, (T(x_prev) + 4 T(x_mid) +
+        T(x)) / 6 with x_mid the Cartesian midpoint (composite, in panels
+        of at most 0.4 A of atomic displacement, see _analytic_model_average):
+        the terms of T are exponentials of distances, and a contact or bond
+        that opens or closes by 0.5-1 A in one step (the approach of two
+        fragments, early steps of a folding chain, a dissociating bond)
+        changes its k by a factor 6-40, for which the trapezoid
+        (T(x_prev) + T(x)) / 2 overstates the path average by 0.1-0.25 of
+        the larger end value -- more than the smaller end value itself --
+        and would leave the transported pair too soft or even of the wrong
+        sign along the step; Simpson is within 1-2 % of the exact average
+        of an exponential over any such step.  The endpoint average is kept
+        when the interior points cannot be evaluated.
+
+        Multi-fragment systems: the inter-fragment contact block (radial
+        pairs, hydrogen-bond bends, lone-pair-plane terms) grows 2-6 times
+        while the fragments approach and settle, and the rigid-body
+        coordinates are sampled by every step, so the stored pairs there
+        are exactly the ones whose averages the model shift alone cannot
+        correct; the transport gives the endgame the contact curvature of
+        the current geometry instead of the approach-phase average.
         """
         if self.H.B is None:
             return None, None
@@ -5947,7 +6101,10 @@ class InternalPES(PES):
         if T_now is None or T_now.shape != shape:
             return None, None
         T_prev = self._an_prev
+        pos_prev = self._pos_prev
         self._an_prev = T_now
+        self._pos_prev = (self.atoms.positions.copy(),
+                          self.dummies.positions.copy())
         if T_prev is None or T_prev.shape != shape:
             return None, None
         dA = T_now - T_prev
@@ -5955,7 +6112,11 @@ class InternalPES(PES):
             return None, None
         self.H.set_B(self.H.B + dA)
         dx = np.asarray(dx, dtype=np.float64)
-        tbar = 0.5 * ((T_prev + T_now) @ dx)
+        if pos_prev is not None:
+            T_avg = self._analytic_model_average(T_prev, T_now, *pos_prev)
+        else:
+            T_avg = 0.5 * (T_prev + T_now)
+        tbar = T_avg @ dx
         return T_now, tbar
 
     def _update_H(self, dx, dg):
