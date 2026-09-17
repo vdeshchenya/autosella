@@ -4268,12 +4268,13 @@ class Internals(BaseInternals):
         the inter-fragment pairs give them their complete Gauss-Newton
         block (stretch along the contact, coupled to the librations of both
         fragments and to the internal coordinates that move the contact
-        atoms).  The inter-fragment hydrogen-bond contacts X-H...Y also
-        carry the bending curvature of _h0_contact_bends (the sideways
-        stiffness of a directional contact, which a radial pair term does
-        not have); the twist about a contact axis and the sliding of
-        dispersion-bound fragments stay at the diagonal floor of
-        _h0_fragment.
+        atoms).  The hydrogen-bond contacts X-H...Y -- inter-fragment
+        ones with any donor, intramolecular ones with a heteroatom donor
+        -- also carry the bending curvature of _h0_contact_bends (the
+        sideways stiffness of a directional contact, which a radial pair
+        term does not have); the twist about a contact axis and the
+        sliding of dispersion-bound fragments stay at the diagonal floor
+        of _h0_fragment.
         """
         natoms = self.natoms
         pos = np.asarray(self.atoms.positions, dtype=np.float64)
@@ -4328,17 +4329,33 @@ class Internals(BaseInternals):
         alpha_w: float = 0.5,
         hb_elements: Tuple[int, ...] = (7, 8, 9, 16, 17, 35, 53),
     ) -> Optional[np.ndarray]:
-        """Bending curvature of the inter-fragment hydrogen-bond contacts
-        X-H...Y (Y an acceptor element of hb_elements) in the internal
-        coordinates (nint x nint, eV units), evaluated at the current
-        geometry like the pair term it complements.
+        """Bending curvature of the hydrogen-bond contacts X-H...Y (Y an
+        acceptor element of hb_elements) among the non-local pairs --
+        inter-fragment contacts with any donor, intramolecular contacts
+        (same fragment, graph distance >= min_path) with a heteroatom
+        donor X of hb_elements -- in the internal coordinates (nint x
+        nint, eV units), evaluated at the current geometry like the pair
+        term it complements.
 
         A radial pair term k_ij u u^T resists only the compression of the
         contact; the sideways motions of a hydrogen bond -- the donor
         swinging its hydrogen off the H...Y axis and the acceptor turning
         its lone pair away from the hydrogen -- are what holds the
         librations of the two fragments, and they sit at the floor of
-        _h0_fragment otherwise.  Following Lindh's model, every angle
+        _h0_fragment otherwise.  Inside a molecule the same motions are
+        the torsions and bends of the pseudo-ring closed by an
+        intramolecular hydrogen bond (O-H...O=C, N-H...O, O-H...N): the
+        valence guess of those coordinates is that of the free rotor
+        (~0.01 Ha/rad^2 for a hydroxyl or amine torsion) while the
+        hydrogen bond adds 0.01-0.03 Ha/rad^2 of curvature that acts
+        sideways to the H...Y axis, which the radial pair term does not
+        see -- a distinct error class of the model that costs the
+        quasi-Newton endgame its own steps for every such contact.  The
+        intramolecular C-H...Y contacts are left out: their bending
+        stiffness (< 0.005 Ha/rad^2) is small against the covalent
+        torsional and bending curvature that already spans those motions,
+        whereas between fragments it stands against the floor alone.
+        Following Lindh's model, every angle
         around the contact gets a bending curvature proportional to the
         bond-order factors of its two arms, k_phi = A_phi rho_bond
         min(rho_contact, cap), with the Almlof exponential of the pair term
@@ -4368,10 +4385,8 @@ class Internals(BaseInternals):
         """
         adj, label = self._covalent_graph()
         inter = label[ii] != label[jj]
-        if not np.any(inter):
-            return None
         bo = np.exp(-Bb * (r - rcov) / units.Bohr)
-        sel = np.where(inter & (bo >= bo_min))[0]
+        sel = np.where(bo >= bo_min)[0]
         if len(sel) == 0:
             return None
         hb_elem = np.isin(numbers, hb_elements)
@@ -4381,8 +4396,11 @@ class Internals(BaseInternals):
             for h, y in ((i, j), (j, i)):
                 if numbers[h] != 1 or not hb_elem[y] or not adj[h]:
                     continue
-                cap = (bo_cap if any(hb_elem[kk] for kk in adj[h])
-                       else bo_cap_weak)
+                strong = any(hb_elem[kk] for kk in adj[h])
+                if not (strong or inter[p]):
+                    # Intramolecular C-H...Y contact: no bending term.
+                    continue
+                cap = bo_cap if strong else bo_cap_weak
                 c = min(float(bo[p]), cap)
                 # Bend at the hydrogen: X-H...Y, linear reference.
                 for x in adj[h]:
