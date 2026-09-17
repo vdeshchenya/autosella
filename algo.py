@@ -5,7 +5,7 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected dummy-atom
-dihedrals use MaxInternalStep `wd=0.8`.
+dihedrals use MaxInternalStep `wd=0.75`.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5763,9 +5763,9 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-                # Dummy linear-bend dihedrals: |s| <= 0.1/0.8 = 0.125
-                # (0.187 after the connected 0.15 floor).
-                rs_kwargs['wd_dummy'] = 0.8
+                # Dummy linear-bend dihedrals: |s| <= 0.1/0.75 ≈ 0.133
+                # (0.20 after the connected 0.15 floor).
+                rs_kwargs['wd_dummy'] = 0.75
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
