@@ -2,7 +2,7 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-Dimers use `sigma_inc=1.16` only after 40 steps.
+On dimers, connecting-bond Lindh Hessian guesses are stiffened 4x.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -50,6 +50,9 @@ from ase.cell import Cell
 from ase.geometry import complete_cell, minkowski_reduce
 
 from ase.data import covalent_radii
+
+# Set in minimize_func before constructing Sella. One molecule per process.
+_STIFF_DIMER_LONG_BONDS = False
 
 from ase.constraints import (
     FixConstraint, FixAtoms, FixCom, FixBondLengths, FixCartesian, FixInternals
@@ -3917,6 +3920,8 @@ class Internals(BaseInternals):
         rcov = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rij = bond.calc(self.all_atoms)
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
+        if _STIFF_DIMER_LONG_BONDS and rij > 1.25 * rcov:
+            h0 *= 4.0
         return h0 * units.Hartree / units.Bohr**2
 
     def _h0_angle(
@@ -5819,10 +5824,8 @@ class Sella(Optimizer):
             self.rho = 1
             return
 
-        # Connected: σ_inc=1.16 after 20 steps (cycle 52). Dimers: after 40.
+        # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
-            self.sigma_inc = 1.16
-        elif self.nsteps >= 40:
             self.sigma_inc = 1.16
 
         # Update trust radius
@@ -5955,14 +5958,17 @@ class _WrappedCalc(Calculator):
         self.results["forces"] = np.array(forces_kj_nm) / _EV_TO_KJ * _ANGSTROM_TO_NM
 
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
+    global _STIFF_DIMER_LONG_BONDS
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    opt._allow_angle_wa = not bool(probe.internals["translations"])
+    is_dimer = bool(probe.internals["translations"])
+    _STIFF_DIMER_LONG_BONDS = is_dimer
+    opt = Sella(atoms, internal=True, order=0, logfile=None)
+    opt._allow_angle_wa = not is_dimer
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
