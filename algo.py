@@ -3965,7 +3965,7 @@ class Internals(BaseInternals):
     def guess_hessian(self, h0cart=70.) -> np.ndarray:
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
-        h0_tr = 0.05 * units.Hartree
+        h0_tr = 0.005 * units.Hartree
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
@@ -5951,7 +5951,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
+    opt = Sella(atoms, internal=True, order=0, allow_fragments=True, logfile=None)
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
