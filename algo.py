@@ -4155,20 +4155,19 @@ class Internals(BaseInternals):
         """
         return h0_min * units.Hartree
 
-    def _nonlocal_pairs(self, min_path: int) -> Tuple[np.ndarray, np.ndarray]:
-        """Atom pairs of the same covalent fragment at graph distance
-        >= min_path, plus every pair of atoms in different fragments
-        (upper triangle, real atoms only).  The covalent graph of an
-        Internals object is fixed after construction, so the result is
-        cached; a rebuild creates a new object."""
+    def _covalent_graph(self) -> Tuple[List[List[int]], np.ndarray]:
+        """Adjacency lists and fragment labels (connected components) of
+        the covalent graph of the real atoms.  The graph of an Internals
+        object is fixed after construction, so the result is cached; a
+        rebuild creates a new object."""
         natoms = self.natoms
         bonds = tuple(sorted(
             (int(bond.indices[0]), int(bond.indices[1]))
             for bond in self.internals['bonds']
             if int(bond.indices[0]) < natoms and int(bond.indices[1]) < natoms
         ))
-        key = (natoms, min_path, bonds)
-        cache = getattr(self, '_nonlocal_pairs_cache', None)
+        key = (natoms, bonds)
+        cache = getattr(self, '_covalent_graph_cache', None)
         if cache is not None and cache[0] == key:
             return cache[1]
         adj = [[] for _ in range(natoms)]
@@ -4190,6 +4189,22 @@ class Internals(BaseInternals):
                         label[v] = nlabels
                         stack.append(v)
             nlabels += 1
+        result = (adj, label)
+        self._covalent_graph_cache = (key, result)
+        return result
+
+    def _nonlocal_pairs(self, min_path: int) -> Tuple[np.ndarray, np.ndarray]:
+        """Atom pairs of the same covalent fragment at graph distance
+        >= min_path, plus every pair of atoms in different fragments
+        (upper triangle, real atoms only).  The covalent graph of an
+        Internals object is fixed after construction, so the result is
+        cached; a rebuild creates a new object."""
+        natoms = self.natoms
+        adj, label = self._covalent_graph()
+        key = (natoms, min_path, tuple(map(tuple, adj)))
+        cache = getattr(self, '_nonlocal_pairs_cache', None)
+        if cache is not None and cache[0] == key:
+            return cache[1]
         # Graph distance from every atom, capped at min_path (a pair at
         # distance >= min_path keeps the value min_path).
         dist = np.full((natoms, natoms), min_path, dtype=np.int32)
@@ -4253,8 +4268,12 @@ class Internals(BaseInternals):
         the inter-fragment pairs give them their complete Gauss-Newton
         block (stretch along the contact, coupled to the librations of both
         fragments and to the internal coordinates that move the contact
-        atoms), with the soft twist and sliding combinations left at the
-        diagonal floor of _h0_fragment.
+        atoms).  The inter-fragment hydrogen-bond contacts X-H...Y also
+        carry the bending curvature of _h0_contact_bends (the sideways
+        stiffness of a directional contact, which a radial pair term does
+        not have); the twist about a contact axis and the sliding of
+        dispersion-bound fragments stay at the diagonal floor of
+        _h0_fragment.
         """
         natoms = self.natoms
         pos = np.asarray(self.atoms.positions, dtype=np.float64)
@@ -4284,7 +4303,153 @@ class Internals(BaseInternals):
             return None
         Binv = Binv.reshape((-1, 3, Binv.shape[-1]))[:natoms]
         D = np.einsum('pk,pkq->pq', u, Binv[jj] - Binv[ii])
-        return (D * k[:, np.newaxis]).T @ D
+        H = (D * k[:, np.newaxis]).T @ D
+        Hb = self._h0_contact_bends(ii, jj, r, rcov[close], pos, numbers,
+                                    Binv, Bb=Bb)
+        if Hb is not None:
+            H = H + Hb
+        return H
+
+    def _h0_contact_bends(
+        self,
+        ii: np.ndarray,
+        jj: np.ndarray,
+        r: np.ndarray,
+        rcov: np.ndarray,
+        pos: np.ndarray,
+        numbers: np.ndarray,
+        Binv: np.ndarray,
+        Bb: float = 1.944,
+        Aphi_h: float = 0.5,
+        Aphi_acc: float = 0.15,
+        bo_cap: float = 0.05,
+        bo_cap_weak: float = 0.01,
+        bo_min: float = 1e-4,
+        alpha_w: float = 0.5,
+        hb_elements: Tuple[int, ...] = (7, 8, 9, 16, 17, 35, 53),
+    ) -> Optional[np.ndarray]:
+        """Bending curvature of the inter-fragment hydrogen-bond contacts
+        X-H...Y (Y an acceptor element of hb_elements) in the internal
+        coordinates (nint x nint, eV units), evaluated at the current
+        geometry like the pair term it complements.
+
+        A radial pair term k_ij u u^T resists only the compression of the
+        contact; the sideways motions of a hydrogen bond -- the donor
+        swinging its hydrogen off the H...Y axis and the acceptor turning
+        its lone pair away from the hydrogen -- are what holds the
+        librations of the two fragments, and they sit at the floor of
+        _h0_fragment otherwise.  Following Lindh's model, every angle
+        around the contact gets a bending curvature proportional to the
+        bond-order factors of its two arms, k_phi = A_phi rho_bond
+        min(rho_contact, cap), with the Almlof exponential of the pair term
+        as rho.  The contact factor is capped at the value of an
+        equilibrium hydrogen bond of that donor type (bo_cap for N/O/S/
+        halogen donors, bo_cap_weak for C-H donors): a compressed contact
+        relaxes to equilibrium during the run and its sideways stiffness
+        is set by the electrostatics, not by the repulsive wall.  Two
+        prefactors, chosen from the water dimer's harmonic intermolecular
+        frequencies: at the hydrogen (angle X-H...Y) the reference geometry
+        is linear and the potential depends on the deviation from
+        linearity alone, so both perpendicular components carry the same
+        curvature (isotropic linear-bend form) with A_phi = 0.5 Ha/rad^2
+        (donor in-plane/out-of-plane bends at 350/600 cm^-1 give k_phi ~
+        0.015 Ha/rad^2 for rho_contact ~ 0.027); at the acceptor (angles
+        H...Y-Z) the reference angle is bent, the true angle derivative is
+        used (a precession about the contact leaves the angle unchanged)
+        with Lindh's A_phi = 0.15 Ha/rad^2 (acceptor wag/twist at 120-150
+        cm^-1), and the isotropic form is blended in smoothly for
+        near-linear acceptor angles (weight exp(-((pi - theta)/alpha_w)^2))
+        so that the term stays continuous through linearity.  The
+        Gauss-Newton form sum k_phi (grad theta)(grad theta)^T is mapped to
+        the internal coordinates through the pseudo-inverse Jacobian
+        exactly like the pair term.  Dispersion and steric contacts
+        (C...C, C-H...C, H...H) and metal-cation contacts are radial and
+        get no bending term.
+        """
+        adj, label = self._covalent_graph()
+        inter = label[ii] != label[jj]
+        if not np.any(inter):
+            return None
+        bo = np.exp(-Bb * (r - rcov) / units.Bohr)
+        sel = np.where(inter & (bo >= bo_min))[0]
+        if len(sel) == 0:
+            return None
+        hb_elem = np.isin(numbers, hb_elements)
+        V, A, B, W, ISO = [], [], [], [], []
+        for p in sel:
+            i, j = int(ii[p]), int(jj[p])
+            for h, y in ((i, j), (j, i)):
+                if numbers[h] != 1 or not hb_elem[y] or not adj[h]:
+                    continue
+                cap = (bo_cap if any(hb_elem[kk] for kk in adj[h])
+                       else bo_cap_weak)
+                c = min(float(bo[p]), cap)
+                # Bend at the hydrogen: X-H...Y, linear reference.
+                for x in adj[h]:
+                    V.append(h)
+                    A.append(x)
+                    B.append(y)
+                    W.append(Aphi_h * c)
+                    ISO.append(True)
+                # Bends at the acceptor: H...Y-Z, bent reference.
+                for z in adj[y]:
+                    V.append(y)
+                    A.append(z)
+                    B.append(h)
+                    W.append(Aphi_acc * c)
+                    ISO.append(False)
+        if not V:
+            return None
+        V = np.asarray(V, dtype=np.int32)
+        A = np.asarray(A, dtype=np.int32)
+        B = np.asarray(B, dtype=np.int32)
+        W = np.asarray(W, dtype=np.float64)
+        ISO = np.asarray(ISO, dtype=bool)
+        rcov_all = covalent_radii[numbers]
+        a = pos[A] - pos[V]
+        b = pos[B] - pos[V]
+        ra = np.maximum(np.linalg.norm(a, axis=1), 1e-8)
+        rb = np.maximum(np.linalg.norm(b, axis=1), 1e-8)
+        ah = a / ra[:, np.newaxis]
+        bh = b / rb[:, np.newaxis]
+        bo_bond = np.exp(-Bb * (ra - rcov_all[A] - rcov_all[V]) / units.Bohr)
+        W *= np.minimum(bo_bond, 1.) * units.Hartree
+        cos_t = np.clip(np.sum(ah * bh, axis=1), -1., 1.)
+        sin_t = np.sqrt(np.maximum(1. - cos_t**2, 0.))
+        theta = np.arccos(cos_t)
+        s = np.maximum(sin_t, 1e-8)[:, np.newaxis]
+        # In-plane bend directions at A (perpendicular to a) and at B
+        # (perpendicular to b); for a linear angle any direction
+        # perpendicular to the axis serves for both.
+        e1 = (cos_t[:, np.newaxis] * ah - bh) / s
+        e2 = (cos_t[:, np.newaxis] * bh - ah) / s
+        lin = sin_t < 1e-6
+        if np.any(lin):
+            nlin = int(lin.sum())
+            ref = np.zeros((nlin, 3), dtype=np.float64)
+            ref[np.arange(nlin), np.argmin(np.abs(ah[lin]), axis=1)] = 1.
+            perp = np.cross(ah[lin], ref)
+            perp /= np.maximum(np.linalg.norm(perp, axis=1),
+                               1e-8)[:, np.newaxis]
+            e1[lin] = perp
+            e2[lin] = perp
+        # Out-of-plane direction, orthogonal to the axis and to e1.
+        pn = np.cross(ah, e1)
+        pn /= np.maximum(np.linalg.norm(pn, axis=1), 1e-8)[:, np.newaxis]
+        f = np.where(ISO, 1., np.exp(-((np.pi - theta) / alpha_w)**2))
+        dA = e1 / ra[:, np.newaxis]
+        dB = e2 / rb[:, np.newaxis]
+        dth = (np.einsum('pk,pkq->pq', dA, Binv[A])
+               + np.einsum('pk,pkq->pq', dB, Binv[B])
+               - np.einsum('pk,pkq->pq', dA + dB, Binv[V]))
+        H = (dth * W[:, np.newaxis]).T @ dth
+        wA = pn / ra[:, np.newaxis]
+        wB = pn / rb[:, np.newaxis]
+        dpo = (np.einsum('pk,pkq->pq', wA, Binv[A])
+               + np.einsum('pk,pkq->pq', wB, Binv[B])
+               - np.einsum('pk,pkq->pq', wA + wB, Binv[V]))
+        H += (dpo * (W * f)[:, np.newaxis]).T @ dpo
+        return H
 
     def guess_hessian(self, h0cart=70.) -> np.ndarray:
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
