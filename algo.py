@@ -1,7 +1,7 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
+`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 16 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5818,8 +5818,8 @@ class Sella(Optimizer):
             self.rho = 1
             return
 
-        # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15.
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
+        # Connected molecules: after 16 steps, grow δ by 1.16 instead of 1.15.
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 16:
             self.sigma_inc = 1.16
 
         # Update trust radius
