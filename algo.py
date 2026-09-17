@@ -1,11 +1,10 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0), restricted to the code path that
-`Sella(atoms, internal=True, order=0, delta0=0.15, iterative_stepper=1)` +
-`irun(fmax=0)` actually executes. Uses a 50% larger initial MaxInternalStep
-trust radius than the Sella minimum default (0.10). Geometry updates prefer
-the iterative Cartesian realization; an oversized geodesic ODE is restored
-and the internal step is halved instead of aborting.
+`Sella(atoms, internal=True, order=0, delta0=0.15)` + `irun(fmax=0)` actually
+executes. Uses a 50% larger initial MaxInternalStep trust radius than the
+Sella minimum default (0.10). If geodesic ODE integration of a step fails,
+coordinates are restored and the internal step is halved instead of aborting.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5982,7 +5981,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         order=0,
         logfile=None,
         delta0=0.15,
-        iterative_stepper=1,
     )
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
