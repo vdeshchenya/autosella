@@ -1,9 +1,9 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules for the first 30 steps, then default
-angle caps; `sigma_inc=1.16` after 20 steps. Dimers floor the trust
-radius at `delta_min=0.02`.
+`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
+Dimers floor the trust radius at `delta_min=0.02` and shrink poor-ρ
+steps with `sigma_dec=0.80`.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5742,7 +5742,7 @@ class Sella(Optimizer):
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
             # Between cycle 39 (wa=2/3, valid hop) and cycle 40 (wa=0.8,
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
-            if getattr(self, "_allow_angle_wa", False) and self.nsteps < 30:
+            if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -5965,6 +5965,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     if not opt._allow_angle_wa:
         # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
         opt.delta_min = 0.02
+        # Harder shrink than the 0.90 default; still floored at 0.02.
+        opt.sigma_dec = 0.80
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
