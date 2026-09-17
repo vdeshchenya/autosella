@@ -3,8 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. Connected molecules Powell-damp
-TS-BFGS updates when s·y < 0.2 s·B·s.
+also floor δ at 0.15 after 20 steps. Connected molecules skip
+TS-BFGS updates when the displacement-curvature product is negative.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -327,7 +327,7 @@ class ApproximateHessian(LinearOperator):
         self.update_method = update_method
         self.symm = symm
         self.initialized = initialized
-        self.powell_damp = False
+        self.skip_neg_curv = False
         # Lazy eigendecomposition: only compute when needed
         self._evals = None
         self._evecs = None
@@ -400,18 +400,13 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        dx_u = np.asarray(dx, dtype=np.float64)
-        dg_u = np.asarray(dg, dtype=np.float64)
-        if self.powell_damp:
-            Bs = B @ dx_u
-            sBs = float(dx_u @ Bs)
+        dx_u = np.asarray(dx, dtype=np.float64).reshape(-1)
+        dg_u = np.asarray(dg, dtype=np.float64).reshape(-1)
+        if self.skip_neg_curv and dx_u.size == dg_u.size:
             sy = float(dx_u @ dg_u)
-            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.2 * sBs:
-                denom = sBs - sy
-                if abs(denom) > 1e-14:
-                    theta = 0.8 * sBs / denom
-                    dg_u = theta * dg_u + (1.0 - theta) * Bs
-        self.set_B(update_H(B, dx_u, dg_u, method=self.update_method,
+            if np.isfinite(sy) and sy < 0.0:
+                return
+        self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
@@ -5982,7 +5977,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
         opt.delta_min = 0.02
     else:
-        opt.pes.H.powell_damp = True
+        opt.pes.H.skip_neg_curv = True
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
