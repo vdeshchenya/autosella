@@ -1,8 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals, but MaxInternalStep
-downweights dihedrals (`wd=2/3`) so a torsion may move up to 0.15 while bond and
-angle components remain capped at `delta0=0.1`.
+Vendored from the `sella` package (2.5.0). Champion internals, but after four
+steps MaxInternalStep downweights dihedrals (`wd=2/3`) so later torsions may
+reach 0.15 while bond and angle caps stay at `delta0=0.1`.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5739,10 +5739,11 @@ class Sella(Optimizer):
 
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
-            # Allow larger torsion steps than stretches/bends: |s_d| <= delta/wd.
-            # With delta0=0.1 and wd=2/3, dihedrals may reach 0.15 while bonds
-            # and angles stay at 0.1 (unlike a global delta0=0.15).
-            rs_kwargs['wd'] = 2.0 / 3.0
+            # Cycle 27 applied wd=2/3 from step 0 and hopped thiols/water
+            # dimers plus a 0.0026 kcal PubChem miss. Keep champion weights
+            # for the first four steps, then allow |s_d| <= delta/wd = 0.15.
+            if self.nsteps >= 4:
+                rs_kwargs['wd'] = 2.0 / 3.0
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
