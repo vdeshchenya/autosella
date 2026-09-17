@@ -1,9 +1,9 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules, with `sigma_inc=1.18` after 20 steps.
+`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps.
+also floor δ at 0.15 after 16 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5820,12 +5820,14 @@ class Sella(Optimizer):
             self.rho = 1
             return
 
-        # Connected molecules: after 20 steps, grow δ by 1.18 instead of 1.16
-        # and do not let later shrinks (or a still-small δ) sit below 0.15.
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
-            self.sigma_inc = 1.18
-            self.delta_min = 0.15
-            self.delta = max(self.delta, 0.15)
+        # Connected molecules: floor δ at 0.15 after 16 steps; after 20
+        # also grow δ by 1.16 instead of 1.15.
+        if getattr(self, "_allow_angle_wa", False):
+            if self.nsteps >= 16:
+                self.delta_min = 0.15
+                self.delta = max(self.delta, 0.15)
+            if self.nsteps >= 20:
+                self.sigma_inc = 1.16
 
         # Update trust radius
         if rho is not None:
