@@ -1,7 +1,7 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Champion internals and geodesic
-path. After five steps, single-fragment molecules raise the MaxInternalStep
+path. After thirteen steps, single-fragment molecules raise the MaxInternalStep
 floor to 0.15; covalent dimers stay at delta0=0.10 so their path matches the
 champion.
 
@@ -5844,7 +5844,7 @@ class Sella(Optimizer):
         if (
             getattr(self, "_allow_delta_boost", False)
             and (not getattr(self, "_delta_boosted", False))
-            and self.nsteps >= 4
+            and self.nsteps >= 12
         ):
             self.delta = max(self.delta, 0.15)
             self._delta_boosted = True
