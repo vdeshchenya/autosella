@@ -5818,6 +5818,11 @@ class Sella(Optimizer):
             self.rho = 1
             return
 
+        # Connected molecules: after 20 steps, grow δ by 1.18 instead of 1.15.
+        # Delay is past cycle 50's 135011106 26-call hop window.
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
+            self.sigma_inc = 1.18
+
         # Update trust radius
         if rho is not None:
             if self.optimize_cell and False:
