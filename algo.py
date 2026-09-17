@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-add extra-redundant hydrogen-bond stretches after covalent internals.
+treat angles within 10° of linear as dummy linear bends.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3231,19 +3231,20 @@ class Constraints(BaseInternals):
             )
 
 class Internals(BaseInternals):
-    add_hbond_contacts_default = False
+    atol_default = 15.
 
     def __init__(
         self,
         atoms: Atoms,
         dummies: Atoms = None,
-        atol: float = 15.,
+        atol: float = None,
         dinds: np.ndarray = None,
         cons: Constraints = None,
         allow_fragments: bool = False
     ) -> None:
         BaseInternals.__init__(self, atoms, dummies, dinds)
-        self.add_hbond_contacts = Internals.add_hbond_contacts_default
+        if atol is None:
+            atol = Internals.atol_default
         self.atol = atol * np.pi / 180.
         self.forbidden = {key: [] for key in self._names}
         if cons is None:
@@ -3278,7 +3279,6 @@ class Internals(BaseInternals):
             self.cons.copy(),
             self.allow_fragments,
         )
-        new.add_hbond_contacts = getattr(self, 'add_hbond_contacts', False)
         for name in self._names:
             new.internals[name] = self.internals[name].copy()
             new._internals_set[name] = self._internals_set[name].copy()
@@ -3846,48 +3846,6 @@ class Internals(BaseInternals):
                 self.add_dihedral((n0, center, n1, n2), imp_ncvecs)
             except DuplicateInternalError:
                 pass
-
-    def add_hydrogen_bond_contacts(self) -> None:
-        """Extra-redundant H...acceptor stretches (no new angles/torsions).
-
-        Donor is N/O/F/S covalently bound to H; acceptor is a different
-        N/O/F/S with 1.2 Å < r(H,acc) < 2.5 Å.
-        """
-        nums = self.atoms.numbers
-        pos = self.atoms.positions
-        nat = self.natoms
-        neighbors = [[] for _ in range(nat)]
-        seen = set()
-        for bond in self.internals['bonds']:
-            i, j = bond.indices
-            if i >= nat or j >= nat:
-                continue
-            neighbors[i].append(j)
-            neighbors[j].append(i)
-            seen.add((min(i, j), max(i, j)))
-        donor_z = (7, 8, 9, 16)
-        acc_z = (7, 8, 9, 16)
-        for h in range(nat):
-            if int(nums[h]) != 1:
-                continue
-            heavies = [n for n in neighbors[h] if int(nums[n]) in donor_z]
-            if not heavies:
-                continue
-            donor = heavies[0]
-            for acc in range(nat):
-                if acc == h or acc == donor or int(nums[acc]) not in acc_z:
-                    continue
-                key = (min(h, acc), max(h, acc))
-                if key in seen:
-                    continue
-                r = float(np.linalg.norm(pos[h] - pos[acc]))
-                if r <= 1.2 or r >= 2.5:
-                    continue
-                try:
-                    self.add_bond((h, acc))
-                    seen.add(key)
-                except DuplicateInternalError:
-                    pass
 
     def validate_basis(self) -> None:
         jac = self.jacobian()
@@ -4495,8 +4453,6 @@ class InternalPES(PES):
             new_int.find_all_bonds()
             new_int.find_all_angles()
             new_int.find_all_dihedrals()
-            if getattr(new_int, 'add_hbond_contacts', False):
-                new_int.add_hydrogen_bond_contacts()
         new_int.validate_basis()
 
         PES.__init__(
@@ -6010,7 +5966,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     if connected:
-        Internals.add_hbond_contacts_default = True
+        Internals.atol_default = 10.
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6021,7 +5977,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if converged():
                 break
     finally:
-        Internals.add_hbond_contacts_default = False
+        Internals.atol_default = 15.
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
