@@ -1,7 +1,9 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 16 steps.
+`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
+On dimers, connecting-bond stretches longer than 1.25 covalent radii use
+`wb_long=0.4` so |s_bond| may reach 0.25 Å (OptKing-style interfragment limit).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5388,7 +5390,8 @@ class MaxInternalStep(BaseRestrictedStep):
     synonyms = ['mis', 'max internal step']
 
     def __init__(
-        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1., **kwargs
+        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1.,
+        wb_long=None, **kwargs
     ):
         if pes.int is None:
             raise ValueError(
@@ -5401,6 +5404,7 @@ class MaxInternalStep(BaseRestrictedStep):
         self.wd = wd
         self.wo = wo
         self.wc = wc  # Weight for cell DOF
+        self.wb_long = wb_long
         self._weights_cache = None
         BaseRestrictedStep.__init__(self, pes, *args, **kwargs)
 
@@ -5426,13 +5430,17 @@ class MaxInternalStep(BaseRestrictedStep):
             self.pes.int.ntrans, self.pes.int.nbonds,
             self.pes.int.nangles, self.pes.int.ndihedrals,
             self.pes.int.nother, self.pes.int.nrotations,
-            n_cell_dof,
+            n_cell_dof, self.wb_long,
         )
         if cached is not None and cached[0] == key:
             return cached[1]
+        if self.wb_long is None:
+            bond_w = [self.wb] * self.pes.int.nbonds
+        else:
+            bond_w = self._long_bond_weights()
         w = np.array(
             [self.wx] * self.pes.int.ntrans
-            + [self.wb] * self.pes.int.nbonds
+            + bond_w
             + [self.wa] * self.pes.int.nangles
             + [self.wd] * self.pes.int.ndihedrals
             + [self.wo] * self.pes.int.nother
@@ -5442,6 +5450,34 @@ class MaxInternalStep(BaseRestrictedStep):
             w = np.concatenate([w, [self.wc] * n_cell_dof])
         self._weights_cache = (key, w)
         return w
+
+    def _long_bond_weights(self):
+        """Heavier step allowance for stretches past the covalent cutoff."""
+        internals = self.pes.int
+        atoms = internals.atoms
+        pos = atoms.positions
+        numbers = atoms.numbers
+        natoms = len(atoms)
+        scale = 1.25
+        weights = []
+        for bond, active in zip(internals.internals['bonds'],
+                                internals._active['bonds']):
+            if not active:
+                continue
+            i, j = bond.indices
+            if i >= natoms or j >= natoms:
+                weights.append(self.wb)
+                continue
+            r = float(np.linalg.norm(pos[j] - pos[i]))
+            thresh = scale * (float(covalent_radii[numbers[i]])
+                              + float(covalent_radii[numbers[j]]))
+            weights.append(self.wb_long if r > thresh else self.wb)
+        if len(weights) != internals.nbonds:
+            raise RuntimeError(
+                'long-bond weights length %d != nbonds %d'
+                % (len(weights), internals.nbonds)
+            )
+        return weights
 
 _all_restricted_step = [TrustRegion, RestrictedAtomicStep, MaxInternalStep]
 
@@ -5742,6 +5778,10 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
+            else:
+                # Dimers: connecting stretches beyond 1.25 covalent radii
+                # may take |s| <= 0.1/0.4 = 0.25 Å (≈ OptKing 0.5 bohr).
+                rs_kwargs['wb_long'] = 0.4
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5818,8 +5858,8 @@ class Sella(Optimizer):
             self.rho = 1
             return
 
-        # Connected molecules: after 16 steps, grow δ by 1.16 instead of 1.15.
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 16:
+        # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15.
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
 
         # Update trust radius
