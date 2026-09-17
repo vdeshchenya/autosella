@@ -1,8 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals with
-`iterative_stepper=1` so internal steps are realized by the iterative Cartesian
-solver instead of the ODE geodesic.
+Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
+angle weight `wa=2/3` on connected molecules so bends may reach 0.15 while
+stretches and torsions stay at 0.1.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5738,10 +5738,14 @@ class Sella(Optimizer):
         x0 = self.pes.get_x()
 
         rs_kwargs = {}
-        if self.optimize_cell and isinstance(self.rs, type) and issubclass(
-            self.rs, MaxInternalStep
-        ):
-            rs_kwargs['wc'] = self.delta / self.delta_cell
+        if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
+            # Connected molecules: |s_a| <= 0.15. Dimers keep champion wa=1.
+            # Cycle 29's dihedral wd hopped 252618428; angles are a different
+            # MIS coordinate class.
+            if getattr(self, "_allow_angle_wa", False):
+                rs_kwargs['wa'] = 2.0 / 3.0
+            if self.optimize_cell:
+                rs_kwargs['wc'] = self.delta / self.delta_cell
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5950,7 +5954,10 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None, iterative_stepper=1)
+    opt = Sella(atoms, internal=True, order=0, logfile=None)
+    probe = Internals(atoms.copy(), allow_fragments=True)
+    probe.find_all_bonds()
+    opt._allow_angle_wa = not bool(probe.internals["translations"])
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
