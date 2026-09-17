@@ -2,8 +2,8 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-Dimers floor the trust radius at `delta_min=0.02` and shrink after
-poor ρ with `rho_dec=30`.
+Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
+add Bakken extra-redundant 1-3 (angle-span) distances.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5953,20 +5953,47 @@ class _WrappedCalc(Calculator):
         self.results["energy"] = energy_kj / _EV_TO_KJ
         self.results["forces"] = np.array(forces_kj_nm) / _EV_TO_KJ * _ANGSTROM_TO_NM
 
+def _add_angle_span_bonds(internals):
+    """Add 1-3 distances across existing angles (Bakken auxiliary bonds).
+
+    Call only after find_all_angles/find_all_dihedrals so these extra
+    stretches do not spawn new angles or torsions.
+    """
+    natoms = internals.natoms
+    for ang in list(internals.internals['angles']):
+        idx = tuple(int(x) for x in ang.indices)
+        if len(idx) < 3:
+            continue
+        i, k = idx[0], idx[2]
+        if i < 0 or k < 0 or i >= natoms or k >= natoms or i == k:
+            continue
+        try:
+            internals.add_bond((i, k))
+        except DuplicateInternalError:
+            continue
+
+
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    opt._allow_angle_wa = not bool(probe.internals["translations"])
-    if not opt._allow_angle_wa:
+    connected = not bool(probe.internals["translations"])
+    if connected:
+        internals = Internals(atoms, allow_fragments=False)
+        internals.find_all_bonds()
+        internals.find_all_angles()
+        internals.find_all_dihedrals()
+        _add_angle_span_bonds(internals)
+        opt = Sella(atoms, internal=internals, order=0, logfile=None)
+        opt._allow_angle_wa = True
+    else:
+        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt._allow_angle_wa = False
         # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
         opt.delta_min = 0.02
-        # Milder than cycle 68's rho_dec=20: shrink when ρ<1/30 or ρ>30.
-        opt.rho_dec = 30.0
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
