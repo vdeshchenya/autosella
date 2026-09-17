@@ -3,8 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. After 20 connected steps, ρ_inc
-is 1.2 so trust expands only for more nearly-quadratic steps.
+also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
+guess constants are 0.25 Ha instead of 0.5.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3232,6 +3232,8 @@ class Constraints(BaseInternals):
             )
 
 class Internals(BaseInternals):
+    soft_dummy_dihedral_h0_default = False
+
     def __init__(
         self,
         atoms: Atoms,
@@ -3266,6 +3268,7 @@ class Internals(BaseInternals):
                 adder(coord)
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
+        self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3281,6 +3284,7 @@ class Internals(BaseInternals):
             new._internals_set[name] = self._internals_set[name].copy()
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
+        new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         return new
 
     def add_rotation(
@@ -3984,7 +3988,8 @@ class Internals(BaseInternals):
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
-                h0[idx] = 0.5 * units.Hartree
+                scale = 0.25 if getattr(self, 'soft_dummy_dihedral_h0', False) else 0.5
+                h0[idx] = scale * units.Hartree
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
             idx += 1
@@ -5825,7 +5830,6 @@ class Sella(Optimizer):
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
-            self.rho_inc = 1.2
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
 
@@ -5963,16 +5967,22 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    opt._allow_angle_wa = not bool(probe.internals["translations"])
-    if not opt._allow_angle_wa:
-        # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
-        opt.delta_min = 0.02
-    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
-        if converged():
-            break
+    connected = not bool(probe.internals["translations"])
+    if connected:
+        Internals.soft_dummy_dihedral_h0_default = True
+    try:
+        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt._allow_angle_wa = connected
+        if not connected:
+            # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
+            opt.delta_min = 0.02
+        for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+            if converged():
+                break
+    finally:
+        Internals.soft_dummy_dihedral_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
