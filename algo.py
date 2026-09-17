@@ -3,8 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-treat 2-coordinate bends within 20° of linear as dummy-atom linear
-centers; 3+ coordinate improper replacement stays at 15°.
+reset the BFGS Hessian to the model H0 after 20 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3232,11 +3231,6 @@ class Constraints(BaseInternals):
             )
 
 class Internals(BaseInternals):
-    # Degrees. 2-coordinate (dummy-atom) centers use this half-width when
-    # classifying near-linear bends. 3+ coordinate improper replacement
-    # keeps `atol` (default 15°).
-    two_coord_atol_default = 15.
-
     def __init__(
         self,
         atoms: Atoms,
@@ -3248,7 +3242,6 @@ class Internals(BaseInternals):
     ) -> None:
         BaseInternals.__init__(self, atoms, dummies, dinds)
         self.atol = atol * np.pi / 180.
-        self.two_coord_atol = Internals.two_coord_atol_default * np.pi / 180.
         self.forbidden = {key: [] for key in self._names}
         if cons is None:
             cons = Constraints(self.atoms, self.dummies, self.dinds)
@@ -3287,7 +3280,6 @@ class Internals(BaseInternals):
             new._internals_set[name] = self._internals_set[name].copy()
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
-        new.two_coord_atol = self.two_coord_atol
         return new
 
     def add_rotation(
@@ -3648,14 +3640,10 @@ class Internals(BaseInternals):
 
         for j, jbonds in enumerate(bonds):
             linear = []
-            # 2-coordinate centers take the dummy-atom path at `two_coord_atol`
-            # (20° on connected molecules). 3+ coordinate impropers stay at
-            # `atol` (15°).
-            thresh = self.two_coord_atol if len(jbonds) == 2 else self.atol
             for b1, b2 in combinations(jbonds, 2):
                 new = b1 + b2
                 assert new.indices[1] == j, new.indices
-                if thresh < new.calc(self.atoms) < np.pi - thresh:
+                if self.atol < new.calc(self.atoms) < np.pi - self.atol:
                     try:
                         self.add_angle(new)
                     except DuplicateInternalError:
@@ -4496,6 +4484,20 @@ class InternalPES(PES):
         self._pinv_cache = _LRU2()
         self._qr_cache = _LRU2()
         self._Hc_cache = _LRU2()
+
+    def reset_model_hessian(self) -> None:
+        """Replace the BFGS matrix with Fischer–Almlöf H0 at the current geometry.
+
+        Mirrors InternalPES initialization: project the model Hessian onto
+        range(B). ``initialized=True`` keeps subsequent TS-BFGS updates.
+        """
+        B = self.int.jacobian()
+        Q, _ = qr(B, mode='economic')
+        P = Q @ Q.T
+        H0 = P @ self.int.guess_hessian() @ P
+        self.set_H(
+            H0, self.H.update_method, self.H.symm, True,
+        )
 
     dpos = property(lambda self: self.dummies.positions.copy())
 
@@ -5745,6 +5747,17 @@ class Sella(Optimizer):
                 self.nsteps_since_diag = -1
             self.initialized = True
 
+        # After 20 connected steps, drop stale BFGS curvature and rebuild
+        # the model Hessian (xtb ANCopt microcycle / pysisyphus hessian_recalc
+        # without an exact Hessian). Dimers are unchanged.
+        if (
+            getattr(self, "_allow_angle_wa", False)
+            and self.nsteps == 20
+            and not getattr(self, "_h0_reset_done", False)
+        ):
+            self.pes.reset_model_hessian()
+            self._h0_reset_done = True
+
         self.pes.cons.disable_satisfied_inequalities()
         self.pes._update_basis()
         self.pes.save()
@@ -5970,22 +5983,16 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
+    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    connected = not bool(probe.internals["translations"])
-    if connected:
-        Internals.two_coord_atol_default = 20.
-    try:
-        opt = Sella(atoms, internal=True, order=0, logfile=None)
-        opt._allow_angle_wa = connected
-        if not connected:
-            # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
-            opt.delta_min = 0.02
-        for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
-            if converged():
-                break
-    finally:
-        Internals.two_coord_atol_default = 15.
+    opt._allow_angle_wa = not bool(probe.internals["translations"])
+    if not opt._allow_angle_wa:
+        # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
+        opt.delta_min = 0.02
+    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+        if converged():
+            break
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
