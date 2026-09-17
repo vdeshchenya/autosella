@@ -4,8 +4,8 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Dimers use Baker/OptKing
-1/R connecting stretches with R⁴ Hessian scaling.
+guess constants are 0.25 Ha instead of 0.5. Connected period≥2
+(non-hydrogen) stretches use the Schlegel 1984 model Hessian.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -1971,78 +1971,6 @@ class BaseInternals:
         self._tvecs_cache = {'cell_hash': cell_hash, 'tvecs': tvecs}
         return tvecs
 
-    def _invbond_mask(self):
-        """Boolean mask over `internals['bonds']` for cutoff-grown connectors."""
-        pairs = getattr(self, 'interfrag_bond_pairs', None)
-        if not getattr(self, 'use_invbond_connecting', False) or not pairs:
-            return None
-        bonds = self.internals['bonds']
-        if not bonds:
-            return None
-        return np.array([
-            frozenset((int(b.indices[0]), int(b.indices[1]))) in pairs
-            for b in bonds
-        ], dtype=bool)
-
-    def _bond_lengths_r(self):
-        """Bond lengths in Å (r-space, before any 1/R transform)."""
-        positions = self.all_positions
-        cell = self.atoms.cell.array
-        self._build_batched_arrays()
-        tvecs = self._get_cached_tvecs(cell)
-        if self._n_bonds_actual == 0:
-            return np.empty(0, dtype=np.float64)
-        bond_pos = positions[self._bond_indices_padded]
-        values_padded = np.asarray(
-            device_get(_bond_value_batched(bond_pos, tvecs['bonds_padded']))
-        )
-        return np.asarray(values_padded[:self._n_bonds_actual], dtype=np.float64)
-
-    def _bond_gradients_r(self):
-        """Bond B-matrix rows in r-space (before any 1/R transform)."""
-        positions = self.all_positions
-        cell = self.atoms.cell.array
-        self._build_batched_arrays()
-        tvecs = self._get_cached_tvecs(cell)
-        if self._n_bonds_actual == 0:
-            return (
-                np.empty((0, 2), dtype=np.int32),
-                np.empty((0, 2, 3), dtype=np.float64),
-            )
-        bond_pos = positions[self._bond_indices_padded]
-        grads_padded = np.asarray(
-            device_get(_bond_grad_batched(bond_pos, tvecs['bonds_padded']))
-        )
-        return self._bond_indices, np.asarray(
-            grads_padded[:self._n_bonds_actual], dtype=np.float64
-        )
-
-    def _invbond_transform_hvp(self, hvp, v_atoms, bonds_active):
-        """Convert r-space bond HVPs to 1/R for connecting stretches."""
-        mask = self._invbond_mask()
-        if mask is None or not mask.any():
-            return hvp
-        r = self._bond_lengths_r()
-        _, grads_r = self._bond_gradients_r()
-        if not np.all(bonds_active):
-            mask = mask[bonds_active]
-            r = r[bonds_active]
-            grads_r = grads_r[bonds_active]
-        if not mask.any():
-            return hvp
-        v_sub = v_atoms[self._bond_indices]
-        if not np.all(bonds_active):
-            v_sub = v_sub[np.asarray(bonds_active, dtype=bool)]
-        ri = np.maximum(r[mask], 1e-8)
-        g = grads_r[mask]
-        hv = hvp[mask]
-        gdotv = np.sum(g * v_sub[mask], axis=(1, 2))
-        hvp = np.array(hvp, dtype=np.float64, copy=True)
-        hvp[mask] = (
-            (2.0 / ri**3)[:, None, None] * gdotv[:, None, None] * g
-            - hv / (ri**2)[:, None, None]
-        )
-        return hvp
 
     def _compute_batched_values(self, positions: np.ndarray, cell: np.ndarray) -> Dict[str, np.ndarray]:
         """Compute all internal coordinate values using vectorized operations.
@@ -2077,12 +2005,6 @@ class BaseInternals:
         else:
             result['dihedrals'] = np.empty(0)
 
-        mask = self._invbond_mask()
-        if mask is not None and mask.any() and result['bonds'].size:
-            bonds = np.array(result['bonds'], dtype=np.float64, copy=True)
-            r = np.maximum(bonds[mask], 1e-8)
-            bonds[mask] = 1.0 / r
-            result['bonds'] = bonds
         return result
 
     def _compute_batched_gradients(self, positions: np.ndarray, cell: np.ndarray) -> Dict[str, Tuple[np.ndarray, np.ndarray]]:
@@ -2119,14 +2041,6 @@ class BaseInternals:
         else:
             result['dihedrals'] = (np.empty((0, 4), dtype=np.int32), np.empty((0, 4, 3)))
 
-        mask = self._invbond_mask()
-        if mask is not None and mask.any() and result['bonds'][1].size:
-            idx, grads = result['bonds']
-            r = self._bond_lengths_r()
-            grads = np.array(grads, dtype=np.float64, copy=True)
-            scale = (-1.0 / np.maximum(r[mask], 1e-8)**2)
-            grads[mask] *= scale[:, None, None]
-            result['bonds'] = (idx, grads)
         return result
 
     def _compute_batched_hessians(self, positions: np.ndarray, cell: np.ndarray) -> Dict[str, Tuple[np.ndarray, np.ndarray]]:
@@ -2163,20 +2077,6 @@ class BaseInternals:
         else:
             result['dihedrals'] = (np.empty((0, 4), dtype=np.int32), np.empty((0, 4, 3, 4, 3)))
 
-        mask = self._invbond_mask()
-        if mask is not None and mask.any() and result['bonds'][1].size:
-            idx, hess = result['bonds']
-            _, grads_r = self._bond_gradients_r()
-            r = self._bond_lengths_r()
-            hess = np.array(hess, dtype=np.float64, copy=True)
-            g = grads_r[mask]
-            ri = np.maximum(r[mask], 1e-8)
-            outer = np.einsum('mai,mbj->maibj', g, g)
-            hess[mask] = (
-                (2.0 / ri**3)[:, None, None, None, None] * outer
-                - hess[mask] / (ri**2)[:, None, None, None, None]
-            )
-            result['bonds'] = (idx, hess)
         return result
 
 
@@ -2830,7 +2730,6 @@ class BaseInternals:
             if bonds_active.all():
                 hvp = hvp[:self._n_bonds_actual]
             n_coords = self._n_bonds_actual if bonds_active.all() else int(bonds_active.sum())
-            hvp = self._invbond_transform_hvp(hvp, v_atoms, bonds_active)
             if use_sparse:
                 off = self._csr_bond_offset
                 data[off:off + n_coords * 6] = hvp.reshape(-1)
@@ -3335,7 +3234,7 @@ class Constraints(BaseInternals):
 
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
-    use_invbond_connecting_default = False
+    use_schlegel_heavy_bond_h0_default = False
 
     def __init__(
         self,
@@ -3372,8 +3271,7 @@ class Internals(BaseInternals):
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
-        self.use_invbond_connecting = Internals.use_invbond_connecting_default
-        self.interfrag_bond_pairs = set()
+        self.use_schlegel_heavy_bond_h0 = Internals.use_schlegel_heavy_bond_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3390,8 +3288,7 @@ class Internals(BaseInternals):
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
-        new.use_invbond_connecting = getattr(self, 'use_invbond_connecting', False)
-        new.interfrag_bond_pairs = set(getattr(self, 'interfrag_bond_pairs', set()))
+        new.use_schlegel_heavy_bond_h0 = getattr(self, 'use_schlegel_heavy_bond_h0', False)
         return new
 
     def add_rotation(
@@ -3667,7 +3564,6 @@ class Internals(BaseInternals):
             nbonds[j] += 1
 
         first_run = True
-        self.interfrag_bond_pairs = set()
         while True:
             # use flood fill algorithm to count the number of disconnected
             # fragments
@@ -3700,10 +3596,6 @@ class Internals(BaseInternals):
                     self.add_bond((i, j), ts)
                 except DuplicateInternalError:
                     continue
-                # Bonds added after the first covalent pass (scale 1.25) are
-                # cutoff-grown connectors between covalent fragments.
-                if not first_run:
-                    self.interfrag_bond_pairs.add(frozenset((int(i), int(j))))
                 if nbonds[i] < max_bonds and nbonds[j] < max_bonds:
                     c10y[i, nbonds[i]] = j
                     nbonds[i] += 1
@@ -4025,6 +3917,41 @@ class Internals(BaseInternals):
                 return bad
         return None
 
+    def _h0_bond_schlegel(self, bond: Bond, numbers) -> float:
+        """Schlegel 1984 stretch guess (Theor. Chim. Acta 66, 333).
+
+        OptKing `stre.py` SCHLEGEL: k = 1.734 / (R_Bohr - B_period)^3.
+        """
+        rij = bond.calc(self.all_atoms) / units.Bohr
+        periods = []
+        for z in numbers:
+            z = int(z)
+            if z <= 2:
+                periods.append(1)
+            elif z <= 10:
+                periods.append(2)
+            else:
+                periods.append(3)
+        a, b = periods
+        if a > b:
+            a, b = b, a
+        if a == 1 and b == 1:
+            bb = -0.244
+        elif a == 1 and b == 2:
+            bb = 0.352
+        elif a == 1:
+            bb = 0.660
+        elif a == 2 and b == 2:
+            bb = 1.085
+        elif a == 2:
+            bb = 1.522
+        else:
+            bb = 2.068
+        denom = rij - bb
+        if denom < 0.1:
+            denom = 0.1
+        return (1.734 / denom**3) * units.Hartree / units.Bohr**2
+
     def _h0_bond(
         self,
         bond: Bond,
@@ -4032,6 +3959,14 @@ class Internals(BaseInternals):
         Bb: float = 1.944,
     ) -> float:
         idx = np.asarray(bond.indices, dtype=np.int32)
+        if (
+            getattr(self, 'use_schlegel_heavy_bond_h0', False)
+            and np.all(idx < self.natoms)
+        ):
+            numbers = self.all_atoms.numbers[idx]
+            if np.all(numbers >= 3):
+                # Period ≥2 only (C–C, C–N, ...); H–X stays Fischer–Almlöf.
+                return self._h0_bond_schlegel(bond, numbers)
         rcov = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rij = bond.calc(self.all_atoms)
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
@@ -4088,19 +4023,10 @@ class Internals(BaseInternals):
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for bond in self.internals['bonds']:
-            i, j = bond.indices
-            hval = self._h0_bond(bond)
-            if (
-                getattr(self, 'use_invbond_connecting', False)
-                and frozenset((int(i), int(j))) in getattr(self, 'interfrag_bond_pairs', ())
-            ):
-                # OptKing inverse stretch: H_qq = H_rr * R^4 so Cartesian
-                # stiffness matches Fischer in r-space.
-                rij = bond.calc(self.all_atoms)
-                hval = hval * rij**4
-            h0[idx] = hval
+            h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
+            i, j = bond.indices
             nbonds[i] += 1
             nbonds[j] += 1
         for angle in self.internals['angles']:
@@ -5558,29 +5484,18 @@ class MaxInternalStep(BaseRestrictedStep):
             n_cell_dof,
         )
         if cached is not None and cached[0] == key:
-            w = cached[1]
-        else:
-            w = np.array(
-                [self.wx] * self.pes.int.ntrans
-                + [self.wb] * self.pes.int.nbonds
-                + [self.wa] * self.pes.int.nangles
-                + [self.wd] * self.pes.int.ndihedrals
-                + [self.wo] * self.pes.int.nother
-                + [self.wx] * self.pes.int.nrotations
-            )
-            if n_cell_dof > 0:
-                w = np.concatenate([w, [self.wc] * n_cell_dof])
-            self._weights_cache = (key, w)
-        intern = self.pes.int
-        mask = intern._invbond_mask() if hasattr(intern, '_invbond_mask') else None
-        if mask is not None and mask.any():
-            w = np.array(w, dtype=np.float64, copy=True)
-            ntrans = intern.ntrans
-            nb = intern.nbonds
-            q_b = intern.calc()[ntrans:ntrans + nb]
-            r = np.ones(nb, dtype=np.float64)
-            r[mask] = 1.0 / np.maximum(np.abs(q_b[mask]), 1e-8)
-            w[ntrans:ntrans + nb] *= np.where(mask, r * r, 1.0)
+            return cached[1]
+        w = np.array(
+            [self.wx] * self.pes.int.ntrans
+            + [self.wb] * self.pes.int.nbonds
+            + [self.wa] * self.pes.int.nangles
+            + [self.wd] * self.pes.int.ndihedrals
+            + [self.wo] * self.pes.int.nother
+            + [self.wx] * self.pes.int.nrotations
+        )
+        if n_cell_dof > 0:
+            w = np.concatenate([w, [self.wc] * n_cell_dof])
+        self._weights_cache = (key, w)
         return w
 
 _all_restricted_step = [TrustRegion, RestrictedAtomicStep, MaxInternalStep]
@@ -6104,8 +6019,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     connected = not bool(probe.internals["translations"])
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
-    else:
-        Internals.use_invbond_connecting_default = True
+        Internals.use_schlegel_heavy_bond_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6117,7 +6031,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 break
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
-        Internals.use_invbond_connecting_default = False
+        Internals.use_schlegel_heavy_bond_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
