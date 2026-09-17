@@ -2,7 +2,7 @@
 
 Vendored from the `sella` package (2.5.0). Connected molecules keep
 fragment-gated `wa=0.75`. Probe-detected fragments use TRIC internals
-with `wx=5` and `delta0=0.05`.
+with `wx=5` and a stiffer translation/rotation guess Hessian.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3964,7 +3964,7 @@ class Internals(BaseInternals):
     def guess_hessian(self, h0cart=70.) -> np.ndarray:
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
-        h0_tr = 0.05 * units.Hartree
+        h0_tr = 0.5 * units.Hartree
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
@@ -5739,8 +5739,7 @@ class Sella(Optimizer):
 
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
-            # Connected: champion wa=0.75. Fragments: TRIC wx=5 and a
-            # smaller delta0 set in minimize_func.
+            # Connected: champion wa=0.75. Fragments: TRIC with wx=5.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
             if getattr(self, "_tric_wx", None):
@@ -5958,14 +5957,12 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
     is_frag = bool(probe.internals["translations"])
+    opt = Sella(
+        atoms, internal=True, order=0, logfile=None, allow_fragments=is_frag,
+    )
     if is_frag:
-        opt = Sella(
-            atoms, internal=True, order=0, logfile=None,
-            allow_fragments=True, delta0=0.05,
-        )
         opt._tric_wx = 5.0
     else:
-        opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = True
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
