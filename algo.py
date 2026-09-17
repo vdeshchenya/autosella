@@ -2,7 +2,7 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-On dimers, connecting-bond Lindh Hessian guesses are stiffened 2x.
+Dimers use iterative Cartesian realization of internal steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -50,9 +50,6 @@ from ase.cell import Cell
 from ase.geometry import complete_cell, minkowski_reduce
 
 from ase.data import covalent_radii
-
-# Set in minimize_func before constructing Sella. One molecule per process.
-_STIFF_DIMER_LONG_BONDS = False
 
 from ase.constraints import (
     FixConstraint, FixAtoms, FixCom, FixBondLengths, FixCartesian, FixInternals
@@ -3920,8 +3917,6 @@ class Internals(BaseInternals):
         rcov = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rij = bond.calc(self.all_atoms)
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
-        if _STIFF_DIMER_LONG_BONDS and rij > 1.25 * rcov:
-            h0 *= 2.0
         return h0 * units.Hartree / units.Bohr**2
 
     def _h0_angle(
@@ -5958,7 +5953,6 @@ class _WrappedCalc(Calculator):
         self.results["forces"] = np.array(forces_kj_nm) / _EV_TO_KJ * _ANGSTROM_TO_NM
 
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
-    global _STIFF_DIMER_LONG_BONDS
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
@@ -5966,8 +5960,10 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
     is_dimer = bool(probe.internals["translations"])
-    _STIFF_DIMER_LONG_BONDS = is_dimer
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
+    opt = Sella(
+        atoms, internal=True, order=0, logfile=None,
+        iterative_stepper=1 if is_dimer else 0,
+    )
     opt._allow_angle_wa = not is_dimer
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
