@@ -3,8 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-treat 3+ coordinate bends within 20° of linear as dummy-linear impropers;
-2-coordinate dummy-atom centers keep the 15° threshold.
+treat 2-coordinate bends within 20° of linear as dummy-atom linear
+centers; 3+ coordinate improper replacement stays at 15°.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3232,10 +3232,10 @@ class Constraints(BaseInternals):
             )
 
 class Internals(BaseInternals):
-    # Degrees. Multi-coordinate (3+ bond) centers use this half-width when
-    # classifying near-linear bends as improper replacements. 2-coordinate
-    # dummy-atom centers keep `atol` (default 15°).
-    multi_coord_atol_default = 15.
+    # Degrees. 2-coordinate (dummy-atom) centers use this half-width when
+    # classifying near-linear bends. 3+ coordinate improper replacement
+    # keeps `atol` (default 15°).
+    two_coord_atol_default = 15.
 
     def __init__(
         self,
@@ -3248,7 +3248,7 @@ class Internals(BaseInternals):
     ) -> None:
         BaseInternals.__init__(self, atoms, dummies, dinds)
         self.atol = atol * np.pi / 180.
-        self.multi_coord_atol = Internals.multi_coord_atol_default * np.pi / 180.
+        self.two_coord_atol = Internals.two_coord_atol_default * np.pi / 180.
         self.forbidden = {key: [] for key in self._names}
         if cons is None:
             cons = Constraints(self.atoms, self.dummies, self.dinds)
@@ -3287,7 +3287,7 @@ class Internals(BaseInternals):
             new._internals_set[name] = self._internals_set[name].copy()
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
-        new.multi_coord_atol = self.multi_coord_atol
+        new.two_coord_atol = self.two_coord_atol
         return new
 
     def add_rotation(
@@ -3648,10 +3648,10 @@ class Internals(BaseInternals):
 
         for j, jbonds in enumerate(bonds):
             linear = []
-            # 2-coordinate centers take the dummy-atom path at `atol`.
-            # 3+ coordinate centers replace linear bends with impropers
-            # using `multi_coord_atol` (20° on connected molecules).
-            thresh = self.atol if len(jbonds) == 2 else self.multi_coord_atol
+            # 2-coordinate centers take the dummy-atom path at `two_coord_atol`
+            # (20° on connected molecules). 3+ coordinate impropers stay at
+            # `atol` (15°).
+            thresh = self.two_coord_atol if len(jbonds) == 2 else self.atol
             for b1, b2 in combinations(jbonds, 2):
                 new = b1 + b2
                 assert new.indices[1] == j, new.indices
@@ -5974,7 +5974,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     if connected:
-        Internals.multi_coord_atol_default = 20.
+        Internals.two_coord_atol_default = 20.
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -5985,7 +5985,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if converged():
                 break
     finally:
-        Internals.multi_coord_atol_default = 15.
+        Internals.two_coord_atol_default = 15.
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
