@@ -1,9 +1,9 @@
-"""Self-contained Sella minimiser (order=0, internal coordinates, RFO steps).
+"""Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0), restricted to the code path that
-`Sella(atoms, internal=True, order=0, method='rfo')` + `irun(fmax=0)` actually
-executes. Uses rational-function optimization steps instead of the default
-undamped quasi-Newton step for minima.
+`Sella(atoms, internal=True, order=0, delta0=0.15)` + `irun(fmax=0)` actually
+executes. Uses a 50% larger initial MaxInternalStep trust radius than the
+Sella minimum default (0.10) so early steps are less often truncated.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5951,7 +5951,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None, method='rfo')
+    opt = Sella(atoms, internal=True, order=0, logfile=None, delta0=0.15)
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
