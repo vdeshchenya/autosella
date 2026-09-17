@@ -2,7 +2,7 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-On dimers, connecting-bond Lindh Hessian guesses are stiffened 4x.
+On dimers, connecting-bond Lindh Hessian guesses are stiffened 2x.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3921,7 +3921,7 @@ class Internals(BaseInternals):
         rij = bond.calc(self.all_atoms)
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
         if _STIFF_DIMER_LONG_BONDS and rij > 1.25 * rcov:
-            h0 *= 4.0
+            h0 *= 2.0
         return h0 * units.Hartree / units.Bohr**2
 
     def _h0_angle(
