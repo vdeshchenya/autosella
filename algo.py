@@ -4,8 +4,8 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Connected period≥2
-(non-hydrogen) stretches use the Schlegel 1984 model Hessian.
+guess constants are 0.25 Ha instead of 0.5. Connected dummy-atom
+dihedrals use MaxInternalStep `wd=0.8`.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3234,7 +3234,6 @@ class Constraints(BaseInternals):
 
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
-    use_schlegel_heavy_bond_h0_default = False
 
     def __init__(
         self,
@@ -3271,7 +3270,6 @@ class Internals(BaseInternals):
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
-        self.use_schlegel_heavy_bond_h0 = Internals.use_schlegel_heavy_bond_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3288,7 +3286,6 @@ class Internals(BaseInternals):
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
-        new.use_schlegel_heavy_bond_h0 = getattr(self, 'use_schlegel_heavy_bond_h0', False)
         return new
 
     def add_rotation(
@@ -3917,41 +3914,6 @@ class Internals(BaseInternals):
                 return bad
         return None
 
-    def _h0_bond_schlegel(self, bond: Bond, numbers) -> float:
-        """Schlegel 1984 stretch guess (Theor. Chim. Acta 66, 333).
-
-        OptKing `stre.py` SCHLEGEL: k = 1.734 / (R_Bohr - B_period)^3.
-        """
-        rij = bond.calc(self.all_atoms) / units.Bohr
-        periods = []
-        for z in numbers:
-            z = int(z)
-            if z <= 2:
-                periods.append(1)
-            elif z <= 10:
-                periods.append(2)
-            else:
-                periods.append(3)
-        a, b = periods
-        if a > b:
-            a, b = b, a
-        if a == 1 and b == 1:
-            bb = -0.244
-        elif a == 1 and b == 2:
-            bb = 0.352
-        elif a == 1:
-            bb = 0.660
-        elif a == 2 and b == 2:
-            bb = 1.085
-        elif a == 2:
-            bb = 1.522
-        else:
-            bb = 2.068
-        denom = rij - bb
-        if denom < 0.1:
-            denom = 0.1
-        return (1.734 / denom**3) * units.Hartree / units.Bohr**2
-
     def _h0_bond(
         self,
         bond: Bond,
@@ -3959,14 +3921,6 @@ class Internals(BaseInternals):
         Bb: float = 1.944,
     ) -> float:
         idx = np.asarray(bond.indices, dtype=np.int32)
-        if (
-            getattr(self, 'use_schlegel_heavy_bond_h0', False)
-            and np.all(idx < self.natoms)
-        ):
-            numbers = self.all_atoms.numbers[idx]
-            if np.all(numbers >= 3):
-                # Period ≥2 only (C–C, C–N, ...); H–X stays Fischer–Almlöf.
-                return self._h0_bond_schlegel(bond, numbers)
         rcov = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rij = bond.calc(self.all_atoms)
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
@@ -5443,7 +5397,8 @@ class MaxInternalStep(BaseRestrictedStep):
     synonyms = ['mis', 'max internal step']
 
     def __init__(
-        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1., **kwargs
+        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1.,
+        wd_dummy=None, **kwargs
     ):
         if pes.int is None:
             raise ValueError(
@@ -5456,6 +5411,7 @@ class MaxInternalStep(BaseRestrictedStep):
         self.wd = wd
         self.wo = wo
         self.wc = wc  # Weight for cell DOF
+        self.wd_dummy = wd if wd_dummy is None else wd_dummy
         self._weights_cache = None
         BaseRestrictedStep.__init__(self, pes, *args, **kwargs)
 
@@ -5481,18 +5437,28 @@ class MaxInternalStep(BaseRestrictedStep):
             self.pes.int.ntrans, self.pes.int.nbonds,
             self.pes.int.nangles, self.pes.int.ndihedrals,
             self.pes.int.nother, self.pes.int.nrotations,
-            n_cell_dof,
+            n_cell_dof, self.wd, self.wd_dummy, self.wa,
         )
         if cached is not None and cached[0] == key:
             return cached[1]
+        intern = self.pes.int
         w = np.array(
-            [self.wx] * self.pes.int.ntrans
-            + [self.wb] * self.pes.int.nbonds
-            + [self.wa] * self.pes.int.nangles
-            + [self.wd] * self.pes.int.ndihedrals
-            + [self.wo] * self.pes.int.nother
-            + [self.wx] * self.pes.int.nrotations
+            [self.wx] * intern.ntrans
+            + [self.wb] * intern.nbonds
+            + [self.wa] * intern.nangles
+            + [self.wd] * intern.ndihedrals
+            + [self.wo] * intern.nother
+            + [self.wx] * intern.nrotations
         )
+        if self.wd_dummy != self.wd and intern.ndummies and intern.ndihedrals:
+            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
+            k = intern.ntrans + intern.nbonds + intern.nangles
+            for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
+                if not active:
+                    continue
+                if any(j in dummy_set for j in dih.indices):
+                    w[k] = self.wd_dummy
+                k += 1
         if n_cell_dof > 0:
             w = np.concatenate([w, [self.wc] * n_cell_dof])
         self._weights_cache = (key, w)
@@ -5797,6 +5763,9 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
+                # Dummy linear-bend dihedrals: |s| <= 0.1/0.8 = 0.125
+                # (0.187 after the connected 0.15 floor).
+                rs_kwargs['wd_dummy'] = 0.8
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -6019,7 +5988,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     connected = not bool(probe.internals["translations"])
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
-        Internals.use_schlegel_heavy_bond_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6031,7 +5999,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 break
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
-        Internals.use_schlegel_heavy_bond_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
