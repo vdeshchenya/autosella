@@ -1,8 +1,7 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Connected molecules keep
-fragment-gated `wa=0.75`. Fragments get three TRIC force calls with
-`wx=5`, then champion connecting internals.
+Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
+`wa=0.75` on connected molecules, with `sigma_inc=1.18` after six steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5739,11 +5738,10 @@ class Sella(Optimizer):
 
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
-            # Connected champion: wa=0.75. Fragment TRIC phase: wx=5.
+            # Between cycle 39 (wa=2/3, valid hop) and cycle 40 (wa=0.8,
+            # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-            if getattr(self, "_tric_wx", None):
-                rs_kwargs['wx'] = self._tric_wx
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5819,6 +5817,11 @@ class Sella(Optimizer):
             self.initialized = False
             self.rho = 1
             return
+
+        # Connected molecules: after six steps, grow δ by 1.18 instead of 1.15.
+        # Dimers keep 1.15 (cycle 10 timed out on amines–amines at 1.20).
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 6:
+            self.sigma_inc = 1.18
 
         # Update trust radius
         if rho is not None:
@@ -5937,75 +5940,30 @@ class _WrappedCalc(Calculator):
         self.calc_func = calc_func
         self.call_count = 0
         self.last_positions_nm = None
-        self._last_pos_ang = None
-        self._last_energy_kj = None
-        self._last_forces_kj_nm = None
 
     def calculate(self, atoms=None, properties=None, system_changes=all_changes):
         if properties is None:
             properties = ["energy", "forces"]
         super().calculate(atoms, properties, system_changes)
-        pos_ang = np.array(self.atoms.get_positions(), dtype=np.float64)
-        if (
-            self._last_pos_ang is not None
-            and self._last_energy_kj is not None
-            and np.array_equal(pos_ang, self._last_pos_ang)
-        ):
-            energy_kj = self._last_energy_kj
-            forces_kj_nm = self._last_forces_kj_nm
-        else:
-            pos_nm = pos_ang * _ANGSTROM_TO_NM
-            energy_kj, forces_kj_nm = self.calc_func(pos_nm)
-            self.call_count += 1
-            self._last_pos_ang = pos_ang.copy()
-            self.last_positions_nm = pos_nm.copy()
-            self._last_energy_kj = energy_kj
-            self._last_forces_kj_nm = np.array(forces_kj_nm, copy=True)
+        pos_nm = self.atoms.get_positions() * _ANGSTROM_TO_NM
+        energy_kj, forces_kj_nm = self.calc_func(pos_nm)
+        self.call_count += 1
+        self.last_positions_nm = pos_nm.copy()
         self.results["energy"] = energy_kj / _EV_TO_KJ
         self.results["forces"] = np.array(forces_kj_nm) / _EV_TO_KJ * _ANGSTROM_TO_NM
-
-
-def _drive_sella(opt, wrapper, converged, call_limit, max_force_calls):
-    """Advance until external convergence or the wrapper call budget."""
-    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
-        if converged():
-            return True
-        if wrapper.call_count >= call_limit:
-            return False
-    return bool(converged())
-
 
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
+    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    is_frag = bool(probe.internals["translations"])
-    if is_frag:
-        opt = Sella(
-            atoms, internal=True, order=0, logfile=None, allow_fragments=True,
-        )
-        opt._tric_wx = 5.0
-        tric_budget = min(3, max_force_calls)
-        done = _drive_sella(
-            opt, wrapper, converged, tric_budget, max_force_calls,
-        )
-        if (
-            (not done)
-            and wrapper.call_count < max_force_calls
-            and wrapper._last_pos_ang is not None
-        ):
-            atoms = Atoms(numbers=atomic_numbers, positions=wrapper._last_pos_ang)
-            wrapper.reset()
-            atoms.calc = wrapper
-            opt = Sella(atoms, internal=True, order=0, logfile=None)
-            _drive_sella(opt, wrapper, converged, max_force_calls, max_force_calls)
-    else:
-        opt = Sella(atoms, internal=True, order=0, logfile=None)
-        opt._allow_angle_wa = True
-        _drive_sella(opt, wrapper, converged, max_force_calls, max_force_calls)
+    opt._allow_angle_wa = not bool(probe.internals["translations"])
+    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+        if converged():
+            break
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
