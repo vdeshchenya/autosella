@@ -1,9 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals and geodesic
-path. After five steps, single-fragment molecules raise the MaxInternalStep
-floor to 0.12; covalent dimers stay at delta0=0.10 so their path matches the
-champion.
+Vendored from the `sella` package (2.5.0). Champion internals with a wider
+trust-expansion window (`rho_inc=1.5` vs 4/3) so more well-predicted steps
+grow MaxInternalStep.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5841,14 +5840,6 @@ class Sella(Optimizer):
         else:
             self.rho = 1.
 
-        if (
-            getattr(self, "_allow_delta_boost", False)
-            and (not getattr(self, "_delta_boosted", False))
-            and self.nsteps >= 4
-        ):
-            self.delta = max(self.delta, 0.12)
-            self._delta_boosted = True
-
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
             logger.info("Applied Niggli reduction to reduce cell skewness")
@@ -5959,10 +5950,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
-    probe = Internals(atoms.copy(), allow_fragments=True)
-    probe.find_all_bonds()
-    opt._allow_delta_boost = not bool(probe.internals["translations"])
+    opt = Sella(atoms, internal=True, order=0, logfile=None, rho_inc=1.5)
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
