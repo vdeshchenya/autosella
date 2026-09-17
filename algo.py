@@ -1,9 +1,9 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules after the first Newton step, with
-`sigma_inc=1.16` after 20 steps. Dimers floor the trust radius at
-`delta_min=0.02`.
+`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
+Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
+use the Swart–Bickelhaupt 2006 model Hessian instead of Fischer–Almlöf.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3231,6 +3231,8 @@ class Constraints(BaseInternals):
             )
 
 class Internals(BaseInternals):
+    use_swart_h0_default = False
+
     def __init__(
         self,
         atoms: Atoms,
@@ -3241,6 +3243,7 @@ class Internals(BaseInternals):
         allow_fragments: bool = False
     ) -> None:
         BaseInternals.__init__(self, atoms, dummies, dinds)
+        self.use_swart_h0 = Internals.use_swart_h0_default
         self.atol = atol * np.pi / 180.
         self.forbidden = {key: [] for key in self._names}
         if cons is None:
@@ -3275,6 +3278,7 @@ class Internals(BaseInternals):
             self.cons.copy(),
             self.allow_fragments,
         )
+        new.use_swart_h0 = getattr(self, 'use_swart_h0', False)
         for name in self._names:
             new.internals[name] = self.internals[name].copy()
             new._internals_set[name] = self._internals_set[name].copy()
@@ -3908,12 +3912,24 @@ class Internals(BaseInternals):
                 return bad
         return None
 
+    def _swart_rho_bond(self, bond: Bond) -> float:
+        idx = np.asarray(bond.indices, dtype=np.int32)
+        rcov = float(covalent_radii[self.all_atoms.numbers[idx]].sum())
+        rij = float(bond.calc(self.all_atoms))
+        if rcov <= 0.0:
+            return 1.0
+        return float(np.exp(-rij / rcov + 1.0))
+
     def _h0_bond(
         self,
         bond: Bond,
         Ab: float = 0.3601,
         Bb: float = 1.944,
     ) -> float:
+        if getattr(self, 'use_swart_h0', False):
+            # Swart & Bickelhaupt 2006; k_r * exp(1 - r/r_cov).
+            return (0.35 * self._swart_rho_bond(bond)
+                    * units.Hartree / units.Bohr**2)
         idx = np.asarray(bond.indices, dtype=np.int32)
         rcov = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rij = bond.calc(self.all_atoms)
@@ -3929,6 +3945,9 @@ class Internals(BaseInternals):
         Da: float = -0.42,
     ) -> float:
         bab, bbc = angle.split()
+        if getattr(self, 'use_swart_h0', False):
+            return (0.15 * self._swart_rho_bond(bab) * self._swart_rho_bond(bbc)
+                    * units.Hartree)
         idxab = np.asarray(bab.indices, dtype=np.int32)
         idxbc = np.asarray(bbc.indices, dtype=np.int32)
         rcovab = covalent_radii[self.all_atoms.numbers[idxab]].sum()
@@ -3951,10 +3970,16 @@ class Internals(BaseInternals):
         Dt: float = 0.57,
         Et: float = 4.00,
     ) -> float:
-        _, bbc = dihedral.split()[0].split()
-        idx = np.asarray(bbc.indices, dtype=np.int32)
+        a1, a2 = dihedral.split()
+        b0, b1 = a1.split()
+        _, b2 = a2.split()
+        if getattr(self, 'use_swart_h0', False):
+            rho = (self._swart_rho_bond(b0) * self._swart_rho_bond(b1)
+                   * self._swart_rho_bond(b2))
+            return 0.005 * rho * units.Hartree
+        idx = np.asarray(b1.indices, dtype=np.int32)
         rcovbc = covalent_radii[self.all_atoms.numbers[idx]].sum()
-        rbc = bbc.calc(self.all_atoms)
+        rbc = b1.calc(self.all_atoms)
         L = nbonds[idx].sum() - 2
         h0 = (
             At + Bt * L**Dt * np.exp(-Ct * (rbc - rcovbc) / units.Bohr)
@@ -5741,11 +5766,8 @@ class Sella(Optimizer):
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
             # Between cycle 39 (wa=2/3, valid hop) and cycle 40 (wa=0.8,
-            # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133. Cycle 73 showed
-            # late wa is not binding; keep default caps on the first
-            # Newton step (nsteps==0) so 135043047-class organics start
-            # on the original Sella path.
-            if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 1:
+            # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
+            if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -5961,16 +5983,22 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    opt._allow_angle_wa = not bool(probe.internals["translations"])
-    if not opt._allow_angle_wa:
-        # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
-        opt.delta_min = 0.02
-    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
-        if converged():
-            break
+    connected = not bool(probe.internals["translations"])
+    if connected:
+        Internals.use_swart_h0_default = True
+    try:
+        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt._allow_angle_wa = connected
+        if not connected:
+            # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
+            opt.delta_min = 0.02
+        for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+            if converged():
+                break
+    finally:
+        Internals.use_swart_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
