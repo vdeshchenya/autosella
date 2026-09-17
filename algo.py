@@ -3,8 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. After 20 steps, bond
-MIS weight is `wb=1.5` so stretches stay at the original 0.10 cap.
+also floor δ at 0.15 after 20 steps. After 20 connected steps, a
+Farkas–Schlegel controlled GDIIS trial may replace the QN step.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5631,6 +5631,8 @@ class Sella(Optimizer):
         self.ord = order
         self.eta = eta
         self.delta_min = self.eta
+        self._gdiis_x = []
+        self._gdiis_g = []
         self.constraints_tol = constraints_tol
         self.diagkwargs = dict(gamma=gamma, threepoint=threepoint)
         self.rho = 1.
@@ -5745,8 +5747,6 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-                if self.nsteps >= 20:
-                    rs_kwargs['wb'] = 1.5
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5768,7 +5768,71 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
-        return s, smag
+        return self._maybe_gdiis(s, smag)
+
+    def _maybe_gdiis(self, s_qn, smag_qn):
+        """Replace the QN step with Farkas–Schlegel/pysisyphus controlled GDIIS.
+
+        Only connected molecules after 20 steps; otherwise the champion QN
+        trial is unchanged. Controls: coefficient sums, step length vs QN,
+        and direction cosine. Rejected trials keep QN (no mixed-unit scaling).
+        """
+        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
+            return s_qn, smag_qn
+        xs = self._gdiis_x
+        gs = self._gdiis_g
+        if len(xs) < 2 or len(xs) != len(gs):
+            return s_qn, smag_qn
+        s_qn = np.asarray(s_qn, dtype=np.float64)
+        if xs[-1].shape != s_qn.shape:
+            self._gdiis_x = []
+            self._gdiis_g = []
+            return s_qn, smag_qn
+        nref = float(np.linalg.norm(s_qn))
+        if not np.isfinite(nref) or nref < 1e-16:
+            return s_qn, smag_qn
+        err = np.stack(gs)
+        norms = np.linalg.norm(err, axis=1)
+        nmin = float(np.min(norms))
+        if not np.isfinite(nmin) or nmin < 1e-16:
+            return s_qn, smag_qn
+        err = err / nmin
+        coords = np.stack(xs)
+        cos_cut = {2: 0.80, 3: 0.75, 4: 0.71}
+        accepted = None
+        max_use = min(4, err.shape[0])
+        for use in range(2, max_use + 1):
+            use_vecs = err[::-1][:use]
+            A = use_vecs @ use_vecs.T
+            try:
+                coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
+            except np.linalg.LinAlgError:
+                break
+            if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
+                break
+            csum = float(np.sum(coeffs))
+            if abs(csum) < 1e-16:
+                break
+            coeffs = coeffs / csum
+            pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
+            neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
+            if pos_sum > 15.0 or neg_sum > 15.0:
+                break
+            diis_coords = coeffs @ coords[::-1][:use]
+            diis_step = diis_coords - coords[-1]
+            ndiis = float(np.linalg.norm(diis_step))
+            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > 10.0 * nref:
+                break
+            cos = float(diis_step @ s_qn) / (ndiis * nref)
+            if cos < cos_cut.get(use, 0.50) or cos < 0.0:
+                break
+            accepted = diis_step
+        if accepted is None:
+            return s_qn, smag_qn
+        smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
+        if (not np.isfinite(smag)) or smag < 1e-16 or smag > self.delta:
+            return s_qn, smag_qn
+        return accepted, smag
 
     def step(self):
         s, smag = self._predict_step()
@@ -5821,6 +5885,8 @@ class Sella(Optimizer):
             )
             self.initialized = False
             self.rho = 1
+            self._gdiis_x = []
+            self._gdiis_g = []
             return
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
@@ -5853,6 +5919,13 @@ class Sella(Optimizer):
             self.rho = rho
         else:
             self.rho = 1.
+
+        if getattr(self, "_allow_angle_wa", False):
+            self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
+            self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
+            if len(self._gdiis_x) > 6:
+                self._gdiis_x = self._gdiis_x[-5:]
+                self._gdiis_g = self._gdiis_g[-5:]
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
