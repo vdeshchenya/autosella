@@ -1,8 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals, with a stiffer
-Lindh bond Hessian guess (2× `_h0_bond`) so the first Newton steps put more of
-the MaxInternalStep budget into bends and torsions.
+Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
+dihedral weight `wd=2/3` only for the first four steps on connected molecules,
+then champion weights so late torsions cannot hop 252618428.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3917,9 +3917,7 @@ class Internals(BaseInternals):
         rcov = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rij = bond.calc(self.all_atoms)
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
-        # Twice the Lindh stretch force constant so QN takes smaller bond
-        # steps and spends more of the 0.1 MIS budget on angles/dihedrals.
-        return 2.0 * h0 * units.Hartree / units.Bohr**2
+        return h0 * units.Hartree / units.Bohr**2
 
     def _h0_angle(
         self,
@@ -5740,10 +5738,15 @@ class Sella(Optimizer):
         x0 = self.pes.get_x()
 
         rs_kwargs = {}
-        if self.optimize_cell and isinstance(self.rs, type) and issubclass(
-            self.rs, MaxInternalStep
-        ):
-            rs_kwargs['wc'] = self.delta / self.delta_cell
+        if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
+            # Connected molecules: |s_d| <= 0.15. Dimers keep champion wd=1 so
+            # intermolecular dihedrals on grown contacts are not enlarged.
+            # Early torsion packing only: cycle 29's late wd hops 252618428
+            # (same 24-step path with delayed-on). Dimers never get wd.
+            if getattr(self, "_allow_dihedral_wd", False) and self.nsteps < 4:
+                rs_kwargs['wd'] = 2.0 / 3.0
+            if self.optimize_cell:
+                rs_kwargs['wc'] = self.delta / self.delta_cell
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5953,6 +5956,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
     opt = Sella(atoms, internal=True, order=0, logfile=None)
+    probe = Internals(atoms.copy(), allow_fragments=True)
+    probe.find_all_bonds()
+    opt._allow_dihedral_wd = not bool(probe.internals["translations"])
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
