@@ -1,10 +1,10 @@
-"""Self-contained Sella minimiser (order=0, two-phase internals).
+"""Self-contained Sella minimiser (order=0, two-stage internals).
 
 Vendored from the `sella` package (2.5.0). Connected molecules use the
 champion internals throughout. Disconnected fragments start with TRICs
-(`allow_fragments=True`) for a few force calls, then continue from the last
-evaluated geometry with connecting internals (`allow_fragments=False`) so
-the finishing basin matches the champion. Duplicate evaluations of the same
+(`allow_fragments=True`, `delta0=0.02`) for a few force calls, then continue
+from the last evaluated geometry with connecting internals
+(`allow_fragments=False`, default trust). Duplicate evaluations of the same
 geometry are not re-sent to the calculator.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
@@ -5982,9 +5982,17 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     # rel_energy 0.124). A short TRIC phase on *disconnected* systems only,
     # then champion connecting internals from the last evaluated geometry.
     # Single-fragment molecules keep one Sella run (TRICs coincide with
-    # covalent internals, so BFGS is not reset).
+    # covalent internals, so BFGS is not reset). Cycle 11 with default
+    # TRIC delta0 still hopped some dimers in those three calls; shrink
+    # only the TRIC-phase trust radius.
     opt = Sella(atoms, internal=True, order=0, logfile=None, allow_fragments=True)
     has_fragments = bool(opt.pes.int.internals["translations"])
+    if has_fragments:
+        # Rebuild before any force call so connected molecules keep δ0=0.1.
+        opt = Sella(
+            atoms, internal=True, order=0, logfile=None, allow_fragments=True,
+            delta0=0.02,
+        )
     tric_budget = min(3, max_force_calls)
     done = _drive_sella(
         opt, wrapper, converged,
