@@ -1,7 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals; predicted-uphill
-quasi-Newton steps are halved until the quadratic model predicts a decrease.
+Vendored from the `sella` package (2.5.0). Champion internals with
+`iterative_stepper=1` so internal steps are realized by the iterative Cartesian
+solver instead of the ODE geodesic.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5760,14 +5761,6 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
-        g = self.pes.get_g()
-        H = self.pes.get_H().asarray()
-        for _ in range(8):
-            df_pred = self.pes.get_df_pred(s, g, H)
-            if df_pred is None or df_pred <= 0.0:
-                break
-            s = 0.5 * s
-            smag = 0.5 * smag
         return s, smag
 
     def step(self):
@@ -5957,7 +5950,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
+    opt = Sella(atoms, internal=True, order=0, logfile=None, iterative_stepper=1)
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
