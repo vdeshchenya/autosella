@@ -3,8 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5.
+also floor δ at 0.15 after 20 steps. Dummy-atom dihedral guess
+constants are 0.25 Ha on every molecule.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5970,8 +5970,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
-    if connected:
-        Internals.soft_dummy_dihedral_h0_default = True
+    Internals.soft_dummy_dihedral_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
