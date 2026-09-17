@@ -2,7 +2,8 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-Dimers floor the trust radius at `delta_min=0.02`.
+Dimers floor the trust radius at `delta_min=0.02` and shrink after
+mediocre ρ with `rho_dec=5`.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5964,6 +5965,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     if not opt._allow_angle_wa:
         # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
         opt.delta_min = 0.02
+        # Minima default rho_dec=100 almost never shrinks; saddle-like
+        # rho_dec=5 shrinks when ρ<0.2 or ρ>5, still floored at 0.02.
+        opt.rho_dec = 5.0
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
