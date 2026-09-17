@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-reset the BFGS Hessian to the model H0 after 20 steps.
+also floor δ at 0.15 after 20 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4485,20 +4485,6 @@ class InternalPES(PES):
         self._qr_cache = _LRU2()
         self._Hc_cache = _LRU2()
 
-    def reset_model_hessian(self) -> None:
-        """Replace the BFGS matrix with Fischer–Almlöf H0 at the current geometry.
-
-        Mirrors InternalPES initialization: project the model Hessian onto
-        range(B). ``initialized=True`` keeps subsequent TS-BFGS updates.
-        """
-        B = self.int.jacobian()
-        Q, _ = qr(B, mode='economic')
-        P = Q @ Q.T
-        H0 = P @ self.int.guess_hessian() @ P
-        self.set_H(
-            H0, self.H.update_method, self.H.symm, True,
-        )
-
     dpos = property(lambda self: self.dummies.positions.copy())
 
     def _state_hash(self) -> bytes:
@@ -5747,17 +5733,6 @@ class Sella(Optimizer):
                 self.nsteps_since_diag = -1
             self.initialized = True
 
-        # After 20 connected steps, drop stale BFGS curvature and rebuild
-        # the model Hessian (xtb ANCopt microcycle / pysisyphus hessian_recalc
-        # without an exact Hessian). Dimers are unchanged.
-        if (
-            getattr(self, "_allow_angle_wa", False)
-            and self.nsteps == 20
-            and not getattr(self, "_h0_reset_done", False)
-        ):
-            self.pes.reset_model_hessian()
-            self._h0_reset_done = True
-
         self.pes.cons.disable_satisfied_inequalities()
         self.pes._update_basis()
         self.pes.save()
@@ -5845,9 +5820,12 @@ class Sella(Optimizer):
             self.rho = 1
             return
 
-        # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15.
+        # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
+        # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
+            self.delta_min = 0.15
+            self.delta = max(self.delta, 0.15)
 
         # Update trust radius
         if rho is not None:
