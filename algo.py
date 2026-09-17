@@ -2,8 +2,8 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-Dimers floor the trust radius at `delta_min=0.02` and shrink poor-ρ
-steps with `sigma_dec=0.80`.
+Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
+also keep an extra-redundant improper at every 3-coordinate center.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3231,6 +3231,10 @@ class Constraints(BaseInternals):
             )
 
 class Internals(BaseInternals):
+    # When True, find_all_dihedrals still adds an improper at 3-coordinate
+    # centers that already have a proper torsion (Bakken extra-redundants).
+    extra_impropers_default = False
+
     def __init__(
         self,
         atoms: Atoms,
@@ -3241,6 +3245,7 @@ class Internals(BaseInternals):
         allow_fragments: bool = False
     ) -> None:
         BaseInternals.__init__(self, atoms, dummies, dinds)
+        self.extra_impropers = Internals.extra_impropers_default
         self.atol = atol * np.pi / 180.
         self.forbidden = {key: [] for key in self._names}
         if cons is None:
@@ -3275,6 +3280,7 @@ class Internals(BaseInternals):
             self.cons.copy(),
             self.allow_fragments,
         )
+        new.extra_impropers = getattr(self, 'extra_impropers', False)
         for name in self._names:
             new.internals[name] = self.internals[name].copy()
             new._internals_set[name] = self._internals_set[name].copy()
@@ -3823,9 +3829,15 @@ class Internals(BaseInternals):
             if len(neighbors[center]) not in (3, 4):
                 continue
 
-            # Skip if this atom already has proper dihedrals through it
+            # Skip if this atom already has proper dihedrals through it,
+            # unless extra_impropers requested a 3-coordinate out-of-plane
+            # even in that case (planar sp2 groups often already have a
+            # proper torsion, which is the skip Sella uses by default).
             if center in dihedral_centers:
-                continue
+                if len(neighbors[center]) != 3 or not getattr(
+                    self, 'extra_impropers', False
+                ):
+                    continue
 
             # Add improper dihedral: neighbors[0]-center-neighbors[1]-neighbors[2]
             n0, ncvec0 = neighbors[center][0]
@@ -5958,18 +5970,22 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    opt._allow_angle_wa = not bool(probe.internals["translations"])
-    if not opt._allow_angle_wa:
-        # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
-        opt.delta_min = 0.02
-        # Harder shrink than the 0.90 default; still floored at 0.02.
-        opt.sigma_dec = 0.80
-    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
-        if converged():
-            break
+    connected = not bool(probe.internals["translations"])
+    if connected:
+        Internals.extra_impropers_default = True
+    try:
+        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt._allow_angle_wa = connected
+        if not connected:
+            # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
+            opt.delta_min = 0.02
+        for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+            if converged():
+                break
+    finally:
+        Internals.extra_impropers_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
