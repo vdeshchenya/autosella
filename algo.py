@@ -4,8 +4,8 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Dimers floor cutoff-grown
-connecting-bond Hessian guesses at 0.007 Ha/Bohr².
+guess constants are 0.25 Ha instead of 0.5. Connected dummy-involving
+unconstrained angles use 0.10 Ha instead of Fischer–Almlöf.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3234,7 +3234,6 @@ class Constraints(BaseInternals):
 
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
-    interfrag_bond_h0_default = False
 
     def __init__(
         self,
@@ -3271,8 +3270,6 @@ class Internals(BaseInternals):
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
-        self.interfrag_bond_h0 = Internals.interfrag_bond_h0_default
-        self.interfrag_bond_pairs = set()
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3289,8 +3286,6 @@ class Internals(BaseInternals):
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
-        new.interfrag_bond_h0 = getattr(self, 'interfrag_bond_h0', False)
-        new.interfrag_bond_pairs = set(getattr(self, 'interfrag_bond_pairs', set()))
         return new
 
     def add_rotation(
@@ -3566,7 +3561,6 @@ class Internals(BaseInternals):
             nbonds[j] += 1
 
         first_run = True
-        self.interfrag_bond_pairs = set()
         while True:
             # use flood fill algorithm to count the number of disconnected
             # fragments
@@ -3599,10 +3593,6 @@ class Internals(BaseInternals):
                     self.add_bond((i, j), ts)
                 except DuplicateInternalError:
                     continue
-                # Bonds added after the first covalent pass (scale 1.25) are
-                # cutoff-grown connectors between covalent fragments.
-                if not first_run:
-                    self.interfrag_bond_pairs.add(frozenset((int(i), int(j))))
                 if nbonds[i] < max_bonds and nbonds[j] < max_bonds:
                     c10y[i, nbonds[i]] = j
                     nbonds[i] += 1
@@ -3987,29 +3977,23 @@ class Internals(BaseInternals):
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for bond in self.internals['bonds']:
-            i, j = bond.indices
-            if (
-                getattr(self, 'interfrag_bond_h0', False)
-                and frozenset((int(i), int(j))) in getattr(self, 'interfrag_bond_pairs', set())
-            ):
-                # OptKing DEFAULT interfragment stretch is 0.007 Ha/Bohr^2.
-                h0[idx] = max(
-                    self._h0_bond(bond),
-                    0.007 * units.Hartree / units.Bohr**2,
-                )
-            else:
-                h0[idx] = self._h0_bond(bond)
+            h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
+            i, j = bond.indices
             nbonds[i] += 1
             nbonds[j] += 1
-        for angle in self.internals['angles']:
-            h0[idx] = self._h0_angle(angle)
-            idx += 1
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
+        soft_dummy = getattr(self, 'soft_dummy_dihedral_h0', False)
+        for angle in self.internals['angles']:
+            if soft_dummy and any(j in dummy_set for j in angle.indices):
+                h0[idx] = 0.10 * units.Hartree
+            else:
+                h0[idx] = self._h0_angle(angle)
+            idx += 1
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
-                scale = 0.25 if getattr(self, 'soft_dummy_dihedral_h0', False) else 0.5
+                scale = 0.25 if soft_dummy else 0.5
                 h0[idx] = scale * units.Hartree
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
@@ -5993,8 +5977,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     connected = not bool(probe.internals["translations"])
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
-    else:
-        Internals.interfrag_bond_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6006,7 +5988,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 break
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
-        Internals.interfrag_bond_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
