@@ -4,8 +4,8 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Connected dummy-involving
-unconstrained angles use 0.10 Ha instead of Fischer–Almlöf.
+guess constants are 0.25 Ha instead of 0.5. Connected non-dummy
+stretches use the Schlegel 1984 model Hessian instead of Fischer–Almlöf.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3234,6 +3234,7 @@ class Constraints(BaseInternals):
 
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
+    use_schlegel_bond_h0_default = False
 
     def __init__(
         self,
@@ -3270,6 +3271,7 @@ class Internals(BaseInternals):
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
+        self.use_schlegel_bond_h0 = Internals.use_schlegel_bond_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3286,6 +3288,7 @@ class Internals(BaseInternals):
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
+        new.use_schlegel_bond_h0 = getattr(self, 'use_schlegel_bond_h0', False)
         return new
 
     def add_rotation(
@@ -3914,6 +3917,42 @@ class Internals(BaseInternals):
                 return bad
         return None
 
+    def _h0_bond_schlegel(self, bond: Bond, numbers) -> float:
+        """Schlegel 1984 stretch guess (Theor. Chim. Acta 66, 333).
+
+        OptKing `stre.py` SCHLEGEL: k = 1.734 / (R_Bohr - B_period)^3.
+        Dummy-atom bonds are not passed here.
+        """
+        rij = bond.calc(self.all_atoms) / units.Bohr
+        periods = []
+        for z in numbers:
+            z = int(z)
+            if z <= 2:
+                periods.append(1)
+            elif z <= 10:
+                periods.append(2)
+            else:
+                periods.append(3)
+        a, b = periods
+        if a > b:
+            a, b = b, a
+        if a == 1 and b == 1:
+            bb = -0.244
+        elif a == 1 and b == 2:
+            bb = 0.352
+        elif a == 1:
+            bb = 0.660
+        elif a == 2 and b == 2:
+            bb = 1.085
+        elif a == 2:
+            bb = 1.522
+        else:
+            bb = 2.068
+        denom = rij - bb
+        if denom < 0.1:
+            denom = 0.1
+        return (1.734 / denom**3) * units.Hartree / units.Bohr**2
+
     def _h0_bond(
         self,
         bond: Bond,
@@ -3921,6 +3960,10 @@ class Internals(BaseInternals):
         Bb: float = 1.944,
     ) -> float:
         idx = np.asarray(bond.indices, dtype=np.int32)
+        if getattr(self, 'use_schlegel_bond_h0', False) and np.all(idx < self.natoms):
+            numbers = self.all_atoms.numbers[idx]
+            if np.all(numbers >= 1):
+                return self._h0_bond_schlegel(bond, numbers)
         rcov = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rij = bond.calc(self.all_atoms)
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
@@ -3983,17 +4026,13 @@ class Internals(BaseInternals):
             i, j = bond.indices
             nbonds[i] += 1
             nbonds[j] += 1
-        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
-        soft_dummy = getattr(self, 'soft_dummy_dihedral_h0', False)
         for angle in self.internals['angles']:
-            if soft_dummy and any(j in dummy_set for j in angle.indices):
-                h0[idx] = 0.10 * units.Hartree
-            else:
-                h0[idx] = self._h0_angle(angle)
+            h0[idx] = self._h0_angle(angle)
             idx += 1
+        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
-                scale = 0.25 if soft_dummy else 0.5
+                scale = 0.25 if getattr(self, 'soft_dummy_dihedral_h0', False) else 0.5
                 h0[idx] = scale * units.Hartree
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
@@ -5977,6 +6016,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     connected = not bool(probe.internals["translations"])
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
+        Internals.use_schlegel_bond_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -5988,6 +6028,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 break
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
+        Internals.use_schlegel_bond_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
