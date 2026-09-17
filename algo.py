@@ -1,8 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-with `wa=0.72` on connected molecules and a linearized Cartesian max-atom
-constraint of 0.20 Å inside the restricted-step solver.
+Vendored from the `sella` package (2.5.0). Connected molecules keep
+fragment-gated MaxInternalStep `wa=0.75`. Probe-detected fragments use
+TRIC internals with translation/rotation weight `wx=5`.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5389,8 +5389,7 @@ class MaxInternalStep(BaseRestrictedStep):
     synonyms = ['mis', 'max internal step']
 
     def __init__(
-        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1.,
-        cart_max_atom=None, **kwargs
+        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1., **kwargs
     ):
         if pes.int is None:
             raise ValueError(
@@ -5403,7 +5402,6 @@ class MaxInternalStep(BaseRestrictedStep):
         self.wd = wd
         self.wo = wo
         self.wc = wc  # Weight for cell DOF
-        self.cart_max_atom = cart_max_atom
         self._weights_cache = None
         BaseRestrictedStep.__init__(self, pes, *args, **kwargs)
 
@@ -5414,44 +5412,10 @@ class MaxInternalStep(BaseRestrictedStep):
         sw = np.abs(s * w)
         idx = np.argmax(np.abs(sw))
         val = sw[idx]
-        dval = None if dsda is None else np.sign(s[idx]) * dsda[idx] * w[idx]
-
-        cart_cap = self.cart_max_atom
-        if (
-            cart_cap is not None
-            and cart_cap > 0
-            and hasattr(self.pes, "_get_Binv")
-        ):
-            Binv = self.pes._get_Binv()
-            n_int = Binv.shape[1]
-            s_int = np.asarray(s[:n_int], dtype=np.float64)
-            ncart = 3 * len(self.pes.atoms)
-            cart = np.asarray(Binv @ s_int, dtype=np.float64).reshape(-1)[:ncart]
-            if cart.size >= 3:
-                atom = cart.reshape(-1, 3)
-                norms = np.linalg.norm(atom, axis=1)
-                k = int(np.argmax(norms))
-                maxd = float(norms[k])
-                cart_val = maxd * (self.delta / cart_cap)
-                if cart_val > val:
-                    val = cart_val
-                    if dsda is not None:
-                        dcart = np.asarray(
-                            Binv @ np.asarray(dsda[:n_int], dtype=np.float64),
-                            dtype=np.float64,
-                        ).reshape(-1)[:ncart]
-                        d_atom = dcart.reshape(-1, 3)
-                        if maxd > 1e-15:
-                            dval = (
-                                float(np.dot(atom[k], d_atom[k]) / maxd)
-                                * (self.delta / cart_cap)
-                            )
-                        else:
-                            dval = 0.0
 
         if dsda is None:
             return val
-        return val, dval
+        return val, np.sign(s[idx]) * dsda[idx] * w[idx]
 
     def _get_weights(self):
         """Build the per-DOF weight vector. Cached against
@@ -5775,12 +5739,12 @@ class Sella(Optimizer):
 
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
-            # Cycle 42's wa=0.72 train win plus a linearized Cartesian
-            # max-atom constraint inside cons (not post-hoc scaling).
-            # |s_a| <= 0.1/0.72 ≈ 0.139 unless some atom would move >0.20 Å.
+            # Connected: champion wa=0.75. Fragments: TRIC with wx=5 so
+            # |s_trans/rot| <= 0.1/5 = 0.02 (cycle 2 used wx=1 and hopped).
             if getattr(self, "_allow_angle_wa", False):
-                rs_kwargs['wa'] = 0.72
-                rs_kwargs['cart_max_atom'] = 0.20
+                rs_kwargs['wa'] = 0.75
+            if getattr(self, "_tric_wx", None):
+                rs_kwargs['wx'] = self._tric_wx
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5991,10 +5955,16 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    opt._allow_angle_wa = not bool(probe.internals["translations"])
+    is_frag = bool(probe.internals["translations"])
+    opt = Sella(
+        atoms, internal=True, order=0, logfile=None, allow_fragments=is_frag,
+    )
+    if is_frag:
+        opt._tric_wx = 5.0
+    else:
+        opt._allow_angle_wa = True
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
