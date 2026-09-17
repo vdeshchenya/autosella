@@ -3946,6 +3946,28 @@ class Internals(BaseInternals):
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
         return h0 * units.Hartree / units.Bohr**2
 
+    def _h0_stretch_diagonal(self) -> Optional[np.ndarray]:
+        """The Almlof stretch guesses of the bonds at the current geometry
+        as a vector over the internal coordinates (zero elsewhere).
+
+        The exponential of _h0_bond is the local curvature-length relation
+        of a bond (Badger's rule: d ln k / dr = -3 / (r - d_ij), i.e.
+        -3.3 to -4.3 per Angstrom for first-row bonds, against Bb = 3.7),
+        so a bond that relaxes by 0.1 A during the run is 30-45 % stiffer
+        or softer at the end than the start-geometry guess says.  InternalPES
+        moves this part of the model with the geometry and transports the
+        secant pairs with it (see InternalPES._track_analytic_model).
+        """
+        h = np.zeros(self.nint, dtype=np.float64)
+        idx = len(self.internals['translations'])
+        bonds = self.internals['bonds']
+        if idx + len(bonds) > self.nint:
+            return None
+        for bond in bonds:
+            h[idx] = self._h0_bond(bond)
+            idx += 1
+        return h
+
     def _h0_angle(
         self,
         angle: Angle,
@@ -5044,18 +5066,20 @@ class PES:
 
         self.curr['L'] = L
 
-    def _update_H(self, dx, dg):
+    def _update_H(self, dx, dg, T_now=None, tbar=None):
         if self.last['x'] is None or self.last['g'] is None:
             return
         if self.secant_memory <= 1 or not self.H.initialized:
+            if T_now is not None and tbar is not None:
+                dg = np.asarray(dg, dtype=np.float64) + (T_now @ dx - tbar)
             self.H.update(dx, dg)
             return
-        S, Y = self._collect_secant_pairs(dx, dg)
+        S, Y = self._collect_secant_pairs(dx, dg, T_now, tbar)
         if S is None:
             return
         self.H.update(S, Y)
 
-    def _collect_secant_pairs(self, dx, dg):
+    def _collect_secant_pairs(self, dx, dg, T_now=None, tbar=None):
         """Return (S, Y) column matrices of the recent secant pairs.
 
         The newest pair is column 0 (symmetrize_Y2 keeps column 0 exact and
@@ -5064,18 +5088,36 @@ class PES:
         and from the endgame enter with the same weight, and older steps
         that are (nearly) linearly dependent on newer ones are dropped so
         that the m x m secant system of _MS_TS_BFGS stays well conditioned.
+
+        Secant transport: a pair measured over the step x_j -> x_j+1 gives
+        the path-averaged Hessian, y_j = H_avg s_j.  When the model has an
+        analytic geometry-dependent part T(x) (InternalPES: the stretch
+        diagonal of the bonds and the non-local contact block), the pair
+        is moved to the current point x with that part,
+        y_j -> y_j + (T(x) - T_avg,j) s_j, T_avg,j = (T(x_j) + T(x_j+1)) / 2,
+        so that the secant conditions imposed on the shifted model describe
+        the local curvature at x instead of the average over each old
+        segment (which the update would otherwise re-impose along the
+        sampled directions, undoing the shift of the model there).  tbar is
+        T_avg s for the new pair; T_now is T(x); both None disables it.
         """
         dx = np.asarray(dx, dtype=np.float64)
         dg = np.asarray(dg, dtype=np.float64)
         nrm = np.linalg.norm(dx)
         if not np.isfinite(nrm) or nrm < 1e-8 or not np.all(np.isfinite(dg)):
             return None, None
-        self._secant_pairs.insert(0, (dx / nrm, dg / nrm))
+        if tbar is not None:
+            tbar = np.asarray(tbar, dtype=np.float64) / nrm
+            if not np.all(np.isfinite(tbar)):
+                tbar = None
+        self._secant_pairs.insert(0, (dx / nrm, dg / nrm, tbar))
         del self._secant_pairs[self.secant_memory:]
         basis = []
         S_cols = []
         Y_cols = []
-        for s, y in self._secant_pairs:
+        for s, y, tb in self._secant_pairs:
+            if tb is not None and T_now is not None:
+                y = y + (T_now @ s - tb)
             r = s.copy()
             for q in basis:
                 r -= (q @ r) * q
@@ -5283,6 +5325,14 @@ class InternalPES(PES):
         self._pinv_cache = _LRU2()
         self._qr_cache = _LRU2()
         self._Hc_cache = _LRU2()
+
+        # Connected systems: the whole analytic part of the model (stretch
+        # diagonal and contact block) follows the geometry and the secant
+        # pairs are transported with it, see _track_analytic_model.
+        # Multi-fragment systems keep the contact-block tracking alone.
+        self._transport = (self._track_nb
+                           and (self.int.ntrans + self.int.nrotations) == 0)
+        self._an_prev = self._analytic_model() if self._transport else None
 
     dpos = property(lambda self: self.dummies.positions.copy())
 
@@ -5847,7 +5897,72 @@ class InternalPES(PES):
         self.H.set_B(self.H.B + dA)
         self._nb_prev = Hnb
 
+    def _analytic_model(self) -> Optional[np.ndarray]:
+        """The geometry-dependent analytic part T(x) of the model Hessian
+        at the current geometry (nint x nint): the Almlof stretch diagonal
+        of the bonds, projected like the guess (P diag(d) P with P = Q Q^T
+        the projector onto the range of the Jacobian), plus the non-local
+        contact block of _h0_nonlocal_contacts.
+        """
+        try:
+            Binv = self._get_Binv()
+            Hnb = self.int._h0_nonlocal_contacts(Binv=Binv)
+            Q, _ = self._get_jacobian_qr()
+        except (ValueError, np.linalg.LinAlgError):
+            return None
+        d = self.int._h0_stretch_diagonal()
+        if d is None or Q.ndim != 2 or Q.shape[0] != d.shape[0]:
+            return None
+        T = Q @ ((Q.T * d) @ Q) @ Q.T
+        if Hnb is not None and Hnb.shape == T.shape:
+            T = T + Hnb
+        if not np.all(np.isfinite(T)):
+            return None
+        return T
+
+    def _track_analytic_model(self, dx):
+        """Move the analytic part T(x) of the model Hessian to the current
+        geometry, H <- H + T(x) - T(x_prev), and return (T(x), tbar) for
+        the transport of the secant pairs (tbar = (T(x_prev) + T(x)) dx / 2,
+        the analytic contribution averaged over the step just taken).
+
+        _track_nonlocal_contacts does this for the contact block alone.
+        Here the stretch diagonal moves too: the Almlof exponential is the
+        local curvature-length relation of a bond (Badger's rule), so after
+        a bond has relaxed by 0.1 A the start-geometry constant is 30-45 %
+        off; the secant pairs, being path averages, lag behind the local
+        curvature by half the change per step.  Shifting the model alone
+        would not help along the sampled directions, because the update
+        re-imposes the measured (average) secants there; PES._update_H
+        therefore also moves every stored pair with T, y_j <- y_j +
+        (T(x) - T_avg,j) s_j, so that the secant conditions describe the
+        curvature at x.  Where the geometry (bond lengths, contacts, frame)
+        does not change between two points, T does not either and the
+        update is the plain multi-secant one.
+        """
+        if self.H.B is None:
+            return None, None
+        T_now = self._analytic_model()
+        shape = self.H.B.shape
+        if T_now is None or T_now.shape != shape:
+            return None, None
+        T_prev = self._an_prev
+        self._an_prev = T_now
+        if T_prev is None or T_prev.shape != shape:
+            return None, None
+        dA = T_now - T_prev
+        if not np.all(np.isfinite(dA)):
+            return None, None
+        self.H.set_B(self.H.B + dA)
+        dx = np.asarray(dx, dtype=np.float64)
+        tbar = 0.5 * ((T_prev + T_now) @ dx)
+        return T_now, tbar
+
     def _update_H(self, dx, dg):
+        if getattr(self, '_transport', False):
+            T_now, tbar = self._track_analytic_model(dx)
+            PES._update_H(self, dx, dg, T_now, tbar)
+            return
         self._track_nonlocal_contacts()
         PES._update_H(self, dx, dg)
 
