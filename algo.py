@@ -3,8 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. After 20 steps, dihedral
-MIS weight is `wd=0.9`.
+also floor δ at 0.15 after 20 steps. After 20 steps, bond
+MIS weight is `wb=1.5` so stretches stay at the original 0.10 cap.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5746,7 +5746,7 @@ class Sella(Optimizer):
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
                 if self.nsteps >= 20:
-                    rs_kwargs['wd'] = 0.9
+                    rs_kwargs['wb'] = 1.5
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
