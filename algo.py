@@ -4134,63 +4134,33 @@ class Internals(BaseInternals):
         self,
         coord: Coordinate,
         kind: str,
-        Ab: float = 0.3601,
-        Bb: float = 1.944,
         h0_min: float = 1e-3,
     ) -> float:
-        """Contact-derived guess curvature for a fragment translation
+        """Diagonal floor of the guess curvature for a fragment translation
         (eV/Angstrom^2) or rotation (eV/rad^2) coordinate.
 
-        Every inter-fragment atom pair (i in the fragment, j outside it) is
-        treated as a weak pseudo-bond with the same Fischer-Almlof stretch
-        curvature k_ij(r) that _h0_bond assigns to real bonds. The diagonal
-        curvature of the rigid-body coordinate q is then
-            sum_ij k_ij (u_ij . dx_i/dq)^2
-        with u_ij the unit vector i->j and dx_i/dq the displacement of atom i
-        per unit q (a Cartesian unit vector for translations, e_axis x (x_i - c)
-        for rotations about the fragment centroid c). Far-apart or
-        dispersion-bound fragments therefore get soft coordinates (steps limited
-        by the trust radius, not by a stiff guess) while ion pairs and hydrogen
-        bonds get stiff ones. h0_min (Hartree) is a floor for numerical safety.
-
-        add_dummy_to_internals appends dummy-atom indices (>= natoms) to the
-        fragment coordinates of a fragment that contains a near-linear angle,
-        so indices are taken from all_positions and contacts are restricted
-        to real atoms; the rotation centroid includes the dummies, matching
-        the definition of the Rotation coordinate.
+        The curvature that holds the fragments together is not a property
+        of one rigid-body coordinate: a single contact i...j couples the
+        translations and rotations of both fragments (its Gauss-Newton
+        block is k_ij grad r_ij grad r_ij^T over all twelve coordinates), and
+        the contacts change completely while two fragments approach and
+        reorient.  It is therefore carried by the geometry-tracked pair
+        term of _h0_nonlocal_contacts (inter-fragment pairs included), which
+        InternalPES moves along with the geometry before every secant
+        update.  The rigid-body coordinates themselves only get the floor
+        h0_min (Hartree): far-apart or dispersion-bound fragments are soft
+        (steps limited by the trust radius, not by a stiff guess) and the
+        pair term makes ion pairs and hydrogen bonds stiff along the
+        contact-compressing combinations only.
         """
-        pos = np.asarray(self.all_positions, dtype=np.float64)
-        numbers = np.asarray(self.atoms.numbers)
-        idx_all = np.asarray(coord.indices, dtype=np.int32)
-        idx = idx_all[idx_all < self.natoms]
-        mask = np.ones(self.natoms, dtype=bool)
-        mask[idx] = False
-        other = np.where(mask)[0]
-        if len(other) == 0 or len(idx) == 0:
-            return h0_min * units.Hartree
-        dvec = pos[other][np.newaxis, :, :] - pos[idx][:, np.newaxis, :]
-        r = np.maximum(np.linalg.norm(dvec, axis=2), 1e-8)
-        u = dvec / r[..., np.newaxis]
-        rcov = (covalent_radii[numbers[idx]][:, np.newaxis]
-                + covalent_radii[numbers[other]][np.newaxis, :])
-        k = Ab * np.exp(-Bb * (r - rcov) / units.Bohr)
-        k *= units.Hartree / units.Bohr**2
-        if kind == 'translation':
-            g = np.zeros((len(idx), 3), dtype=np.float64)
-            g[:, coord.kwargs['dim']] = 1.
-        else:
-            e = np.zeros(3, dtype=np.float64)
-            e[coord.kwargs['axis']] = 1.
-            g = np.cross(e, pos[idx] - pos[idx_all].mean(0))
-        proj = np.einsum('ijk,ik->ij', u, g)
-        h0 = float(np.sum(k * proj**2))
-        return max(h0, h0_min * units.Hartree)
+        return h0_min * units.Hartree
 
     def _nonlocal_pairs(self, min_path: int) -> Tuple[np.ndarray, np.ndarray]:
         """Atom pairs of the same covalent fragment at graph distance
-        >= min_path (upper triangle, real atoms only).  The covalent graph
-        of an Internals object is fixed after construction, so the result
-        is cached; a rebuild creates a new object."""
+        >= min_path, plus every pair of atoms in different fragments
+        (upper triangle, real atoms only).  The covalent graph of an
+        Internals object is fixed after construction, so the result is
+        cached; a rebuild creates a new object."""
         natoms = self.natoms
         bonds = tuple(sorted(
             (int(bond.indices[0]), int(bond.indices[1]))
@@ -4237,7 +4207,10 @@ class Internals(BaseInternals):
                 if not front:
                     break
         ii, jj = np.triu_indices(natoms, k=1)
-        keep = (label[ii] == label[jj]) & (dist[ii, jj] >= min_path)
+        # Atoms in different fragments are at infinite graph distance (the
+        # search never reaches them, so dist keeps the cap): every
+        # inter-fragment pair qualifies.
+        keep = (label[ii] != label[jj]) | (dist[ii, jj] >= min_path)
         result = (ii[keep], jj[keep])
         self._nonlocal_pairs_cache = (key, result)
         return result
@@ -4250,9 +4223,11 @@ class Internals(BaseInternals):
         max_excess: float = 3.0,
         Binv: Optional[np.ndarray] = None,
     ) -> Optional[np.ndarray]:
-        """Curvature of the non-local intramolecular contacts, expressed in
-        the internal coordinates (nint x nint, same units as the diagonal
-        guess: eV/Angstrom^2 for bonds, eV/rad^2 for angles/dihedrals).
+        """Curvature of the non-local contacts -- intramolecular and
+        inter-fragment -- expressed in the internal coordinates (nint x
+        nint, same units as the diagonal guess: eV/Angstrom^2 for bonds and
+        fragment translations, eV/rad^2 for angles, dihedrals and fragment
+        rotations).
 
         Bonds, angles and dihedrals carry the 1-2, 1-3 and 1-4 curvature,
         and the Fischer-Almlof torsional constant is fitted to rotational
@@ -4260,20 +4235,26 @@ class Internals(BaseInternals):
         around the central bond.  Nothing in the redundant set describes
         the contacts that hold a folded chain or an intramolecular hydrogen
         bond together (atoms five or more bonds apart that sit 2-4 A from
-        each other), so the model is too soft along the torsional
-        combinations that compress them.  Following Lindh's all-pair model
-        Hessian, every such pair (same fragment, graph distance >= min_path,
+        each other), nor the contacts that hold the fragments of a
+        molecular complex together, so the model is too soft along the
+        torsional and rigid-body combinations that compress them.
+        Following Lindh's all-pair model Hessian, every such pair (same
+        fragment at graph distance >= min_path, or different fragments;
         r < r_cov,i + r_cov,j + max_excess) is treated as a weak pseudo-bond
-        with the same stretch curvature k_ij(r) that _h0_bond and
-        _h0_fragment use (at a van der Waals contact this is ~2-3e-4
-        Ha/Bohr^2, the Lennard-Jones curvature at the minimum; for an
-        H...O contact at 1.9 A it is ~0.012 Ha/Bohr^2), and the Cartesian
-        quadratic form sum_ij k_ij (u_ij . (dx_j - dx_i))^2 is expressed in
-        the internal coordinates through the pseudo-inverse Jacobian:
-        H = D^T K D with D_pq = u_ij . (Binv_j - Binv_i)_q.  A rigid motion
-        of a fragment leaves its internal distances unchanged, so the
-        fragment translation/rotation coordinates get no contribution and
-        the contact-derived TR block of _h0_fragment is untouched.
+        with the Almlof stretch curvature k_ij(r) = Ab exp(-Bb (r - r_cov))
+        (at a van der Waals contact this is ~2-3e-4 Ha/Bohr^2, the
+        Lennard-Jones curvature at the minimum; for an H...O contact at
+        1.9 A it is ~0.012 Ha/Bohr^2), and the Cartesian quadratic form
+        sum_ij k_ij (u_ij . (dx_j - dx_i))^2 is expressed in the internal
+        coordinates through the pseudo-inverse Jacobian: H = D^T K D with
+        D_pq = u_ij . (Binv_j - Binv_i)_q.  A rigid motion of a fragment
+        leaves its internal distances unchanged, so the intramolecular
+        pairs contribute nothing to the translation/rotation coordinates;
+        the inter-fragment pairs give them their complete Gauss-Newton
+        block (stretch along the contact, coupled to the librations of both
+        fragments and to the internal coordinates that move the contact
+        atoms), with the soft twist and sliding combinations left at the
+        diagonal floor of _h0_fragment.
         """
         natoms = self.natoms
         pos = np.asarray(self.atoms.positions, dtype=np.float64)
@@ -4417,9 +4398,10 @@ class Internals(BaseInternals):
             idx += 1
         H0 = np.diag(np.abs(h0))
         # Non-local contact curvature (folded chains, intramolecular
-        # hydrogen bonds): a positive semi-definite pair term in the
-        # internal coordinates, see _h0_nonlocal_contacts.  The term is
-        # kept so that InternalPES can move it along with the geometry.
+        # hydrogen bonds, and the contacts between the fragments of a
+        # complex): a positive semi-definite pair term in the internal
+        # coordinates, see _h0_nonlocal_contacts.  The term is kept so that
+        # InternalPES can move it along with the geometry.
         Hnb = self._h0_nonlocal_contacts()
         if Hnb is not None and Hnb.shape != H0.shape:
             Hnb = None
@@ -5521,14 +5503,16 @@ class InternalPES(PES):
         curvature of _h0_nonlocal_contacts.  The quasi-Newton updates learn
         along the steps taken, but a molecule that folds during the run
         forms contacts (and intramolecular hydrogen bonds) that did not
-        exist at x0, and their curvature acts in directions the secant
-        pairs have not sampled.  Replacing A(x_prev) by A(x) before every
-        secant update keeps the analytic part of the model at the current
-        geometry (including the change of frame through the current
-        pseudo-inverse Jacobian) while the learned correction is kept; the
-        subsequent update re-imposes the secant conditions on the shifted
-        matrix.  Near the minimum the geometry hardly changes and the shift
-        vanishes.
+        exist at x0, and the fragments of a complex that start apart form
+        their hydrogen bonds or ion pair only after several steps of
+        approach and reorientation; that curvature acts in directions the
+        secant pairs have not sampled.  Replacing A(x_prev) by A(x) before
+        every secant update keeps the analytic part of the model at the
+        current geometry (including the change of frame through the
+        current pseudo-inverse Jacobian) while the learned correction is
+        kept; the subsequent update re-imposes the secant conditions on the
+        shifted matrix.  Near the minimum the geometry hardly changes and
+        the shift vanishes.
         """
         if not getattr(self, '_track_nb', False) or self.H.B is None:
             return
@@ -6597,8 +6581,91 @@ class _WrappedCalc(Calculator):
         self.results["energy"] = energy_kj / _EV_TO_KJ
         self.results["forces"] = np.array(forces_kj_nm) / _EV_TO_KJ * _ANGSTROM_TO_NM
 
+# Symmetry-breaking start displacement for multi-fragment systems: rigid-body
+# translation (A) and rotation (rad) applied to every fragment of the input
+# geometry before the first force call.
+_SYMMETRY_BREAK_TRANS = 0.02
+_SYMMETRY_BREAK_ROT = 0.02
+_SYMMETRY_BREAK_SEED = 0
+
+
+def _start_fragments(numbers, pos_ang, scale=1.25):
+    """Fragments of the input geometry under the bond criterion of Sella's
+    first bond pass (Internals.find_all_bonds: d_ij <= scale * (r_cov,i +
+    r_cov,j)), as index arrays; a lone atom forms a one-atom fragment."""
+    natoms = len(numbers)
+    rcov = covalent_radii[np.asarray(numbers)]
+    d = np.linalg.norm(pos_ang[:, None, :] - pos_ang[None, :, :], axis=2)
+    bonded = d <= scale * (rcov[:, None] + rcov[None, :])
+    np.fill_diagonal(bonded, False)
+    label = -np.ones(natoms, dtype=int)
+    groups = []
+    for i in range(natoms):
+        if label[i] >= 0:
+            continue
+        label[i] = len(groups)
+        stack = [i]
+        members = [i]
+        while stack:
+            k = stack.pop()
+            for j in np.flatnonzero(bonded[k]):
+                if label[j] < 0:
+                    label[j] = label[i]
+                    stack.append(j)
+                    members.append(j)
+        groups.append(np.array(sorted(members), dtype=int))
+    return groups
+
+
+def _break_start_symmetry(numbers, pos_ang):
+    """Displace every fragment of a multi-fragment start as a rigid body by
+    _SYMMETRY_BREAK_TRANS A along a random direction and (fragments of two
+    or more atoms) _SYMMETRY_BREAK_ROT rad about a random axis through its
+    centroid; directions come from a fixed-seed generator, so the
+    displacement is a deterministic function of the fragment count only.
+
+    Rationale: the input geometries of non-covalent complexes frequently
+    lie on a symmetry element (an ion on the bisector of two equivalent
+    donors, a molecule in the mirror plane of its partner). Along a
+    symmetry-breaking mode the gradient is then identically zero, every
+    quasi-Newton step preserves the symmetry, and the optimizer converges
+    onto the symmetric stationary point even when it is a saddle: the
+    force along a soft antisymmetric mode, |k|*delta, stays below the
+    convergence threshold for any displacement delta the run reaches, so
+    the saddle passes every force and displacement test. A small
+    displacement off the symmetry element is the standard remedy for
+    relaxations from high-symmetry starts (cf. ASE Atoms.rattle); it gives
+    the unstable mode a finite seed that the descent amplifies by
+    ~(1 + |k|/lambda_model) per step, while a stable mode absorbs it in one
+    or two steps at negligible energy cost (~0.5*k*delta^2 < 1e-3 eV).
+    Connected systems are returned unchanged (one fragment: their internal
+    coordinates carry no such rigid-body symmetry element)."""
+    groups = _start_fragments(numbers, pos_ang)
+    if len(groups) < 2:
+        return pos_ang
+    rng = np.random.RandomState(_SYMMETRY_BREAK_SEED)
+    pos = np.array(pos_ang, dtype=float, copy=True)
+    for group in groups:
+        t = rng.normal(size=3)
+        t *= _SYMMETRY_BREAK_TRANS / np.linalg.norm(t)
+        if len(group) >= 2:
+            w = rng.normal(size=3)
+            w *= _SYMMETRY_BREAK_ROT / np.linalg.norm(w)
+            skew = np.array([[0., -w[2], w[1]],
+                             [w[2], 0., -w[0]],
+                             [-w[1], w[0], 0.]])
+            rot = expm(skew)
+            centroid = pos[group].mean(axis=0)
+            pos[group] = (pos[group] - centroid) @ rot.T + centroid
+        pos[group] += t
+    return pos
+
+
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
+    # Multi-fragment starts leave their symmetry element before the first
+    # force call (see _break_start_symmetry); connected systems unchanged.
+    pos_ang = _break_start_symmetry(atomic_numbers, pos_ang)
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
@@ -6606,7 +6673,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     # get explicit centroid translation + rotation internals (TRIC-style,
     # Wang & Song 2016) instead of being stitched together by long
     # inter-fragment pseudo-bonds found by inflating the covalent radii. Their
-    # guess curvatures come from the inter-fragment contacts
+    # curvature comes from the geometry-tracked inter-fragment contact term
+    # (Internals._h0_nonlocal_contacts) on top of a diagonal floor
     # (Internals._h0_fragment).
     opt = Sella(atoms, internal=True, order=0, logfile=None,
                 allow_fragments=True)
