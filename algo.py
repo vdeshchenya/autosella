@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 On dimers, connecting-bond stretches longer than 1.25 covalent radii use
-`wb_long=0.4` so |s_bond| may reach 0.25 Å (OptKing-style interfragment limit).
+`wb_long=0.5` so |s_bond| may reach 0.20 Å (tighter than OptKing 0.5 bohr).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5780,8 +5780,8 @@ class Sella(Optimizer):
                 rs_kwargs['wa'] = 0.75
             else:
                 # Dimers: connecting stretches beyond 1.25 covalent radii
-                # may take |s| <= 0.1/0.4 = 0.25 Å (≈ OptKing 0.5 bohr).
-                rs_kwargs['wb_long'] = 0.4
+                # may take |s| <= 0.1/0.5 = 0.20 Å.
+                rs_kwargs['wb_long'] = 0.5
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
