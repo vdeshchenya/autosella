@@ -1,8 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals, but the
-approximate Hessian uses `BFGS_auto` (standard BFGS while H and SᵀY stay
-positive definite; otherwise TS-BFGS) instead of always TS-BFGS.
+Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
+dihedral weight `wd=2/3` on connected molecules, with a 0.15 Å linearized
+max-atom Cartesian cap so enlarged torsions cannot hop by large Cartesian moves.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -314,7 +314,7 @@ class ApproximateHessian(LinearOperator):
         dim: int,
         ncart: int,
         B0: np.ndarray = None,
-        update_method: str = 'BFGS_auto',
+        update_method: str = 'TS-BFGS',
         symm: int = 2,
         initialized: bool = False,
     ) -> None:
@@ -5738,10 +5738,13 @@ class Sella(Optimizer):
         x0 = self.pes.get_x()
 
         rs_kwargs = {}
-        if self.optimize_cell and isinstance(self.rs, type) and issubclass(
-            self.rs, MaxInternalStep
-        ):
-            rs_kwargs['wc'] = self.delta / self.delta_cell
+        if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
+            # Connected molecules: |s_d| <= 0.15. Dimers keep champion wd=1 so
+            # intermolecular dihedrals on grown contacts are not enlarged.
+            if getattr(self, "_allow_dihedral_wd", False):
+                rs_kwargs['wd'] = 2.0 / 3.0
+            if self.optimize_cell:
+                rs_kwargs['wc'] = self.delta / self.delta_cell
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5763,8 +5766,30 @@ class Sella(Optimizer):
 
         return s, smag
 
+    def _cap_cartesian_step(self, s, smag, max_atom=0.15):
+        """Scale an internal step so no atom moves more than max_atom Å.
+
+        Applied only with fragment-gated wd=2/3. geomeTRIC limits trust in
+        Cartesian RMSD because mixed-unit internals can realize large Cartesian
+        motion from a modest torsion: https://geometric.readthedocs.io/en/latest/how-it-works.html
+        """
+        if self.pes.int is None:
+            return s, smag
+        ncart = 3 * len(self.atoms)
+        Binv = self.pes._get_Binv()
+        cart = np.asarray(Binv @ s, dtype=np.float64).reshape(-1)[:ncart]
+        if cart.size < 3:
+            return s, smag
+        maxd = float(np.linalg.norm(cart.reshape(-1, 3), axis=1).max())
+        if maxd > max_atom:
+            scale = max_atom / maxd
+            return s * scale, smag * scale
+        return s, smag
+
     def step(self):
         s, smag = self._predict_step()
+        if getattr(self, "_allow_dihedral_wd", False):
+            s, smag = self._cap_cartesian_step(s, smag)
 
         # Determine if we need to call the eigensolver, then step
         if self.nsteps_since_diag >= self.diag_every_n:
@@ -5951,6 +5976,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
     opt = Sella(atoms, internal=True, order=0, logfile=None)
+    probe = Internals(atoms.copy(), allow_fragments=True)
+    probe.find_all_bonds()
+    opt._allow_dihedral_wd = not bool(probe.internals["translations"])
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
