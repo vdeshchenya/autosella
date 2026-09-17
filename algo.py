@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-use the Swart–Bickelhaupt 2006 model Hessian instead of Fischer–Almlöf.
+add extra-redundant hydrogen-bond stretches after covalent internals.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3231,7 +3231,7 @@ class Constraints(BaseInternals):
             )
 
 class Internals(BaseInternals):
-    use_swart_h0_default = False
+    add_hbond_contacts_default = False
 
     def __init__(
         self,
@@ -3243,7 +3243,7 @@ class Internals(BaseInternals):
         allow_fragments: bool = False
     ) -> None:
         BaseInternals.__init__(self, atoms, dummies, dinds)
-        self.use_swart_h0 = Internals.use_swart_h0_default
+        self.add_hbond_contacts = Internals.add_hbond_contacts_default
         self.atol = atol * np.pi / 180.
         self.forbidden = {key: [] for key in self._names}
         if cons is None:
@@ -3278,7 +3278,7 @@ class Internals(BaseInternals):
             self.cons.copy(),
             self.allow_fragments,
         )
-        new.use_swart_h0 = getattr(self, 'use_swart_h0', False)
+        new.add_hbond_contacts = getattr(self, 'add_hbond_contacts', False)
         for name in self._names:
             new.internals[name] = self.internals[name].copy()
             new._internals_set[name] = self._internals_set[name].copy()
@@ -3847,6 +3847,48 @@ class Internals(BaseInternals):
             except DuplicateInternalError:
                 pass
 
+    def add_hydrogen_bond_contacts(self) -> None:
+        """Extra-redundant H...acceptor stretches (no new angles/torsions).
+
+        Donor is N/O/F/S covalently bound to H; acceptor is a different
+        N/O/F/S with 1.2 Å < r(H,acc) < 2.5 Å.
+        """
+        nums = self.atoms.numbers
+        pos = self.atoms.positions
+        nat = self.natoms
+        neighbors = [[] for _ in range(nat)]
+        seen = set()
+        for bond in self.internals['bonds']:
+            i, j = bond.indices
+            if i >= nat or j >= nat:
+                continue
+            neighbors[i].append(j)
+            neighbors[j].append(i)
+            seen.add((min(i, j), max(i, j)))
+        donor_z = (7, 8, 9, 16)
+        acc_z = (7, 8, 9, 16)
+        for h in range(nat):
+            if int(nums[h]) != 1:
+                continue
+            heavies = [n for n in neighbors[h] if int(nums[n]) in donor_z]
+            if not heavies:
+                continue
+            donor = heavies[0]
+            for acc in range(nat):
+                if acc == h or acc == donor or int(nums[acc]) not in acc_z:
+                    continue
+                key = (min(h, acc), max(h, acc))
+                if key in seen:
+                    continue
+                r = float(np.linalg.norm(pos[h] - pos[acc]))
+                if r <= 1.2 or r >= 2.5:
+                    continue
+                try:
+                    self.add_bond((h, acc))
+                    seen.add(key)
+                except DuplicateInternalError:
+                    pass
+
     def validate_basis(self) -> None:
         jac = self.jacobian()
         S = svdvals(jac)
@@ -3912,24 +3954,12 @@ class Internals(BaseInternals):
                 return bad
         return None
 
-    def _swart_rho_bond(self, bond: Bond) -> float:
-        idx = np.asarray(bond.indices, dtype=np.int32)
-        rcov = float(covalent_radii[self.all_atoms.numbers[idx]].sum())
-        rij = float(bond.calc(self.all_atoms))
-        if rcov <= 0.0:
-            return 1.0
-        return float(np.exp(-rij / rcov + 1.0))
-
     def _h0_bond(
         self,
         bond: Bond,
         Ab: float = 0.3601,
         Bb: float = 1.944,
     ) -> float:
-        if getattr(self, 'use_swart_h0', False):
-            # Swart & Bickelhaupt 2006; k_r * exp(1 - r/r_cov).
-            return (0.35 * self._swart_rho_bond(bond)
-                    * units.Hartree / units.Bohr**2)
         idx = np.asarray(bond.indices, dtype=np.int32)
         rcov = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rij = bond.calc(self.all_atoms)
@@ -3945,9 +3975,6 @@ class Internals(BaseInternals):
         Da: float = -0.42,
     ) -> float:
         bab, bbc = angle.split()
-        if getattr(self, 'use_swart_h0', False):
-            return (0.15 * self._swart_rho_bond(bab) * self._swart_rho_bond(bbc)
-                    * units.Hartree)
         idxab = np.asarray(bab.indices, dtype=np.int32)
         idxbc = np.asarray(bbc.indices, dtype=np.int32)
         rcovab = covalent_radii[self.all_atoms.numbers[idxab]].sum()
@@ -3970,16 +3997,10 @@ class Internals(BaseInternals):
         Dt: float = 0.57,
         Et: float = 4.00,
     ) -> float:
-        a1, a2 = dihedral.split()
-        b0, b1 = a1.split()
-        _, b2 = a2.split()
-        if getattr(self, 'use_swart_h0', False):
-            rho = (self._swart_rho_bond(b0) * self._swart_rho_bond(b1)
-                   * self._swart_rho_bond(b2))
-            return 0.005 * rho * units.Hartree
-        idx = np.asarray(b1.indices, dtype=np.int32)
+        _, bbc = dihedral.split()[0].split()
+        idx = np.asarray(bbc.indices, dtype=np.int32)
         rcovbc = covalent_radii[self.all_atoms.numbers[idx]].sum()
-        rbc = b1.calc(self.all_atoms)
+        rbc = bbc.calc(self.all_atoms)
         L = nbonds[idx].sum() - 2
         h0 = (
             At + Bt * L**Dt * np.exp(-Ct * (rbc - rcovbc) / units.Bohr)
@@ -4474,6 +4495,8 @@ class InternalPES(PES):
             new_int.find_all_bonds()
             new_int.find_all_angles()
             new_int.find_all_dihedrals()
+            if getattr(new_int, 'add_hbond_contacts', False):
+                new_int.add_hydrogen_bond_contacts()
         new_int.validate_basis()
 
         PES.__init__(
@@ -5987,7 +6010,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     if connected:
-        Internals.use_swart_h0_default = True
+        Internals.add_hbond_contacts_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -5998,7 +6021,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if converged():
                 break
     finally:
-        Internals.use_swart_h0_default = False
+        Internals.add_hbond_contacts_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
