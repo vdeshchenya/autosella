@@ -1,8 +1,7 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals, but after four
-steps MaxInternalStep downweights dihedrals (`wd=2/3`) so later torsions may
-reach 0.15 while bond and angle caps stay at `delta0=0.1`.
+Vendored from the `sella` package (2.5.0). Champion internals, with MaxInternalStep
+dihedral weight `wd=2/3` only on molecules whose covalent graph is a single fragment.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5739,10 +5738,9 @@ class Sella(Optimizer):
 
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
-            # Cycle 27 applied wd=2/3 from step 0 and hopped thiols/water
-            # dimers plus a 0.0026 kcal PubChem miss. Keep champion weights
-            # for the first four steps, then allow |s_d| <= delta/wd = 0.15.
-            if self.nsteps >= 4:
+            # Connected molecules: |s_d| <= 0.15. Dimers keep champion wd=1 so
+            # intermolecular dihedrals on grown contacts are not enlarged.
+            if getattr(self, "_allow_dihedral_wd", False):
                 rs_kwargs['wd'] = 2.0 / 3.0
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -5955,6 +5953,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
     opt = Sella(atoms, internal=True, order=0, logfile=None)
+    probe = Internals(atoms.copy(), allow_fragments=True)
+    probe.find_all_bonds()
+    opt._allow_dihedral_wd = not bool(probe.internals["translations"])
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
