@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps and cap it at 0.20.
+also floor δ at 0.15 after 20 steps and switch Hessian updates to BFGS.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5826,6 +5826,10 @@ class Sella(Optimizer):
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
+            if self.nsteps == 20:
+                # geomeTRIC uses BFGS for minima; keep TS-BFGS for the
+                # first 20 updates then switch without resetting B.
+                self.pes.H.update_method = 'BFGS'
 
         # Update trust radius
         if rho is not None:
@@ -5850,9 +5854,6 @@ class Sella(Optimizer):
             self.rho = rho
         else:
             self.rho = 1.
-
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
-            self.delta = min(self.delta, 0.20)
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
