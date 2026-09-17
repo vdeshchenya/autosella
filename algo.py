@@ -1,12 +1,9 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also keep an extra-redundant improper at every 3-coordinate center.
-Geodesic ODE timeouts restore coordinates and halve the internal step.
-Connected extra-improper runs realize steps with iterative_stepper=1 first
-and a linearized B⁺ fallback instead of LSODA.
+`wa=0.75` on connected molecules after the first Newton step, with
+`sigma_inc=1.16` after 20 steps. Dimers floor the trust radius at
+`delta_min=0.02`.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3234,10 +3231,6 @@ class Constraints(BaseInternals):
             )
 
 class Internals(BaseInternals):
-    # When True, find_all_dihedrals still adds an improper at 3-coordinate
-    # centers that already have a proper torsion (Bakken extra-redundants).
-    extra_impropers_default = False
-
     def __init__(
         self,
         atoms: Atoms,
@@ -3248,7 +3241,6 @@ class Internals(BaseInternals):
         allow_fragments: bool = False
     ) -> None:
         BaseInternals.__init__(self, atoms, dummies, dinds)
-        self.extra_impropers = Internals.extra_impropers_default
         self.atol = atol * np.pi / 180.
         self.forbidden = {key: [] for key in self._names}
         if cons is None:
@@ -3283,7 +3275,6 @@ class Internals(BaseInternals):
             self.cons.copy(),
             self.allow_fragments,
         )
-        new.extra_impropers = getattr(self, 'extra_impropers', False)
         for name in self._names:
             new.internals[name] = self.internals[name].copy()
             new._internals_set[name] = self._internals_set[name].copy()
@@ -3832,15 +3823,9 @@ class Internals(BaseInternals):
             if len(neighbors[center]) not in (3, 4):
                 continue
 
-            # Skip if this atom already has proper dihedrals through it,
-            # unless extra_impropers requested a 3-coordinate out-of-plane
-            # even in that case (planar sp2 groups often already have a
-            # proper torsion, which is the skip Sella uses by default).
+            # Skip if this atom already has proper dihedrals through it
             if center in dihedral_centers:
-                if len(neighbors[center]) != 3 or not getattr(
-                    self, 'extra_impropers', False
-                ):
-                    continue
+                continue
 
             # Add improper dihedral: neighbors[0]-center-neighbors[1]-neighbors[2]
             n0, ncvec0 = neighbors[center][0]
@@ -4678,26 +4663,6 @@ class InternalPES(PES):
         g_final = self.int.jacobian() @ g0
         return dx_initial, dx_final, g_final
 
-    def _set_x_linear(self, target):
-        """Single linearized B⁺ step when the iterative map fails.
-
-        Extra-improper geodesics can make LSODA abort (cycles 75–77). A
-        one-shot Cartesian realization never calls the ODE.
-        """
-        x0 = self.get_x()
-        dx_initial = self.wrap_dx(target - x0)
-        Binv = self._get_Binv()
-        g0 = Binv @ self.curr.get('g', np.zeros_like(dx_initial))
-        dx_cart = (Binv @ dx_initial).reshape((-1, 3))
-        self.atoms.positions = self.atoms.positions + dx_cart[:len(self.atoms)]
-        if len(self.dummies):
-            self.dummies.positions = (
-                self.dummies.positions + dx_cart[len(self.atoms):]
-            )
-        dx_final = self.get_x() - x0
-        g_final = self.int.jacobian() @ g0
-        return dx_initial, dx_final, g_final
-
     def _set_x_ode(self, target):
         """ODE-based stepper for internal coordinate updates.
 
@@ -4708,8 +4673,6 @@ class InternalPES(PES):
         t0 = 0.
         Binv = self._get_Binv()
         self._ode_Binv = Binv
-        pos0 = self.atoms.positions.copy()
-        dpos0 = None if self.dummies is None else self.dummies.positions.copy()
         y0 = np.hstack((self.apos.ravel(), self.dpos.ravel(),
                         Binv @ dx,
                         Binv @ self.curr.get('g', np.zeros_like(dx))))
@@ -4723,16 +4686,11 @@ class InternalPES(PES):
             if self.bad_int is not None:
                 break
             if ode.nfev > 1000:
-                self.atoms.positions = pos0
-                if dpos0 is not None:
-                    self.dummies.positions = dpos0
+                view(self.atoms + self.dummies)
                 raise RuntimeError("Geometry update ODE is taking too long "
                                    "to converge!")
 
         if ode.status == 'failed':
-            self.atoms.positions = pos0
-            if dpos0 is not None:
-                self.dummies.positions = dpos0
             raise RuntimeError("Geometry update ODE failed to converge!")
 
         nxa = 3 * len(self.atoms)
@@ -4750,20 +4708,18 @@ class InternalPES(PES):
     def set_x(self, target):
         """Update internal coordinates to target values.
 
-        Uses fast iterative stepper by default, with a linearized B⁺
-        fallback when iterative_stepper is on (no LSODA), else ODE.
+        Uses fast iterative stepper by default, with ODE fallback for robustness.
         """
         if self.iterative_stepper:
             res = self._set_x_iterative(target)
-            if res is None:
-                res = self._set_x_linear(target)
-            q_after_ode = self.int.calc().copy()
-            proj_moved = self._project_to_constraints()
-            dx_initial, dx_final_ode, g_final = res
-            dx_final = self._add_proj_delta(dx_final_ode, q_after_ode,
-                                            proj_moved)
-            return dx_initial, dx_final, g_final
-        # Champion path: ODE geodesic
+            if res is not None:
+                q_after_ode = self.int.calc().copy()
+                proj_moved = self._project_to_constraints()
+                dx_initial, dx_final_ode, g_final = res
+                dx_final = self._add_proj_delta(dx_final_ode, q_after_ode,
+                                                proj_moved)
+                return dx_initial, dx_final, g_final
+        # Fall back to ODE solver
         res = self._set_x_ode(target)
         q_after_ode = self.int.calc().copy()
         proj_moved = self._project_to_constraints()
@@ -5785,8 +5741,11 @@ class Sella(Optimizer):
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
             # Between cycle 39 (wa=2/3, valid hop) and cycle 40 (wa=0.8,
-            # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
-            if getattr(self, "_allow_angle_wa", False):
+            # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133. Cycle 73 showed
+            # late wa is not binding; keep default caps on the first
+            # Newton step (nsteps==0) so 135043047-class organics start
+            # on the original Sella path.
+            if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 1:
                 rs_kwargs['wa'] = 0.75
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -5832,23 +5791,7 @@ class Sella(Optimizer):
         else:
             self.nsteps_since_diag += 1
 
-        rho = None
-        last_ode_error = None
-        for _ode_try in range(6):
-            try:
-                rho = self.pes.kick(s, ev, **self.diagkwargs)
-                last_ode_error = None
-                break
-            except RuntimeError as exc:
-                msg = str(exc)
-                if "ODE is taking too long" not in msg and "ODE failed" not in msg:
-                    raise
-                last_ode_error = exc
-                self.pes.restore()
-                s = 0.5 * s
-                smag = 0.5 * smag
-        if last_ode_error is not None:
-            raise last_ode_error
+        rho = self.pes.kick(s, ev, **self.diagkwargs)
 
         # Check for bad internals, and if found, reset PES object.
         # This skips the trust radius update.
@@ -5875,7 +5818,6 @@ class Sella(Optimizer):
                 exp_cell_factor=exp_cell_factor,
                 scalar_pressure=scalar_pressure,
                 allow_fragments=self.allow_fragments,
-                iterative_stepper=getattr(self.pes, 'iterative_stepper', 0),
             )
             self.initialized = False
             self.rho = 1
@@ -6019,28 +5961,16 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
+    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    connected = not bool(probe.internals["translations"])
-    if connected:
-        Internals.extra_impropers_default = True
-    try:
-        opt = Sella(
-            atoms,
-            internal=True,
-            order=0,
-            logfile=None,
-            iterative_stepper=1 if connected else 0,
-        )
-        opt._allow_angle_wa = connected
-        if not connected:
-            # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
-            opt.delta_min = 0.02
-        for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
-            if converged():
-                break
-    finally:
-        Internals.extra_impropers_default = False
+    opt._allow_angle_wa = not bool(probe.internals["translations"])
+    if not opt._allow_angle_wa:
+        # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
+        opt.delta_min = 0.02
+    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+        if converged():
+            break
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
