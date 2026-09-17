@@ -1,8 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules. After 20 steps, `sigma_inc=1.16` for
-both connected molecules and dimers (dimers previously kept 1.15).
+`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
+Dimers use `sigma_inc=1.16` only after 40 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5819,8 +5819,10 @@ class Sella(Optimizer):
             self.rho = 1
             return
 
-        # After 20 steps, grow δ by 1.16 instead of 1.15 (connected and dimers).
-        if self.nsteps >= 20:
+        # Connected: σ_inc=1.16 after 20 steps (cycle 52). Dimers: after 40.
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
+            self.sigma_inc = 1.16
+        elif self.nsteps >= 40:
             self.sigma_inc = 1.16
 
         # Update trust radius
