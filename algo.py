@@ -1,7 +1,7 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals, with Pulay GDIIS
-replacing the quasi-Newton step once three prior (x, g) iterates are available.
+Vendored from the `sella` package (2.5.0). Champion internals; predicted-uphill
+quasi-Newton steps are halved until the quadratic model predicts a decrease.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5631,8 +5631,6 @@ class Sella(Optimizer):
         self.constraints_tol = constraints_tol
         self.diagkwargs = dict(gamma=gamma, threepoint=threepoint)
         self.rho = 1.
-        self._gdiis_x = []
-        self._gdiis_g = []
 
         if self.ord != 0 and not self.eig:
             warnings.warn("Saddle point optimizations with eig=False will "
@@ -5762,53 +5760,14 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
-        try:
-            s, smag = self._maybe_gdiis(s, smag)
-        except (ValueError, np.linalg.LinAlgError, IndexError, TypeError):
-            pass
-        return s, smag
-
-    def _maybe_gdiis(self, s_qn, smag_qn, max_hist=4):
-        """Replace the QN step with a GDIIS interpolation when the subspace
-        is well-conditioned. Pulay GDIIS (Császár/Pulay; Farkas–Schlegel
-        GEDIIS uses energies). Extra Cartesian motion is still MIS-capped.
-        """
-        xs = getattr(self, '_gdiis_x', None) or []
-        gs = getattr(self, '_gdiis_g', None) or []
-        if len(xs) < 3:
-            return s_qn, smag_qn
-        X = np.stack(xs[-max_hist:])
-        G = np.stack(gs[-max_hist:])
-        n = G.shape[0]
-        if X.shape[1] != s_qn.shape[0]:
-            # Internals were rebuilt; drop history.
-            self._gdiis_x = []
-            self._gdiis_g = []
-            return s_qn, smag_qn
-        A = G @ G.T
-        A = A + 1e-8 * np.eye(n)
-        B = np.zeros((n + 1, n + 1), dtype=np.float64)
-        B[:n, :n] = A
-        B[:n, n] = 1.0
-        B[n, :n] = 1.0
-        rhs = np.zeros(n + 1, dtype=np.float64)
-        rhs[n] = 1.0
-        try:
-            c = np.linalg.solve(B, rhs)[:n]
-        except np.linalg.LinAlgError:
-            return s_qn, smag_qn
-        if (not np.isfinite(c).all()) or np.max(np.abs(c)) > 2.0:
-            return s_qn, smag_qn
-        x = self.pes.get_x()
-        s = c @ X - x
-        if not np.isfinite(s).all():
-            return s_qn, smag_qn
-        smag = float(np.max(np.abs(s))) if s.size else 0.0
-        if smag > self.delta and smag > 0:
-            s = s * (self.delta / smag)
-            smag = self.delta
-        if smag < 1e-16:
-            return s_qn, smag_qn
+        g = self.pes.get_g()
+        H = self.pes.get_H().asarray()
+        for _ in range(8):
+            df_pred = self.pes.get_df_pred(s, g, H)
+            if df_pred is None or df_pred <= 0.0:
+                break
+            s = 0.5 * s
+            smag = 0.5 * smag
         return s, smag
 
     def step(self):
@@ -5862,8 +5821,6 @@ class Sella(Optimizer):
             )
             self.initialized = False
             self.rho = 1
-            self._gdiis_x = []
-            self._gdiis_g = []
             return
 
         # Update trust radius
@@ -5889,12 +5846,6 @@ class Sella(Optimizer):
             self.rho = rho
         else:
             self.rho = 1.
-
-        self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
-        self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
-        if len(self._gdiis_x) > 6:
-            self._gdiis_x = self._gdiis_x[-4:]
-            self._gdiis_g = self._gdiis_g[-4:]
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
