@@ -3,8 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. After 20 connected steps, a
-convex controlled GDIIS trial no longer than QN may replace QN.
+also floor δ at 0.15 after 20 steps. Connected molecules use a Swart
+dihedral guess Hessian; stretches and bends stay Fischer–Almlöf.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3232,6 +3232,8 @@ class Constraints(BaseInternals):
             )
 
 class Internals(BaseInternals):
+    use_swart_dihedral_h0_default = False
+
     def __init__(
         self,
         atoms: Atoms,
@@ -3266,6 +3268,7 @@ class Internals(BaseInternals):
                 adder(coord)
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
+        self.use_swart_dihedral_h0 = Internals.use_swart_dihedral_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3281,6 +3284,7 @@ class Internals(BaseInternals):
             new._internals_set[name] = self._internals_set[name].copy()
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
+        new.use_swart_dihedral_h0 = getattr(self, 'use_swart_dihedral_h0', False)
         return new
 
     def add_rotation(
@@ -3909,6 +3913,14 @@ class Internals(BaseInternals):
                 return bad
         return None
 
+    def _swart_rho_bond(self, bond: Bond) -> float:
+        idx = np.asarray(bond.indices, dtype=np.int32)
+        rcov = float(covalent_radii[self.all_atoms.numbers[idx]].sum())
+        rij = float(bond.calc(self.all_atoms))
+        if rcov <= 0.0:
+            return 1.0
+        return float(np.exp(-rij / rcov + 1.0))
+
     def _h0_bond(
         self,
         bond: Bond,
@@ -3952,10 +3964,16 @@ class Internals(BaseInternals):
         Dt: float = 0.57,
         Et: float = 4.00,
     ) -> float:
-        _, bbc = dihedral.split()[0].split()
-        idx = np.asarray(bbc.indices, dtype=np.int32)
+        a1, a2 = dihedral.split()
+        b0, b1 = a1.split()
+        _, b2 = a2.split()
+        if getattr(self, 'use_swart_dihedral_h0', False):
+            rho = (self._swart_rho_bond(b0) * self._swart_rho_bond(b1)
+                   * self._swart_rho_bond(b2))
+            return 0.005 * rho * units.Hartree
+        idx = np.asarray(b1.indices, dtype=np.int32)
         rcovbc = covalent_radii[self.all_atoms.numbers[idx]].sum()
-        rbc = bbc.calc(self.all_atoms)
+        rbc = b1.calc(self.all_atoms)
         L = nbonds[idx].sum() - 2
         h0 = (
             At + Bt * L**Dt * np.exp(-Ct * (rbc - rcovbc) / units.Bohr)
@@ -5631,8 +5649,6 @@ class Sella(Optimizer):
         self.ord = order
         self.eta = eta
         self.delta_min = self.eta
-        self._gdiis_x = []
-        self._gdiis_g = []
         self.constraints_tol = constraints_tol
         self.diagkwargs = dict(gamma=gamma, threepoint=threepoint)
         self.rho = 1.
@@ -5768,75 +5784,7 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
-        return self._maybe_gdiis(s, smag)
-
-    def _maybe_gdiis(self, s_qn, smag_qn):
-        """Replace the QN step with interpolation-only controlled GDIIS.
-
-        Cycle 97's Farkas–Schlegel tests still allowed extrapolation
-        (negative coefficients, GDIIS up to 10× QN). Paliperidone hopped
-        78→23 / +1.65 kcal at the nsteps=20 switch. Repair: all c_i≥0 and
-        ||s_DIIS|| ≤ ||s_QN||, plus the original 2002 cosine cutoffs.
-        """
-        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
-            return s_qn, smag_qn
-        xs = self._gdiis_x
-        gs = self._gdiis_g
-        if len(xs) < 2 or len(xs) != len(gs):
-            return s_qn, smag_qn
-        s_qn = np.asarray(s_qn, dtype=np.float64)
-        if xs[-1].shape != s_qn.shape:
-            self._gdiis_x = []
-            self._gdiis_g = []
-            return s_qn, smag_qn
-        nref = float(np.linalg.norm(s_qn))
-        if not np.isfinite(nref) or nref < 1e-16:
-            return s_qn, smag_qn
-        err = np.stack(gs)
-        norms = np.linalg.norm(err, axis=1)
-        nmin = float(np.min(norms))
-        if not np.isfinite(nmin) or nmin < 1e-16:
-            return s_qn, smag_qn
-        err = err / nmin
-        coords = np.stack(xs)
-        # Original Farkas–Schlegel 2002 cutoffs for 2 and 3; pysisyphus 4.
-        cos_cut = {2: 0.97, 3: 0.84, 4: 0.71}
-        accepted = None
-        max_use = min(4, err.shape[0])
-        for use in range(2, max_use + 1):
-            use_vecs = err[::-1][:use]
-            A = use_vecs @ use_vecs.T
-            try:
-                coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
-            except np.linalg.LinAlgError:
-                break
-            if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-                break
-            csum = float(np.sum(coeffs))
-            if abs(csum) < 1e-16:
-                break
-            coeffs = coeffs / csum
-            if np.any(coeffs < -1e-8):
-                break
-            pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-            neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-            if pos_sum > 15.0 or neg_sum > 15.0:
-                break
-            diis_coords = coeffs @ coords[::-1][:use]
-            diis_step = diis_coords - coords[-1]
-            ndiis = float(np.linalg.norm(diis_step))
-            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-                break
-            cos = float(diis_step @ s_qn) / (ndiis * nref)
-            if cos < cos_cut.get(use, 0.50) or cos < 0.0:
-                break
-            accepted = diis_step
-        if accepted is None:
-            return s_qn, smag_qn
-        smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
-        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-            return s_qn, smag_qn
-        return accepted, smag
+        return s, smag
 
     def step(self):
         s, smag = self._predict_step()
@@ -5889,8 +5837,6 @@ class Sella(Optimizer):
             )
             self.initialized = False
             self.rho = 1
-            self._gdiis_x = []
-            self._gdiis_g = []
             return
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
@@ -5923,13 +5869,6 @@ class Sella(Optimizer):
             self.rho = rho
         else:
             self.rho = 1.
-
-        if getattr(self, "_allow_angle_wa", False):
-            self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
-            self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
-            if len(self._gdiis_x) > 6:
-                self._gdiis_x = self._gdiis_x[-5:]
-                self._gdiis_g = self._gdiis_g[-5:]
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
@@ -6041,16 +5980,22 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    opt._allow_angle_wa = not bool(probe.internals["translations"])
-    if not opt._allow_angle_wa:
-        # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
-        opt.delta_min = 0.02
-    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
-        if converged():
-            break
+    connected = not bool(probe.internals["translations"])
+    if connected:
+        Internals.use_swart_dihedral_h0_default = True
+    try:
+        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt._allow_angle_wa = connected
+        if not connected:
+            # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
+            opt.delta_min = 0.02
+        for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+            if converged():
+                break
+    finally:
+        Internals.use_swart_dihedral_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
