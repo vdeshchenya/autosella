@@ -1,8 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-dihedral weight `wd=2/3` only for the first four steps on connected molecules,
-then champion weights so late torsions cannot hop 252618428.
+Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep floor
+of 0.15 after four steps, applied only when the last step's ρ is in the
+trust-expansion window so poorly predicted steps do not trigger the boost.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5738,15 +5738,10 @@ class Sella(Optimizer):
         x0 = self.pes.get_x()
 
         rs_kwargs = {}
-        if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
-            # Connected molecules: |s_d| <= 0.15. Dimers keep champion wd=1 so
-            # intermolecular dihedrals on grown contacts are not enlarged.
-            # Early torsion packing only: cycle 29's late wd hops 252618428
-            # (same 24-step path with delayed-on). Dimers never get wd.
-            if getattr(self, "_allow_dihedral_wd", False) and self.nsteps < 4:
-                rs_kwargs['wd'] = 2.0 / 3.0
-            if self.optimize_cell:
-                rs_kwargs['wc'] = self.delta / self.delta_cell
+        if self.optimize_cell and isinstance(self.rs, type) and issubclass(
+            self.rs, MaxInternalStep
+        ):
+            rs_kwargs['wc'] = self.delta / self.delta_cell
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5844,6 +5839,15 @@ class Sella(Optimizer):
             self.rho = rho
         else:
             self.rho = 1.
+
+        if (
+            getattr(self, "_allow_delta_boost", False)
+            and (not getattr(self, "_delta_boosted", False))
+            and self.nsteps >= 4
+            and (1.0 / self.rho_inc < self.rho < self.rho_inc)
+        ):
+            self.delta = max(self.delta, 0.15)
+            self._delta_boosted = True
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
@@ -5958,7 +5962,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    opt._allow_dihedral_wd = not bool(probe.internals["translations"])
+    opt._allow_delta_boost = not bool(probe.internals["translations"])
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
