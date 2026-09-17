@@ -5,7 +5,8 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also keep an extra-redundant improper at every 3-coordinate center.
 Geodesic ODE timeouts restore coordinates and halve the internal step.
-Connected extra-improper runs realize steps with iterative_stepper=1 first.
+Connected extra-improper runs realize steps with iterative_stepper=1 first
+and a linearized B⁺ fallback instead of LSODA.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4677,6 +4678,26 @@ class InternalPES(PES):
         g_final = self.int.jacobian() @ g0
         return dx_initial, dx_final, g_final
 
+    def _set_x_linear(self, target):
+        """Single linearized B⁺ step when the iterative map fails.
+
+        Extra-improper geodesics can make LSODA abort (cycles 75–77). A
+        one-shot Cartesian realization never calls the ODE.
+        """
+        x0 = self.get_x()
+        dx_initial = self.wrap_dx(target - x0)
+        Binv = self._get_Binv()
+        g0 = Binv @ self.curr.get('g', np.zeros_like(dx_initial))
+        dx_cart = (Binv @ dx_initial).reshape((-1, 3))
+        self.atoms.positions = self.atoms.positions + dx_cart[:len(self.atoms)]
+        if len(self.dummies):
+            self.dummies.positions = (
+                self.dummies.positions + dx_cart[len(self.atoms):]
+            )
+        dx_final = self.get_x() - x0
+        g_final = self.int.jacobian() @ g0
+        return dx_initial, dx_final, g_final
+
     def _set_x_ode(self, target):
         """ODE-based stepper for internal coordinate updates.
 
@@ -4729,18 +4750,20 @@ class InternalPES(PES):
     def set_x(self, target):
         """Update internal coordinates to target values.
 
-        Uses fast iterative stepper by default, with ODE fallback for robustness.
+        Uses fast iterative stepper by default, with a linearized B⁺
+        fallback when iterative_stepper is on (no LSODA), else ODE.
         """
         if self.iterative_stepper:
             res = self._set_x_iterative(target)
-            if res is not None:
-                q_after_ode = self.int.calc().copy()
-                proj_moved = self._project_to_constraints()
-                dx_initial, dx_final_ode, g_final = res
-                dx_final = self._add_proj_delta(dx_final_ode, q_after_ode,
-                                                proj_moved)
-                return dx_initial, dx_final, g_final
-        # Fall back to ODE solver
+            if res is None:
+                res = self._set_x_linear(target)
+            q_after_ode = self.int.calc().copy()
+            proj_moved = self._project_to_constraints()
+            dx_initial, dx_final_ode, g_final = res
+            dx_final = self._add_proj_delta(dx_final_ode, q_after_ode,
+                                            proj_moved)
+            return dx_initial, dx_final, g_final
+        # Champion path: ODE geodesic
         res = self._set_x_ode(target)
         q_after_ode = self.int.calc().copy()
         proj_moved = self._project_to_constraints()
