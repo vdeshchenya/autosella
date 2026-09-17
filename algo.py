@@ -2,9 +2,9 @@
 
 Vendored from the `sella` package (2.5.0), restricted to the code path that
 `Sella(atoms, internal=True, order=0, allow_fragments=True)` + `irun(fmax=0)`
-actually executes. TRICs avoid cutoff-grown intermolecular bonds; each internal
-step is then scaled so the linearized Cartesian max-atom displacement is at
-most 0.20 Å (geomeTRIC-style Cartesian trust, repair of cycle 2).
+actually executes. TRICs avoid cutoff-grown intermolecular angles/dihedrals;
+up to three extra-redundant inter-fragment distances are added afterwards so
+starting dimer packing cannot jump by more than the internal trust radius.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3266,6 +3266,7 @@ class Internals(BaseInternals):
                 adder(coord)
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
+        self.extra_contact_pairs = set()
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3281,6 +3282,11 @@ class Internals(BaseInternals):
             new._internals_set[name] = self._internals_set[name].copy()
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
+        new.fragment_atom_groups = (
+            None if self.fragment_atom_groups is None
+            else [np.array(g, dtype=np.int32) for g in self.fragment_atom_groups]
+        )
+        new.extra_contact_pairs = set(self.extra_contact_pairs)
         return new
 
     def add_rotation(
@@ -3628,6 +3634,59 @@ class Internals(BaseInternals):
                         [bond.kwargs['ncvecs'][0] - shift_j + shift_i]
                     )
 
+    def add_interfragment_distances(self, n_contacts: int = 3) -> None:
+        """Add extra-redundant distances between fragments, without angles.
+
+        Must run after find_all_angles/dihedrals so these contacts do not
+        spawn intermolecular bends or torsions. MaxInternalStep then limits
+        each contact to the internal trust radius (~0.1 Å per step), which
+        keeps starting dimer packing from jumping in a few TRIC steps.
+        Bakken & Helgaker extra-redundant internals; Wang–Song TRIC remains
+        for the remaining intermolecular rigid-body modes.
+        """
+        groups = []
+        seen = set()
+        if self.fragment_atom_groups:
+            for group in self.fragment_atom_groups:
+                atoms = [int(i) for i in group]
+                if atoms:
+                    groups.append(atoms)
+                    seen.update(atoms)
+        for trans in self.internals['translations']:
+            idx = tuple(int(i) for i in trans.indices)
+            if len(idx) == 1 and idx[0] not in seen:
+                groups.append([idx[0]])
+                seen.add(idx[0])
+        if len(groups) < 2:
+            return
+        pos = np.asarray(self.atoms.positions, dtype=np.float64)
+        for a in range(len(groups)):
+            for b in range(a + 1, len(groups)):
+                ga = np.asarray(groups[a], dtype=np.int32)
+                gb = np.asarray(groups[b], dtype=np.int32)
+                delta = pos[ga][:, None, :] - pos[gb][None, :, :]
+                dist = np.linalg.norm(delta, axis=2)
+                ntake = min(int(n_contacts), int(dist.size))
+                if ntake <= 0:
+                    continue
+                flat = np.argpartition(dist.ravel(), ntake - 1)[:ntake]
+                order = np.argsort(dist.ravel()[flat])
+                added = 0
+                for k in order:
+                    ia, ib = np.unravel_index(int(flat[k]), dist.shape)
+                    i = int(ga[ia])
+                    j = int(gb[ib])
+                    if i > j:
+                        i, j = j, i
+                    try:
+                        self.add_bond((i, j))
+                    except DuplicateInternalError:
+                        continue
+                    self.extra_contact_pairs.add((i, j))
+                    added += 1
+                    if added >= ntake:
+                        break
+
     def find_all_angles(
         self,
     ) -> None:
@@ -3972,7 +4031,12 @@ class Internals(BaseInternals):
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for bond in self.internals['bonds']:
-            h0[idx] = self._h0_bond(bond)
+            i, j = bond.indices
+            pair = (int(i), int(j)) if int(i) < int(j) else (int(j), int(i))
+            if pair in self.extra_contact_pairs:
+                h0[idx] = h0_tr
+            else:
+                h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -4450,6 +4514,8 @@ class InternalPES(PES):
             new_int.find_all_bonds()
             new_int.find_all_angles()
             new_int.find_all_dihedrals()
+            if new_int.allow_fragments:
+                new_int.add_interfragment_distances()
         new_int.validate_basis()
 
         PES.__init__(
@@ -5765,33 +5831,8 @@ class Sella(Optimizer):
 
         return s, smag
 
-    def _cap_cartesian_step(self, s, smag, max_atom=0.20):
-        """Scale an internal step so no atom moves more than max_atom Å.
-
-        MaxInternalStep limits mixed-unit internals (Å stretches vs radian
-        bends/rotations). A 0.1 rad fragment rotation moves a peripheral atom
-        by ~0.1 R, and geodesic realization can be larger still. Cycle 2's
-        xTB SCC crash on des370k_monoatomics__thiols__train was a 0.42 Å
-        Cartesian step into a 0.20 eV-gap region with no internuclear clash.
-        geomeTRIC therefore defines the trust radius in Cartesian RMSD:
-        https://geometric.readthedocs.io/en/latest/how-it-works.html
-        """
-        if self.internal is None:
-            return s, smag
-        ncart = 3 * len(self.atoms)
-        Binv = self.pes._get_Binv()
-        cart = np.asarray(Binv @ s, dtype=np.float64).reshape(-1)[:ncart]
-        if cart.size < 3:
-            return s, smag
-        maxd = float(np.linalg.norm(cart.reshape(-1, 3), axis=1).max())
-        if maxd > max_atom:
-            scale = max_atom / maxd
-            return s * scale, smag * scale
-        return s, smag
-
     def step(self):
         s, smag = self._predict_step()
-        s, smag = self._cap_cartesian_step(s, smag)
 
         # Determine if we need to call the eigensolver, then step
         if self.nsteps_since_diag >= self.diag_every_n:
