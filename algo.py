@@ -3256,6 +3256,31 @@ for _z, _r in ((3, 0.76), (11, 1.02), (19, 1.38), (37, 1.52), (55, 1.67),
     _STIFFNESS_RADII[_z] = _r
 del _z, _r
 
+# Row factors of the Almlof stretch curvature for the covalent bonds of the
+# p-block elements beyond the second row (Al-Ar, Ga-Kr, In-Xe, Tl-Rn).  The
+# single exponential gives every bond 0.36 Ha/Bohr^2 = 5.6 mdyn/A at
+# r = r_ref, which is right for the first-row bonds (C-C 4.5, C-N 5.0-5.5,
+# C-O 5.0-5.4, C-F 5.9, C-H 5.0, N-H 6.4, O-H 7.8 mdyn/A), but the bonds of
+# the heavier p-block elements are soft for their length (diffuse valence
+# shells): C-Si 2.9, C-P 3.0, C-S 3.1, C-Cl 3.4, C-Br 2.9, C-I 2.3, Si-Cl
+# 3.0, P-Cl 2.5, S-S 2.5, Cl-Cl 3.2, Br-Br 2.5, I-I 1.7 mdyn/A -- 1.6-5x
+# below the exponential, the homonuclear ones also sitting inside r_ref
+# where it grows.  One factor per element row, applied once per atom of
+# the bond (product), reproduces the C-X values (row 3: 3.2-3.3, row 4:
+# 3.0, row 5: 2.4 mdyn/A) and leaves the X-X and H-X bonds 10-30 % soft
+# (S-S 2.3, Cl-Cl 2.3, Br-Br 2.2, I-I 1.5, Si-Cl 2.8, P-Cl 2.3, S-H 3.3,
+# Si-H 2.6, H-Cl 4.1, H-Br 4.1, H-I 3.3; Si-F 5.3, Si-O 5.4, S=O 9.1, C=S
+# 6.7 against 6.4, 5-6, 10.0, 7.5).  The s-block keeps the ionic-radius
+# treatment above, and the d-block is left alone.  The factor applies to
+# the bonds of connected systems only: the cost of a molecular complex is
+# set by its intermolecular coordinates, and the intramolecular paths of
+# its fragments (and the basins they reach) stay as they are.
+_STIFFNESS_SCALE = np.ones(len(covalent_radii), dtype=np.float64)
+for (_z0, _z1), _f in (((13, 18), 0.58), ((31, 36), 0.50), ((49, 54), 0.42),
+                       ((81, 86), 0.35)):
+    _STIFFNESS_SCALE[_z0:_z1 + 1] = _f
+del _z0, _z1, _f
+
 class Internals(BaseInternals):
     def __init__(
         self,
@@ -3987,9 +4012,14 @@ class Internals(BaseInternals):
         Bb: float = 1.944,
     ) -> float:
         idx = np.asarray(bond.indices, dtype=np.int32)
-        rcov = _STIFFNESS_RADII[self.all_atoms.numbers[idx]].sum()
+        numbers = self.all_atoms.numbers[idx]
+        rcov = _STIFFNESS_RADII[numbers].sum()
         rij = bond.calc(self.all_atoms)
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
+        if (self.ntrans + self.nrotations) == 0 and numbers.min() > 0:
+            # Connected system, bond between real atoms: the row factors of
+            # the heavier p-block elements (see _STIFFNESS_SCALE).
+            h0 *= _STIFFNESS_SCALE[numbers].prod()
         return h0 * units.Hartree / units.Bohr**2
 
     def _h0_stretch_diagonal(self) -> Optional[np.ndarray]:
