@@ -1,8 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-angle weight `wa=0.72` on connected molecules (slightly larger bends than the
-cycle-41 champion's 0.75).
+angle weight `wa=0.74` on connected molecules (repair between cycle-41
+keep at 0.75 and cycle-42 hop at 0.72).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5739,10 +5739,10 @@ class Sella(Optimizer):
 
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
-            # Between the cycle-41 champion (wa=0.75) and cycle 39 (wa=2/3).
-            # |s_a| <= 0.1/0.72 ≈ 0.139.
+            # Repair 1/3 after cycle 42: hop cliff is between wa=0.75 (keep)
+            # and wa=0.72 (same 135255884 basin as wa=2/3). |s_a| <= 0.1/0.74 ≈ 0.135.
             if getattr(self, "_allow_angle_wa", False):
-                rs_kwargs['wa'] = 0.72
+                rs_kwargs['wa'] = 0.74
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
