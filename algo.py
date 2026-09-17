@@ -4,7 +4,7 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. After 20 connected steps, a
-Farkas–Schlegel controlled GDIIS trial may replace the QN step.
+convex controlled GDIIS trial no longer than QN may replace QN.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5771,11 +5771,12 @@ class Sella(Optimizer):
         return self._maybe_gdiis(s, smag)
 
     def _maybe_gdiis(self, s_qn, smag_qn):
-        """Replace the QN step with Farkas–Schlegel/pysisyphus controlled GDIIS.
+        """Replace the QN step with interpolation-only controlled GDIIS.
 
-        Only connected molecules after 20 steps; otherwise the champion QN
-        trial is unchanged. Controls: coefficient sums, step length vs QN,
-        and direction cosine. Rejected trials keep QN (no mixed-unit scaling).
+        Cycle 97's Farkas–Schlegel tests still allowed extrapolation
+        (negative coefficients, GDIIS up to 10× QN). Paliperidone hopped
+        78→23 / +1.65 kcal at the nsteps=20 switch. Repair: all c_i≥0 and
+        ||s_DIIS|| ≤ ||s_QN||, plus the original 2002 cosine cutoffs.
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5798,7 +5799,8 @@ class Sella(Optimizer):
             return s_qn, smag_qn
         err = err / nmin
         coords = np.stack(xs)
-        cos_cut = {2: 0.80, 3: 0.75, 4: 0.71}
+        # Original Farkas–Schlegel 2002 cutoffs for 2 and 3; pysisyphus 4.
+        cos_cut = {2: 0.97, 3: 0.84, 4: 0.71}
         accepted = None
         max_use = min(4, err.shape[0])
         for use in range(2, max_use + 1):
@@ -5814,6 +5816,8 @@ class Sella(Optimizer):
             if abs(csum) < 1e-16:
                 break
             coeffs = coeffs / csum
+            if np.any(coeffs < -1e-8):
+                break
             pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
             neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
             if pos_sum > 15.0 or neg_sum > 15.0:
@@ -5821,7 +5825,7 @@ class Sella(Optimizer):
             diis_coords = coeffs @ coords[::-1][:use]
             diis_step = diis_coords - coords[-1]
             ndiis = float(np.linalg.norm(diis_step))
-            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > 10.0 * nref:
+            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
                 break
             cos = float(diis_step @ s_qn) / (ndiis * nref)
             if cos < cos_cut.get(use, 0.50) or cos < 0.0:
@@ -5830,7 +5834,7 @@ class Sella(Optimizer):
         if accepted is None:
             return s_qn, smag_qn
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
-        if (not np.isfinite(smag)) or smag < 1e-16 or smag > self.delta:
+        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
             return s_qn, smag_qn
         return accepted, smag
 
