@@ -1,10 +1,9 @@
-"""Self-contained Sella minimiser (order=0, internal coordinates, TRICs).
+"""Self-contained Sella minimiser (order=0, internal coordinates, RFO steps).
 
 Vendored from the `sella` package (2.5.0), restricted to the code path that
-`Sella(atoms, internal=True, order=0, allow_fragments=True)` + `irun(fmax=0)`
-actually executes. TRICs avoid cutoff-grown intermolecular angles/dihedrals;
-up to three extra-redundant inter-fragment distances are added afterwards so
-starting dimer packing cannot jump by more than the internal trust radius.
+`Sella(atoms, internal=True, order=0, method='rfo')` + `irun(fmax=0)` actually
+executes. Uses rational-function optimization steps instead of the default
+undamped quasi-Newton step for minima.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3266,7 +3265,6 @@ class Internals(BaseInternals):
                 adder(coord)
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
-        self.extra_contact_pairs = set()
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3282,11 +3280,6 @@ class Internals(BaseInternals):
             new._internals_set[name] = self._internals_set[name].copy()
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
-        new.fragment_atom_groups = (
-            None if self.fragment_atom_groups is None
-            else [np.array(g, dtype=np.int32) for g in self.fragment_atom_groups]
-        )
-        new.extra_contact_pairs = set(self.extra_contact_pairs)
         return new
 
     def add_rotation(
@@ -3634,59 +3627,6 @@ class Internals(BaseInternals):
                         [bond.kwargs['ncvecs'][0] - shift_j + shift_i]
                     )
 
-    def add_interfragment_distances(self, n_contacts: int = 3) -> None:
-        """Add extra-redundant distances between fragments, without angles.
-
-        Must run after find_all_angles/dihedrals so these contacts do not
-        spawn intermolecular bends or torsions. MaxInternalStep then limits
-        each contact to the internal trust radius (~0.1 Å per step), which
-        keeps starting dimer packing from jumping in a few TRIC steps.
-        Bakken & Helgaker extra-redundant internals; Wang–Song TRIC remains
-        for the remaining intermolecular rigid-body modes.
-        """
-        groups = []
-        seen = set()
-        if self.fragment_atom_groups:
-            for group in self.fragment_atom_groups:
-                atoms = [int(i) for i in group]
-                if atoms:
-                    groups.append(atoms)
-                    seen.update(atoms)
-        for trans in self.internals['translations']:
-            idx = tuple(int(i) for i in trans.indices)
-            if len(idx) == 1 and idx[0] not in seen:
-                groups.append([idx[0]])
-                seen.add(idx[0])
-        if len(groups) < 2:
-            return
-        pos = np.asarray(self.atoms.positions, dtype=np.float64)
-        for a in range(len(groups)):
-            for b in range(a + 1, len(groups)):
-                ga = np.asarray(groups[a], dtype=np.int32)
-                gb = np.asarray(groups[b], dtype=np.int32)
-                delta = pos[ga][:, None, :] - pos[gb][None, :, :]
-                dist = np.linalg.norm(delta, axis=2)
-                ntake = min(int(n_contacts), int(dist.size))
-                if ntake <= 0:
-                    continue
-                flat = np.argpartition(dist.ravel(), ntake - 1)[:ntake]
-                order = np.argsort(dist.ravel()[flat])
-                added = 0
-                for k in order:
-                    ia, ib = np.unravel_index(int(flat[k]), dist.shape)
-                    i = int(ga[ia])
-                    j = int(gb[ib])
-                    if i > j:
-                        i, j = j, i
-                    try:
-                        self.add_bond((i, j))
-                    except DuplicateInternalError:
-                        continue
-                    self.extra_contact_pairs.add((i, j))
-                    added += 1
-                    if added >= ntake:
-                        break
-
     def find_all_angles(
         self,
     ) -> None:
@@ -4031,12 +3971,7 @@ class Internals(BaseInternals):
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for bond in self.internals['bonds']:
-            i, j = bond.indices
-            pair = (int(i), int(j)) if int(i) < int(j) else (int(j), int(i))
-            if pair in self.extra_contact_pairs:
-                h0[idx] = h0_tr
-            else:
-                h0[idx] = self._h0_bond(bond)
+            h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -4514,8 +4449,6 @@ class InternalPES(PES):
             new_int.find_all_bonds()
             new_int.find_all_angles()
             new_int.find_all_dihedrals()
-            if new_int.allow_fragments:
-                new_int.add_interfragment_distances()
         new_int.validate_basis()
 
         PES.__init__(
@@ -6018,7 +5951,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None, allow_fragments=True)
+    opt = Sella(atoms, internal=True, order=0, logfile=None, method='rfo')
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
