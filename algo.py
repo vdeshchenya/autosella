@@ -1,8 +1,9 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion MaxInternalStep (delta0=0.10)
-on all systems. After five steps, connected single-fragment molecules raise the
-trust floor to 0.15 (cycle 19) with ODE restore/halve; covalent dimers keep 0.10.
+Vendored from the `sella` package (2.5.0). Champion internals and geodesic
+path. After five steps, single-fragment molecules raise the MaxInternalStep
+floor to 0.15; covalent dimers stay at delta0=0.10 so their path matches the
+champion.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4672,8 +4673,6 @@ class InternalPES(PES):
         t0 = 0.
         Binv = self._get_Binv()
         self._ode_Binv = Binv
-        pos0 = self.atoms.positions.copy()
-        dpos0 = None if self.dummies is None else self.dummies.positions.copy()
         y0 = np.hstack((self.apos.ravel(), self.dpos.ravel(),
                         Binv @ dx,
                         Binv @ self.curr.get('g', np.zeros_like(dx))))
@@ -4687,16 +4686,11 @@ class InternalPES(PES):
             if self.bad_int is not None:
                 break
             if ode.nfev > 1000:
-                self.atoms.positions = pos0
-                if dpos0 is not None:
-                    self.dummies.positions = dpos0
+                view(self.atoms + self.dummies)
                 raise RuntimeError("Geometry update ODE is taking too long "
                                    "to converge!")
 
         if ode.status == 'failed':
-            self.atoms.positions = pos0
-            if dpos0 is not None:
-                self.dummies.positions = dpos0
             raise RuntimeError("Geometry update ODE failed to converge!")
 
         nxa = 3 * len(self.atoms)
@@ -5791,23 +5785,7 @@ class Sella(Optimizer):
         else:
             self.nsteps_since_diag += 1
 
-        rho = None
-        last_ode_error = None
-        for _ode_try in range(6):
-            try:
-                rho = self.pes.kick(s, ev, **self.diagkwargs)
-                last_ode_error = None
-                break
-            except RuntimeError as exc:
-                msg = str(exc)
-                if "ODE is taking too long" not in msg and "ODE failed" not in msg:
-                    raise
-                last_ode_error = exc
-                self.pes.restore()
-                s = 0.5 * s
-                smag = 0.5 * smag
-        if last_ode_error is not None:
-            raise last_ode_error
+        rho = self.pes.kick(s, ev, **self.diagkwargs)
 
         # Check for bad internals, and if found, reset PES object.
         # This skips the trust radius update.
@@ -5982,9 +5960,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
     opt = Sella(atoms, internal=True, order=0, logfile=None)
-    # Cycle 19's 0.15 floor slightly cheapened connected organics but
-    # slightly cost dimers. Apply that floor only when a covalent-fragment
-    # probe finds a single molecule (no TRIC translations).
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
     opt._allow_delta_boost = not bool(probe.internals["translations"])
