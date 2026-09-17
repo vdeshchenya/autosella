@@ -1,7 +1,7 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-angle weight `wa=2/3` on connected molecules so bends may reach 0.15 while
+angle weight `wa=0.8` on connected molecules so bends may reach 0.125 while
 stretches and torsions stay at 0.1.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
@@ -5739,11 +5739,10 @@ class Sella(Optimizer):
 
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
-            # Connected molecules: |s_a| <= 0.15. Dimers keep champion wa=1.
-            # Cycle 29's dihedral wd hopped 252618428; angles are a different
-            # MIS coordinate class.
+            # Connected only. Cycle 39 wa=2/3 passed train but hopped
+            # 135255884 by 1.14 kcal on valid. Milder |s_a|<=0.125.
             if getattr(self, "_allow_angle_wa", False):
-                rs_kwargs['wa'] = 2.0 / 3.0
+                rs_kwargs['wa'] = 0.8
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
