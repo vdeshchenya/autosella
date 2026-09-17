@@ -2,7 +2,7 @@
 
 Vendored from the `sella` package (2.5.0). Uses delta0=0.15 with geodesic
 ODE restore/halve (cycle 8). After a step whose energy rises by more than
-1e-4 eV, Cartesian coordinates and PES state are restored to the previous
+1e-3 eV, Cartesian coordinates and PES state are restored to the previous
 point and the trust radius is shrunk, so large MIS steps cannot finish in a
 higher basin.
 
@@ -4420,7 +4420,7 @@ class PES:
         df_actual = self.get_f() - f0
         # Reject uphill geodesic steps: keep the force-call cost of the trial
         # point but restore the last downhill geometry without a second eval.
-        if df_actual > 1e-4:
+        if df_actual > 1e-3:
             self.atoms.positions = apos0
             if dpos0 is not None:
                 self.dummies.positions = dpos0
