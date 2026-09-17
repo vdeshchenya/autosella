@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps.
+also floor δ at 0.15 after 20 steps and restore default angle caps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5741,8 +5741,9 @@ class Sella(Optimizer):
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
             # Between cycle 39 (wa=2/3, valid hop) and cycle 40 (wa=0.8,
-            # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
-            if getattr(self, "_allow_angle_wa", False):
+            # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133. After the cycle-88
+            # δ=0.15 floor, restore wa=1 so |s_a| stays 0.15 not 0.20.
+            if getattr(self, "_allow_angle_wa", False) and self.nsteps < 20:
                 rs_kwargs['wa'] = 0.75
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
