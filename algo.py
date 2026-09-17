@@ -4521,11 +4521,15 @@ class Internals(BaseInternals):
         bend at the hydrogen and the true-angle bends H...C-Z at the
         carbon, whose two or three arms 120 degrees apart cover the tilt
         in every direction.  The contact factor uses the weak cap
-        (bo_cap_weak): the pi bond is a diffuse acceptor, and with two to
-        three carbons within reach the sum over them reproduces the
-        libration stiffness (0.003-0.01 Ha/rad^2) that the water-dimer
-        calibration of the caps gives per single heteroatom contact.  A
-        hydrogen whose closest partner is a heteroatom keeps the
+        (bo_cap_weak): the pi bond is a diffuse acceptor, and the two
+        carbons of a double bond within reach sum to the libration
+        stiffness (0.003-0.01 Ha/rad^2) that the water-dimer calibration
+        of the caps gives per single heteroatom contact.  An aromatic face
+        puts six carbons at the same distance, but it binds a donor only
+        1.3-2 times more strongly than a double bond, not three times, so
+        the contact factors of one (hydrogen, fragment) face are scaled to
+        a sum of at most twice the largest of them -- a double bond's
+        worth.  A hydrogen whose closest partner is a heteroatom keeps the
         heteroatom terms only, so hydrogen-bonded contacts are unchanged.
         """
         adj, label = self._covalent_graph()
@@ -4538,6 +4542,7 @@ class Internals(BaseInternals):
         # (hydrogen, fragment label) pairs for which the hydrogen's closest
         # non-hydrogen atom of that fragment is an unsaturated carbon.
         pi_donor = set()
+        pi_scale = {}
         if np.any(inter):
             excess = r - rcov
             nearest = {}
@@ -4552,6 +4557,21 @@ class Internals(BaseInternals):
             for key, (_, y) in nearest.items():
                 if numbers[y] == 6 and 2 <= len(adj[y]) <= 3:
                     pi_donor.add(key)
+            # Per face, the contact factors of the unsaturated carbons in
+            # range sum to at most twice the largest one.
+            face = {}
+            for p in sel:
+                if not inter[p]:
+                    continue
+                i, j = int(ii[p]), int(jj[p])
+                for h, y in ((i, j), (j, i)):
+                    key = (h, int(label[y]))
+                    if (key in pi_donor and numbers[y] == 6
+                            and 2 <= len(adj[y]) <= 3):
+                        face.setdefault(key, []).append(
+                            min(float(bo[p]), bo_cap_weak))
+            for key, cs in face.items():
+                pi_scale[key] = min(1., 2. * max(cs) / sum(cs))
         V, A, B, W, ISO = [], [], [], [], []
         OOP, WO = [], []
         for p in sel:
@@ -4560,6 +4580,7 @@ class Internals(BaseInternals):
                 if numbers[h] != 1 or not adj[h]:
                     continue
                 strong = any(hb_elem[kk] for kk in adj[h])
+                scale = 1.
                 if hb_elem[y]:
                     if not (strong or inter[p]):
                         # Intramolecular C-H...Y contact: no bending term.
@@ -4570,9 +4591,10 @@ class Internals(BaseInternals):
                       and (h, int(label[y])) in pi_donor):
                     # X-H...pi contact with an unsaturated carbon.
                     cap = bo_cap_weak
+                    scale = pi_scale[(h, int(label[y]))]
                 else:
                     continue
-                c = min(float(bo[p]), cap)
+                c = min(float(bo[p]), cap) * scale
                 # Bend at the hydrogen: X-H...Y, linear reference.
                 for x in adj[h]:
                     V.append(h)
