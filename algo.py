@@ -1,10 +1,9 @@
-"""Self-contained Sella minimiser (order=0, internal coordinates).
+"""Self-contained Sella minimiser (order=0, Cartesian coordinates).
 
-Vendored from the `sella` package (2.5.0). Uses delta0=0.15 with geodesic
-ODE restore/halve (cycle 8). After a step whose energy rises by more than
-1e-2 eV, Cartesian coordinates and PES state are restored to the previous
-point and the trust radius is shrunk, so large MIS steps cannot finish in a
-higher basin.
+Vendored from the `sella` package (2.5.0). Uses RestrictedAtomicStep on
+Cartesian coordinates (`internal=False`) instead of MaxInternalStep on
+redundant internals, so intermolecular translation is not mixed with bond
+units.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4408,25 +4407,12 @@ class PES:
         f0 = self.get_f()
         g0 = self.get_g()
         B0 = self.H.asarray()
-        apos0 = self.atoms.positions.copy()
-        dpos0 = None if self.dummies is None else self.dummies.positions.copy()
-        saved_curr = dict(self.curr)
-        saved_last = dict(self.last)
 
         dx_initial, dx_final, g_par = self.set_x(x0 + dx)
 
         df_pred = self.get_df_pred(dx_initial, g0, B0)
         dg_actual = self.get_g() - g_par
         df_actual = self.get_f() - f0
-        # Reject uphill geodesic steps: keep the force-call cost of the trial
-        # point but restore the last downhill geometry without a second eval.
-        if df_actual > 1e-2:
-            self.atoms.positions = apos0
-            if dpos0 is not None:
-                self.dummies.positions = dpos0
-            self.curr = dict(saved_curr)
-            self.last = dict(saved_last)
-            return 0.0
         if df_pred is None or abs(df_pred) < 1e-14:
             ratio = None
         else:
@@ -4687,8 +4673,6 @@ class InternalPES(PES):
         t0 = 0.
         Binv = self._get_Binv()
         self._ode_Binv = Binv
-        pos0 = self.atoms.positions.copy()
-        dpos0 = None if self.dummies is None else self.dummies.positions.copy()
         y0 = np.hstack((self.apos.ravel(), self.dpos.ravel(),
                         Binv @ dx,
                         Binv @ self.curr.get('g', np.zeros_like(dx))))
@@ -4702,16 +4686,11 @@ class InternalPES(PES):
             if self.bad_int is not None:
                 break
             if ode.nfev > 1000:
-                self.atoms.positions = pos0
-                if dpos0 is not None:
-                    self.dummies.positions = dpos0
+                view(self.atoms + self.dummies)
                 raise RuntimeError("Geometry update ODE is taking too long "
                                    "to converge!")
 
         if ode.status == 'failed':
-            self.atoms.positions = pos0
-            if dpos0 is not None:
-                self.dummies.positions = dpos0
             raise RuntimeError("Geometry update ODE failed to converge!")
 
         nxa = 3 * len(self.atoms)
@@ -5806,23 +5785,7 @@ class Sella(Optimizer):
         else:
             self.nsteps_since_diag += 1
 
-        rho = None
-        last_ode_error = None
-        for _ode_try in range(6):
-            try:
-                rho = self.pes.kick(s, ev, **self.diagkwargs)
-                last_ode_error = None
-                break
-            except RuntimeError as exc:
-                msg = str(exc)
-                if "ODE is taking too long" not in msg and "ODE failed" not in msg:
-                    raise
-                last_ode_error = exc
-                self.pes.restore()
-                s = 0.5 * s
-                smag = 0.5 * smag
-        if last_ode_error is not None:
-            raise last_ode_error
+        rho = self.pes.kick(s, ev, **self.diagkwargs)
 
         # Check for bad internals, and if found, reset PES object.
         # This skips the trust radius update.
@@ -5988,13 +5951,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(
-        atoms,
-        internal=True,
-        order=0,
-        logfile=None,
-        delta0=0.15,
-    )
+    opt = Sella(atoms, internal=False, order=0, logfile=None)
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
