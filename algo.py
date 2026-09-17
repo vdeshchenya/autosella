@@ -1,7 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Champion internals, with MaxInternalStep
-dihedral weight `wd=2/3` only on molecules whose covalent graph is a single fragment.
+dihedral weight `wd=0.8` only on molecules whose covalent graph is a single fragment
+so torsions may reach 0.125 while stretches stay at 0.1.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5738,10 +5739,10 @@ class Sella(Optimizer):
 
         rs_kwargs = {}
         if isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep):
-            # Connected molecules: |s_d| <= 0.15. Dimers keep champion wd=1 so
-            # intermolecular dihedrals on grown contacts are not enlarged.
+            # Connected molecules only: milder torsion cap than cycle 29's 0.15.
+            # wd=0.8 => |s_d| <= 0.1/0.8 = 0.125; dimers keep champion wd=1.
             if getattr(self, "_allow_dihedral_wd", False):
-                rs_kwargs['wd'] = 2.0 / 3.0
+                rs_kwargs['wd'] = 0.8
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
