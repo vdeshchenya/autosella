@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-treat angles within 20° of linear as dummy linear bends.
+treat angles within 18° of linear as dummy linear bends.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5966,7 +5966,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     if connected:
-        Internals.atol_default = 20.
+        Internals.atol_default = 18.
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
