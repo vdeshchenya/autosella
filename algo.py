@@ -1,7 +1,7 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Starts at the champion MaxInternalStep
-trust (delta0=0.10). After five optimizer steps the trust floor is raised to
+trust (delta0=0.10). After three optimizer steps the trust floor is raised to
 0.15, with cycle 8's geodesic ODE restore/halve so later larger steps do not
 abort.
 
@@ -5864,7 +5864,7 @@ class Sella(Optimizer):
         else:
             self.rho = 1.
 
-        if (not getattr(self, "_delta_boosted", False)) and self.nsteps >= 4:
+        if (not getattr(self, "_delta_boosted", False)) and self.nsteps >= 2:
             self.delta = max(self.delta, 0.15)
             self._delta_boosted = True
 
