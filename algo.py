@@ -2,8 +2,9 @@
 
 Vendored from the `sella` package (2.5.0), restricted to the code path that
 `Sella(atoms, internal=True, order=0, allow_fragments=True)` + `irun(fmax=0)`
-actually executes. Cycle 2 enables translation-rotation internals (TRIC) so
-disconnected fragments are not joined by spurious intermolecular bonds.
+actually executes. TRICs avoid cutoff-grown intermolecular bonds; each internal
+step is then scaled so the linearized Cartesian max-atom displacement is at
+most 0.20 Å (geomeTRIC-style Cartesian trust, repair of cycle 2).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5764,8 +5765,33 @@ class Sella(Optimizer):
 
         return s, smag
 
+    def _cap_cartesian_step(self, s, smag, max_atom=0.20):
+        """Scale an internal step so no atom moves more than max_atom Å.
+
+        MaxInternalStep limits mixed-unit internals (Å stretches vs radian
+        bends/rotations). A 0.1 rad fragment rotation moves a peripheral atom
+        by ~0.1 R, and geodesic realization can be larger still. Cycle 2's
+        xTB SCC crash on des370k_monoatomics__thiols__train was a 0.42 Å
+        Cartesian step into a 0.20 eV-gap region with no internuclear clash.
+        geomeTRIC therefore defines the trust radius in Cartesian RMSD:
+        https://geometric.readthedocs.io/en/latest/how-it-works.html
+        """
+        if self.internal is None:
+            return s, smag
+        ncart = 3 * len(self.atoms)
+        Binv = self.pes._get_Binv()
+        cart = np.asarray(Binv @ s, dtype=np.float64).reshape(-1)[:ncart]
+        if cart.size < 3:
+            return s, smag
+        maxd = float(np.linalg.norm(cart.reshape(-1, 3), axis=1).max())
+        if maxd > max_atom:
+            scale = max_atom / maxd
+            return s * scale, smag * scale
+        return s, smag
+
     def step(self):
         s, smag = self._predict_step()
+        s, smag = self._cap_cartesian_step(s, smag)
 
         # Determine if we need to call the eigensolver, then step
         if self.nsteps_since_diag >= self.diag_every_n:
