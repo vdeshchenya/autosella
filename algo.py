@@ -1,8 +1,7 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Champion internals with a wider
-trust-expansion window (`rho_inc=1.5` vs 4/3) so more well-predicted steps
-grow MaxInternalStep.
+Vendored from the `sella` package (2.5.0). Champion internals with a milder
+trust-radius shrink (`sigma_dec=0.95` vs 0.90) after poorly predicted steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5950,7 +5949,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=True, order=0, logfile=None, rho_inc=1.5)
+    opt = Sella(atoms, internal=True, order=0, logfile=None, sigma_dec=0.95)
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
