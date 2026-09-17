@@ -2,7 +2,7 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-Dimers use RFO steps instead of quasi-Newton.
+Dimers floor the trust radius at `delta_min=0.05`.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5957,14 +5957,13 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
+    opt = Sella(atoms, internal=True, order=0, logfile=None)
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
-    is_dimer = bool(probe.internals["translations"])
-    opt = Sella(
-        atoms, internal=True, order=0, logfile=None,
-        method='rfo' if is_dimer else 'qn',
-    )
-    opt._allow_angle_wa = not is_dimer
+    opt._allow_angle_wa = not bool(probe.internals["translations"])
+    if not opt._allow_angle_wa:
+        # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
+        opt.delta_min = 0.05
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
