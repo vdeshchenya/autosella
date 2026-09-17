@@ -3,8 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. Dummy-atom dihedral guess
-constants are 0.25 Ha on every molecule.
+also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
+guess constants are 0.20 Ha.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3988,7 +3988,7 @@ class Internals(BaseInternals):
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
-                scale = 0.25 if getattr(self, 'soft_dummy_dihedral_h0', False) else 0.5
+                scale = 0.20 if getattr(self, 'soft_dummy_dihedral_h0', False) else 0.5
                 h0[idx] = scale * units.Hartree
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
@@ -5970,7 +5970,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
-    Internals.soft_dummy_dihedral_h0_default = True
+    if connected:
+        Internals.soft_dummy_dihedral_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
