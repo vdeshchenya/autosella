@@ -5762,7 +5762,10 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
-        s, smag = self._maybe_gdiis(s, smag)
+        try:
+            s, smag = self._maybe_gdiis(s, smag)
+        except (ValueError, np.linalg.LinAlgError, IndexError, TypeError):
+            pass
         return s, smag
 
     def _maybe_gdiis(self, s_qn, smag_qn, max_hist=4):
