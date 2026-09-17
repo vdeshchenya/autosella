@@ -4364,7 +4364,8 @@ class Internals(BaseInternals):
         fragments and to the internal coordinates that move the contact
         atoms).  The hydrogen-bond contacts X-H...Y -- inter-fragment
         ones with any donor, intramolecular ones with a heteroatom donor
-        -- also carry the bending curvature of _h0_contact_bends (the
+        -- and the inter-fragment X-H...pi contacts of heteroatom donors
+        also carry the bending curvature of _h0_contact_bends (the
         sideways stiffness of a directional contact, which a radial pair
         term does not have); the twist about a contact axis and the
         sliding of dispersion-bound fragments stay at the diagonal floor
@@ -4503,6 +4504,29 @@ class Internals(BaseInternals):
         neighbour is linear (nitrile) or tetrahedral (sulfonyl,
         phosphoryl) have nearly cylindrical lone-pair distributions and
         keep the precession free.
+
+        X-H...pi contacts between fragments (a heteroatom donor pointing
+        its hydrogen at a double bond or an aromatic ring) are directional
+        too: the hydrogen sits over the pi face, 2.0-2.8 A from the
+        nearest unsaturated carbons, and the pair terms to those carbons --
+        all inclined by only 15-30 degrees from the common normal -- give
+        the sideways motions of the hydrogen (the donor tilting, the ring
+        or double bond sliding under it) almost no curvature, so they stay
+        at the floor although their librations lie at 100-300 cm^-1.  A
+        hydrogen of a heteroatom donor whose closest non-hydrogen atom of
+        another fragment (by r - r_cov) is an unsaturated carbon (two or
+        three covalent neighbours) is taken as a pi donor towards that
+        fragment, and every such carbon of the fragment within range gets
+        the same two kinds of bend as a heteroatom acceptor: the isotropic
+        bend at the hydrogen and the true-angle bends H...C-Z at the
+        carbon, whose two or three arms 120 degrees apart cover the tilt
+        in every direction.  The contact factor uses the weak cap
+        (bo_cap_weak): the pi bond is a diffuse acceptor, and with two to
+        three carbons within reach the sum over them reproduces the
+        libration stiffness (0.003-0.01 Ha/rad^2) that the water-dimer
+        calibration of the caps gives per single heteroatom contact.  A
+        hydrogen whose closest partner is a heteroatom keeps the
+        heteroatom terms only, so hydrogen-bonded contacts are unchanged.
         """
         adj, label = self._covalent_graph()
         inter = label[ii] != label[jj]
@@ -4511,18 +4535,43 @@ class Internals(BaseInternals):
         if len(sel) == 0:
             return None
         hb_elem = np.isin(numbers, hb_elements)
+        # (hydrogen, fragment label) pairs for which the hydrogen's closest
+        # non-hydrogen atom of that fragment is an unsaturated carbon.
+        pi_donor = set()
+        if np.any(inter):
+            excess = r - rcov
+            nearest = {}
+            for p in np.where(inter)[0]:
+                i, j = int(ii[p]), int(jj[p])
+                for h, y in ((i, j), (j, i)):
+                    if numbers[h] != 1 or numbers[y] == 1:
+                        continue
+                    key = (h, int(label[y]))
+                    if key not in nearest or excess[p] < nearest[key][0]:
+                        nearest[key] = (float(excess[p]), y)
+            for key, (_, y) in nearest.items():
+                if numbers[y] == 6 and 2 <= len(adj[y]) <= 3:
+                    pi_donor.add(key)
         V, A, B, W, ISO = [], [], [], [], []
         OOP, WO = [], []
         for p in sel:
             i, j = int(ii[p]), int(jj[p])
             for h, y in ((i, j), (j, i)):
-                if numbers[h] != 1 or not hb_elem[y] or not adj[h]:
+                if numbers[h] != 1 or not adj[h]:
                     continue
                 strong = any(hb_elem[kk] for kk in adj[h])
-                if not (strong or inter[p]):
-                    # Intramolecular C-H...Y contact: no bending term.
+                if hb_elem[y]:
+                    if not (strong or inter[p]):
+                        # Intramolecular C-H...Y contact: no bending term.
+                        continue
+                    cap = bo_cap if strong else bo_cap_weak
+                elif (strong and inter[p] and numbers[y] == 6
+                      and 2 <= len(adj[y]) <= 3
+                      and (h, int(label[y])) in pi_donor):
+                    # X-H...pi contact with an unsaturated carbon.
+                    cap = bo_cap_weak
+                else:
                     continue
-                cap = bo_cap if strong else bo_cap_weak
                 c = min(float(bo[p]), cap)
                 # Bend at the hydrogen: X-H...Y, linear reference.
                 for x in adj[h]:
