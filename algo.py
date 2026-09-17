@@ -1,9 +1,8 @@
-"""Self-contained Sella minimiser (order=0, Cartesian coordinates).
+"""Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Uses RestrictedAtomicStep on
-Cartesian coordinates (`internal=False`) instead of MaxInternalStep on
-redundant internals, so intermolecular translation is not mixed with bond
-units.
+Vendored from the `sella` package (2.5.0). Champion connecting internals plus
+one to three extra-redundant closest contacts between covalent fragments, added after
+angles/dihedrals so it does not spawn intermolecular bends (Bakken–Helgaker).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3265,6 +3264,8 @@ class Internals(BaseInternals):
                 adder(coord)
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
+        self.covalent_atom_groups = None
+        self.extra_contact_pairs = set()
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3280,6 +3281,9 @@ class Internals(BaseInternals):
             new._internals_set[name] = self._internals_set[name].copy()
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
+        new.fragment_atom_groups = self.fragment_atom_groups
+        new.covalent_atom_groups = self.covalent_atom_groups
+        new.extra_contact_pairs = set(self.extra_contact_pairs)
         return new
 
     def add_rotation(
@@ -3576,6 +3580,20 @@ class Internals(BaseInternals):
             # to be incorrectly added to single-atom groups.
             labels[nbonds == 0] = -1
 
+            if (
+                (not first_run)
+                and self.covalent_atom_groups is None
+                and nlabels > 1
+            ):
+                groups = [[] for _ in range(nlabels)]
+                loners = []
+                for i, label in enumerate(labels):
+                    if label >= 0:
+                        groups[label].append(i)
+                    else:
+                        loners.append([i])
+                self.covalent_atom_groups = [g for g in groups if g] + loners
+
             if self.allow_fragments and not first_run:
                 break
 
@@ -3626,6 +3644,39 @@ class Internals(BaseInternals):
                     bond.kwargs['ncvecs'] = np.array(
                         [bond.kwargs['ncvecs'][0] - shift_j + shift_i]
                     )
+
+    def add_interfragment_distances(self, n_contacts: int = 3) -> None:
+        """Extra-redundant closest contacts between covalent fragments."""
+        groups = self.covalent_atom_groups or []
+        if len(groups) < 2:
+            return
+        pos = np.asarray(self.atoms.positions, dtype=np.float64)
+        for a in range(len(groups)):
+            for b in range(a + 1, len(groups)):
+                ga = np.asarray(groups[a], dtype=np.int32)
+                gb = np.asarray(groups[b], dtype=np.int32)
+                delta = pos[ga][:, None, :] - pos[gb][None, :, :]
+                dist = np.linalg.norm(delta, axis=2)
+                ntake = min(int(n_contacts), int(dist.size))
+                if ntake <= 0:
+                    continue
+                flat = np.argpartition(dist.ravel(), ntake - 1)[:ntake]
+                order = np.argsort(dist.ravel()[flat])
+                added = 0
+                for k in order:
+                    ia, ib = np.unravel_index(int(flat[k]), dist.shape)
+                    i = int(ga[ia])
+                    j = int(gb[ib])
+                    if i > j:
+                        i, j = j, i
+                    try:
+                        self.add_bond((i, j))
+                    except DuplicateInternalError:
+                        continue
+                    self.extra_contact_pairs.add((i, j))
+                    added += 1
+                    if added >= ntake:
+                        break
 
     def find_all_angles(
         self,
@@ -3971,7 +4022,11 @@ class Internals(BaseInternals):
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for bond in self.internals['bonds']:
-            h0[idx] = self._h0_bond(bond)
+            i, j = bond.indices
+            if (min(i, j), max(i, j)) in self.extra_contact_pairs:
+                h0[idx] = h0_tr
+            else:
+                h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -4449,6 +4504,7 @@ class InternalPES(PES):
             new_int.find_all_bonds()
             new_int.find_all_angles()
             new_int.find_all_dihedrals()
+            new_int.add_interfragment_distances(n_contacts=3)
         new_int.validate_basis()
 
         PES.__init__(
@@ -5951,7 +6007,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
-    opt = Sella(atoms, internal=False, order=0, logfile=None)
+    opt = Sella(atoms, internal=True, order=0, logfile=None)
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
