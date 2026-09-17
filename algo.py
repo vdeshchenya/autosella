@@ -1,9 +1,8 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
-Vendored from the `sella` package (2.5.0). Starts at the champion MaxInternalStep
-trust (delta0=0.10). After three optimizer steps the trust floor is raised to
-0.15, with cycle 8's geodesic ODE restore/halve so later larger steps do not
-abort.
+Vendored from the `sella` package (2.5.0). Champion MaxInternalStep (delta0=0.10)
+on all systems. After five steps, connected single-fragment molecules raise the
+trust floor to 0.15 (cycle 19) with ODE restore/halve; covalent dimers keep 0.10.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5864,7 +5863,11 @@ class Sella(Optimizer):
         else:
             self.rho = 1.
 
-        if (not getattr(self, "_delta_boosted", False)) and self.nsteps >= 2:
+        if (
+            getattr(self, "_allow_delta_boost", False)
+            and (not getattr(self, "_delta_boosted", False))
+            and self.nsteps >= 4
+        ):
             self.delta = max(self.delta, 0.15)
             self._delta_boosted = True
 
@@ -5979,6 +5982,12 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
     opt = Sella(atoms, internal=True, order=0, logfile=None)
+    # Cycle 19's 0.15 floor slightly cheapened connected organics but
+    # slightly cost dimers. Apply that floor only when a covalent-fragment
+    # probe finds a single molecule (no TRIC translations).
+    probe = Internals(atoms.copy(), allow_fragments=True)
+    probe.find_all_bonds()
+    opt._allow_delta_boost = not bool(probe.internals["translations"])
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
