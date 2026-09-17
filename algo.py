@@ -4382,6 +4382,33 @@ class Internals(BaseInternals):
         exactly like the pair term.  Dispersion and steric contacts
         (C...C, C-H...C, H...H) and metal-cation contacts are radial and
         get no bending term.
+
+        An acceptor with two or more covalent neighbours gets both of its
+        angular degrees of freedom from the bends H...Y-Z: the precession
+        of the hydrogen about one Y-Z axis changes the angle to the other
+        neighbour.  An acceptor with a single neighbour -- the carbonyl,
+        carboxylate or nitro oxygen, Y=Z with Z trigonal -- has only one
+        such bend, and the precession about the Y=Z axis is invisible to
+        every term above (it changes neither the contact length nor the
+        angles at H and Y); physically it is the stiffer of the two
+        acceptor motions, because the sp2 lone pairs lie in the plane of
+        Z's substituents and a hydrogen bond above that plane costs a
+        substantial part of the interaction energy (1-3 kcal/mol at 90
+        degrees, i.e. k ~ 0.005-0.01 Ha/rad^2).  Such acceptors get the
+        out-of-plane term k_oop s^2 / 2 with s = sin of the angle between
+        Y->H and the plane (W1, Z, W2), k_oop = A_phi,acc rho_YZ
+        min(rho_contact, cap) times the planarity of Z (squared cosine of
+        the angle between Z->Y and the plane, so that a pyramidal centre
+        such as a sulfoxide sulfur, whose oxygen lone pairs are nearly
+        cylindrical, gets little of it); with the same prefactor as the
+        acceptor bends the acceptor-side angular curvature becomes
+        isotropic, as it effectively is for two-neighbour acceptors.  The
+        gradient of s involves the hydrogen, the acceptor and the three
+        atoms that define the plane, so the term also holds the rotation
+        of the acceptor molecule about its own Y=Z axis.  Acceptors whose
+        neighbour is linear (nitrile) or tetrahedral (sulfonyl,
+        phosphoryl) have nearly cylindrical lone-pair distributions and
+        keep the precession free.
         """
         adj, label = self._covalent_graph()
         inter = label[ii] != label[jj]
@@ -4391,6 +4418,7 @@ class Internals(BaseInternals):
             return None
         hb_elem = np.isin(numbers, hb_elements)
         V, A, B, W, ISO = [], [], [], [], []
+        OOP, WO = [], []
         for p in sel:
             i, j = int(ii[p]), int(jj[p])
             for h, y in ((i, j), (j, i)):
@@ -4416,6 +4444,16 @@ class Internals(BaseInternals):
                     B.append(h)
                     W.append(Aphi_acc * c)
                     ISO.append(False)
+                # Lone-pair plane of a single-neighbour acceptor on a
+                # trigonal centre (Y=Z with Z bonded to Y, W1, W2): the
+                # out-of-plane wag of the hydrogen relative to the plane
+                # (W1, Z, W2).
+                if len(adj[y]) == 1 and len(adj[adj[y][0]]) == 3:
+                    z = adj[y][0]
+                    ws = [w for w in adj[z] if w != y]
+                    if len(ws) == 2:
+                        OOP.append((h, y, z, ws[0], ws[1]))
+                        WO.append(Aphi_acc * c)
         if not V:
             return None
         V = np.asarray(V, dtype=np.int32)
@@ -4467,7 +4505,68 @@ class Internals(BaseInternals):
                + np.einsum('pk,pkq->pq', wB, Binv[B])
                - np.einsum('pk,pkq->pq', wA + wB, Binv[V]))
         H += (dpo * (W * f)[:, np.newaxis]).T @ dpo
+        if OOP:
+            Hoop = self._h0_lone_pair_plane(np.asarray(OOP, dtype=np.int32),
+                                            np.asarray(WO, dtype=np.float64),
+                                            pos, rcov_all, Binv, Bb)
+            if Hoop is not None:
+                H += Hoop
         return H
+
+    @staticmethod
+    def _h0_lone_pair_plane(
+        OOP: np.ndarray,
+        WO: np.ndarray,
+        pos: np.ndarray,
+        rcov_all: np.ndarray,
+        Binv: np.ndarray,
+        Bb: float,
+    ) -> Optional[np.ndarray]:
+        """Gauss-Newton curvature sum k_oop (grad s)(grad s)^T of the
+        out-of-plane coordinate s = u_YH . n of the hydrogen-bond contacts
+        listed in OOP (rows h, y, z, w1, w2; see _h0_contact_bends), with
+        n the unit normal of the plane (W1, Z, W2) and u_YH the unit
+        vector from the acceptor to the hydrogen, in the internal
+        coordinates (nint x nint, eV units).  WO holds A_phi
+        min(rho_contact, cap) per row; the bond-order factor of Y-Z and
+        the planarity of Z are applied here.  s is the sine of the angle
+        between Y->H and the plane, so it is regular for every geometry
+        and its gradient is bounded; the planarity factor is the squared
+        cosine of the angle between Z->Y and the plane."""
+        h, y, z, w1, w2 = (OOP[:, k] for k in range(5))
+        u = pos[h] - pos[y]
+        ru = np.maximum(np.linalg.norm(u, axis=1), 1e-8)
+        u = u / ru[:, np.newaxis]
+        a = pos[w1] - pos[z]
+        b = pos[w2] - pos[z]
+        n = np.cross(a, b)
+        nn = np.linalg.norm(n, axis=1)
+        ok = nn > 1e-6
+        if not np.any(ok):
+            return None
+        if not np.all(ok):
+            h, y, z, w1, w2 = h[ok], y[ok], z[ok], w1[ok], w2[ok]
+            u, ru, a, b, n, nn = u[ok], ru[ok], a[ok], b[ok], n[ok], nn[ok]
+            WO = WO[ok]
+        nh = n / nn[:, np.newaxis]
+        s = np.sum(u * nh, axis=1)
+        v = pos[y] - pos[z]
+        rv = np.maximum(np.linalg.norm(v, axis=1), 1e-8)
+        planarity = 1. - (np.sum(v * nh, axis=1) / rv)**2
+        bo_yz = np.exp(-Bb * (rv - rcov_all[y] - rcov_all[z]) / units.Bohr)
+        k = WO * planarity * np.minimum(bo_yz, 1.) * units.Hartree
+        # d s / d r_H = (n - s u) / r_YH; the plane atoms enter through
+        # d n_hat = (I - n_hat n_hat^T) d n / |n| with n = a x b.
+        gH = (nh - s[:, np.newaxis] * u) / ru[:, np.newaxis]
+        q = (u - s[:, np.newaxis] * nh) / nn[:, np.newaxis]
+        gW1 = np.cross(b, q)
+        gW2 = np.cross(q, a)
+        ds = (np.einsum('pk,pkq->pq', gH, Binv[h])
+              - np.einsum('pk,pkq->pq', gH, Binv[y])
+              + np.einsum('pk,pkq->pq', gW1, Binv[w1])
+              + np.einsum('pk,pkq->pq', gW2, Binv[w2])
+              - np.einsum('pk,pkq->pq', gW1 + gW2, Binv[z]))
+        return (ds * k[:, np.newaxis]).T @ ds
 
     def guess_hessian(self, h0cart=70.) -> np.ndarray:
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
