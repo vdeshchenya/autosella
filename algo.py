@@ -3,8 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. Connected molecules skip
-TS-BFGS updates when the displacement-curvature product is negative.
+also floor δ at 0.15 after 20 steps. After 20 connected steps, ρ_inc
+is 1.2 so trust expands only for more nearly-quadratic steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -327,7 +327,6 @@ class ApproximateHessian(LinearOperator):
         self.update_method = update_method
         self.symm = symm
         self.initialized = initialized
-        self.skip_neg_curv = False
         # Lazy eigendecomposition: only compute when needed
         self._evals = None
         self._evecs = None
@@ -400,12 +399,6 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        dx_u = np.asarray(dx, dtype=np.float64).reshape(-1)
-        dg_u = np.asarray(dg, dtype=np.float64).reshape(-1)
-        if self.skip_neg_curv and dx_u.size == dg_u.size:
-            sy = float(dx_u @ dg_u)
-            if np.isfinite(sy) and sy < 0.0:
-                return
         self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
@@ -5832,6 +5825,7 @@ class Sella(Optimizer):
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
+            self.rho_inc = 1.2
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
 
@@ -5976,8 +5970,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     if not opt._allow_angle_wa:
         # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
         opt.delta_min = 0.02
-    else:
-        opt.pes.H.skip_neg_curv = True
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
