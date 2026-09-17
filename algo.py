@@ -5,6 +5,7 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also keep an extra-redundant improper at every 3-coordinate center.
 Geodesic ODE timeouts restore coordinates and halve the internal step.
+Connected extra-improper runs realize steps with iterative_stepper=1 first.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5851,6 +5852,7 @@ class Sella(Optimizer):
                 exp_cell_factor=exp_cell_factor,
                 scalar_pressure=scalar_pressure,
                 allow_fragments=self.allow_fragments,
+                iterative_stepper=getattr(self.pes, 'iterative_stepper', 0),
             )
             self.initialized = False
             self.rho = 1
@@ -6000,7 +6002,13 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     if connected:
         Internals.extra_impropers_default = True
     try:
-        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt = Sella(
+            atoms,
+            internal=True,
+            order=0,
+            logfile=None,
+            iterative_stepper=1 if connected else 0,
+        )
         opt._allow_angle_wa = connected
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
