@@ -14,7 +14,7 @@ Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane.
-Connected n_atoms≥80 use Banerjee RFO after 50 steps.
+Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5840,7 +5840,7 @@ class Sella(Optimizer):
         elif (
             getattr(self, "_allow_angle_wa", False)
             and len(self.atoms) >= 80
-            and self.nsteps >= 50
+            and self.nsteps >= 45
         ):
             step_method = 'rfo'
 
