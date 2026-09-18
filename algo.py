@@ -5763,12 +5763,16 @@ class Sella(Optimizer):
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
+        use_tr = getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20
+        rs_cls = TrustRegion if use_tr else self.rs
+        step_kwargs = {} if use_tr else dict(rs_kwargs)
+
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = self.rs(
+                s, smag = rs_cls(
                     self.pes, self.ord, self.delta, method=self.method,
-                    **rs_kwargs
+                    **step_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -5776,12 +5780,13 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = self.rs(
+            s, smag = rs_cls(
                 self.pes, self.ord, self.delta, method=self.method,
-                **rs_kwargs
+                **step_kwargs
             ).get_s()
 
-        s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
+        if not use_tr:
+            s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
         return self._maybe_gdiis(s, smag)
 
     def _dummy_dihedral_s_indices(self, intern):
