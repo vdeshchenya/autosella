@@ -5838,7 +5838,7 @@ class Sella(Optimizer):
         neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
         if pos_sum > 15.0 or neg_sum > 15.0:
             return s_qn, smag_qn
-        diis_coords = coeffs @ coords[::-1][:use]
+        diis_coords = coeffs @ coords[pick]
         diis_step = diis_coords - coords[-1]
         ndiis = float(np.linalg.norm(diis_step))
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
