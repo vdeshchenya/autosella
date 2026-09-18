@@ -18,8 +18,8 @@ product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected n_atoms≥30 use 0.10 Ha
-guesses on ester/carbamate C–O–C angles (2-coordinate oxygen with two
-carbon terminals, one of which is bonded to another oxygen).
+guesses on 2-coordinate pyridine/imine C–N–C angles (nitrogen bonded
+to two carbons, neither carbon bonded to oxygen).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3250,7 +3250,7 @@ class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
     soft_oxo_angle_h0_default = False
-    soft_ester_angle_h0_default = False
+    soft_pyridine_angle_h0_default = False
     adj_dummy_placement_default = False
 
     def __init__(
@@ -3290,7 +3290,7 @@ class Internals(BaseInternals):
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
-        self.soft_ester_angle_h0 = Internals.soft_ester_angle_h0_default
+        self.soft_pyridine_angle_h0 = Internals.soft_pyridine_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
         self.windowed_dummy_atoms = set()
 
@@ -3311,7 +3311,7 @@ class Internals(BaseInternals):
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
-        new.soft_ester_angle_h0 = getattr(self, 'soft_ester_angle_h0', False)
+        new.soft_pyridine_angle_h0 = getattr(self, 'soft_pyridine_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         return new
@@ -4071,7 +4071,7 @@ class Internals(BaseInternals):
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
         soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
-        soft_ester_angle = getattr(self, 'soft_ester_angle_h0', False)
+        soft_pyridine_angle = getattr(self, 'soft_pyridine_angle_h0', False)
         numbers = np.asarray(self.all_atoms.numbers)
         neighbors = [[] for _ in range(len(self.all_atoms))]
         for bond in self.internals['bonds']:
@@ -4082,23 +4082,21 @@ class Internals(BaseInternals):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
             elif (
-                soft_ester_angle
-                and int(numbers[int(angle.indices[1])]) == 8
+                soft_pyridine_angle
+                and int(numbers[int(angle.indices[1])]) == 7
                 and int(nbonds[int(angle.indices[1])]) == 2
                 and int(numbers[int(angle.indices[0])]) == 6
                 and int(numbers[int(angle.indices[2])]) == 6
-                and (
-                    any(
-                        int(numbers[nb]) == 8 and nb != int(angle.indices[1])
-                        for nb in neighbors[int(angle.indices[0])]
-                    )
-                    or any(
-                        int(numbers[nb]) == 8 and nb != int(angle.indices[1])
-                        for nb in neighbors[int(angle.indices[2])]
-                    )
+                and not any(
+                    int(numbers[nb]) == 8
+                    for nb in neighbors[int(angle.indices[0])]
+                )
+                and not any(
+                    int(numbers[nb]) == 8
+                    for nb in neighbors[int(angle.indices[2])]
                 )
             ):
-                # Ester/carbamate C–O–C (GAFF c-os-c3 class).
+                # Pyridine/imine C–N–C (GAFF ca-na-ca class).
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -6297,7 +6295,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
-        Internals.soft_ester_angle_h0_default = n_atoms >= 30
+        Internals.soft_pyridine_angle_h0_default = n_atoms >= 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
@@ -6312,7 +6310,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
         Internals.soft_oxo_angle_h0_default = False
-        Internals.soft_ester_angle_h0_default = False
+        Internals.soft_pyridine_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
