@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
-use Banerjee RFO and freeze the Hessian (no further TS-BFGS updates).
+use Banerjee RFO after a one-shot model-Hessian reset.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -386,8 +386,6 @@ class ApproximateHessian(LinearOperator):
 
     def update(self, dx, dg):
         """Perform a quasi-Newton update on B"""
-        if getattr(self, '_skip_update', False):
-            return
         if self.B is None:
             B = np.zeros(self.shape, dtype=self.dtype)
         else:
@@ -417,10 +415,8 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        out = ApproximateHessian(n, 0, Bproj, self.update_method,
+        return ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
-        out._skip_update = getattr(self, '_skip_update', False)
-        return out
 
     def asarray(self):
         if self.B is not None:
@@ -4223,9 +4219,7 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        out = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
-        out._skip_update = getattr(self.H, '_skip_update', False)
-        return out
+        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -4499,6 +4493,14 @@ class InternalPES(PES):
         self._pinv_cache = _LRU2()
         self._qr_cache = _LRU2()
         self._Hc_cache = _LRU2()
+
+    def reset_model_hessian(self) -> None:
+        """Replace B with the current-geometry model Hessian (cycle 87)."""
+        B = self.int.jacobian()
+        Q, _ = np.linalg.qr(B, mode='reduced')
+        P = Q @ Q.T
+        H0 = P @ self.int.guess_hessian() @ P
+        self.set_H(H0, self.H.update_method, self.H.symm, True)
 
     dpos = property(lambda self: self.dummies.positions.copy())
 
@@ -5772,8 +5774,13 @@ class Sella(Optimizer):
 
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+            if self.nsteps == 80 and not getattr(self, "_h0_reset_done", False):
+                try:
+                    self.pes.reset_model_hessian()
+                except (np.linalg.LinAlgError, ValueError, AttributeError):
+                    pass
+                self._h0_reset_done = True
             step_method = 'rfo'
-            self.pes.H._skip_update = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5927,8 +5934,6 @@ class Sella(Optimizer):
 
     def step(self):
         s, smag = self._predict_step()
-        if not getattr(self, "_allow_angle_wa", False) and self.nsteps >= 80:
-            self.pes.H._skip_update = True
 
         # Determine if we need to call the eigensolver, then step
         if self.nsteps_since_diag >= self.diag_every_n:
