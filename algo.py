@@ -17,10 +17,11 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.20 Ha guesses. Connected 18≤n_atoms<80 use 0.10 Ha
+dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors).
+guanidinium (≥3 N neighbors), and on at most two 3-coordinate
+carbamate/amide C–N–C angles (one carbon oxygen-substituted).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4101,19 +4102,40 @@ class Internals(BaseInternals):
                 return False
             return True
 
+        def _amide_cnc(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if int(numbers[icen]) != 7 or int(nbonds[icen]) != 3:
+                return False
+            if int(numbers[ia]) != 6 or int(numbers[ic]) != 6:
+                return False
+            has_o = (
+                any(int(numbers[nb]) == 8 for nb in neighbors[ia])
+                or any(int(numbers[nb]) == 8 for nb in neighbors[ic])
+            )
+            return has_o
+
         pyridine_ok = set()
+        amide_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _pyridine_cnc(angle)]
             # Spare polypyridine hoppers (valid 11109414 has four C–N–C).
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
+            acands = [ia for ia, angle in enumerate(self.internals['angles'])
+                      if _amide_cnc(angle)]
+            if 1 <= len(acands) <= 2:
+                amide_ok = set(acands)
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in amide_ok:
+                # 3-coordinate carbamate/amide C–N–C (leftover oxazolidinone).
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -6312,7 +6334,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
-        Internals.soft_pyridine_angle_h0_default = 18 <= n_atoms < 80
+        Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
