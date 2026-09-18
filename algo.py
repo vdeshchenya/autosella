@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02` and switch to Banerjee
-RFO after 40 steps. Connected molecules
+RFO after 50 steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -5905,7 +5905,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 40:
+        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 50:
             step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
