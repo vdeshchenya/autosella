@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
-use Banerjee RFO and floor the trust radius at 0.10.
+use Banerjee RFO only when the Hessian is indefinite.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5766,9 +5766,15 @@ class Sella(Optimizer):
 
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
-            step_method = 'rfo'
-            self.delta_min = 0.10
-            self.delta = max(self.delta, 0.10)
+            use_rfo = True
+            try:
+                ev = self.pes.H.evals
+                if ev is not None and (not np.any(np.asarray(ev, dtype=np.float64) < -1e-8)):
+                    use_rfo = False
+            except (np.linalg.LinAlgError, ValueError, AttributeError):
+                use_rfo = True
+            if use_rfo:
+                step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5981,9 +5987,6 @@ class Sella(Optimizer):
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
-        elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
-            self.delta_min = 0.10
-            self.delta = max(self.delta, 0.10)
 
         # Update trust radius
         if rho is not None:
