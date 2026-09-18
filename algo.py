@@ -10,10 +10,9 @@ when the previous ratio ρ was well predicted. Connected molecules with fewer th
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
-2-coordinate sulfur angles that have a phosphorus neighbor
-(P–S–P / P–S–H), on tetrahedral O–P–O angles at phosphorus
-centers, and on F–Si–X, Cl–Si–X, and F–B–F angles at silicon
-or boron centers.
+tetrahedral O–P–O angles at phosphorus centers, complementary
+S–P–S angles at phosphorus, and on F–Si–X,
+Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4061,22 +4060,19 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
-                and int(numbers[int(angle.indices[1])]) == 16
-                and int(nbonds[int(angle.indices[1])]) == 2
-                and (
-                    int(numbers[int(angle.indices[0])]) == 15
-                    or int(numbers[int(angle.indices[2])]) == 15
-                )
-            ):
-                # 2-coordinate sulfur with a P neighbor: P–S–P / P–S–H.
-                h0[idx] = 0.10 * units.Hartree
-            elif (
-                soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 15
                 and int(numbers[int(angle.indices[0])]) == 8
                 and int(numbers[int(angle.indices[2])]) == 8
             ):
                 # Complementary phosphate class: tetrahedral O–P–O at P.
+                h0[idx] = 0.10 * units.Hartree
+            elif (
+                soft_oxo_angle
+                and int(numbers[int(angle.indices[1])]) == 15
+                and int(numbers[int(angle.indices[0])]) == 16
+                and int(numbers[int(angle.indices[2])]) == 16
+            ):
+                # Complementary thiophosphate class: S–P–S at P.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
