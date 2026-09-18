@@ -3,7 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
+also floor δ at 0.15 after 20 steps and grow σ_inc to 1.16, or 1.17
+when 30≤n_atoms<80. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
@@ -5986,8 +5987,7 @@ class Sella(Optimizer):
         return out
 
     def _maybe_dummy_limiter_wd(self, s, smag, rs_kwargs):
-        """Downweight only the limiter dummy dihedral to 0.8, or 0.7 when
-        that dummy is a windowed alkyne/isocyanate center.
+        """Downweight only the limiter dummy dihedral to 0.8.
 
         Cycle 167 re-solved with global wd_dummy=0.8 whenever any dummy
         dihedral was the limiter and was bit-identical to cycle 122.
@@ -6024,19 +6024,6 @@ class Sella(Optimizer):
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
         kw['w_index_value'] = 0.8
-        windowed = getattr(intern, 'windowed_dummy_atoms', set())
-        if windowed:
-            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
-            jdx = intern.ntrans + intern.nbonds + intern.nangles
-            for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
-                if not active:
-                    continue
-                if jdx == idx and any(int(j) in windowed for j in dih.indices):
-                    # Cycle 187 global dummy-wd=0.7 undid 135043047; windowed
-                    # leftover alkynes are n≥30.
-                    kw['w_index_value'] = 0.7
-                    break
-                jdx += 1
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
@@ -6174,7 +6161,9 @@ class Sella(Optimizer):
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
-            self.sigma_inc = 1.16
+            intern = getattr(self.pes, "int", None)
+            n = intern.natoms if intern is not None else len(self.atoms)
+            self.sigma_inc = 1.17 if 30 <= n < 80 else 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
 
