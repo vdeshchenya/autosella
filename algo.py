@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
-use Banerjee RFO after a one-shot model-Hessian reset.
+use Banerjee RFO after a ρ-gated one-shot model-Hessian reset.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5775,10 +5775,12 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if self.nsteps == 80 and not getattr(self, "_h0_reset_done", False):
-                try:
-                    self.pes.reset_model_hessian()
-                except (np.linalg.LinAlgError, ValueError, AttributeError):
-                    pass
+                rho = float(getattr(self, "rho", 1.0))
+                if 1.0 / self.rho_inc < rho < self.rho_inc:
+                    try:
+                        self.pes.reset_model_hessian()
+                    except (np.linalg.LinAlgError, ValueError, AttributeError):
+                        pass
                 self._h0_reset_done = True
             step_method = 'rfo'
 
