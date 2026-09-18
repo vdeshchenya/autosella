@@ -15,7 +15,8 @@ and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
-otherwise keep the Sella cross-product dummy plane.
+otherwise keep the Sella cross-product dummy plane. Dummy-involving
+dihedrals on that same ill-conditioned window use 0.20 Ha guesses.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3286,6 +3287,7 @@ class Internals(BaseInternals):
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
+        self.windowed_dummy_atoms = set()
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3305,6 +3307,7 @@ class Internals(BaseInternals):
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
+        new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         return new
 
     def add_rotation(
@@ -3698,6 +3701,11 @@ class Internals(BaseInternals):
                         if (
                             getattr(self, 'adj_dummy_placement', False)
                             and 0.04 < cross_norm < 0.10
+                        ):
+                            self.windowed_dummy_atoms.add(int(self.dinds[j]))
+                        if (
+                            getattr(self, 'adj_dummy_placement', False)
+                            and 0.04 < cross_norm < 0.10
                             and int(self.atoms.numbers[j]) == 6
                         ):
                             # Schlegel: dummy in the plane of an adjacent
@@ -4088,7 +4096,16 @@ class Internals(BaseInternals):
             idx += 1
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
-                scale = 0.25 if getattr(self, 'soft_dummy_dihedral_h0', False) else 0.5
+                windowed = getattr(self, 'windowed_dummy_atoms', set())
+                if (
+                    getattr(self, 'soft_dummy_dihedral_h0', False)
+                    and any(int(j) in windowed for j in dihedral.indices)
+                ):
+                    scale = 0.20
+                elif getattr(self, 'soft_dummy_dihedral_h0', False):
+                    scale = 0.25
+                else:
+                    scale = 0.5
                 h0[idx] = scale * units.Hartree
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
