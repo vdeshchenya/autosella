@@ -4131,6 +4131,13 @@ class Internals(BaseInternals):
             n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
             if n_n != 1 or n_c != 2 or n_h != 1:
                 return False
+            carbons = [nb for nb in real_c if int(numbers[nb]) == 6]
+            if not any(
+                any(int(numbers[nbb]) == 8 for nbb in neighbors[cn]
+                    if int(nbb) not in dummy_set)
+                for cn in carbons
+            ):
+                return False
             za, zc = int(numbers[ia]), int(numbers[ic])
             return {za, zc} == {6, 7}
 
