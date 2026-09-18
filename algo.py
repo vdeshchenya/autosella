@@ -4008,6 +4008,104 @@ class Internals(BaseInternals):
             except DuplicateInternalError:
                 pass
 
+        # Third, the out-of-plane coordinate of the planar pi centres whose
+        # proper dihedrals all run about single bonds (carbonyl, carboxyl,
+        # carboxylate, thiocarbonyl and nitro centres), see
+        # _add_planar_centre_impropers.
+        self._add_planar_centre_impropers(neighbors, dihedral_centers)
+
+    def _add_planar_centre_impropers(
+        self,
+        neighbors: List[List[Tuple[int, np.ndarray]]],
+        dihedral_centers: set,
+        bo_pi: float = 1.7,
+        planar_min: float = 345.,
+    ) -> None:
+        """Improper dihedral (n0, centre, n1, n2) at every planar
+        three-coordinate pi centre (C or B with three neighbours, nitro N;
+        the three bond angles sum to at least planar_min degrees) that
+        has proper dihedrals through it but no multiple bond to a
+        neighbour that carries them.
+
+        The model describes the pyramidalisation of a planar centre only
+        through the proper dihedrals about its bonds: at a planar geometry
+        the three bond angles have no out-of-plane derivative, and the
+        umbrella improper is added above only where no proper dihedral
+        exists.  Where the pi partner of the centre is a terminal atom
+        (C=O, C=S, N=O) the double bond carries no dihedral, and the
+        dihedrals about the remaining single bonds are the class-scaled
+        rotor constants of _torsion_class_factor, 0.01-0.02 Ha/rad^2 in
+        total: the model's wag of the carbonyl oxygen comes out 2-5x too
+        soft (acetone 217 against 484 cm^-1, acetic acid 245 against 535,
+        formaldehyde with its umbrella improper 1079 against 1167).  Alkene
+        and aromatic centres, amide carbons and boron esters get their
+        out-of-plane stiffness from the dihedrals about their multiple or
+        conjugated bonds (bond-order factor exp(-2.85 (r - r_cov)/Bohr) of
+        1.9-2.9, against 1.0-1.6 for the C-C, C-O(ester/acid) and C-N(nitro)
+        single bonds; benzene's out-of-plane modes are within 10 % of
+        experiment) and are left alone: an improper there would double
+        stiffness that is already right.  The improper is the torsion
+        about the terminal double bond that the dihedral set cannot
+        contain (n1 is the terminal neighbour with the largest bond-order
+        factor, or the most strongly bonded neighbour when none is
+        terminal); its stiffness is the out-of-plane guess of
+        guess_hessian (_h0_out_of_plane).  Connected systems only: the
+        fragments of a complex keep their coordinate sets and paths (see
+        guess_hessian)."""
+        if (self.ntrans + self.nrotations) != 0:
+            return
+        numbers = np.asarray(self.atoms.numbers)
+        positions = np.asarray(self.atoms.positions, dtype=np.float64)
+        adj = [[int(j) for j, _ in neighbors[i] if j < self.natoms]
+               for i in range(self.natoms)]
+        types = self._torsion_centre_types(adj)
+        for centre in range(self.natoms):
+            if types[centre] != 'pi' or centre not in dihedral_centers:
+                continue
+            nb = neighbors[centre]
+            if len(nb) != 3 or any(int(j) >= self.natoms for j, _ in nb):
+                continue
+            vecs = []
+            bo = []
+            for j, _ in nb:
+                v = positions[int(j)] - positions[centre]
+                r = float(np.linalg.norm(v))
+                if r <= 0.0:
+                    break
+                vecs.append(v / r)
+                rcov = (_STIFFNESS_RADII[numbers[centre]]
+                        + _STIFFNESS_RADII[numbers[int(j)]])
+                bo.append(float(np.exp(-2.85 * (r - rcov) / units.Bohr)))
+            if len(vecs) != 3:
+                continue
+            angsum = 0.0
+            for a, b in ((0, 1), (1, 2), (0, 2)):
+                cosab = float(np.clip(vecs[a] @ vecs[b], -1.0, 1.0))
+                angsum += np.degrees(np.arccos(cosab))
+            if angsum < planar_min:
+                continue
+            # A multiple bond to a neighbour with further neighbours: its
+            # dihedrals already hold the centre in the plane.
+            if any(len(adj[int(j)]) >= 2 and b >= bo_pi
+                   for (j, _), b in zip(nb, bo)):
+                continue
+            order = sorted(
+                range(3),
+                key=lambda k: (len(adj[int(nb[k][0])]) == 1, bo[k]),
+                reverse=True,
+            )
+            k1 = order[0]
+            k0, k2 = [k for k in range(3) if k != k1]
+            n0, ncvec0 = nb[k0]
+            n1, ncvec1 = nb[k1]
+            n2, ncvec2 = nb[k2]
+            imp_ncvecs = (-ncvec0, ncvec1, ncvec2 - ncvec1)
+            try:
+                self.add_dihedral((int(n0), centre, int(n1), int(n2)),
+                                  imp_ncvecs)
+            except DuplicateInternalError:
+                pass
+
     def validate_basis(self) -> None:
         jac = self.jacobian()
         S = svdvals(jac)
@@ -4176,6 +4274,22 @@ class Internals(BaseInternals):
         # stiffness while sp3-sp3 rotations are softened towards their
         # physical ~0.02 Ha/rad^2.
         return h0 * bo * units.Hartree
+
+    def _h0_out_of_plane(self, k_oop: float = 0.045) -> float:
+        """Stiffness of the improper dihedral of a planar pi centre with
+        proper dihedrals (_add_planar_centre_impropers): Schlegel's
+        out-of-plane guess of 0.045 Ha/rad^2 (the value of the covalent
+        out-of-plane coordinates in Schlegel-type guesses, e.g. geomeTRIC),
+        on top of the 0.01-0.03 Ha/rad^2 the single-bond dihedrals of the
+        centre supply.  The physical out-of-plane constants of the
+        centres concerned sit at 0.05-0.1 Ha/rad^2 per improper radian
+        (formaldehyde 0.066 from its 1167 cm^-1 wag; ketones, acids and
+        esters 0.05-0.08), so the guess ends up slightly soft rather than
+        stiff.  The Fischer-Almlof torsional formula the umbrella
+        impropers use is not applied here: its (r r_cov)^-4 dependence on
+        the central bond is a torsional calibration and drops 6-8x
+        between C=O and C=S or a C-C bond."""
+        return k_oop * units.Hartree
 
     def _h0_linear_bend(self, centre: int, k_bend: float = 0.10,
                         k_bend_h: float = 0.05) -> float:
@@ -4935,6 +5049,7 @@ class Internals(BaseInternals):
         # dihedral with 1/sqrt(n) (a compromise between the per-dihedral value
         # and an exact 1/n split, which would be too soft for double bonds).
         ndih = {}
+        proper_centres = set()
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
                 continue
@@ -4942,6 +5057,7 @@ class Internals(BaseInternals):
                 continue
             key = frozenset(int(j) for j in dihedral.indices[1:3])
             ndih[key] = ndih.get(key, 0) + 1
+            proper_centres.update(key)
         # Class-resolved scale of the rotatable-bond torsions (see
         # _torsion_class_factor), from the covalent graph of the real atoms.
         scale_torsions = connected
@@ -4969,7 +5085,14 @@ class Internals(BaseInternals):
                 else:
                     h0[idx] = 0.5 * units.Hartree
             elif not is_proper(dihedral):
-                h0[idx] = self._h0_dihedral(dihedral, nbonds, proper=False)
+                if int(dihedral.indices[1]) in proper_centres:
+                    # Out-of-plane coordinate of a planar pi centre whose
+                    # proper dihedrals run about single bonds
+                    # (_add_planar_centre_impropers).
+                    h0[idx] = self._h0_out_of_plane()
+                else:
+                    h0[idx] = self._h0_dihedral(dihedral, nbonds,
+                                                proper=False)
             else:
                 key = frozenset(int(j) for j in dihedral.indices[1:3])
                 if key not in tfac:
