@@ -10,8 +10,8 @@ when the previous ratio ρ was well predicted. Connected molecules with fewer th
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms≥30 replace two-coordinate dummy-atom linear bends
 with two orthogonal geomeTRIC LinearAngle coordinates. LinearAngle
-seconds are 3-atom finite differences; geodesic ODE timeouts fall back
-to iterative realization with a 1.0 Å Cartesian hop cap.
+seconds are 3-atom finite differences; e0 is frozen until after an
+accepted step. Geodesic ODE timeouts fall back to iterative realization.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -1604,9 +1604,7 @@ def _linear_angle(
 ) -> float:
     """geomeTRIC LinearAngle: BA+BC projections on two axes ⊥ AC.
 
-    e0 is a frozen reference axis (repositioned only after accepted steps),
-    matching geomeTRIC value()/derivative() rather than re-orthogonalizing
-    inside every evaluation.
+    e0 is a frozen reference axis (repositioned only after accepted steps).
     """
     v_ac = pos[2] - pos[0] + tvecs[0] + tvecs[1]
     ev = v_ac / jnp.maximum(jnp.linalg.norm(v_ac), 1e-18)
@@ -4846,12 +4844,8 @@ class InternalPES(PES):
         """ODE-based stepper for internal coordinate updates.
 
         Uses LSODA to integrate the geodesic equation for reliable convergence
-        on large or ill-conditioned steps. Timeouts and integrator failures
-        restore the starting geometry and return None so set_x can fall back
-        to the iterative stepper instead of raising.
+        on large or ill-conditioned steps.
         """
-        apos0 = self.atoms.positions.copy()
-        dpos0 = self.dummies.positions.copy()
         dx = self.wrap_dx(target - self.get_x())
         t0 = 0.
         Binv = self._get_Binv()
@@ -4860,7 +4854,6 @@ class InternalPES(PES):
                         Binv @ dx,
                         Binv @ self.curr.get('g', np.zeros_like(dx))))
         ode = LSODA(self._q_ode, t0, y0, t_bound=1., atol=1e-6)
-        y = y0
 
         while ode.status == 'running':
             ode.step()
@@ -4868,19 +4861,16 @@ class InternalPES(PES):
             t0 = ode.t
             self.bad_int = self.int.check_for_bad_internals()
             if self.bad_int is not None:
-                self.atoms.positions = apos0
-                self.dummies.positions = dpos0
-                self.bad_int = None
-                return None
+                break
             if ode.nfev > 1000:
-                self.atoms.positions = apos0
-                self.dummies.positions = dpos0
+                nxa = 3 * len(self.atoms)
+                nxd = 3 * len(self.dummies)
+                self.atoms.positions = y0[:nxa].reshape((-1, 3))
+                self.dummies.positions = y0[nxa:nxa + nxd].reshape((-1, 3))
                 return None
 
         if ode.status == 'failed':
-            self.atoms.positions = apos0
-            self.dummies.positions = dpos0
-            return None
+            raise RuntimeError("Geometry update ODE failed to converge!")
 
         nxa = 3 * len(self.atoms)
         nxd = 3 * len(self.dummies)
@@ -4898,64 +4888,39 @@ class InternalPES(PES):
         intern = getattr(self, 'int', None)
         if intern is None:
             return
-        atoms = intern.atoms
         for coord in intern.internals.get('other', ()):
             if isinstance(coord, LinearAngle):
-                coord.reposition_e0(atoms)
+                coord.reposition_e0(intern.atoms)
 
     def set_x(self, target):
         """Update internal coordinates to target values.
 
-        ODE first, iterative fallback on timeout/failure. Reject Cartesian
-        realizations whose max-atom hop exceeds 1.0 Å (retry a halved
-        internal target, else stay put).
+        Uses fast iterative stepper by default, with ODE fallback for robustness.
+        ODE nfev timeouts restore the start geometry and retry iteratively
+        instead of raising.
         """
-        pos0 = self.atoms.positions.copy()
-        dpos0 = self.dummies.positions.copy()
-        x0 = self.get_x()
-
-        def _realize(tgt):
-            res = None
-            if self.iterative_stepper:
-                res = self._set_x_iterative(tgt)
-            if res is None:
-                res = self._set_x_ode(tgt)
-            if res is None:
-                res = self._set_x_iterative(tgt)
-            return res
-
-        def _hop_ok():
-            if len(self.atoms) == 0:
-                return True
-            disp = np.linalg.norm(self.atoms.positions - pos0, axis=1)
-            return float(np.max(disp)) <= 1.0
-
-        def _finish(res):
-            q_after = self.int.calc().copy()
-            proj_moved = self._project_to_constraints()
-            dx_initial, dx_final_ode, g_final = res
-            dx_final = self._add_proj_delta(dx_final_ode, q_after, proj_moved)
-            self._reposition_linear_e0()
-            return dx_initial, dx_final, g_final
-
-        res = _realize(target)
-        if res is not None and not _hop_ok():
-            self.atoms.positions = pos0
-            self.dummies.positions = dpos0
-            mid = x0 + 0.5 * self.wrap_dx(target - x0)
-            res = _realize(mid)
-            if res is not None and not _hop_ok():
-                self.atoms.positions = pos0
-                self.dummies.positions = dpos0
-                res = None
+        if self.iterative_stepper:
+            res = self._set_x_iterative(target)
+            if res is not None:
+                q_after_ode = self.int.calc().copy()
+                proj_moved = self._project_to_constraints()
+                dx_initial, dx_final_ode, g_final = res
+                dx_final = self._add_proj_delta(dx_final_ode, q_after_ode,
+                                                proj_moved)
+                self._reposition_linear_e0()
+                return dx_initial, dx_final, g_final
+        res = self._set_x_ode(target)
         if res is None:
-            self.atoms.positions = pos0
-            self.dummies.positions = dpos0
-            z = np.zeros_like(x0)
-            g0 = self.curr.get('g', np.zeros_like(x0))
-            g_final = self.int.jacobian() @ g0
-            return z, z, g_final
-        return _finish(res)
+            res = self._set_x_iterative(target)
+        if res is None:
+            raise RuntimeError("Geometry update ODE is taking too long "
+                               "to converge!")
+        q_after_ode = self.int.calc().copy()
+        proj_moved = self._project_to_constraints()
+        dx_initial, dx_final_ode, g_final = res
+        dx_final = self._add_proj_delta(dx_final_ode, q_after_ode, proj_moved)
+        self._reposition_linear_e0()
+        return dx_initial, dx_final, g_final
 
     def _add_proj_delta(self, dx_int_final, q_after_ode, proj_moved):
         """Combine ODE-tangent dx with the projection's IC delta.
