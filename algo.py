@@ -4,8 +4,8 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Connected dummy-involving
-angles use MaxInternalStep `wa=0.7`.
+guess constants are 0.25 Ha instead of 0.5. Connected non-dummy
+angles use the Lindh 1995 model Hessian.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3234,6 +3234,7 @@ class Constraints(BaseInternals):
 
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
+    use_lindh_angle_h0_default = False
 
     def __init__(
         self,
@@ -3270,6 +3271,7 @@ class Internals(BaseInternals):
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
+        self.use_lindh_angle_h0 = Internals.use_lindh_angle_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3286,6 +3288,7 @@ class Internals(BaseInternals):
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
+        new.use_lindh_angle_h0 = getattr(self, 'use_lindh_angle_h0', False)
         return new
 
     def add_rotation(
@@ -3926,6 +3929,21 @@ class Internals(BaseInternals):
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
         return h0 * units.Hartree / units.Bohr**2
 
+    def _lindh_rho(self, bond: Bond) -> float:
+        idx = np.asarray(bond.indices, dtype=np.int32)
+        numbers = self.all_atoms.numbers[idx]
+        rcov = covalent_radii[numbers].sum() / units.Bohr
+        rij = bond.calc(self.all_atoms) / units.Bohr
+        z1, z2 = int(numbers[0]), int(numbers[1])
+        first = (z1 <= 2, z2 <= 2)
+        if first[0] and first[1]:
+            alpha = 1.0
+        elif first[0] or first[1]:
+            alpha = 0.3949
+        else:
+            alpha = 0.28
+        return float(np.exp(alpha * (rcov**2 - rij**2)))
+
     def _h0_angle(
         self,
         angle: Angle,
@@ -3937,6 +3955,15 @@ class Internals(BaseInternals):
         bab, bbc = angle.split()
         idxab = np.asarray(bab.indices, dtype=np.int32)
         idxbc = np.asarray(bbc.indices, dtype=np.int32)
+        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
+        if (
+            getattr(self, 'use_lindh_angle_h0', False)
+            and not dummy_set.intersection(angle.indices)
+            and np.all(idxab < self.natoms)
+            and np.all(idxbc < self.natoms)
+        ):
+            # Lindh 1995: k_theta = 0.15 * rho_ab * rho_bc
+            return 0.15 * self._lindh_rho(bab) * self._lindh_rho(bbc) * units.Hartree
         rcovab = covalent_radii[self.all_atoms.numbers[idxab]].sum()
         rcovbc = covalent_radii[self.all_atoms.numbers[idxbc]].sum()
         rab = bab.calc(self.all_atoms)
@@ -5397,8 +5424,7 @@ class MaxInternalStep(BaseRestrictedStep):
     synonyms = ['mis', 'max internal step']
 
     def __init__(
-        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1.,
-        wa_dummy=None, **kwargs
+        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1., **kwargs
     ):
         if pes.int is None:
             raise ValueError(
@@ -5411,7 +5437,6 @@ class MaxInternalStep(BaseRestrictedStep):
         self.wd = wd
         self.wo = wo
         self.wc = wc  # Weight for cell DOF
-        self.wa_dummy = wa if wa_dummy is None else wa_dummy
         self._weights_cache = None
         BaseRestrictedStep.__init__(self, pes, *args, **kwargs)
 
@@ -5437,28 +5462,18 @@ class MaxInternalStep(BaseRestrictedStep):
             self.pes.int.ntrans, self.pes.int.nbonds,
             self.pes.int.nangles, self.pes.int.ndihedrals,
             self.pes.int.nother, self.pes.int.nrotations,
-            n_cell_dof, self.wa, self.wa_dummy,
+            n_cell_dof,
         )
         if cached is not None and cached[0] == key:
             return cached[1]
-        intern = self.pes.int
         w = np.array(
-            [self.wx] * intern.ntrans
-            + [self.wb] * intern.nbonds
-            + [self.wa] * intern.nangles
-            + [self.wd] * intern.ndihedrals
-            + [self.wo] * intern.nother
-            + [self.wx] * intern.nrotations
+            [self.wx] * self.pes.int.ntrans
+            + [self.wb] * self.pes.int.nbonds
+            + [self.wa] * self.pes.int.nangles
+            + [self.wd] * self.pes.int.ndihedrals
+            + [self.wo] * self.pes.int.nother
+            + [self.wx] * self.pes.int.nrotations
         )
-        if self.wa_dummy != self.wa and intern.ndummies and intern.nangles:
-            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
-            k = intern.ntrans + intern.nbonds
-            for ang, active in zip(intern.internals['angles'], intern._active['angles']):
-                if not active:
-                    continue
-                if any(j in dummy_set for j in ang.indices):
-                    w[k] = self.wa_dummy
-                k += 1
         if n_cell_dof > 0:
             w = np.concatenate([w, [self.wc] * n_cell_dof])
         self._weights_cache = (key, w)
@@ -5763,8 +5778,6 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-                # Dummy-involving unconstrained angles: |s| <= 0.1/0.7 ≈ 0.143
-                rs_kwargs['wa_dummy'] = 0.7
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5987,6 +6000,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     connected = not bool(probe.internals["translations"])
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
+        Internals.use_lindh_angle_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -5998,6 +6012,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 break
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
+        Internals.use_lindh_angle_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
