@@ -5806,8 +5806,9 @@ class Sella(Optimizer):
         Cycle 167 re-solved with global wd_dummy=0.8 whenever any dummy
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
-        Connected and dimer jobs share this limiter when dummy atoms exist.
         """
+        if not getattr(self, "_allow_angle_wa", False):
+            return s, smag
         if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
             return s, smag
         intern = getattr(self.pes, "int", None)
@@ -6121,8 +6122,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
-    if connected:
-        Internals.soft_dummy_dihedral_h0_default = True
+    Internals.soft_dummy_dihedral_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
