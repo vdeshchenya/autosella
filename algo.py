@@ -5764,7 +5764,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 45:
             step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
