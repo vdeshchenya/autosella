@@ -7,14 +7,13 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
-at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
+at least 25 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H).
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane.
-Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5837,12 +5836,6 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
-        elif (
-            getattr(self, "_allow_angle_wa", False)
-            and len(self.atoms) >= 80
-            and self.nsteps >= 45
-        ):
-            step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -6202,7 +6195,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
-        Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
+        Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 25
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
