@@ -5785,8 +5785,13 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
+        dummy_lim = getattr(self, "_allow_angle_wa", False) and self._dummy_is_mis_limiter(
+            s, rs_kwargs
+        )
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
-        s, smag = self._maybe_connecting_limiter_wb(s, smag, rs_kwargs, step_method)
+        if (getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20
+                and not dummy_lim):
+            s, smag = self._maybe_dummy_excluded_tr(s, smag)
         return self._maybe_gdiis(s, smag)
 
     def _dummy_dihedral_s_indices(self, intern):
@@ -5847,62 +5852,15 @@ class Sella(Optimizer):
             return s, smag
         return s2, smag2
 
-    def _connecting_bond_s_indices(self, intern):
-        """Active bond indices that join distinct 1.25-covalent fragments."""
-        n = intern.natoms
-        atoms = intern.atoms
-        numbers = atoms.numbers
-        pos = atoms.positions
-        parent = np.arange(n, dtype=np.int32)
+    def _dummy_is_mis_limiter(self, s, rs_kwargs):
+        """True when the MIS max-|s w| coordinate is a dummy dihedral.
 
-        def find(a):
-            while parent[a] != a:
-                parent[a] = parent[parent[a]]
-                a = parent[a]
-            return int(a)
-
-        def union(a, b):
-            ra, rb = find(a), find(b)
-            if ra != rb:
-                parent[rb] = ra
-
-        bonds = intern.internals['bonds']
-        active = intern._active['bonds']
-        lengths = []
-        for bond, is_act in zip(bonds, active):
-            i, j = (int(x) for x in bond.indices)
-            rij = np.inf
-            if is_act and 0 <= i < n and 0 <= j < n:
-                rij = float(np.linalg.norm(pos[j] - pos[i]))
-                rcov = float(covalent_radii[numbers[i]] + covalent_radii[numbers[j]])
-                if rij <= 1.25 * rcov:
-                    union(i, j)
-            lengths.append((is_act, i, j, rij))
-        out = set()
-        idx = intern.ntrans
-        for is_act, i, j, rij in lengths:
-            if not is_act:
-                continue
-            if 0 <= i < n and 0 <= j < n and find(i) != find(j):
-                out.add(idx)
-            idx += 1
-        return out
-
-    def _maybe_connecting_limiter_wb(self, s, smag, rs_kwargs, step_method):
-        """Downweight only the limiter connecting stretch to 0.8 on dimers.
-
-        Cycle 54–57 scaled every long connector and hopped packing wells.
-        Cycle 189 showed translations are not the MIS limiter. Cycle 168
-        kept by scaling only the limiter dummy dihedral. Do the same for
-        the connecting stretch after packing (nsteps≥20).
+        Exceptions fail closed (treat as dummy-limited) so TrustRegion cannot
+        replace cycle-168 limiter dummy-wd.
         """
-        if getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
-            return s, smag
-        if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
-            return s, smag
         intern = getattr(self.pes, "int", None)
-        if intern is None or intern.nbonds == 0:
-            return s, smag
+        if intern is None or intern.ndummies == 0 or intern.ndihedrals == 0:
+            return False
         s = np.asarray(s, dtype=np.float64)
         try:
             wprobe = MaxInternalStep.__new__(MaxInternalStep)
@@ -5918,18 +5876,21 @@ class Sella(Optimizer):
             wprobe._weights_cache = None
             w = MaxInternalStep._get_weights(wprobe)
         except (RuntimeError, ValueError, AssertionError, AttributeError):
-            return s, smag
+            return True
         if len(w) != len(s):
-            return s, smag
+            return True
         idx = int(np.argmax(np.abs(s * w)))
-        if idx not in self._connecting_bond_s_indices(intern):
-            return s, smag
-        kw = dict(rs_kwargs)
-        kw['w_index'] = idx
-        kw['w_index_value'] = 0.8
+        return idx in self._dummy_dihedral_s_indices(intern)
+
+    def _maybe_dummy_excluded_tr(self, s, smag):
+        """Euclidean TrustRegion after 20 connected steps unless dummy-limited.
+
+        Cycle 169 always-on TR@20 undid 135043047. Skip TR when the MIS
+        limiter is a dummy dihedral so those jobs keep limiter dummy-wd.
+        """
         try:
-            s2, smag2 = MaxInternalStep(
-                self.pes, self.ord, self.delta, method=step_method, **kw
+            s2, smag2 = TrustRegion(
+                self.pes, self.ord, self.delta, method=self.method
             ).get_s()
         except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
             return s, smag
