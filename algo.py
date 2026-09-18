@@ -5763,11 +5763,11 @@ class Sella(Optimizer):
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
-        # Cycle 171's always-on RFO@45 saved paliperidone but inflated
-        # 88–95-step jobs. Keep RFO only on medium connected tails.
         step_method = self.method
-        if getattr(self, "_allow_angle_wa", False) and 45 <= self.nsteps < 80:
-            step_method = 'rfo'
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 45:
+            ev = getattr(self.pes.H, "evals", None)
+            if ev is not None and np.min(ev) < -1e-8:
+                step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
