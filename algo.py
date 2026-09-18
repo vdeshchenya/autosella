@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Dimers after 80 steps
-use Banerjee RFO with a 0.001 Eh Hessian |λ| floor.
+when the previous ratio ρ was well predicted. Connected molecules
+skip TS-BFGS updates when s·y < 0.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -386,6 +386,13 @@ class ApproximateHessian(LinearOperator):
 
     def update(self, dx, dg):
         """Perform a quasi-Newton update on B"""
+        if getattr(self, '_skip_neg_curv', False):
+            s = np.asarray(dx, dtype=np.float64).reshape(-1)
+            y = np.asarray(dg, dtype=np.float64).reshape(-1)
+            n = min(s.size, y.size)
+            if n and np.isfinite(s[:n]).all() and np.isfinite(y[:n]).all():
+                if float(s[:n] @ y[:n]) < 0.0:
+                    return
         if self.B is None:
             B = np.zeros(self.shape, dtype=self.dtype)
         else:
@@ -5161,24 +5168,11 @@ class RationalFunctionOptimization(BaseStepper):
     alphamax = 1.
     slope = 1.
     newton_safe = False
-    eval_floor = 0.0
     synonyms = ['rfo', 'rational function optimization']
 
     def _stepper_init(self) -> None:
-        H = np.asarray(self.H.asarray(), dtype=np.float64)
-        floor = float(getattr(type(self), "eval_floor", 0.0) or 0.0)
-        if floor > 0.0:
-            evals, evecs = eigh((H + H.T) * 0.5)
-            mag = np.abs(evals)
-            tiny = mag < floor
-            if np.any(tiny):
-                signs = np.sign(evals)
-                signs[signs == 0.0] = 1.0
-                evals = np.where(tiny, signs * floor, evals)
-                H = evecs @ (evals[:, None] * evecs.T)
-                H = (H + H.T) * 0.5
         self.A = np.block([
-            [H, self.g[:, np.newaxis]],
+            [self.H.asarray(), self.g[:, np.newaxis]],
             [self.g, 0]
         ])
 
@@ -5780,9 +5774,6 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
-            RationalFunctionOptimization.eval_floor = 0.001 * units.Hartree
-        else:
-            RationalFunctionOptimization.eval_floor = 0.0
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -6144,6 +6135,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
+        if connected:
+            opt.pes.H._skip_neg_curv = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
