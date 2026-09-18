@@ -17,6 +17,8 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne centers use 0.20 Ha guesses.
+Windowed C–N–C nitrogen centers use the same adjacent-substituent
+dummy plane without the 0.20 dummy-dihedral scale.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3745,6 +3747,46 @@ class Internals(BaseInternals):
                                     if vn > 1e-8:
                                         dpos = vec / vn
                                         break
+                        if (
+                            dpos is None
+                            and getattr(self, 'adj_dummy_placement', False)
+                            and 0.04 < cross_norm < 0.10
+                            and int(self.atoms.numbers[j]) == 7
+                        ):
+                            # C–N–C nitrogen: same coplanar adjacent dummy as
+                            # carbon, without 0.20 dummy-dihedral tagging.
+                            term_z = []
+                            terms = []
+                            for bterm in jbonds:
+                                t0, t1 = int(bterm.indices[0]), int(bterm.indices[1])
+                                t = t1 if t0 == j else t0
+                                if 0 <= t < self.natoms:
+                                    term_z.append(int(self.atoms.numbers[t]))
+                                    terms.append(t)
+                            if len(term_z) == 2 and term_z[0] == 6 and term_z[1] == 6:
+                                axis = dx1 + dx2
+                                an = float(np.linalg.norm(axis))
+                                if an > 1e-8:
+                                    ev = axis / an
+                                    posj = np.asarray(self.atoms.positions[j], dtype=np.float64)
+                                    numbers = np.asarray(self.atoms.numbers)
+                                    cands = []
+                                    for t in terms:
+                                        for bnb in bonds[t]:
+                                            k0, k1 = int(bnb.indices[0]), int(bnb.indices[1])
+                                            k = k1 if k0 == t else k0
+                                            if k == j or k >= self.natoms:
+                                                continue
+                                            z = int(numbers[k])
+                                            cands.append((0 if z >= 6 else 1, k))
+                                    cands.sort()
+                                    for _, k in cands:
+                                        vec = np.asarray(self.atoms.positions[k], dtype=np.float64) - posj
+                                        vec = vec - ev * float(np.dot(vec, ev))
+                                        vn = float(np.linalg.norm(vec))
+                                        if vn > 1e-8:
+                                            dpos = vec / vn
+                                            break
                         if dpos is None:
                             dpos = cross
                             dpos_norm = cross_norm
