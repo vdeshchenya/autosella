@@ -5978,7 +5978,7 @@ class Sella(Optimizer):
             self._gp_history = []
         q, g, energy = self.pes.get_x(), self.pes.get_g(), self.pes.get_f()
         history = self._gp_history
-        history.append((q.copy(), g.copy(), energy))
+        history.append((q.copy(), g.copy(), energy, self.pes.get_Unred().copy()))
         history[:] = [point for point in history[-5:]
                       if np.max(np.abs(self.pes.wrap_dx(point[0] - q)))
                       <= 2.0 * self.delta]
@@ -6001,6 +6001,12 @@ class Sella(Optimizer):
         transform = basis * np.sqrt(scale / eig)
         points = (offsets @ basis) * np.sqrt(eig / scale)
         g0 = g @ transform / scale
+        embedding = basis * np.sqrt(eig / scale)
+        derivative_maps = np.array([
+            (embedding.T @ old_basis) @ (old_basis.T @ transform)
+            for _, _, _, old_basis in history])
+        # The current transform lies in the current tangent range exactly.
+        derivative_maps[-1] = np.eye(d)
         count = len(history)
         size = count * (d + 1)
         # Squared-exponential covariance and its analytic mixed derivatives.
@@ -6008,20 +6014,22 @@ class Sella(Optimizer):
         kernel = np.empty((size, size))
         target = np.empty(size)
         identity = np.eye(d)
-        for i, (_, old_g, old_e) in enumerate(history):
+        for i, (_, old_g, old_e, _) in enumerate(history):
             a = i * (d + 1)
             target[a] = ((old_e - energy) / scale - g0 @ points[i]
                          - 0.5 * points[i] @ points[i])
-            target[a+1:a+d+1] = old_g @ transform / scale - g0 - points[i]
+            target[a+1:a+d+1] = (old_g @ transform / scale
+                                   - derivative_maps[i].T @ (g0 + points[i]))
             for j in range(count):
                 b = j * (d + 1)
                 diff = points[i] - points[j]
                 k = np.exp(-0.5 * inv_l2 * (diff @ diff))
                 kernel[a, b] = k
-                kernel[a, b+1:b+d+1] = inv_l2 * diff * k
-                kernel[a+1:a+d+1, b] = -inv_l2 * diff * k
+                kernel[a, b+1:b+d+1] = (inv_l2 * diff * k) @ derivative_maps[j]
+                kernel[a+1:a+d+1, b] = derivative_maps[i].T @ (-inv_l2 * diff * k)
+                mixed = (inv_l2 * identity - inv_l2**2 * np.outer(diff, diff)) * k
                 kernel[a+1:a+d+1, b+1:b+d+1] = (
-                    inv_l2 * identity - inv_l2**2 * np.outer(diff, diff)) * k
+                    derivative_maps[i].T @ mixed @ derivative_maps[j])
         kernel.flat[::size+1] += 1e-7
         try:
             from scipy.linalg import cho_factor, cho_solve
@@ -6033,13 +6041,16 @@ class Sella(Optimizer):
         def features(y):
             diff = y - points
             kval = np.exp(-0.5 * inv_l2 * np.sum(diff * diff, axis=1))
-            value = np.column_stack((kval, inv_l2 * diff * kval[:, None])).ravel()
+            value = np.column_stack((kval, inv_l2 * diff * kval[:, None]))
             deriv = np.empty((count, d + 1, d))
             deriv[:, 0, :] = -inv_l2 * diff * kval[:, None]
             deriv[:, 1:, :] = (inv_l2 * identity[None, :, :]
                                - inv_l2**2 * diff[:, :, None] * diff[:, None, :]
                                ) * kval[:, None, None]
-            return value, deriv.reshape(size, d)
+            for i, mapping in enumerate(derivative_maps):
+                value[i, 1:] = value[i, 1:] @ mapping
+                deriv[i, 1:, :] = mapping.T @ deriv[i, 1:, :]
+            return value.ravel(), deriv.reshape(size, d)
 
         origin_value, origin_deriv = features(np.zeros(d))
         correction0 = origin_value @ weights
