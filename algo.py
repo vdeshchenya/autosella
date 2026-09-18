@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules after
-50 steps use a wider trust-expansion window (`rho_inc=1.4`).
+when the previous ratio ρ was well predicted. Connected molecules stop
+trust-radius expansion after 50 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5980,7 +5980,7 @@ class Sella(Optimizer):
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
-            self.rho_inc = 1.4
+            self.sigma_inc = 1.0
 
         # Update trust radius
         if rho is not None:
