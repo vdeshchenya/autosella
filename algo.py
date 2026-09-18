@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected QN steps
-floor Hessian |λ| at 0.01 Eh (Helgaker) so floppy modes cannot
+floor Hessian |λ| at 0.001 Eh so tiny TS-BFGS modes cannot
 dominate the Newton step.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
@@ -6062,7 +6062,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = True
     try:
         if connected:
-            QuasiNewton.eval_floor = 0.01 * units.Hartree
+            QuasiNewton.eval_floor = 0.001 * units.Hartree
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         if not connected:
