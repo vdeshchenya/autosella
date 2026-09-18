@@ -5801,12 +5801,11 @@ class Sella(Optimizer):
         return out
 
     def _maybe_dummy_limiter_wd(self, s, smag, rs_kwargs):
-        """Downweight only the limiter dummy dihedral to 0.7.
+        """Downweight only the limiter dummy dihedral to 0.8.
 
         Cycle 167 re-solved with global wd_dummy=0.8 whenever any dummy
         dihedral was the limiter and was bit-identical to cycle 122.
-        Cycle 168 used 0.8 on the limiter index. 0.7 enlarges that
-        dummy-linear step further while other dummy dihedrals stay at wd=1.
+        Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
@@ -5838,7 +5837,7 @@ class Sella(Optimizer):
             return s, smag
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        kw['w_index_value'] = 0.7
+        kw['w_index_value'] = 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
@@ -5854,11 +5853,12 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
-        share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only.
+        predicted (1/rho_inc < rho < rho_inc). Connected jobs may
+        interpolate from nsteps>=15; dimers stay at 20. Dummy-wd and wa
+        stay connected-only.
         """
-        if self.nsteps < 20:
+        min_steps = 15 if getattr(self, "_allow_angle_wa", False) else 20
+        if self.nsteps < min_steps:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
