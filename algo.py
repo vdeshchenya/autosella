@@ -4116,7 +4116,7 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
 
-        def _isocyanide_ccn(angle) -> bool:
+        def _oxazolidinone_ocn(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4124,23 +4124,23 @@ class Internals(BaseInternals):
             if int(numbers[icen]) != 6:
                 return False
             real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 3:
+            if len(real_c) != 4:
+                return False
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_c)
+            n_n = sum(int(numbers[nb]) == 7 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
+            if n_o != 1 or n_n != 1 or n_c != 1 or n_h != 1:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 7}:
-                return False
-            n_idx = ia if za == 7 else ic
-            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
-            if len(real_n) != 2:
-                return False
-            return all(int(numbers[nb]) == 6 for nb in real_n)
+            return {za, zc} == {7, 8}
 
-        isocyanide_ok = set()
+        oxazolidinone_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _isocyanide_ccn(angle)]
+                     if _oxazolidinone_ocn(angle)]
             if 1 <= len(cands) <= 2:
-                isocyanide_ok = set(cands)
+                oxazolidinone_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4185,8 +4185,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in isocyanide_ok:
-                # Aryl–isocyanide C–C–N at 3-coordinate carbon.
+            elif soft_pyridine_angle and ia in oxazolidinone_ok:
+                # Oxazolidinone ring O–C–N at 4-coordinate carbon.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
