@@ -4181,10 +4181,13 @@ class Internals(BaseInternals):
 
             v_nb = {int(nb) for nb in neighbors[vertex]
                     if int(nb) not in dummy_set}
+            found = False
+            rings_n = False
             shared = (v_nb & {int(nb) for nb in neighbors[other]
                               if int(nb) not in dummy_set}) - {o_idx}
             if shared:
-                return _ring_has_n({o_idx, vertex, other} | shared)
+                found = True
+                rings_n = _ring_has_n({o_idx, vertex, other} | shared)
             for a in v_nb:
                 if a == o_idx:
                     continue
@@ -4194,8 +4197,10 @@ class Internals(BaseInternals):
                         continue
                     if other in (int(nb) for nb in neighbors[bi]
                                  if int(nb) not in dummy_set):
-                        return _ring_has_n({o_idx, vertex, a, bi, other})
-            return False
+                        found = True
+                        rings_n = rings_n or _ring_has_n(
+                            {o_idx, vertex, a, bi, other})
+            return found and rings_n
 
         oxazolidinone_occ_ok = set()
         if soft_pyridine_angle:
