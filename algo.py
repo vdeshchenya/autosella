@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules stop
-trust-radius expansion after 50 steps.
+when the previous ratio ρ was well predicted. Connected molecules with
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3236,6 +3236,7 @@ class Constraints(BaseInternals):
 
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
+    soft_dummy_angle_h0_default = False
 
     def __init__(
         self,
@@ -3272,6 +3273,7 @@ class Internals(BaseInternals):
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
+        self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3288,6 +3290,7 @@ class Internals(BaseInternals):
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
+        new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
         return new
 
     def add_rotation(
@@ -3985,10 +3988,14 @@ class Internals(BaseInternals):
             i, j = bond.indices
             nbonds[i] += 1
             nbonds[j] += 1
-        for angle in self.internals['angles']:
-            h0[idx] = self._h0_angle(angle)
-            idx += 1
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
+        soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
+        for angle in self.internals['angles']:
+            if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
+                h0[idx] = 0.10 * units.Hartree
+            else:
+                h0[idx] = self._h0_angle(angle)
+            idx += 1
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
                 scale = 0.25 if getattr(self, 'soft_dummy_dihedral_h0', False) else 0.5
@@ -5979,8 +5986,6 @@ class Sella(Optimizer):
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
-            self.sigma_inc = 1.0
 
         # Update trust radius
         if rho is not None:
@@ -6127,6 +6132,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     connected = not bool(probe.internals["translations"])
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
+        Internals.soft_dummy_angle_h0_default = len(atomic_numbers) >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6138,6 +6144,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 break
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
+        Internals.soft_dummy_angle_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
