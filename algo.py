@@ -21,9 +21,10 @@ dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors). Dimers that contain a 1-coordinate
-carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
-angles (2-coordinate O bonded to C and H; the ipso carbon is
-3-coordinate with exactly one oxygen).
+carbonyl oxygen, or a 2-coordinate H-bonded ketone oxygen, use
+0.10 Ha guesses on at most two phenol C–O–H angles (2-coordinate O
+bonded to C and H; the ipso carbon is 3-coordinate with exactly one
+oxygen).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4121,8 +4122,32 @@ class Internals(BaseInternals):
                 if int(i) in dummy_set or int(z) != 8:
                     continue
                 real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if len(real) == 1 and int(numbers[real[0]]) == 6:
+                if not real:
+                    continue
+                if any(int(numbers[nb]) not in (1, 6) for nb in real):
+                    continue
+                carbons = [nb for nb in real if int(numbers[nb]) == 6]
+                if len(carbons) != 1:
+                    continue
+                # Free 1-coordinate carbonyl oxygen (cycle 334 keep).
+                if len(real) == 1:
                     return True
+                # H-bonded ketone: O bonded to C and H; ketone carbon is
+                # 3-coordinate with one O and two C, at least one 4-coord C.
+                if len(real) != 2 or not any(int(numbers[nb]) == 1 for nb in real):
+                    continue
+                real_c = [nb for nb in neighbors[carbons[0]] if int(nb) not in dummy_set]
+                if len(real_c) != 3:
+                    continue
+                if sum(int(numbers[nb]) == 8 for nb in real_c) != 1:
+                    continue
+                c_neighbors = [nb for nb in real_c if int(numbers[nb]) == 6]
+                if len(c_neighbors) != 2:
+                    continue
+                for cn in c_neighbors:
+                    real_cn = [nb for nb in neighbors[cn] if int(nb) not in dummy_set]
+                    if len(real_cn) == 4:
+                        return True
             return False
 
         def _phenol_coh(angle) -> bool:
