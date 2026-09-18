@@ -4510,6 +4510,106 @@ class PES:
         assert self.hessian_function is not None
         self.H.set_B(self.hessian_function(self.atoms))
 
+class _BadgerBondHessians:
+    def __init__(self, base, jacobian, first, second):
+        self.base = base
+        self.jacobian = jacobian
+        self.first = first
+        self.second = second
+        self.shape = base.shape
+
+    def ldot(self, weights):
+        return (self.base.ldot(weights * self.first)
+                + self.jacobian.T @ ((weights * self.second)[:, None]
+                                     * self.jacobian))
+
+    def asarray(self):
+        return (self.first[:, None, None] * self.base.asarray()
+                + self.second[:, None, None] * self.jacobian[:, :, None]
+                * self.jacobian[:, None, :])
+
+
+class _BadgerBondInternals:
+    """Arc length of the accepted inverse-cubic bond stiffness metric."""
+    def __init__(self, base):
+        self.base = base
+        offsets = (
+            (-0.2573, 0.3401, 0.6937, 0.7126, 0.8355, 0.9491),
+            (0.3401, 0.9652, 1.2843, 1.4725, 1.6549, 1.7190),
+            (0.6937, 1.2843, 1.6925, 1.8238, 2.1164, 2.3185),
+            (0.7126, 1.4725, 1.8238, 2.0203, 2.2137, 2.5206),
+            (0.8355, 1.6549, 2.1164, 2.2137, 2.3718, 2.5110),
+            (0.9491, 1.7190, 2.3185, 2.5206, 2.5110, 2.5110),
+        )
+        raw = base.calc()
+        rows, origins = [], []
+        row = base.ntrans
+        if not base.atoms.pbc.any():
+            for bond, active in zip(base.internals['bonds'], base._active['bonds']):
+                if not active:
+                    continue
+                if all(i < base.natoms for i in bond.indices):
+                    numbers = base.atoms.numbers[list(bond.indices)]
+                    periods = np.searchsorted((2, 10, 18, 36, 54), numbers)
+                    origin = offsets[periods[0]][periods[1]] * units.Bohr
+                    if np.all(numbers > 0) and (raw[row] - origin) / units.Bohr > 1e-8:
+                        rows.append(row)
+                        origins.append(origin)
+                row += 1
+        self.rows = np.asarray(rows, dtype=int)
+        self.origins = np.asarray(origins)
+        self.reference = raw[self.rows].copy()
+        self.gaps = self.reference - self.origins
+
+    def __getattr__(self, name):
+        return getattr(object.__getattribute__(self, 'base'), name)
+
+    def _current_gaps(self, raw):
+        gap = raw[self.rows] - self.origins
+        if np.any(gap <= 0):
+            raise ValueError('Bond leaves the positive Badger coordinate domain')
+        return gap
+
+    def _derivatives(self):
+        raw = self.base.calc()
+        gap = self._current_gaps(raw)
+        first, second = np.ones_like(raw), np.zeros_like(raw)
+        first[self.rows] = (self.gaps / gap)**1.5
+        second[self.rows] = -1.5 * first[self.rows] / gap
+        return first, second
+
+    def calc(self):
+        raw = self.base.calc().copy()
+        gap = self._current_gaps(raw)
+        # expm1 avoids cancellation for near-reference late optimization steps.
+        raw[self.rows] = (self.reference - 2.0 * self.gaps
+                          * np.expm1(-0.5 * np.log(gap / self.gaps)))
+        return raw
+
+    def jacobian(self):
+        first, _ = self._derivatives()
+        return first[:, None] * self.base.jacobian()
+
+    def hessian_rdot(self, vector):
+        first, second = self._derivatives()
+        jacobian = self.base.jacobian()
+        raw = self.base.hessian_rdot(vector)
+        correction = (second * (jacobian @ vector))[:, None] * jacobian
+        if sparse.issparse(raw):
+            return (raw.multiply(first[:, None]).tocsr()
+                    + sparse.csr_matrix(correction))
+        return first[:, None] * raw + correction
+
+    def hessian(self):
+        first, second = self._derivatives()
+        return _BadgerBondHessians(self.base.hessian(), self.base.jacobian(),
+                                  first, second)
+
+    def guess_hessian(self, h0cart=70.):
+        first, _ = self._derivatives()
+        return self.base.guess_hessian(h0cart) / np.outer(first, first)
+
+
 class InternalPES(PES):
     def __init__(
         self,
@@ -4540,7 +4640,7 @@ class InternalPES(PES):
             **kwargs
         )
 
-        self.int = new_int
+        self.int = (_BadgerBondInternals(new_int) if H0 is None else new_int)
         self.dummies = self.int.dummies
         self.dim = len(self.get_x())
         self.ncart = self.int.ndof
