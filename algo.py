@@ -4,9 +4,9 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Connected tails after 12
+guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted.
+when the previous ratio ρ was not a poor underprediction.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5783,14 +5783,15 @@ class Sella(Optimizer):
         Cycle 117's 2–4 point milder GDIIS passed train but inflated
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Enable after 12 connected
-        steps so 15–20-step jobs can interpolate (cycle 120 used 20).
+        and cosine ≥ 0.90. Skip only when the previous step underperformed
+        the quadratic model (rho <= 1/rho_inc). Cycle 120 also skipped
+        unexpectedly downhill steps (rho >= rho_inc); those last segments
+        are the interpolants this gate keeps.
         """
-        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 12:
+        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        if not (1.0 / self.rho_inc < rho < self.rho_inc):
+        if not (rho > 1.0 / self.rho_inc):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
