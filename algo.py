@@ -5764,9 +5764,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 45:
-            step_method = 'rfo'
-        elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
@@ -5803,11 +5801,12 @@ class Sella(Optimizer):
         return out
 
     def _maybe_dummy_limiter_wd(self, s, smag, rs_kwargs):
-        """Downweight only the limiter dummy dihedral to 0.8.
+        """Downweight only the limiter dummy dihedral to 0.7.
 
         Cycle 167 re-solved with global wd_dummy=0.8 whenever any dummy
         dihedral was the limiter and was bit-identical to cycle 122.
-        Scale only that coordinate so other dummy dihedrals stay at wd=1.
+        Cycle 168 used 0.8 on the limiter index. 0.7 enlarges that
+        dummy-linear step further while other dummy dihedrals stay at wd=1.
         """
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
@@ -5839,7 +5838,7 @@ class Sella(Optimizer):
             return s, smag
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        kw['w_index_value'] = 0.8
+        kw['w_index_value'] = 0.7
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
