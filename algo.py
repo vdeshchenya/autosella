@@ -17,7 +17,7 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.20 Ha guesses. Connected n_atoms≥30 use 0.10 Ha
+dummy centers use 0.20 Ha guesses. Connected n_atoms≥30 use 0.21 Ha
 guesses on isolated gem-difluoro F–C–C angles (4-coordinate carbon
 with exactly two F neighbors; the carbon terminal has no F).
 
@@ -4149,7 +4149,7 @@ class Internals(BaseInternals):
                 c_term = a if int(numbers[a]) == 6 else b
                 c_term_has_f = any(int(numbers[t]) == 9 for t in neigh[c_term])
                 if n_f == 2 and n_c == 2 and not c_term_has_f:
-                    h0[idx] = 0.10 * units.Hartree
+                    h0[idx] = 0.21 * units.Hartree
                 else:
                     h0[idx] = self._h0_angle(angle)
             else:
