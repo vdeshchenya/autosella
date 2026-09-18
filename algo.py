@@ -5,7 +5,7 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
-steps may replace the QN step with two-point interpolation GDIIS
+steps may replace the QN step with 2–4 point interpolation GDIIS
 when the previous ratio ρ was well predicted.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
@@ -5778,13 +5778,12 @@ class Sella(Optimizer):
         return self._maybe_gdiis(s, smag)
 
     def _maybe_gdiis(self, s_qn, smag_qn):
-        """Replace the QN step with two-point interpolation-only GDIIS.
+        """Replace the QN step with 2–4 point interpolation-only GDIIS.
 
-        Cycle 117's 2–4 point milder GDIIS passed train but inflated
-        seven valid jobs. Restrict to the two most recent points so the
-        interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc).
+        Cycle 120 kept two-point GDIIS under a previous-ρ window. Cycle 117's
+        larger window saved paliperidone/135264879 without that gate. Combine
+        both: allow use=2..4 with cosine 0.90/0.75/0.60, still c_i≥0,
+        ||s_DIIS||≤||s_QN||, and 1/rho_inc < rho < rho_inc.
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5810,37 +5809,39 @@ class Sella(Optimizer):
             return s_qn, smag_qn
         err = err / nmin
         coords = np.stack(xs)
+        cos_cut = {2: 0.90, 3: 0.75, 4: 0.60}
         accepted = None
-        use = 2
-        if err.shape[0] < use:
+        max_use = min(4, err.shape[0])
+        for use in range(2, max_use + 1):
+            use_vecs = err[::-1][:use]
+            A = use_vecs @ use_vecs.T
+            try:
+                coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
+            except np.linalg.LinAlgError:
+                break
+            if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
+                break
+            csum = float(np.sum(coeffs))
+            if abs(csum) < 1e-16:
+                break
+            coeffs = coeffs / csum
+            if np.any(coeffs < -1e-8):
+                break
+            pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
+            neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
+            if pos_sum > 15.0 or neg_sum > 15.0:
+                break
+            diis_coords = coeffs @ coords[::-1][:use]
+            diis_step = diis_coords - coords[-1]
+            ndiis = float(np.linalg.norm(diis_step))
+            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
+                break
+            cos = float(diis_step @ s_qn) / (ndiis * nref)
+            if cos < cos_cut.get(use, 0.50) or cos < 0.0:
+                break
+            accepted = diis_step
+        if accepted is None:
             return s_qn, smag_qn
-        use_vecs = err[::-1][:use]
-        A = use_vecs @ use_vecs.T
-        try:
-            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
-        except np.linalg.LinAlgError:
-            return s_qn, smag_qn
-        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-            return s_qn, smag_qn
-        csum = float(np.sum(coeffs))
-        if abs(csum) < 1e-16:
-            return s_qn, smag_qn
-        coeffs = coeffs / csum
-        if np.any(coeffs < -1e-8):
-            return s_qn, smag_qn
-        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-        if pos_sum > 15.0 or neg_sum > 15.0:
-            return s_qn, smag_qn
-        diis_coords = coeffs @ coords[::-1][:use]
-        diis_step = diis_coords - coords[-1]
-        ndiis = float(np.linalg.norm(diis_step))
-        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-            return s_qn, smag_qn
-        cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
-            return s_qn, smag_qn
-        accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
         if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
             return s_qn, smag_qn
