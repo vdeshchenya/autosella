@@ -7,11 +7,12 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
-at least 25 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H).
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
-plane at 2-coordinate carbon centers when the linear-frame cross
+plane at 2-coordinate carbon centers, and on a geomeTRIC e0 axis at
+2-coordinate C–N–C nitrogen centers, when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane.
 
@@ -3727,6 +3728,31 @@ class Internals(BaseInternals):
                                     if vn > 1e-8:
                                         dpos = vec / vn
                                         break
+                        if (
+                            dpos is None
+                            and getattr(self, 'adj_dummy_placement', False)
+                            and 0.04 < cross_norm < 0.10
+                            and int(self.atoms.numbers[j]) == 7
+                        ):
+                            # C–N–C nitrogen: geomeTRIC e0 dummy (cycle 272
+                            # adjacent dummy saved leftover by only one call).
+                            term_z = []
+                            for bterm in jbonds:
+                                t0, t1 = int(bterm.indices[0]), int(bterm.indices[1])
+                                t = t1 if t0 == j else t0
+                                if 0 <= t < self.natoms:
+                                    term_z.append(int(self.atoms.numbers[t]))
+                            if len(term_z) == 2 and term_z[0] == 6 and term_z[1] == 6:
+                                axis = dx1 + dx2
+                                an = float(np.linalg.norm(axis))
+                                if an > 1e-8:
+                                    ev = axis / an
+                                    e0 = np.zeros(3, dtype=np.float64)
+                                    e0[int(np.argmin(ev * ev))] = 1.0
+                                    e0 = e0 - ev * float(np.dot(ev, e0))
+                                    n0 = float(np.linalg.norm(e0))
+                                    if n0 > 1e-12:
+                                        dpos = e0 / n0
                         if dpos is None:
                             dpos = cross
                             dpos_norm = cross_norm
@@ -6195,7 +6221,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
-        Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 25
+        Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
