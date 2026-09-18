@@ -3,8 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps and grow σ_inc to 1.16, or 1.17
-when 30≤n_atoms<80. Connected dummy-atom dihedral
+also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
@@ -21,7 +20,9 @@ dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors).
+guanidinium (≥3 N neighbors), and on at most two O–C–N angles at a
+3-coordinate carbamate carbon (exactly two O and one N; the N is not
+sulfur-bonded).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4102,19 +4103,48 @@ class Internals(BaseInternals):
                 return False
             return True
 
+        def _carbamate_ocn(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if ia in dummy_set or icen in dummy_set or ic in dummy_set:
+                return False
+            if int(numbers[icen]) != 6 or int(nbonds[icen]) != 3:
+                return False
+            # O–C–N at a carbamate/oxazolidinone carbonyl (leftover 363892164).
+            if {int(numbers[ia]), int(numbers[ic])} != {7, 8}:
+                return False
+            nbs = neighbors[icen]
+            if sum(int(numbers[nb]) == 8 for nb in nbs) != 2:
+                return False
+            if sum(int(numbers[nb]) == 7 for nb in nbs) != 1:
+                return False
+            # Spare sulfonyl carbamate (valid 135065494).
+            n_idx = ia if int(numbers[ia]) == 7 else ic
+            if any(int(numbers[nb]) == 16 for nb in neighbors[n_idx]):
+                return False
+            return True
+
         pyridine_ok = set()
+        carbamate_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _pyridine_cnc(angle)]
             # Spare polypyridine hoppers (valid 11109414 has four C–N–C).
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
+            ccands = [ia for ia, angle in enumerate(self.internals['angles'])
+                      if _carbamate_ocn(angle)]
+            if 1 <= len(ccands) <= 2:
+                carbamate_ok = set(ccands)
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in carbamate_ok:
+                # Isolated carbamate/oxazolidinone O–C–N.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -6161,9 +6191,7 @@ class Sella(Optimizer):
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
-            intern = getattr(self.pes, "int", None)
-            n = intern.natoms if intern is not None else len(self.atoms)
-            self.sigma_inc = 1.17 if 30 <= n < 80 else 1.16
+            self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
 
