@@ -6,9 +6,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. If that GDIIS step is
-not accepted, a pysisyphus-style constrained quartic line search
-along the last internal step may replace the QN step.
+when the previous ratio ρ was well predicted.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5642,7 +5640,6 @@ class Sella(Optimizer):
         self.delta_min = self.eta
         self._gdiis_x = []
         self._gdiis_g = []
-        self._gdiis_e = []
         self.constraints_tol = constraints_tol
         self.diagkwargs = dict(gamma=gamma, threepoint=threepoint)
         self.rho = 1.
@@ -5778,20 +5775,15 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
-        s_qn, smag_qn = s, smag
-        s, smag = self._maybe_gdiis(s_qn, smag_qn)
-        if s is s_qn or np.array_equal(s, s_qn):
-            s, smag = self._maybe_poly_ls(s_qn, smag_qn)
-        return s, smag
+        return self._maybe_gdiis(s, smag)
 
     def _maybe_gdiis(self, s_qn, smag_qn):
-        """Replace the QN step with two-point interpolation-only GDIIS.
+        """Replace the QN step with interpolation-only GDIIS.
 
-        Cycle 117's 2–4 point milder GDIIS passed train but inflated
-        seven valid jobs. Restrict to the two most recent points so the
-        interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc).
+        Champion path: two most recent points, C1 linear solve, c_i>=0,
+        ||s_DIIS||<=||s_QN||, cosine >= 0.90, well-predicted rho.
+        If that interpolant rejects, try Pulay C2-DIIS on the last three
+        points (eigendecomposition of the residual overlap).
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5806,7 +5798,6 @@ class Sella(Optimizer):
         if xs[-1].shape != s_qn.shape:
             self._gdiis_x = []
             self._gdiis_g = []
-            self._gdiis_e = []
             return s_qn, smag_qn
         nref = float(np.linalg.norm(s_qn))
         if not np.isfinite(nref) or nref < 1e-16:
@@ -5818,137 +5809,61 @@ class Sella(Optimizer):
             return s_qn, smag_qn
         err = err / nmin
         coords = np.stack(xs)
-        accepted = None
+
+        def _accept(coeffs, use_coords):
+            if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
+                return None
+            csum = float(np.sum(coeffs))
+            if abs(csum) < 1e-16:
+                return None
+            coeffs = coeffs / csum
+            if np.any(coeffs < -1e-8):
+                return None
+            pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
+            neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
+            if pos_sum > 15.0 or neg_sum > 15.0:
+                return None
+            diis_coords = coeffs @ use_coords
+            diis_step = diis_coords - coords[-1]
+            ndiis = float(np.linalg.norm(diis_step))
+            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
+                return None
+            cos = float(diis_step @ s_qn) / (ndiis * nref)
+            if cos < 0.90 or cos < 0.0:
+                return None
+            smag = float(np.max(np.abs(diis_step))) if diis_step.size else 0.0
+            if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
+                return None
+            return diis_step, smag
+
         use = 2
+        if err.shape[0] >= use:
+            use_vecs = err[::-1][:use]
+            A = use_vecs @ use_vecs.T
+            try:
+                coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
+            except np.linalg.LinAlgError:
+                coeffs = None
+            if coeffs is not None:
+                accepted = _accept(coeffs, coords[::-1][:use])
+                if accepted is not None:
+                    return accepted
+
+        use = 3
         if err.shape[0] < use:
             return s_qn, smag_qn
         use_vecs = err[::-1][:use]
         A = use_vecs @ use_vecs.T
         try:
-            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
+            _, evecs = np.linalg.eigh(A)
         except np.linalg.LinAlgError:
             return s_qn, smag_qn
-        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-            return s_qn, smag_qn
-        csum = float(np.sum(coeffs))
-        if abs(csum) < 1e-16:
-            return s_qn, smag_qn
-        coeffs = coeffs / csum
-        if np.any(coeffs < -1e-8):
-            return s_qn, smag_qn
-        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-        if pos_sum > 15.0 or neg_sum > 15.0:
-            return s_qn, smag_qn
-        diis_coords = coeffs @ coords[::-1][:use]
-        diis_step = diis_coords - coords[-1]
-        ndiis = float(np.linalg.norm(diis_step))
-        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-            return s_qn, smag_qn
-        cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
-            return s_qn, smag_qn
-        accepted = diis_step
-        smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
-        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-            return s_qn, smag_qn
-        return accepted, smag
-
-    def _quartic_ls_min(self, e0, e1, g0, g1):
-        """Constrained quartic minimum along [0,1] as in pysisyphus poly_fit."""
-        inner = -2.0 * (
-            6.0 * (e0 - e1) ** 2
-            + 6.0 * (e0 - e1) * (g0 + g1)
-            + (g0 + g1) ** 2
-            + 2.0 * g0 * g1
-        )
-        if (not np.isfinite(inner)) or inner <= 0.0:
-            return None, None
-        sqrt_term = float(np.sqrt(inner))
-        a2_pre = -3.0 * (e0 - e1) - 2.5 * g0 - 0.5 * g1
-        a3_pre = 2.0 * e0 - 2.0 * e1 + 2.0 * g0
-        best_x = None
-        best_y = None
-        for a2, a3 in (
-            (a2_pre - 0.5 * sqrt_term, a3_pre + sqrt_term),
-            (a2_pre + 0.5 * sqrt_term, a3_pre - sqrt_term),
-        ):
-            if (not np.isfinite(a2)) or abs(a2) < 1e-16:
-                continue
-            a4 = 0.375 * a3 * a3 / a2
-            if not np.isfinite(a4):
-                continue
-            try:
-                roots = np.roots(np.array([4.0 * a4, 3.0 * a3, 2.0 * a2, g0],
-                                          dtype=np.float64))
-            except np.linalg.LinAlgError:
-                continue
-            real = np.real(roots[np.abs(np.imag(roots)) < 1e-10])
-            for xr in real:
-                xf = float(xr)
-                if not np.isfinite(xf):
-                    continue
-                yf = (((a4 * xf + a3) * xf + a2) * xf + g0) * xf + e0
-                if (not np.isfinite(yf)):
-                    continue
-                if best_y is None or yf < best_y:
-                    best_x, best_y = xf, yf
-        return best_x, best_y
-
-    def _maybe_poly_ls(self, s_qn, smag_qn):
-        """Quartic line-search fallback along the last internal step.
-
-        pysisyphus RFOptimizer tries a constrained quartic along the previous
-        displacement when GDIIS is unavailable. Restrict to mild
-        extrapolation 1 < x <= 2, downhill vs the previous energy, and the
-        champion GDIIS cosine / length / rho gates.
-        """
-        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
-            return s_qn, smag_qn
-        rho = float(getattr(self, "rho", 1.0))
-        if not (1.0 / self.rho_inc < rho < self.rho_inc):
-            return s_qn, smag_qn
-        xs = self._gdiis_x
-        gs = self._gdiis_g
-        es = self._gdiis_e
-        if len(xs) < 2 or len(xs) != len(gs) or len(xs) != len(es):
-            return s_qn, smag_qn
-        s_qn = np.asarray(s_qn, dtype=np.float64)
-        if xs[-1].shape != s_qn.shape or gs[-1].shape != s_qn.shape:
-            return s_qn, smag_qn
-        prev_step = np.asarray(xs[-1] - xs[-2], dtype=np.float64)
-        if prev_step.shape != s_qn.shape:
-            return s_qn, smag_qn
-        nprev = float(np.linalg.norm(prev_step))
-        nref = float(np.linalg.norm(s_qn))
-        if (not np.isfinite(nprev)) or nprev < 1e-16:
-            return s_qn, smag_qn
-        if (not np.isfinite(nref)) or nref < 1e-16:
-            return s_qn, smag_qn
-        g0 = float(np.dot(gs[-2], prev_step))
-        g1 = float(np.dot(gs[-1], prev_step))
-        e0 = float(es[-2])
-        e1 = float(es[-1])
-        if not (np.isfinite(g0) and np.isfinite(g1) and np.isfinite(e0) and np.isfinite(e1)):
-            return s_qn, smag_qn
-        xfit, yfit = self._quartic_ls_min(e0, e1, g0, g1)
-        if xfit is None or yfit is None:
-            return s_qn, smag_qn
-        if not (1.0 < xfit <= 2.0):
-            return s_qn, smag_qn
-        if yfit >= e0:
-            return s_qn, smag_qn
-        fit_step = (1.0 - xfit) * (-prev_step)
-        nd = float(np.linalg.norm(fit_step))
-        if (not np.isfinite(nd)) or nd < 1e-16 or nd > nref:
-            return s_qn, smag_qn
-        cos = float(fit_step @ s_qn) / (nd * nref)
-        if (not np.isfinite(cos)) or cos < 0.90:
-            return s_qn, smag_qn
-        smag = float(np.max(np.abs(fit_step))) if fit_step.size else 0.0
-        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-            return s_qn, smag_qn
-        return fit_step, smag
+        use_coords = coords[::-1][:use]
+        for k in range(use):
+            accepted = _accept(evecs[:, k].astype(np.float64, copy=False), use_coords)
+            if accepted is not None:
+                return accepted
+        return s_qn, smag_qn
 
     def step(self):
         s, smag = self._predict_step()
@@ -6003,7 +5918,6 @@ class Sella(Optimizer):
             self.rho = 1
             self._gdiis_x = []
             self._gdiis_g = []
-            self._gdiis_e = []
             return
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
@@ -6040,11 +5954,9 @@ class Sella(Optimizer):
         if getattr(self, "_allow_angle_wa", False):
             self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
             self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
-            self._gdiis_e.append(float(self.pes.get_f()))
             if len(self._gdiis_x) > 6:
                 self._gdiis_x = self._gdiis_x[-5:]
                 self._gdiis_g = self._gdiis_g[-5:]
-                self._gdiis_e = self._gdiis_e[-5:]
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
