@@ -5,10 +5,10 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected dummy-set
-dihedrals use MaxInternalStep `wd_dummy=0.8` when the previous ratio ρ
-was well predicted. Connected tails after 20 steps may replace the QN
-step with two-point interpolation GDIIS when the previous ratio ρ was
-well predicted.
+dihedrals use MaxInternalStep `wd_dummy=0.8` while their parent
+center is still a linear bend. Connected tails after 20 steps may
+replace the QN step with two-point interpolation GDIIS when the
+previous ratio ρ was well predicted.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5396,6 +5396,34 @@ class RestrictedAtomicStep(BaseRestrictedStep):
         dval = dsda_mat[index] @ s_mat[index] / max(val, 1e-12)
         return val, dval
 
+def _parent_still_linear(intern, parent):
+    """True if two real bonds at ``parent`` remain collinear within ``atol``."""
+    atol = float(getattr(intern, "atol", 15.0 * np.pi / 180.0))
+    nbrs = []
+    for bond in intern.internals['bonds']:
+        i, j = bond.indices
+        if i == parent and j < intern.natoms:
+            nbrs.append(j)
+        elif j == parent and i < intern.natoms:
+            nbrs.append(i)
+    if len(nbrs) < 2:
+        return False
+    pos = intern.atoms.positions
+    p = pos[parent]
+    for a, b in combinations(nbrs, 2):
+        v1 = pos[a] - p
+        v2 = pos[b] - p
+        n1 = float(np.linalg.norm(v1))
+        n2 = float(np.linalg.norm(v2))
+        if n1 < 1e-8 or n2 < 1e-8:
+            continue
+        c = float(np.clip(np.dot(v1, v2) / (n1 * n2), -1.0, 1.0))
+        ang = float(np.arccos(c))
+        if not (atol < ang < np.pi - atol):
+            return True
+    return False
+
+
 class MaxInternalStep(BaseRestrictedStep):
     synonyms = ['mis', 'max internal step']
 
@@ -5455,12 +5483,28 @@ class MaxInternalStep(BaseRestrictedStep):
         )
         if self.wd_dummy != self.wd and intern.ndummies and intern.ndihedrals:
             dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
+            parent_of_dummy = {}
+            dinds = np.asarray(intern.dinds)
+            for j, d in enumerate(dinds):
+                if d >= intern.natoms:
+                    parent_of_dummy[int(d)] = j
+            linear_parents = {}
             k = intern.ntrans + intern.nbonds + intern.nangles
             for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
                 if not active:
                     continue
-                if any(j in dummy_set for j in dih.indices):
-                    w[k] = self.wd_dummy
+                dummy_idx = None
+                for j in dih.indices:
+                    if j in dummy_set:
+                        dummy_idx = j
+                        break
+                if dummy_idx is not None:
+                    parent = parent_of_dummy.get(dummy_idx)
+                    if parent is not None:
+                        if parent not in linear_parents:
+                            linear_parents[parent] = _parent_still_linear(intern, parent)
+                        if linear_parents[parent]:
+                            w[k] = self.wd_dummy
                 k += 1
         if n_cell_dof > 0:
             w = np.concatenate([w, [self.wc] * n_cell_dof])
@@ -5768,9 +5812,7 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-                rho = float(getattr(self, "rho", 1.0))
-                if 1.0 / self.rho_inc < rho < self.rho_inc:
-                    rs_kwargs['wd_dummy'] = 0.8
+                rs_kwargs['wd_dummy'] = 0.8
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
