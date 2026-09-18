@@ -17,9 +17,9 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.20 Ha guesses. Connected n_atoms≥30 use 0.21 Ha
-guesses on isolated gem-difluoro F–C–C angles (4-coordinate carbon
-with exactly two F neighbors; the carbon terminal has no F).
+dummy centers use 0.20 Ha guesses. Connected n_atoms≥30 use 0.10 Ha
+guesses on isolated gem-difluoro C–C–C angles (4-coordinate carbon
+with exactly two F neighbors; both carbon terminals have no F).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4128,28 +4128,20 @@ class Internals(BaseInternals):
                 getattr(self, 'adj_dummy_placement', False)
                 and int(numbers[int(angle.indices[1])]) == 6
                 and int(nbonds[int(angle.indices[1])]) == 4
-                and (
-                    (
-                        int(numbers[int(angle.indices[0])]) == 9
-                        and int(numbers[int(angle.indices[2])]) == 6
-                    )
-                    or (
-                        int(numbers[int(angle.indices[0])]) == 6
-                        and int(numbers[int(angle.indices[2])]) == 9
-                    )
-                )
+                and int(numbers[int(angle.indices[0])]) == 6
+                and int(numbers[int(angle.indices[2])]) == 6
             ):
-                # Isolated gem-difluoro F–C–C: 4-coord C with exactly two F
-                # and two C; the C terminal is not fluorinated.
+                # Isolated gem-difluoro C–C–C: 4-coord C with exactly two F
+                # and two C; neither C terminal is fluorinated.
                 c = int(angle.indices[1])
                 a = int(angle.indices[0])
                 b = int(angle.indices[2])
                 n_f = sum(1 for t in neigh[c] if int(numbers[t]) == 9)
                 n_c = sum(1 for t in neigh[c] if int(numbers[t]) == 6)
-                c_term = a if int(numbers[a]) == 6 else b
-                c_term_has_f = any(int(numbers[t]) == 9 for t in neigh[c_term])
-                if n_f == 2 and n_c == 2 and not c_term_has_f:
-                    h0[idx] = 0.21 * units.Hartree
+                a_has_f = any(int(numbers[t]) == 9 for t in neigh[a])
+                b_has_f = any(int(numbers[t]) == 9 for t in neigh[b])
+                if n_f == 2 and n_c == 2 and not a_has_f and not b_has_f:
+                    h0[idx] = 0.10 * units.Hartree
                 else:
                     h0[idx] = self._h0_angle(angle)
             else:
