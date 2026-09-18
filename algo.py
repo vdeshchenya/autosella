@@ -8,8 +8,7 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms≥30 rebuild internals without a 2-coordinate dummy
-when that center's real angle leaves the linear window.
+Connected n_atoms<12 use Banerjee RFO instead of |λ| quasi-Newton.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3921,42 +3920,6 @@ class Internals(BaseInternals):
                 return bad
         return None
 
-    def has_unused_dummy(self) -> bool:
-        """True if a 2-coordinate dummy center is no longer linear.
-
-        QUILD drops the dummy and regenerates internals once the real
-        angle leaves the linear window. Sella only rebuilds when a kept
-        Angle *becomes* linear.
-        """
-        if int(self.ndummies) == 0:
-            return False
-        pos = np.asarray(self.atoms.positions, dtype=np.float64)
-        for j in range(self.natoms):
-            if int(self.dinds[j]) < 0:
-                continue
-            neigh = []
-            for bond in self.internals['bonds']:
-                i0, i1 = (int(x) for x in bond.indices)
-                if i0 == j and i1 < self.natoms:
-                    neigh.append(i1)
-                elif i1 == j and i0 < self.natoms:
-                    neigh.append(i0)
-            if len(neigh) != 2:
-                continue
-            a, c = neigh
-            u = pos[a] - pos[j]
-            v = pos[c] - pos[j]
-            nu = float(np.linalg.norm(u))
-            nv = float(np.linalg.norm(v))
-            if nu < 1e-12 or nv < 1e-12:
-                continue
-            u = u / nu
-            v = v / nv
-            ang = float(np.arccos(np.clip(np.dot(u, v), -1.0, 1.0)))
-            if self.atol < ang < np.pi - self.atol:
-                return True
-        return False
-
     def _h0_bond(
         self,
         bond: Bond,
@@ -5812,6 +5775,8 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
+        if getattr(self, "_allow_angle_wa", False) and len(self.atoms) < 12:
+            step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5988,10 +5953,7 @@ class Sella(Optimizer):
 
         # Check for bad internals, and if found, reset PES object.
         # This skips the trust radius update.
-        rebuild_int = bool(self.internal and self.pes.int.check_for_bad_internals())
-        if (not rebuild_int) and self.internal and getattr(self, '_drop_unused_dummies', False):
-            rebuild_int = bool(self.pes.int.has_unused_dummy())
-        if rebuild_int:
+        if self.internal and self.pes.int.check_for_bad_internals():
             if False:
                 cell_mask = self.pes.cell_mask
                 exp_cell_factor = self.pes.exp_cell_factor
@@ -6178,10 +6140,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected:
-            if n_atoms >= 30:
-                opt._drop_unused_dummies = True
-        else:
+        if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
         for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
