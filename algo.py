@@ -8,16 +8,17 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
-angles that have a phosphorus neighbor (P–O–P / P–O–H), on
+Connected 18≤n_atoms<30 use 0.10 Ha guesses on 2-coordinate C–N–O
+nitroso angles. Connected n_atoms<12 use 0.10 Ha guesses on
+2-coordinate oxygen angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
 Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
-dihedrals at windowed C–C–C alkyne (n≥30), C–N–O isocyanate, and
-C–N–C isocyanide dummy centers use 0.20 Ha guesses.
+dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
+dummy centers use 0.20 Ha guesses.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3248,6 +3249,7 @@ class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
     soft_oxo_angle_h0_default = False
+    soft_nitroso_angle_h0_default = False
     adj_dummy_placement_default = False
 
     def __init__(
@@ -3287,6 +3289,7 @@ class Internals(BaseInternals):
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
+        self.soft_nitroso_angle_h0 = Internals.soft_nitroso_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
         self.windowed_dummy_atoms = set()
 
@@ -3307,6 +3310,7 @@ class Internals(BaseInternals):
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
+        new.soft_nitroso_angle_h0 = getattr(self, 'soft_nitroso_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         return new
@@ -3718,16 +3722,6 @@ class Internals(BaseInternals):
                                 elif zpair == {7, 8}:
                                     # Isocyanate N=C=O, including near-collinear.
                                     self.windowed_dummy_atoms.add(int(self.dinds[j]))
-                        elif int(self.atoms.numbers[j]) == 7:
-                            term_z = []
-                            for bterm in jbonds:
-                                t0, t1 = int(bterm.indices[0]), int(bterm.indices[1])
-                                t = t1 if t0 == j else t0
-                                if 0 <= t < self.natoms:
-                                    term_z.append(int(self.atoms.numbers[t]))
-                            if len(term_z) == 2 and term_z[0] == 6 and term_z[1] == 6:
-                                # Isocyanide C–N–C, including near-collinear.
-                                self.windowed_dummy_atoms.add(int(self.dinds[j]))
                         if (
                             getattr(self, 'adj_dummy_placement', False)
                             and 0.04 < cross_norm < 0.10
@@ -4076,9 +4070,27 @@ class Internals(BaseInternals):
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
         soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
+        soft_nitroso_angle = getattr(self, 'soft_nitroso_angle_h0', False)
         numbers = np.asarray(self.all_atoms.numbers)
         for angle in self.internals['angles']:
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
+                h0[idx] = 0.10 * units.Hartree
+            elif (
+                soft_nitroso_angle
+                and int(numbers[int(angle.indices[1])]) == 7
+                and int(nbonds[int(angle.indices[1])]) == 2
+                and (
+                    (
+                        int(numbers[int(angle.indices[0])]) == 6
+                        and int(numbers[int(angle.indices[2])]) == 8
+                    )
+                    or (
+                        int(numbers[int(angle.indices[0])]) == 8
+                        and int(numbers[int(angle.indices[2])]) == 6
+                    )
+                )
+            ):
+                # Nitroso class: 2-coordinate C–N–O.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -6277,6 +6289,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
+        Internals.soft_nitroso_angle_h0_default = 18 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
@@ -6291,6 +6304,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
         Internals.soft_oxo_angle_h0_default = False
+        Internals.soft_nitroso_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
