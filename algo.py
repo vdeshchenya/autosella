@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected dummy-involving
-angle guesses are 0.10 Ha when n_atoms<18 and 0.08 Ha when n_atoms>=30.
+angle guesses are 0.08 Ha when n_atoms<18 and 0.10 Ha when n_atoms>=30.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -6138,7 +6138,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         n_atoms = len(atomic_numbers)
         if n_atoms < 18 or n_atoms >= 30:
             Internals.soft_dummy_angle_h0_default = True
-            Internals.dummy_angle_h0_default = 0.08 if n_atoms >= 30 else 0.10
+            Internals.dummy_angle_h0_default = 0.08 if n_atoms < 18 else 0.10
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
