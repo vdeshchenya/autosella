@@ -20,8 +20,7 @@ dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors), and on at most two 3-coordinate
-carbamate/amide C–N–C angles (one carbon oxygen-substituted).
+guanidinium (≥3 N neighbors).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4102,40 +4101,19 @@ class Internals(BaseInternals):
                 return False
             return True
 
-        def _amide_cnc(angle) -> bool:
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if int(numbers[icen]) != 7 or int(nbonds[icen]) != 3:
-                return False
-            if int(numbers[ia]) != 6 or int(numbers[ic]) != 6:
-                return False
-            has_o = (
-                any(int(numbers[nb]) == 8 for nb in neighbors[ia])
-                or any(int(numbers[nb]) == 8 for nb in neighbors[ic])
-            )
-            return has_o
-
         pyridine_ok = set()
-        amide_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _pyridine_cnc(angle)]
             # Spare polypyridine hoppers (valid 11109414 has four C–N–C).
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
-            acands = [ia for ia, angle in enumerate(self.internals['angles'])
-                      if _amide_cnc(angle)]
-            if 1 <= len(acands) <= 2:
-                amide_ok = set(acands)
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in amide_ok:
-                # 3-coordinate carbamate/amide C–N–C (leftover oxazolidinone).
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -6008,7 +5986,8 @@ class Sella(Optimizer):
         return out
 
     def _maybe_dummy_limiter_wd(self, s, smag, rs_kwargs):
-        """Downweight only the limiter dummy dihedral to 0.8.
+        """Downweight only the limiter dummy dihedral to 0.8, or 0.7 when
+        that dummy is a windowed alkyne/isocyanate center.
 
         Cycle 167 re-solved with global wd_dummy=0.8 whenever any dummy
         dihedral was the limiter and was bit-identical to cycle 122.
@@ -6045,6 +6024,19 @@ class Sella(Optimizer):
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
         kw['w_index_value'] = 0.8
+        windowed = getattr(intern, 'windowed_dummy_atoms', set())
+        if windowed:
+            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
+            jdx = intern.ntrans + intern.nbonds + intern.nangles
+            for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
+                if not active:
+                    continue
+                if jdx == idx and any(int(j) in windowed for j in dih.indices):
+                    # Cycle 187 global dummy-wd=0.7 undid 135043047; windowed
+                    # leftover alkynes are n≥30.
+                    kw['w_index_value'] = 0.7
+                    break
+                jdx += 1
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
