@@ -9,14 +9,13 @@ steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
-angles that have a phosphorus neighbor (P–O–P / P–O–H) and on
-tetrahedral O–P–O angles at phosphorus centers.
+angles that have a phosphorus neighbor (P–O–P / P–O–H), on
+tetrahedral O–P–O angles at phosphorus centers, and on F–Si–F /
+F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
-otherwise keep the Sella cross-product dummy plane. Windowed
-carbon-center adj dummies leave the dummy–center–real angle
-unconstrained so dummy-angle H0 0.10 can act on that bend.
+otherwise keep the Sella cross-product dummy plane.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3687,7 +3686,6 @@ class Internals(BaseInternals):
                     # vectors. These two vectors are close to collinear, and
                     # may be exactly collinear, so there's a backup strategy
                     # if this results in the zero-vector.
-                    used_adj_dummy = False
                     if self.dinds[j] < 0:
                         self.dinds[j] = self.natoms + self.ndummies
                         dx1 = -b1.calc_vec(self.atoms)
@@ -3730,7 +3728,6 @@ class Internals(BaseInternals):
                                     vn = float(np.linalg.norm(vec))
                                     if vn > 1e-8:
                                         dpos = vec / vn
-                                        used_adj_dummy = True
                                         break
                         if dpos is None:
                             dpos = cross
@@ -3762,8 +3759,7 @@ class Internals(BaseInternals):
                     # the angles O1-C-dummy and O2-C-dummy are supplementary,
                     # so constraining both over-constrains real atoms)
                     dangle1 = b1 + dbond
-                    if not used_adj_dummy:
-                        self.cons.fix_angle(dangle1, replace_ok=False)
+                    self.cons.fix_angle(dangle1, replace_ok=False)
                     dangle2 = b2 + dbond
                     # Fix the improper dihedral and update relevant internals
                     if b2.indices[1] == j:
@@ -4068,6 +4064,14 @@ class Internals(BaseInternals):
                 and int(numbers[int(angle.indices[2])]) == 8
             ):
                 # Complementary phosphate class: tetrahedral O–P–O at P.
+                h0[idx] = 0.10 * units.Hartree
+            elif (
+                soft_oxo_angle
+                and int(numbers[int(angle.indices[1])]) in (5, 14)
+                and int(numbers[int(angle.indices[0])]) == 9
+                and int(numbers[int(angle.indices[2])]) == 9
+            ):
+                # Fluoride tetrahedral class: F–Si–F / F–B–F.
                 h0[idx] = 0.10 * units.Hartree
             else:
                 h0[idx] = self._h0_angle(angle)
