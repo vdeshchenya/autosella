@@ -9,8 +9,8 @@ steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms≥30 place two-coordinate dummy atoms on geomeTRIC's
-e0 axis (Cartesian basis most orthogonal to the linear frame)
-instead of the cross product of nearly collinear bonds.
+e0 axis when the unit-bond cross product is ill-conditioned
+(||u×v||<0.10), otherwise keeping the Sella cross-product dummy plane.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3685,10 +3685,11 @@ class Internals(BaseInternals):
                         dx2 = b2.calc_vec(self.atoms)
                         dx2 /= np.linalg.norm(dx2)
                         dpos = None
-                        if getattr(self, 'e0_dummy_placement', False):
-                            # geomeTRIC LinearAngle e0: Cartesian axis most
-                            # orthogonal to the linear frame, not cross(dx1,dx2)
-                            # which vanishes for near-collinear bonds.
+                        cross = np.cross(dx1, dx2)
+                        cross_norm = float(np.linalg.norm(cross))
+                        if getattr(self, 'e0_dummy_placement', False) and cross_norm < 0.10:
+                            # e0 only when cross(u,v) is ill-conditioned
+                            # (~6° from collinear). Milder bends keep cross.
                             axis = dx1 + dx2
                             an = float(np.linalg.norm(axis))
                             if an > 1e-8:
@@ -3700,8 +3701,8 @@ class Internals(BaseInternals):
                                 if n0 > 1e-12:
                                     dpos = e0 / n0
                         if dpos is None:
-                            dpos = np.cross(dx1, dx2)
-                            dpos_norm = np.linalg.norm(dpos)
+                            dpos = cross
+                            dpos_norm = cross_norm
                             if dpos_norm < 1e-4:
                                 # the aforementioned backup strategy
                                 # pick the cartesian basis vector that is maximally
