@@ -20,7 +20,7 @@ dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors), and on at most two C–C–C angles at a
+guanidinium (≥3 N neighbors), and on at most two C–C–N angles at a
 3-coordinate carbon adjacent to a 2-coordinate alkyne carbon.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
@@ -4102,7 +4102,7 @@ class Internals(BaseInternals):
                 return False
             return True
 
-        def _alkyne_aryl_ccc(angle) -> bool:
+        def _alkyne_aryl_ccn(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if ia in dummy_set or icen in dummy_set or ic in dummy_set:
@@ -4112,7 +4112,8 @@ class Internals(BaseInternals):
             real_cen = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
             if len(real_cen) != 3:
                 return False
-            if int(numbers[ia]) != 6 or int(numbers[ic]) != 6:
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 7}:
                 return False
 
             def _is_alkyne_c(idx: int) -> bool:
@@ -4121,8 +4122,8 @@ class Internals(BaseInternals):
                 real = [nb for nb in neighbors[idx] if int(nb) not in dummy_set]
                 return len(real) == 2 and all(int(numbers[nb]) == 6 for nb in real)
 
-            # Exactly one terminal is a 2-coordinate C–C alkyne (not nitrile).
-            return _is_alkyne_c(ia) != _is_alkyne_c(ic)
+            c_idx = ia if za == 6 else ic
+            return _is_alkyne_c(c_idx)
 
         pyridine_ok = set()
         alkyne_ok = set()
@@ -4133,7 +4134,7 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
             acands = [ia for ia, angle in enumerate(self.internals['angles'])
-                      if _alkyne_aryl_ccc(angle)]
+                      if _alkyne_aryl_ccn(angle)]
             if 1 <= len(acands) <= 2:
                 alkyne_ok = set(acands)
 
@@ -4144,7 +4145,7 @@ class Internals(BaseInternals):
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in alkyne_ok:
-                # Isolated aryl–alkyne C–C–C (leftover 363892164).
+                # Isolated aryl–alkyne C–C–N (leftover pyridine joint).
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
