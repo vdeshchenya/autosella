@@ -8,10 +8,8 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms<18 or n_atoms≥30 (the dummy-angle 0.10 bands) place
-two-coordinate dummy atoms on geomeTRIC's e0 axis when the unit-bond
-cross product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
-otherwise keep the Sella cross-product dummy plane.
+Connected n_atoms≥30 rebuild internals without a 2-coordinate dummy
+when that center's real angle leaves the linear window.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3241,7 +3239,6 @@ class Constraints(BaseInternals):
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
-    e0_dummy_placement_default = False
 
     def __init__(
         self,
@@ -3279,7 +3276,6 @@ class Internals(BaseInternals):
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
-        self.e0_dummy_placement = Internals.e0_dummy_placement_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3297,7 +3293,6 @@ class Internals(BaseInternals):
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
-        new.e0_dummy_placement = getattr(self, 'e0_dummy_placement', False)
         return new
 
     def add_rotation(
@@ -3685,40 +3680,22 @@ class Internals(BaseInternals):
                         dx1 /= np.linalg.norm(dx1)
                         dx2 = b2.calc_vec(self.atoms)
                         dx2 /= np.linalg.norm(dx2)
-                        dpos = None
-                        cross = np.cross(dx1, dx2)
-                        cross_norm = float(np.linalg.norm(cross))
-                        if getattr(self, 'e0_dummy_placement', False) and 0.04 < cross_norm < 0.10:
-                            # e0 only for moderately ill-conditioned frames
-                            # (~2.3–5.7° from collinear). Almost-linear and
-                            # milder bends keep the Sella cross-product plane.
-                            axis = dx1 + dx2
-                            an = float(np.linalg.norm(axis))
-                            if an > 1e-8:
-                                ev = axis / an
-                                e0 = np.zeros(3, dtype=np.float64)
-                                e0[int(np.argmin(ev * ev))] = 1.0
-                                e0 = e0 - ev * float(np.dot(ev, e0))
-                                n0 = float(np.linalg.norm(e0))
-                                if n0 > 1e-12:
-                                    dpos = e0 / n0
-                        if dpos is None:
-                            dpos = cross
-                            dpos_norm = cross_norm
-                            if dpos_norm < 1e-4:
-                                # the aforementioned backup strategy
-                                # pick the cartesian basis vector that is maximally
-                                # orthogonal with the shorter of the two
-                                # displacement vectors.
-                                # note: this is not rotationally invariant, but
-                                # there's not much we can do about that
-                                dim = np.argmin(np.abs(dx1))
-                                dpos[:] = 0.
-                                dpos[dim] = 1.
-                                dpos -= dx1 * (dpos @ dx1)
-                                dpos /= np.linalg.norm(dpos)
-                            else:
-                                dpos /= dpos_norm
+                        dpos = np.cross(dx1, dx2)
+                        dpos_norm = np.linalg.norm(dpos)
+                        if dpos_norm < 1e-4:
+                            # the aforementioned backup strategy
+                            # pick the cartesian basis vector that is maximally
+                            # orthogonal with the shorter of the two
+                            # displacement vectors.
+                            # note: this is not rotationally invariant, but
+                            # there's not much we can do about that
+                            dim = np.argmin(np.abs(dx1))
+                            dpos[:] = 0.
+                            dpos[dim] = 1.
+                            dpos -= dx1 * (dpos @ dx1)
+                            dpos /= np.linalg.norm(dpos)
+                        else:
+                            dpos /= dpos_norm
                         # Add the dummy atom
                         dpos += self.atoms.positions[j]
                         self.dummies += Atom('X', dpos)
@@ -3943,6 +3920,42 @@ class Internals(BaseInternals):
             if ints:
                 return bad
         return None
+
+    def has_unused_dummy(self) -> bool:
+        """True if a 2-coordinate dummy center is no longer linear.
+
+        QUILD drops the dummy and regenerates internals once the real
+        angle leaves the linear window. Sella only rebuilds when a kept
+        Angle *becomes* linear.
+        """
+        if int(self.ndummies) == 0:
+            return False
+        pos = np.asarray(self.atoms.positions, dtype=np.float64)
+        for j in range(self.natoms):
+            if int(self.dinds[j]) < 0:
+                continue
+            neigh = []
+            for bond in self.internals['bonds']:
+                i0, i1 = (int(x) for x in bond.indices)
+                if i0 == j and i1 < self.natoms:
+                    neigh.append(i1)
+                elif i1 == j and i0 < self.natoms:
+                    neigh.append(i0)
+            if len(neigh) != 2:
+                continue
+            a, c = neigh
+            u = pos[a] - pos[j]
+            v = pos[c] - pos[j]
+            nu = float(np.linalg.norm(u))
+            nv = float(np.linalg.norm(v))
+            if nu < 1e-12 or nv < 1e-12:
+                continue
+            u = u / nu
+            v = v / nv
+            ang = float(np.arccos(np.clip(np.dot(u, v), -1.0, 1.0)))
+            if self.atol < ang < np.pi - self.atol:
+                return True
+        return False
 
     def _h0_bond(
         self,
@@ -5975,7 +5988,10 @@ class Sella(Optimizer):
 
         # Check for bad internals, and if found, reset PES object.
         # This skips the trust radius update.
-        if self.internal and self.pes.int.check_for_bad_internals():
+        rebuild_int = bool(self.internal and self.pes.int.check_for_bad_internals())
+        if (not rebuild_int) and self.internal and getattr(self, '_drop_unused_dummies', False):
+            rebuild_int = bool(self.pes.int.has_unused_dummy())
+        if rebuild_int:
             if False:
                 cell_mask = self.pes.cell_mask
                 exp_cell_factor = self.pes.exp_cell_factor
@@ -6159,11 +6175,13 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
-        Internals.e0_dummy_placement_default = n_atoms < 18 or n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if not connected:
+        if connected:
+            if n_atoms >= 30:
+                opt._drop_unused_dummies = True
+        else:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
         for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
@@ -6172,7 +6190,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
-        Internals.e0_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
