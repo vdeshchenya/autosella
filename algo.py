@@ -5757,11 +5757,17 @@ class Sella(Optimizer):
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
+        step_method = self.method
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
+            ev = getattr(self.pes.H, "evals", None)
+            if ev is not None and np.min(ev) < -1e-8:
+                step_method = 'rfo'
+
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
                 s, smag = self.rs(
-                    self.pes, self.ord, self.delta, method=self.method,
+                    self.pes, self.ord, self.delta, method=step_method,
                     **rs_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
@@ -5771,19 +5777,20 @@ class Sella(Optimizer):
             self.pes._update_basis()
         else:
             s, smag = self.rs(
-                self.pes, self.ord, self.delta, method=self.method,
+                self.pes, self.ord, self.delta, method=step_method,
                 **rs_kwargs
             ).get_s()
 
         return self._maybe_gdiis(s, smag)
 
     def _maybe_gdiis(self, s_qn, smag_qn):
-        """Replace the QN step with interpolation-only GDIIS.
+        """Replace the QN step with two-point interpolation-only GDIIS.
 
-        Champion path: two most recent points, C1 linear solve, c_i>=0,
-        ||s_DIIS||<=||s_QN||, cosine >= 0.90, well-predicted rho.
-        If that interpolant rejects, try Pulay C2-DIIS on the last three
-        points (eigendecomposition of the residual overlap).
+        Cycle 117's 2–4 point milder GDIIS passed train but inflated
+        seven valid jobs. Restrict to the two most recent points so the
+        interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
+        and cosine ≥ 0.90. Accept only when the previous step was well
+        predicted (1/rho_inc < rho < rho_inc).
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5809,61 +5816,41 @@ class Sella(Optimizer):
             return s_qn, smag_qn
         err = err / nmin
         coords = np.stack(xs)
-
-        def _accept(coeffs, use_coords):
-            if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-                return None
-            csum = float(np.sum(coeffs))
-            if abs(csum) < 1e-16:
-                return None
-            coeffs = coeffs / csum
-            if np.any(coeffs < -1e-8):
-                return None
-            pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-            neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-            if pos_sum > 15.0 or neg_sum > 15.0:
-                return None
-            diis_coords = coeffs @ use_coords
-            diis_step = diis_coords - coords[-1]
-            ndiis = float(np.linalg.norm(diis_step))
-            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-                return None
-            cos = float(diis_step @ s_qn) / (ndiis * nref)
-            if cos < 0.90 or cos < 0.0:
-                return None
-            smag = float(np.max(np.abs(diis_step))) if diis_step.size else 0.0
-            if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-                return None
-            return diis_step, smag
-
+        accepted = None
         use = 2
-        if err.shape[0] >= use:
-            use_vecs = err[::-1][:use]
-            A = use_vecs @ use_vecs.T
-            try:
-                coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
-            except np.linalg.LinAlgError:
-                coeffs = None
-            if coeffs is not None:
-                accepted = _accept(coeffs, coords[::-1][:use])
-                if accepted is not None:
-                    return accepted
-
-        use = 3
         if err.shape[0] < use:
             return s_qn, smag_qn
         use_vecs = err[::-1][:use]
         A = use_vecs @ use_vecs.T
         try:
-            _, evecs = np.linalg.eigh(A)
+            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
         except np.linalg.LinAlgError:
             return s_qn, smag_qn
-        use_coords = coords[::-1][:use]
-        for k in range(use):
-            accepted = _accept(evecs[:, k].astype(np.float64, copy=False), use_coords)
-            if accepted is not None:
-                return accepted
-        return s_qn, smag_qn
+        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
+            return s_qn, smag_qn
+        csum = float(np.sum(coeffs))
+        if abs(csum) < 1e-16:
+            return s_qn, smag_qn
+        coeffs = coeffs / csum
+        if np.any(coeffs < -1e-8):
+            return s_qn, smag_qn
+        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
+        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
+        if pos_sum > 15.0 or neg_sum > 15.0:
+            return s_qn, smag_qn
+        diis_coords = coeffs @ coords[::-1][:use]
+        diis_step = diis_coords - coords[-1]
+        ndiis = float(np.linalg.norm(diis_step))
+        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
+            return s_qn, smag_qn
+        cos = float(diis_step @ s_qn) / (ndiis * nref)
+        if cos < 0.90 or cos < 0.0:
+            return s_qn, smag_qn
+        accepted = diis_step
+        smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
+        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
+            return s_qn, smag_qn
+        return accepted, smag
 
     def step(self):
         s, smag = self._predict_step()
