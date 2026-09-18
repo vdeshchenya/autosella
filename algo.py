@@ -19,7 +19,7 @@ otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected n_atoms≥30 use 0.10 Ha
 guesses on 2-coordinate pyridine/imine C–N–C angles (nitrogen bonded
-to two carbons, neither carbon bonded to oxygen).
+to two carbons, neither carbon bonded to oxygen) when 30≤n_atoms<80.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -6295,7 +6295,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
-        Internals.soft_pyridine_angle_h0_default = n_atoms >= 30
+        Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
