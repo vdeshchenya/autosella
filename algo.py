@@ -20,7 +20,9 @@ dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors). Dimers that contain a 1-coordinate
+guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
+ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and
+fused-aryl 4-/5-membered cyclic ethers. Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
 3-coordinate with exactly one oxygen).
@@ -4145,14 +4147,28 @@ class Internals(BaseInternals):
             real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
             return all(int(numbers[nb]) > 1 for nb in real_o)
 
-        def _small_cyclic_ether(angle) -> bool:
+        def _siloxane_oxygen(angle) -> bool:
+            ia, _, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                         int(angle.indices[2]))
+            o_idx = ia if int(numbers[ia]) == 8 else ic
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            return any(int(numbers[nb]) == 14 for nb in real_o)
+
+        def _fused_small_cyclic_ether(angle) -> bool:
+            # 4-/5-ring through ether O whose other neighbor is 3-coordinate
+            # (dihydrobenzofuran / oxazolidinone carbonyl), not THF.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             o_idx = ia if int(numbers[ia]) == 8 else ic
             vertex = icen
             real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
             other = next(int(nb) for nb in real_o if int(nb) != vertex)
-            v_nb = {int(nb) for nb in neighbors[vertex] if int(nb) not in dummy_set}
+            other_heavy = [nb for nb in neighbors[other]
+                           if int(nb) not in dummy_set]
+            if len(other_heavy) != 3:
+                return False
+            v_nb = {int(nb) for nb in neighbors[vertex]
+                    if int(nb) not in dummy_set}
             if (v_nb & {int(nb) for nb in neighbors[other]
                         if int(nb) not in dummy_set}) - {o_idx}:
                 return True
@@ -4176,44 +4192,10 @@ class Internals(BaseInternals):
                 oxazolidinone_occ_ok = {
                     ia for ia in cands
                     if _ether_oxygen(self.internals['angles'][ia])
-                    and not _small_cyclic_ether(self.internals['angles'][ia])
+                    and not _siloxane_oxygen(self.internals['angles'][ia])
+                    and not _fused_small_cyclic_ether(
+                        self.internals['angles'][ia])
                 }
-
-        def _carboxyl_carbon(cn) -> bool:
-            nbs = [nbb for nbb in neighbors[cn] if int(nbb) not in dummy_set]
-            if len(nbs) != 3:
-                return False
-            if any(int(numbers[nbb]) == 7 for nbb in nbs):
-                return False
-            return sum(int(numbers[nbb]) == 8 for nbb in nbs) >= 2
-
-        def _carboxyl_ccn(angle) -> bool:
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
-                return False
-            n_n = sum(int(numbers[nb]) == 7 for nb in real_c)
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
-            n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
-            if n_n != 1 or n_c != 2 or n_h != 1:
-                return False
-            carbons = [nb for nb in real_c if int(numbers[nb]) == 6]
-            if not any(_carboxyl_carbon(cn) for cn in carbons):
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 7}
-
-        carboxyl_ccn_ok = set()
-        if soft_pyridine_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _carboxyl_ccn(angle)]
-            if 1 <= len(cands) <= 2:
-                carboxyl_ccn_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4260,9 +4242,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in oxazolidinone_occ_ok:
                 # Oxazolidinone C5 O–C–C at 4-coordinate carbon.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
-                # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
