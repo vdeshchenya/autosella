@@ -4895,6 +4895,44 @@ class InternalPES(PES):
 
     # Position getter/setter
     def set_x(self, target):
+        """Backtrack realized nonbonded collisions without requesting forces."""
+        if self.atoms.pbc.any():
+            return self._set_x_unchecked(target)
+        positions = self.atoms.positions.copy()
+        dummy_positions = self.dummies.positions.copy()
+        q0 = self.get_x().copy()
+        displacement = self.wrap_dx(target - q0)
+        first, second = np.triu_indices(len(positions), 1)
+        bonded = {tuple(sorted(bond.indices))
+                  for bond in self.int.internals['bonds']}
+        keep = np.array([(int(i), int(j)) not in bonded
+                         for i, j in zip(first, second)], dtype=bool)
+        first, second = first[keep], second[keep]
+        radii = covalent_radii[self.atoms.numbers]
+        distances = np.linalg.norm(positions[first] - positions[second], axis=1)
+        # Match the existing topology detector, allowing gradual new contacts.
+        separated = distances > 1.25 * (radii[first] + radii[second])
+        first, second = first[separated], second[separated]
+        minimum = radii[first] + radii[second]
+        curr, last, bad_int = self.curr.copy(), self.last.copy(), self.bad_int
+        for attempt in range(25):
+            if attempt:
+                self.atoms.positions = positions.copy()
+                self.dummies.positions = dummy_positions.copy()
+                self.curr, self.last = curr.copy(), last.copy()
+                self.bad_int = bad_int
+            trial_target = target if attempt == 0 else q0 + (0.5**attempt) * displacement
+            result = self._set_x_unchecked(trial_target)
+            candidate = self.atoms.positions
+            distances = np.linalg.norm(candidate[first] - candidate[second], axis=1)
+            if np.all(distances >= minimum):
+                return result
+        self.atoms.positions = positions.copy()
+        self.dummies.positions = dummy_positions.copy()
+        self.curr, self.last, self.bad_int = curr, last, bad_int
+        raise RuntimeError("No collision-free internal step found")
+
+    def _set_x_unchecked(self, target):
         """Update internal coordinates to target values.
 
         Uses fast iterative stepper by default, with ODE fallback for robustness.
