@@ -6,8 +6,9 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. After 40 connected
-steps, MaxInternalStep is replaced by Euclidean TrustRegion.
+when the previous ratio ρ was well predicted. After 20 connected
+well-predicted steps, MaxInternalStep is replaced by Euclidean
+TrustRegion.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5760,7 +5761,9 @@ class Sella(Optimizer):
 
         rs_cls = self.rs
         step_kwargs = dict(rs_kwargs)
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 40:
+        rho = float(getattr(self, "rho", 1.0))
+        if (getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20
+                and 1.0 / self.rho_inc < rho < self.rho_inc):
             rs_cls = TrustRegion
             step_kwargs = {}
 
