@@ -16,8 +16,8 @@ Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
-dihedrals at windowed C–C–C alkyne (n≥30) and C–N–O isocyanate
-centers use 0.20 Ha guesses.
+dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
+dummy centers use 0.20 Ha guesses.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3699,10 +3699,7 @@ class Internals(BaseInternals):
                         dpos = None
                         cross = np.cross(dx1, dx2)
                         cross_norm = float(np.linalg.norm(cross))
-                        if (
-                            0.04 < cross_norm < 0.10
-                            and int(self.atoms.numbers[j]) == 6
-                        ):
+                        if int(self.atoms.numbers[j]) == 6:
                             term_z = []
                             for bterm in jbonds:
                                 t0, t1 = int(bterm.indices[0]), int(bterm.indices[1])
@@ -3711,13 +3708,15 @@ class Internals(BaseInternals):
                                     term_z.append(int(self.atoms.numbers[t]))
                             if len(term_z) == 2:
                                 zpair = {term_z[0], term_z[1]}
-                                if zpair == {6, 6} and getattr(
-                                    self, 'adj_dummy_placement', False
+                                if (
+                                    zpair == {6, 6}
+                                    and getattr(self, 'adj_dummy_placement', False)
+                                    and 0.04 < cross_norm < 0.10
                                 ):
                                     # Cycle 286: windowed C–C–C alkyne, n≥30.
                                     self.windowed_dummy_atoms.add(int(self.dinds[j]))
                                 elif zpair == {7, 8}:
-                                    # Isocyanate N=C=O; all connected sizes.
+                                    # Isocyanate N=C=O, including near-collinear.
                                     self.windowed_dummy_atoms.add(int(self.dinds[j]))
                         if (
                             getattr(self, 'adj_dummy_placement', False)
