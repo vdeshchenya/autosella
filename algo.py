@@ -4139,17 +4139,13 @@ class Internals(BaseInternals):
             ):
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 7}:
-                return False
-            n_idx = ia if za == 7 else ic
-            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
-            return len(real_n) == 3
+            return {za, zc} == {6, 7}
 
         oxazolidinone_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _oxazolidinone_ccn(angle)]
-            if 1 <= len(cands) <= 2:
+            if len(cands) == 1:
                 oxazolidinone_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
