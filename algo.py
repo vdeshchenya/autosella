@@ -5853,11 +5853,13 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
-        share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only.
+        predicted (1/rho_inc < rho < rho_inc). Connected jobs keep GDIIS
+        after 20 steps; dimers stop interpolating at nsteps>=80 so RFO
+        owns the long tail. Dummy-wd and wa stay connected-only.
         """
         if self.nsteps < 20:
+            return s_qn, smag_qn
+        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
