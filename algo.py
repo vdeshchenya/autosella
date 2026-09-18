@@ -7,8 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
-use Banerjee RFO after one ρ-gated model-Hessian step, then
-restore the packed TS-BFGS Hessian.
+use Banerjee RFO and skip TS-BFGS updates with negative s·y.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -387,6 +386,13 @@ class ApproximateHessian(LinearOperator):
 
     def update(self, dx, dg):
         """Perform a quasi-Newton update on B"""
+        if getattr(self, '_skip_neg_curv', False):
+            s = np.asarray(dx, dtype=np.float64).reshape(-1)
+            y = np.asarray(dg, dtype=np.float64).reshape(-1)
+            n = min(s.size, y.size)
+            if n and np.isfinite(s[:n]).all() and np.isfinite(y[:n]).all():
+                if float(s[:n] @ y[:n]) < 0.0:
+                    return
         if self.B is None:
             B = np.zeros(self.shape, dtype=self.dtype)
         else:
@@ -4495,14 +4501,6 @@ class InternalPES(PES):
         self._qr_cache = _LRU2()
         self._Hc_cache = _LRU2()
 
-    def reset_model_hessian(self) -> None:
-        """Replace B with the current-geometry model Hessian (cycle 87)."""
-        B = self.int.jacobian()
-        Q, _ = np.linalg.qr(B, mode='reduced')
-        P = Q @ Q.T
-        H0 = P @ self.int.guess_hessian() @ P
-        self.set_H(H0, self.H.update_method, self.H.symm, True)
-
     dpos = property(lambda self: self.dummies.positions.copy())
 
     def _state_hash(self) -> bytes:
@@ -5775,20 +5773,8 @@ class Sella(Optimizer):
 
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
-            if self.nsteps == 80 and not getattr(self, "_h0_reset_done", False):
-                rho = float(getattr(self, "rho", 1.0))
-                if 1.0 / self.rho_inc < rho < self.rho_inc:
-                    try:
-                        if self.pes.H.B is not None:
-                            self._h0_saved_B = np.array(self.pes.H.B, copy=True)
-                        else:
-                            self._h0_saved_B = None
-                        self.pes.reset_model_hessian()
-                        self._restore_h_after_kick = True
-                    except (np.linalg.LinAlgError, ValueError, AttributeError):
-                        self._restore_h_after_kick = False
-                self._h0_reset_done = True
             step_method = 'rfo'
+            self.pes.H._skip_neg_curv = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5942,6 +5928,8 @@ class Sella(Optimizer):
 
     def step(self):
         s, smag = self._predict_step()
+        if not getattr(self, "_allow_angle_wa", False) and self.nsteps >= 80:
+            self.pes.H._skip_neg_curv = True
 
         # Determine if we need to call the eigensolver, then step
         if self.nsteps_since_diag >= self.diag_every_n:
@@ -5962,16 +5950,6 @@ class Sella(Optimizer):
             self.nsteps_since_diag += 1
 
         rho = self.pes.kick(s, ev, **self.diagkwargs)
-
-        if getattr(self, "_restore_h_after_kick", False):
-            saved = getattr(self, "_h0_saved_B", None)
-            if saved is not None:
-                try:
-                    self.pes.H.set_B(saved)
-                except (ValueError, AttributeError):
-                    pass
-            self._restore_h_after_kick = False
-            self._h0_saved_B = None
 
         # Check for bad internals, and if found, reset PES object.
         # This skips the trust radius update.
