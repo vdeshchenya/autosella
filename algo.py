@@ -5,10 +5,11 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected dummy-set
-dihedrals use MaxInternalStep `wd_dummy=0.8`. Connected tails after 20
-steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected jobs switch
-to RFO steps after 50 steps.
+dihedrals use MaxInternalStep `wd_dummy=0.8`. After MaxInternalStep,
+connected Newton steps may be scaled to the 1D quadratic minimum
+along s. Connected tails after 20 steps may replace the QN step
+with two-point interpolation GDIIS when the previous ratio ρ was
+well predicted.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5772,15 +5773,11 @@ class Sella(Optimizer):
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
-        step_method = self.method
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
-            step_method = 'rfo'
-
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
                 s, smag = self.rs(
-                    self.pes, self.ord, self.delta, method=step_method,
+                    self.pes, self.ord, self.delta, method=self.method,
                     **rs_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
@@ -5790,11 +5787,40 @@ class Sella(Optimizer):
             self.pes._update_basis()
         else:
             s, smag = self.rs(
-                self.pes, self.ord, self.delta, method=step_method,
+                self.pes, self.ord, self.delta, method=self.method,
                 **rs_kwargs
             ).get_s()
 
-        return self._maybe_gdiis(s, smag)
+        return self._maybe_gdiis(*self._maybe_quadratic_alpha(s, smag))
+
+    def _maybe_quadratic_alpha(self, s, smag):
+        """Scale a connected MIS step to the 1D quadratic minimum along s.
+
+        Cycle 37 halved only when df_pred>0 (α*<1/2) and was bit-identical.
+        Cycle 134 applied this to the champion and saved paliperidone without
+        extra force calls. Combined here with wd_dummy=0.8 so the dummy-linear
+        train/valid savings can sit under a shorter interior Newton tail.
+        Dimers keep the unscaled MIS+GDIIS path.
+        """
+        if not getattr(self, "_allow_angle_wa", False):
+            return s, smag
+        s = np.asarray(s, dtype=np.float64)
+        g = np.asarray(self.pes.get_g(), dtype=np.float64)
+        H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
+        if g.shape != s.shape or H.shape != (s.size, s.size):
+            return s, smag
+        gs = float(np.dot(g, s))
+        sHs = float(s @ H @ s)
+        if (not np.isfinite(gs)) or (not np.isfinite(sHs)) or sHs <= 0.0 or gs >= 0.0:
+            return s, smag
+        alpha = -gs / sHs
+        if not (0.0 < alpha < 1.0):
+            return s, smag
+        s_new = alpha * s
+        smag_new = float(alpha) * float(smag)
+        if (not np.isfinite(smag_new)) or smag_new < 1e-16:
+            return s, smag
+        return s_new, smag_new
 
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
