@@ -8,10 +8,10 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms≥30 place two-coordinate dummy atoms on geomeTRIC's
-e0 axis when the unit-bond cross product is moderately ill-conditioned
-(0.04 < ||u×v|| < 0.10); otherwise keep the Sella cross-product dummy plane.
-Those dummy atoms sit 1 Bohr from the linear center (QUILD), not 1 Å.
+Connected n_atoms≥30 place two-coordinate dummy atoms toward the
+molecular center of mass (QUILD) when the unit-bond cross product is
+moderately ill-conditioned (0.04 < ||u×v|| < 0.10); otherwise keep the
+Sella cross-product dummy plane.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3241,7 +3241,7 @@ class Constraints(BaseInternals):
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
-    e0_dummy_placement_default = False
+    com_dummy_placement_default = False
 
     def __init__(
         self,
@@ -3279,7 +3279,7 @@ class Internals(BaseInternals):
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
-        self.e0_dummy_placement = Internals.e0_dummy_placement_default
+        self.com_dummy_placement = Internals.com_dummy_placement_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3297,7 +3297,7 @@ class Internals(BaseInternals):
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
-        new.e0_dummy_placement = getattr(self, 'e0_dummy_placement', False)
+        new.com_dummy_placement = getattr(self, 'com_dummy_placement', False)
         return new
 
     def add_rotation(
@@ -3688,20 +3688,19 @@ class Internals(BaseInternals):
                         dpos = None
                         cross = np.cross(dx1, dx2)
                         cross_norm = float(np.linalg.norm(cross))
-                        if getattr(self, 'e0_dummy_placement', False) and 0.04 < cross_norm < 0.10:
-                            # e0 only for moderately ill-conditioned frames
-                            # (~2.3–5.7° from collinear). Almost-linear and
-                            # milder bends keep the Sella cross-product plane.
+                        if getattr(self, 'com_dummy_placement', False) and 0.04 < cross_norm < 0.10:
+                            # QUILD: dummy in the plane perpendicular to the
+                            # linear axis, pointing toward the molecular COM.
                             axis = dx1 + dx2
                             an = float(np.linalg.norm(axis))
                             if an > 1e-8:
                                 ev = axis / an
-                                e0 = np.zeros(3, dtype=np.float64)
-                                e0[int(np.argmin(ev * ev))] = 1.0
-                                e0 = e0 - ev * float(np.dot(ev, e0))
-                                n0 = float(np.linalg.norm(e0))
-                                if n0 > 1e-12:
-                                    dpos = e0 / n0
+                                com = np.asarray(self.atoms.get_center_of_mass(), dtype=np.float64)
+                                vec = com - np.asarray(self.atoms.positions[j], dtype=np.float64)
+                                vec = vec - ev * float(np.dot(vec, ev))
+                                vn = float(np.linalg.norm(vec))
+                                if vn > 1e-8:
+                                    dpos = vec / vn
                         if dpos is None:
                             dpos = cross
                             dpos_norm = cross_norm
@@ -3719,10 +3718,7 @@ class Internals(BaseInternals):
                                 dpos /= np.linalg.norm(dpos)
                             else:
                                 dpos /= dpos_norm
-                        # Add the dummy atom. On n≥30, QUILD's 1 Bohr dummy
-                        # bond length is used with the e0/cross direction.
-                        if getattr(self, 'e0_dummy_placement', False):
-                            dpos = np.asarray(dpos, dtype=np.float64) * float(units.Bohr)
+                        # Add the dummy atom
                         dpos += self.atoms.positions[j]
                         self.dummies += Atom('X', dpos)
                         self._batched_arrays_valid = False
@@ -6162,7 +6158,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
-        Internals.e0_dummy_placement_default = n_atoms >= 30
+        Internals.com_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6175,7 +6171,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
-        Internals.e0_dummy_placement_default = False
+        Internals.com_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
