@@ -7,8 +7,9 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted, or with two-point
-interpolation GEDIIS (Li–Frisch) when that GDIIS step is not accepted
-and the interpolant agrees with the QN direction (cosine ≥ 0.90).
+interpolation GEDIIS (Li–Frisch) when that GDIIS step is not accepted,
+the interpolant agrees with the QN direction (cosine ≥ 0.90), and
+the previous step was uphill.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5793,8 +5794,10 @@ class Sella(Optimizer):
         GEDIIS (Li–Frisch 2006) on the same last segment: convex energy
         interpolant, predicted energy below the current point, the same
         length cap, and cosine ≥ 0.90. Cycle 126 without the cosine
-        gate hopped paliperidone/160853090. GEDIIS does not use the ρ
-        window (Li–Frisch use it farther from the quadratic region).
+        gate hopped paliperidone/160853090. Cycle 127 with cosine was
+        energy-safe but inflated those two; require the last step to
+        have been uphill so GEDIIS only backtracks after an energy rise.
+        GEDIIS does not use the ρ window.
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5861,7 +5864,8 @@ class Sella(Optimizer):
         current and previous internals (pysisyphus Eq. 6, origin at the
         current geometry). Reject endpoints, a non-decrease in predicted
         energy, steps longer than the QN step or the trust radius, and
-        interpolants that do not agree with the QN direction (cosine).
+        interpolants that do not agree with the QN direction (cosine),
+        and last-step downhill geometries.
         """
         xs = self._gdiis_x
         gs = self._gdiis_g
@@ -5880,6 +5884,10 @@ class Sella(Optimizer):
         e0 = float(es[-1])
         e1 = float(es[-2])
         if not np.isfinite(e0) or not np.isfinite(e1):
+            return None
+        # Cycle 127 cosine-GEDIIS inflated paliperidone/160853090 on
+        # downhill tails. Only backtrack after an uphill last step.
+        if e0 <= e1:
             return None
         dx = x1 - x0
         f0 = -g0
