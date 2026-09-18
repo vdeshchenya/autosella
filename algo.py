@@ -5763,11 +5763,15 @@ class Sella(Optimizer):
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
+        step_method = self.method
+        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+            step_method = 'rfo'
+
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
                 s, smag = self.rs(
-                    self.pes, self.ord, self.delta, method=self.method,
+                    self.pes, self.ord, self.delta, method=step_method,
                     **rs_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
@@ -5777,7 +5781,7 @@ class Sella(Optimizer):
             self.pes._update_basis()
         else:
             s, smag = self.rs(
-                self.pes, self.ord, self.delta, method=self.method,
+                self.pes, self.ord, self.delta, method=step_method,
                 **rs_kwargs
             ).get_s()
 
@@ -5848,10 +5852,10 @@ class Sella(Optimizer):
         Cycle 117's 2–4 point milder GDIIS passed train but inflated
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90 on connected jobs (0.80 on dimers). Accept only
-        when the previous step was well predicted (1/rho_inc < rho < rho_inc).
+        and cosine ≥ 0.90. Accept only when the previous step was well
+        predicted (1/rho_inc < rho < rho_inc).
         """
-        if self.nsteps < 20:
+        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
@@ -5903,8 +5907,7 @@ class Sella(Optimizer):
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
-        cos_min = 0.90 if getattr(self, "_allow_angle_wa", False) else 0.80
-        if cos < cos_min or cos < 0.0:
+        if cos < 0.90 or cos < 0.0:
             return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
@@ -5998,11 +6001,12 @@ class Sella(Optimizer):
         else:
             self.rho = 1.
 
-        self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
-        self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
-        if len(self._gdiis_x) > 6:
-            self._gdiis_x = self._gdiis_x[-5:]
-            self._gdiis_g = self._gdiis_g[-5:]
+        if getattr(self, "_allow_angle_wa", False):
+            self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
+            self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
+            if len(self._gdiis_x) > 6:
+                self._gdiis_x = self._gdiis_x[-5:]
+                self._gdiis_g = self._gdiis_g[-5:]
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
