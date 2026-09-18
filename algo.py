@@ -8,10 +8,9 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms≥30 replace two-coordinate dummy-atom linear bends
-with two orthogonal geomeTRIC LinearAngle coordinates. LinearAngle
-seconds are 3-atom finite differences; e0 is frozen until after an
-accepted step. Geodesic ODE timeouts fall back to iterative realization.
+Connected n_atoms≥30 place two-coordinate dummy atoms on geomeTRIC's
+e0 axis (Cartesian basis most orthogonal to the linear frame)
+instead of the cross product of nearly collinear bonds.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -81,6 +80,8 @@ from ase import Atoms
 from ase.build import niggli_reduce
 
 from ase.utils import basestring
+
+from ase.visualize import view
 
 from ase.calculators.singlepoint import SinglePointCalculator
 
@@ -1594,126 +1595,6 @@ class Dihedral(Internal):
     _eval1 = staticmethod(_gradient(_dihedral))
     _eval2 = staticmethod(_hessian(_dihedral))
     _eval_cell_grad = staticmethod(_dihedral_cell_grad_single)
-
-
-def _linear_angle(
-    pos: jnp.ndarray,
-    tvecs: jnp.ndarray,
-    e0: jnp.ndarray,
-    axis: jnp.ndarray,
-) -> float:
-    """geomeTRIC LinearAngle: BA+BC projections on two axes ⊥ AC.
-
-    e0 is a frozen reference axis (repositioned only after accepted steps).
-    """
-    v_ac = pos[2] - pos[0] + tvecs[0] + tvecs[1]
-    ev = v_ac / jnp.maximum(jnp.linalg.norm(v_ac), 1e-18)
-    e0n = e0 / jnp.maximum(jnp.linalg.norm(e0), 1e-18)
-    c1 = jnp.cross(ev, e0n)
-    e1 = c1 / jnp.maximum(jnp.linalg.norm(c1), 1e-18)
-    e2 = jnp.cross(ev, e1)
-    e2 = e2 / jnp.maximum(jnp.linalg.norm(e2), 1e-18)
-    vba = -(pos[1] - pos[0] + tvecs[0])
-    vbc = pos[2] - pos[1] + tvecs[1]
-    eba = vba / jnp.maximum(jnp.linalg.norm(vba), 1e-18)
-    ebc = vbc / jnp.maximum(jnp.linalg.norm(vbc), 1e-18)
-    ax = jnp.asarray(axis, dtype=e1.dtype)
-    e_ax = e1 * (1.0 - ax) + e2 * ax
-    return eba @ e_ax + ebc @ e_ax
-
-
-_linear_angle_eval0 = jit(_linear_angle)
-_linear_angle_eval1 = jit(grad(_linear_angle, argnums=0))
-
-
-class LinearAngle(Internal):
-    """Dummy-free linear bend: two orthogonal axes, geomeTRIC LinearAngle."""
-
-    nindices = 3
-    _eval0 = staticmethod(_linear_angle_eval0)
-    _eval1 = staticmethod(_linear_angle_eval1)
-
-    def __init__(
-        self,
-        indices: Tuple[int, ...],
-        ncvecs: Tuple[IVec, ...] = None,
-        axis: int = 0,
-        e0: np.ndarray = None,
-    ) -> None:
-        Internal.__init__(self, indices, ncvecs)
-        self.kwargs['axis'] = int(axis)
-        if e0 is None:
-            e0 = np.array([1.0, 0.0, 0.0], dtype=np.float64)
-        self.kwargs['e0'] = np.asarray(e0, dtype=np.float64).reshape(3).copy()
-
-    def reverse(self) -> 'LinearAngle':
-        return LinearAngle(
-            self.indices[::-1],
-            -self.kwargs['ncvecs'][::-1],
-            axis=self.kwargs['axis'],
-            e0=self.kwargs['e0'],
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, LinearAngle):
-            return NotImplemented
-        if int(self.kwargs.get('axis', 0)) != int(other.kwargs.get('axis', 0)):
-            return False
-        if np.array_equal(self.indices, other.indices):
-            return True
-        if np.array_equal(self.indices, other.indices[::-1]):
-            return True
-        return False
-
-    def _eval_args(self, atoms: Atoms):
-        tvecs = jnp.asarray(
-            self.kwargs['ncvecs'] @ atoms.cell, dtype=np.float64
-        )
-        pos = atoms.positions[self.indices]
-        e0 = jnp.asarray(self.kwargs['e0'], dtype=np.float64)
-        axis = jnp.asarray(self.kwargs['axis'], dtype=np.float64)
-        return pos, tvecs, e0, axis
-
-    def reposition_e0(self, atoms: Atoms) -> None:
-        """geomeTRIC LinearAngle.reposition_e0 after an accepted step."""
-        tvecs = np.asarray(self.kwargs['ncvecs'] @ atoms.cell, dtype=np.float64)
-        pos = np.asarray(atoms.positions[self.indices], dtype=np.float64)
-        v = pos[2] - pos[0] + tvecs[0] + tvecs[1]
-        n = np.linalg.norm(v)
-        if n < 1e-12:
-            return
-        ev = v / n
-        e0 = np.asarray(self.kwargs['e0'], dtype=np.float64).reshape(3)
-        if float(np.dot(ev, e0) ** 2) > 0.81:
-            e0 = np.eye(3)[int(np.argmin(ev * ev))]
-        e0 = e0 - ev * float(np.dot(ev, e0))
-        n0 = np.linalg.norm(e0)
-        if n0 > 1e-12:
-            self.kwargs['e0'] = e0 / n0
-
-    def calc(self, atoms: Atoms) -> float:
-        return float(self._eval0(*self._eval_args(atoms)))
-
-    def calc_gradient(self, atoms: Atoms) -> np.ndarray:
-        return np.array(self._eval1(*self._eval_args(atoms)))
-
-    def calc_hessian(self, atoms: Atoms) -> np.ndarray:
-        """geomeTRIC LinearAngle.second_derivative: 3-atom central FD, h=1e-3 Å."""
-        pos0, tvecs, e0, axis = self._eval_args(atoms)
-        pos = np.array(pos0, dtype=np.float64, copy=True)
-        h = 1.0e-3
-        hess = np.zeros((3, 3, 3, 3), dtype=np.float64)
-        eval1 = self._eval1
-        for i in range(3):
-            for j in range(3):
-                pos[i, j] += h
-                gp = np.array(eval1(pos, tvecs, e0, axis))
-                pos[i, j] -= 2.0 * h
-                gm = np.array(eval1(pos, tvecs, e0, axis))
-                pos[i, j] += h
-                hess[i, j, :, :] = (gp - gm) / (2.0 * h)
-        return hess
-
 
 Bond.union = Angle
 
@@ -3359,7 +3240,7 @@ class Constraints(BaseInternals):
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
-    use_linear_angle_default = False
+    e0_dummy_placement_default = False
 
     def __init__(
         self,
@@ -3397,7 +3278,7 @@ class Internals(BaseInternals):
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
-        self.use_linear_angle = Internals.use_linear_angle_default
+        self.e0_dummy_placement = Internals.e0_dummy_placement_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3415,7 +3296,7 @@ class Internals(BaseInternals):
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
-        new.use_linear_angle = getattr(self, 'use_linear_angle', False)
+        new.e0_dummy_placement = getattr(self, 'e0_dummy_placement', False)
         return new
 
     def add_rotation(
@@ -3520,8 +3401,6 @@ class Internals(BaseInternals):
         except ValueError:
             self.internals['other'].append(coord)
             self._active['other'].append(True)
-            self._batched_arrays_valid = False
-            self._cache.pop('all_positions', None)
         else:
             raise DuplicateInternalError()
 
@@ -3795,34 +3674,6 @@ class Internals(BaseInternals):
                     # sort bonds from shortest to longest to ensure
                     # permutational invariance
                     b1, b2 = sorted(jbonds, key=lambda x: x.calc(self.atoms))
-                    if getattr(self, 'use_linear_angle', False):
-                        a = int(b1.indices[1])
-                        c = int(b2.indices[1])
-                        ncvecs = (
-                            -b1.kwargs['ncvecs'][0],
-                            b2.kwargs['ncvecs'][0],
-                        )
-                        pos = self.atoms.positions
-                        v = pos[c] - pos[a]
-                        n = np.linalg.norm(v)
-                        if n < 1e-12:
-                            e0 = np.array([1.0, 0.0, 0.0], dtype=np.float64)
-                        else:
-                            ev = v / n
-                            e0 = np.eye(3)[int(np.argmin(ev * ev))]
-                        try:
-                            self.add_other(LinearAngle(
-                                (a, j, c), ncvecs=ncvecs, axis=0, e0=e0
-                            ))
-                        except DuplicateInternalError:
-                            pass
-                        try:
-                            self.add_other(LinearAngle(
-                                (a, j, c), ncvecs=ncvecs, axis=1, e0=e0
-                            ))
-                        except DuplicateInternalError:
-                            pass
-                        continue
                     # First try to take the cross product of the two bond
                     # vectors. These two vectors are close to collinear, and
                     # may be exactly collinear, so there's a backup strategy
@@ -3833,22 +3684,38 @@ class Internals(BaseInternals):
                         dx1 /= np.linalg.norm(dx1)
                         dx2 = b2.calc_vec(self.atoms)
                         dx2 /= np.linalg.norm(dx2)
-                        dpos = np.cross(dx1, dx2)
-                        dpos_norm = np.linalg.norm(dpos)
-                        if dpos_norm < 1e-4:
-                            # the aforementioned backup strategy
-                            # pick the cartesian basis vector that is maximally
-                            # orthogonal with the shorter of the two
-                            # displacement vectors.
-                            # note: this is not rotationally invariant, but
-                            # there's not much we can do about that
-                            dim = np.argmin(np.abs(dx1))
-                            dpos[:] = 0.
-                            dpos[dim] = 1.
-                            dpos -= dx1 * (dpos @ dx1)
-                            dpos /= np.linalg.norm(dpos)
-                        else:
-                            dpos /= dpos_norm
+                        dpos = None
+                        if getattr(self, 'e0_dummy_placement', False):
+                            # geomeTRIC LinearAngle e0: Cartesian axis most
+                            # orthogonal to the linear frame, not cross(dx1,dx2)
+                            # which vanishes for near-collinear bonds.
+                            axis = dx1 + dx2
+                            an = float(np.linalg.norm(axis))
+                            if an > 1e-8:
+                                ev = axis / an
+                                e0 = np.zeros(3, dtype=np.float64)
+                                e0[int(np.argmin(ev * ev))] = 1.0
+                                e0 = e0 - ev * float(np.dot(ev, e0))
+                                n0 = float(np.linalg.norm(e0))
+                                if n0 > 1e-12:
+                                    dpos = e0 / n0
+                        if dpos is None:
+                            dpos = np.cross(dx1, dx2)
+                            dpos_norm = np.linalg.norm(dpos)
+                            if dpos_norm < 1e-4:
+                                # the aforementioned backup strategy
+                                # pick the cartesian basis vector that is maximally
+                                # orthogonal with the shorter of the two
+                                # displacement vectors.
+                                # note: this is not rotationally invariant, but
+                                # there's not much we can do about that
+                                dim = np.argmin(np.abs(dx1))
+                                dpos[:] = 0.
+                                dpos[dim] = 1.
+                                dpos -= dx1 * (dpos @ dx1)
+                                dpos /= np.linalg.norm(dpos)
+                            else:
+                                dpos /= dpos_norm
                         # Add the dummy atom
                         dpos += self.atoms.positions[j]
                         self.dummies += Atom('X', dpos)
@@ -4157,12 +4024,6 @@ class Internals(BaseInternals):
                 h0[idx] = scale * units.Hartree
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
-            idx += 1
-        for other in self.internals['other']:
-            if isinstance(other, LinearAngle):
-                h0[idx] = 0.10 * units.Hartree
-            else:
-                h0[idx] = h0cart
             idx += 1
         for rot in self.internals['rotations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
@@ -4863,11 +4724,9 @@ class InternalPES(PES):
             if self.bad_int is not None:
                 break
             if ode.nfev > 1000:
-                nxa = 3 * len(self.atoms)
-                nxd = 3 * len(self.dummies)
-                self.atoms.positions = y0[:nxa].reshape((-1, 3))
-                self.dummies.positions = y0[nxa:nxa + nxd].reshape((-1, 3))
-                return None
+                view(self.atoms + self.dummies)
+                raise RuntimeError("Geometry update ODE is taking too long "
+                                   "to converge!")
 
         if ode.status == 'failed':
             raise RuntimeError("Geometry update ODE failed to converge!")
@@ -4884,20 +4743,10 @@ class InternalPES(PES):
         return dx_initial, dx_final, g_final
 
     # Position getter/setter
-    def _reposition_linear_e0(self):
-        intern = getattr(self, 'int', None)
-        if intern is None:
-            return
-        for coord in intern.internals.get('other', ()):
-            if isinstance(coord, LinearAngle):
-                coord.reposition_e0(intern.atoms)
-
     def set_x(self, target):
         """Update internal coordinates to target values.
 
         Uses fast iterative stepper by default, with ODE fallback for robustness.
-        ODE nfev timeouts restore the start geometry and retry iteratively
-        instead of raising.
         """
         if self.iterative_stepper:
             res = self._set_x_iterative(target)
@@ -4907,19 +4756,13 @@ class InternalPES(PES):
                 dx_initial, dx_final_ode, g_final = res
                 dx_final = self._add_proj_delta(dx_final_ode, q_after_ode,
                                                 proj_moved)
-                self._reposition_linear_e0()
                 return dx_initial, dx_final, g_final
+        # Fall back to ODE solver
         res = self._set_x_ode(target)
-        if res is None:
-            res = self._set_x_iterative(target)
-        if res is None:
-            raise RuntimeError("Geometry update ODE is taking too long "
-                               "to converge!")
         q_after_ode = self.int.calc().copy()
         proj_moved = self._project_to_constraints()
         dx_initial, dx_final_ode, g_final = res
         dx_final = self._add_proj_delta(dx_final_ode, q_after_ode, proj_moved)
-        self._reposition_linear_e0()
         return dx_initial, dx_final, g_final
 
     def _add_proj_delta(self, dx_int_final, q_after_ode, proj_moved):
@@ -6313,7 +6156,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
-        Internals.use_linear_angle_default = n_atoms >= 30
+        Internals.e0_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6326,7 +6169,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
-        Internals.use_linear_angle_default = False
+        Internals.e0_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
