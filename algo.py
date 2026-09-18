@@ -5882,7 +5882,7 @@ class Sella(Optimizer):
         err = err / nmin
         coords = np.stack(xs)
         accepted = None
-        sizes = (3, 2) if (
+        sizes = (2, 3) if (
             (not getattr(self, "_allow_angle_wa", False)) and err.shape[0] >= 3
         ) else (2,)
         for use in sizes:
