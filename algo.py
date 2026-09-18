@@ -5885,6 +5885,8 @@ class Sella(Optimizer):
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
+        if getattr(self, "_allow_angle_wa", False) and len(self.atoms) >= 80 and self.nsteps >= 50:
+            return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
