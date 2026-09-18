@@ -5399,7 +5399,7 @@ class MaxInternalStep(BaseRestrictedStep):
 
     def __init__(
         self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1.,
-        wd_dummy=None, **kwargs
+        w_index=None, w_index_value=None, **kwargs
     ):
         if pes.int is None:
             raise ValueError(
@@ -5412,7 +5412,8 @@ class MaxInternalStep(BaseRestrictedStep):
         self.wd = wd
         self.wo = wo
         self.wc = wc  # Weight for cell DOF
-        self.wd_dummy = wd if wd_dummy is None else wd_dummy
+        self.w_index = w_index
+        self.w_index_value = w_index_value
         self._weights_cache = None
         BaseRestrictedStep.__init__(self, pes, *args, **kwargs)
 
@@ -5438,30 +5439,23 @@ class MaxInternalStep(BaseRestrictedStep):
             self.pes.int.ntrans, self.pes.int.nbonds,
             self.pes.int.nangles, self.pes.int.ndihedrals,
             self.pes.int.nother, self.pes.int.nrotations,
-            n_cell_dof, self.wd, self.wd_dummy, self.wa,
+            n_cell_dof, self.w_index, self.w_index_value,
         )
         if cached is not None and cached[0] == key:
             return cached[1]
-        intern = self.pes.int
         w = np.array(
-            [self.wx] * intern.ntrans
-            + [self.wb] * intern.nbonds
-            + [self.wa] * intern.nangles
-            + [self.wd] * intern.ndihedrals
-            + [self.wo] * intern.nother
-            + [self.wx] * intern.nrotations
+            [self.wx] * self.pes.int.ntrans
+            + [self.wb] * self.pes.int.nbonds
+            + [self.wa] * self.pes.int.nangles
+            + [self.wd] * self.pes.int.ndihedrals
+            + [self.wo] * self.pes.int.nother
+            + [self.wx] * self.pes.int.nrotations
         )
-        if self.wd_dummy != self.wd and intern.ndummies and intern.ndihedrals:
-            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
-            k = intern.ntrans + intern.nbonds + intern.nangles
-            for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
-                if not active:
-                    continue
-                if any(j in dummy_set for j in dih.indices):
-                    w[k] = self.wd_dummy
-                k += 1
         if n_cell_dof > 0:
             w = np.concatenate([w, [self.wc] * n_cell_dof])
+        if self.w_index is not None and 0 <= int(self.w_index) < w.size:
+            w = np.array(w, dtype=np.float64, copy=True)
+            w[int(self.w_index)] = float(self.w_index_value)
         self._weights_cache = (key, w)
         return w
 
@@ -5790,34 +5784,6 @@ class Sella(Optimizer):
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
         return self._maybe_gdiis(s, smag)
 
-    def _mis_weights(self, wd_dummy=None):
-        intern = self.pes.int
-        wa = 0.75 if getattr(self, "_allow_angle_wa", False) else 1.0
-        wd = 1.0
-        wdd = wd if wd_dummy is None else float(wd_dummy)
-        w = np.array(
-            [1.0] * intern.ntrans
-            + [1.0] * intern.nbonds
-            + [wa] * intern.nangles
-            + [wd] * intern.ndihedrals
-            + [1.0] * intern.nother
-            + [1.0] * intern.nrotations
-        )
-        if wdd != wd and intern.ndummies and intern.ndihedrals:
-            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
-            k = intern.ntrans + intern.nbonds + intern.nangles
-            for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
-                if not active:
-                    continue
-                if any(j in dummy_set for j in dih.indices):
-                    w[k] = wdd
-                k += 1
-        n_cell_dof = self.pes.n_cell_dof
-        if n_cell_dof > 0:
-            wc = self.delta / self.delta_cell if self.optimize_cell else 1.0
-            w = np.concatenate([w, [wc] * n_cell_dof])
-        return w
-
     def _dummy_dihedral_s_indices(self, intern):
         dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
         idx = intern.ntrans + intern.nbonds + intern.nangles
@@ -5831,12 +5797,11 @@ class Sella(Optimizer):
         return out
 
     def _maybe_dummy_limiter_wd(self, s, smag, rs_kwargs):
-        """Re-solve MIS with wd_dummy=0.8 only if a dummy dihedral is the limiter.
+        """Downweight only the limiter dummy dihedral to 0.8.
 
-        Cycle 122 always-on dummy-wd is the strongest unused keep but valid
-        extras may come from dummy-wd when some other coordinate already
-        saturates MaxInternalStep. Use 0.8 only when the champion weighted
-        argmax is a dummy-set dihedral.
+        Cycle 167 re-solved with global wd_dummy=0.8 whenever any dummy
+        dihedral was the limiter and was bit-identical to cycle 122.
+        Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
@@ -5846,14 +5811,29 @@ class Sella(Optimizer):
         if intern is None or intern.ndummies == 0 or intern.ndihedrals == 0:
             return s, smag
         s = np.asarray(s, dtype=np.float64)
-        w = self._mis_weights()
+        try:
+            wprobe = MaxInternalStep.__new__(MaxInternalStep)
+            wprobe.pes = self.pes
+            wprobe.wx = 1.0
+            wprobe.wb = 1.0
+            wprobe.wa = float(rs_kwargs.get('wa', 1.0))
+            wprobe.wd = 1.0
+            wprobe.wo = 1.0
+            wprobe.wc = float(rs_kwargs.get('wc', 1.0))
+            wprobe.w_index = None
+            wprobe.w_index_value = None
+            wprobe._weights_cache = None
+            w = MaxInternalStep._get_weights(wprobe)
+        except (RuntimeError, ValueError, AssertionError, AttributeError):
+            return s, smag
         if len(w) != len(s):
             return s, smag
         idx = int(np.argmax(np.abs(s * w)))
         if idx not in self._dummy_dihedral_s_indices(intern):
             return s, smag
         kw = dict(rs_kwargs)
-        kw['wd_dummy'] = 0.8
+        kw['w_index'] = idx
+        kw['w_index_value'] = 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
