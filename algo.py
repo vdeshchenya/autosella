@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Dimers may take a
-GDIIS interpolant up to 1.15 times the QN step length.
+when the previous ratio ρ was well predicted. Connected molecules after
+50 steps use iterative Cartesian realization of internal steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5767,6 +5767,8 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
+        elif getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
+            self.pes.iterative_stepper = 1
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5907,20 +5909,14 @@ class Sella(Optimizer):
         diis_coords = coeffs @ coords[::-1][:use]
         diis_step = diis_coords - coords[-1]
         ndiis = float(np.linalg.norm(diis_step))
-        nmax = nref
-        if not getattr(self, "_allow_angle_wa", False):
-            nmax = 1.15 * nref
-        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nmax:
+        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
         if cos < 0.90 or cos < 0.0:
             return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
-        smag_cap = smag_qn
-        if not getattr(self, "_allow_angle_wa", False):
-            smag_cap = 1.15 * smag_qn
-        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_cap):
+        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
             return s_qn, smag_qn
         return accepted, smag
 
