@@ -4,11 +4,11 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. After 50 steps, connected
-MaxInternalStep also restricts linearized Cartesian max-atom
-displacement to the same δ. Connected tails after 20 steps may replace
-the QN step with two-point interpolation GDIIS when the previous
-ratio ρ was well predicted.
+guess constants are 0.25 Ha instead of 0.5. After 20 well-predicted
+steps, connected MaxInternalStep also restricts linearized Cartesian
+max-atom displacement to the same δ. Connected tails after 20 steps
+may replace the QN step with two-point interpolation GDIIS when the
+previous ratio ρ was well predicted.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5797,11 +5797,14 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-                # Cycle 146 always-on hopped 135043047. Cycle 147 @20 was
-                # energy-safe but extras on 31–45 step jobs ate venetoclax
-                # / paliperidone / 160853090 savings. Start at 50.
-                if self.nsteps >= 50:
-                    rs_kwargs['max_atom'] = True
+                # Cycle 147 @20 saved long tails but extras on 31–45-step
+                # jobs. Cycle 148 @50 lost venetoclax and inflated
+                # 160853090. Apply Cartesian trust after 20 only when the
+                # previous step was well predicted.
+                if self.nsteps >= 20:
+                    rho = float(getattr(self, "rho", 1.0))
+                    if 1.0 / self.rho_inc < rho < self.rho_inc:
+                        rs_kwargs['max_atom'] = True
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
