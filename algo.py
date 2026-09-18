@@ -5398,7 +5398,8 @@ class MaxInternalStep(BaseRestrictedStep):
     synonyms = ['mis', 'max internal step']
 
     def __init__(
-        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1., **kwargs
+        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1.,
+        wd_dummy=None, **kwargs
     ):
         if pes.int is None:
             raise ValueError(
@@ -5411,6 +5412,7 @@ class MaxInternalStep(BaseRestrictedStep):
         self.wd = wd
         self.wo = wo
         self.wc = wc  # Weight for cell DOF
+        self.wd_dummy = wd if wd_dummy is None else wd_dummy
         self._weights_cache = None
         BaseRestrictedStep.__init__(self, pes, *args, **kwargs)
 
@@ -5436,18 +5438,28 @@ class MaxInternalStep(BaseRestrictedStep):
             self.pes.int.ntrans, self.pes.int.nbonds,
             self.pes.int.nangles, self.pes.int.ndihedrals,
             self.pes.int.nother, self.pes.int.nrotations,
-            n_cell_dof,
+            n_cell_dof, self.wd, self.wd_dummy, self.wa,
         )
         if cached is not None and cached[0] == key:
             return cached[1]
+        intern = self.pes.int
         w = np.array(
-            [self.wx] * self.pes.int.ntrans
-            + [self.wb] * self.pes.int.nbonds
-            + [self.wa] * self.pes.int.nangles
-            + [self.wd] * self.pes.int.ndihedrals
-            + [self.wo] * self.pes.int.nother
-            + [self.wx] * self.pes.int.nrotations
+            [self.wx] * intern.ntrans
+            + [self.wb] * intern.nbonds
+            + [self.wa] * intern.nangles
+            + [self.wd] * intern.ndihedrals
+            + [self.wo] * intern.nother
+            + [self.wx] * intern.nrotations
         )
+        if self.wd_dummy != self.wd and intern.ndummies and intern.ndihedrals:
+            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
+            k = intern.ntrans + intern.nbonds + intern.nangles
+            for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
+                if not active:
+                    continue
+                if any(j in dummy_set for j in dih.indices):
+                    w[k] = self.wd_dummy
+                k += 1
         if n_cell_dof > 0:
             w = np.concatenate([w, [self.wc] * n_cell_dof])
         self._weights_cache = (key, w)
@@ -5757,17 +5769,11 @@ class Sella(Optimizer):
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
-        step_method = self.method
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
-            ev = getattr(self.pes.H, "evals", None)
-            if ev is not None and np.min(ev) < -1e-8:
-                step_method = 'rfo'
-
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
                 s, smag = self.rs(
-                    self.pes, self.ord, self.delta, method=step_method,
+                    self.pes, self.ord, self.delta, method=self.method,
                     **rs_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
@@ -5777,11 +5783,84 @@ class Sella(Optimizer):
             self.pes._update_basis()
         else:
             s, smag = self.rs(
-                self.pes, self.ord, self.delta, method=step_method,
+                self.pes, self.ord, self.delta, method=self.method,
                 **rs_kwargs
             ).get_s()
 
+        s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
         return self._maybe_gdiis(s, smag)
+
+    def _mis_weights(self, wd_dummy=None):
+        intern = self.pes.int
+        wa = 0.75 if getattr(self, "_allow_angle_wa", False) else 1.0
+        wd = 1.0
+        wdd = wd if wd_dummy is None else float(wd_dummy)
+        w = np.array(
+            [1.0] * intern.ntrans
+            + [1.0] * intern.nbonds
+            + [wa] * intern.nangles
+            + [wd] * intern.ndihedrals
+            + [1.0] * intern.nother
+            + [1.0] * intern.nrotations
+        )
+        if wdd != wd and intern.ndummies and intern.ndihedrals:
+            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
+            k = intern.ntrans + intern.nbonds + intern.nangles
+            for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
+                if not active:
+                    continue
+                if any(j in dummy_set for j in dih.indices):
+                    w[k] = wdd
+                k += 1
+        n_cell_dof = self.pes.n_cell_dof
+        if n_cell_dof > 0:
+            wc = self.delta / self.delta_cell if self.optimize_cell else 1.0
+            w = np.concatenate([w, [wc] * n_cell_dof])
+        return w
+
+    def _dummy_dihedral_s_indices(self, intern):
+        dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
+        idx = intern.ntrans + intern.nbonds + intern.nangles
+        out = set()
+        for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
+            if not active:
+                continue
+            if any(j in dummy_set for j in dih.indices):
+                out.add(idx)
+            idx += 1
+        return out
+
+    def _maybe_dummy_limiter_wd(self, s, smag, rs_kwargs):
+        """Re-solve MIS with wd_dummy=0.8 only if a dummy dihedral is the limiter.
+
+        Cycle 122 always-on dummy-wd is the strongest unused keep but valid
+        extras may come from dummy-wd when some other coordinate already
+        saturates MaxInternalStep. Use 0.8 only when the champion weighted
+        argmax is a dummy-set dihedral.
+        """
+        if not getattr(self, "_allow_angle_wa", False):
+            return s, smag
+        if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
+            return s, smag
+        intern = getattr(self.pes, "int", None)
+        if intern is None or intern.ndummies == 0 or intern.ndihedrals == 0:
+            return s, smag
+        s = np.asarray(s, dtype=np.float64)
+        w = self._mis_weights()
+        if len(w) != len(s):
+            return s, smag
+        idx = int(np.argmax(np.abs(s * w)))
+        if idx not in self._dummy_dihedral_s_indices(intern):
+            return s, smag
+        kw = dict(rs_kwargs)
+        kw['wd_dummy'] = 0.8
+        try:
+            s2, smag2 = MaxInternalStep(
+                self.pes, self.ord, self.delta, method=self.method, **kw
+            ).get_s()
+        except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
+            return s, smag
+        return s2, smag2
 
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
