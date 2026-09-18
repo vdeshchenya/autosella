@@ -3990,6 +3990,13 @@ class Internals(BaseInternals):
         idx = np.asarray(bbc.indices, dtype=np.int32)
         rcovbc = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rbc = bbc.calc(self.all_atoms)
+        indices = np.asarray(dihedral.indices, dtype=np.int32)
+        if (np.all(indices < self.natoms)
+                and np.all(self.all_atoms.numbers[indices] > 0)):
+            # OptKing SCHLEGEL branch, using distances in Bohr.
+            radius, distance = rcovbc / units.Bohr, rbc / units.Bohr
+            slope = 0.0 if distance > radius + 0.0023 / 0.07 else 0.07
+            return (0.0023 - slope * (distance - radius)) * units.Hartree
         L = nbonds[idx].sum() - 2
         h0 = (
             At + Bt * L**Dt * np.exp(-Ct * (rbc - rcovbc) / units.Bohr)
