@@ -5090,11 +5090,10 @@ class Internals(BaseInternals):
             nbonds[i] += 1
             nbonds[j] += 1
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
-        # Connected systems get the class-resolved soft-mode guesses (the
-        # linear-bend constant below, the rotatable-bond torsion classes).
-        # Multi-fragment systems keep the unscaled model: their cost is set
-        # by the intermolecular coordinates, and the intramolecular paths of
-        # the fragments (and with them the basins they reach) stay as before.
+        # Connected systems get the class-resolved linear-bend constant and
+        # the ion-dipole routing below; the rotatable-bond torsion classes
+        # apply to the fragments of multi-fragment systems as well (see
+        # scale_torsions).
         connected = (self.ntrans + self.nrotations) == 0
         # Formal charges of the s-block metal ions (zero elsewhere, dummies
         # included): their bends and terminal dihedrals in a connected
@@ -5163,7 +5162,16 @@ class Internals(BaseInternals):
             ndih[key] = ndih.get(key, 0) + 1
         # Class-resolved scale of the rotatable-bond torsions (see
         # _torsion_class_factor), from the covalent graph of the real atoms.
-        scale_torsions = connected
+        # The fragments of a multi-fragment system take the same classes: the
+        # partner's field moves the acetyl-type methyls (sp2-sp3 bonds of the
+        # ketone, ester, amide and acid fragments) 10-50 degrees away from
+        # their monomer phase, and with the unscaled constant (0.025 Ha/rad^2
+        # against 0.006-0.014 for the rotor barriers) that relaxation creeps
+        # in short steps the update does not see behind the intermolecular
+        # motion.  The carbonyl wag of those fragments is held by its own
+        # improper coordinate (_add_planar_centre_impropers), so the scaled
+        # rotor dihedrals no longer carry it.
+        scale_torsions = True
         adj = [[] for _ in range(self.natoms)]
         for pair in bonded:
             i, j = tuple(pair)
