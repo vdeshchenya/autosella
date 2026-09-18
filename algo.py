@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
-Powell-damp TS-BFGS when s·y < 0.2 s·B·s.
+may interpolate in the Newton metric e=H⁻¹g.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -402,18 +402,7 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        dx_u = np.asarray(dx, dtype=np.float64)
-        dg_u = np.asarray(dg, dtype=np.float64)
-        if getattr(self, 'powell_damp', False):
-            Bs = B @ dx_u
-            sBs = float(dx_u @ Bs)
-            sy = float(dx_u @ dg_u)
-            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.2 * sBs:
-                denom = sBs - sy
-                if abs(denom) > 1e-14:
-                    theta = 0.8 * sBs / denom
-                    dg_u = theta * dg_u + (1.0 - theta) * Bs
-        self.set_B(update_H(B, dx_u, dg_u, method=self.update_method,
+        self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
@@ -5778,7 +5767,6 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
-            self.pes.H.powell_damp = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5887,7 +5875,18 @@ class Sella(Optimizer):
         nref = float(np.linalg.norm(s_qn))
         if not np.isfinite(nref) or nref < 1e-16:
             return s_qn, smag_qn
-        err = np.stack(gs)
+        G = np.stack(gs)
+        err = G
+        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+            try:
+                H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
+                if H.shape == (G.shape[1], G.shape[1]):
+                    newton, *_ = np.linalg.lstsq(H, G.T, rcond=None)
+                    newton = np.asarray(newton.T, dtype=np.float64)
+                    if newton.shape == G.shape and np.isfinite(newton).all():
+                        err = newton
+            except (np.linalg.LinAlgError, AttributeError, ValueError, TypeError):
+                err = G
         norms = np.linalg.norm(err, axis=1)
         nmin = float(np.min(norms))
         if not np.isfinite(nmin) or nmin < 1e-16:
