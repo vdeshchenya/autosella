@@ -4498,6 +4498,9 @@ class InternalPES(PES):
             auxiliary = self._auxiliary_curvature(B)
             if auxiliary is not None:
                 self._fit_blocks.append(auxiliary)
+            out_of_plane = self._out_of_plane_curvature(B)
+            if out_of_plane is not None:
+                self._fit_blocks.append(out_of_plane)
             count = len(self._fit_blocks)
             self._fit_gram = 0.25 * np.eye(count)
             self._fit_rhs = 0.25 * np.ones(count)
@@ -4555,6 +4558,58 @@ class InternalPES(PES):
         return mapped.T @ mapped
 
     dpos = property(lambda self: self.dummies.positions.copy())
+
+    def _out_of_plane_curvature(self, jacobian):
+        """Permutation-averaged, centered umbrella springs in native internals."""
+        if self.atoms.pbc.any():
+            return None
+        from itertools import permutations
+        positions = self.atoms.positions
+        neighbors = [set() for _ in positions]
+        for bond in self.int.internals['bonds']:
+            i, j = bond.indices
+            if i < len(positions) and j < len(positions):
+                neighbors[i].add(j)
+                neighbors[j].add(i)
+        quadruples, stiffness = [], []
+        cosine_limit = np.cos(self.int.atol)
+        for center, adjacent in enumerate(neighbors):
+            if len(adjacent) != 3:
+                continue
+            valid = []
+            for outer in permutations(sorted(adjacent)):
+                indices = (center,) + outer
+                edges = np.diff(positions[list(indices)], axis=0)
+                lengths = np.linalg.norm(edges, axis=1)
+                if np.any(lengths < 1e-8):
+                    continue
+                directions = edges / lengths[:, None]
+                cosines = np.sum(directions[:-1] * directions[1:], axis=1)
+                if np.any(np.abs(cosines) >= cosine_limit):
+                    continue
+                valid.append(indices)
+            if valid:
+                quadruples.extend(valid)
+                stiffness.extend([0.045 * units.Hartree / len(valid)] * len(valid))
+        if not quadruples:
+            return None
+        indices = np.asarray(quadruples, dtype=np.int32)
+        count = len(indices)
+        padded_count = ((count + BLOCK_SIZE - 1) // BLOCK_SIZE) * BLOCK_SIZE
+        padded = np.tile(indices[0], (padded_count, 1))
+        padded[:count] = indices
+        gradients = np.asarray(device_get(_dihedral_grad_batched(
+            positions[padded], np.zeros((padded_count, 3, 3)))))[:count]
+        if not np.all(np.isfinite(gradients)):
+            return None
+        cartesian = np.zeros((count, jacobian.shape[1]))
+        rows = np.arange(count)[:, None, None]
+        columns = 3 * indices[:, :, None] + np.arange(3)
+        cartesian[rows, columns] = gradients
+        mapped = ((np.sqrt(stiffness)[:, None] * cartesian)
+                  @ np.linalg.pinv(jacobian, rcond=1e-6))
+        block = mapped.T @ mapped
+        return block if np.all(np.isfinite(block)) else None
 
     def _state_hash(self) -> bytes:
         h = super()._state_hash()
