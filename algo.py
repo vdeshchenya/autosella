@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected jobs switch
-to RFO steps after 50 steps.
+to RFO steps after 45 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5759,7 +5759,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 45:
             step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
