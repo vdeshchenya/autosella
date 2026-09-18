@@ -10,8 +10,8 @@ when the previous ratio ρ was well predicted. Connected molecules with fewer th
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
-tetrahedral O–P–O angles at phosphorus centers, and on F–Si–F /
-F–B–F angles at silicon or boron centers.
+tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X
+and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4067,11 +4067,21 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
-                and int(numbers[int(angle.indices[1])]) in (5, 14)
+                and int(numbers[int(angle.indices[1])]) == 14
+                and (
+                    int(numbers[int(angle.indices[0])]) == 9
+                    or int(numbers[int(angle.indices[2])]) == 9
+                )
+            ):
+                # Mixed fluoride silane: F–Si–X.
+                h0[idx] = 0.10 * units.Hartree
+            elif (
+                soft_oxo_angle
+                and int(numbers[int(angle.indices[1])]) == 5
                 and int(numbers[int(angle.indices[0])]) == 9
                 and int(numbers[int(angle.indices[2])]) == 9
             ):
-                # Fluoride tetrahedral class: F–Si–F / F–B–F.
+                # Fluoride tetrahedral class: F–B–F.
                 h0[idx] = 0.10 * units.Hartree
             else:
                 h0[idx] = self._h0_angle(angle)
