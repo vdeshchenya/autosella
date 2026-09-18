@@ -5801,7 +5801,116 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
-        return s, smag
+        return self._surrogate_step(s, smag)
+
+    def _surrogate_step(self, ordinary, magnitude):
+        """Small gradient-enhanced GP with a physical quadratic prior.
+
+        The surrogate is fit and minimized only during remote optimization;
+        its microiterations never request an additional physical force call.
+        """
+        if not self.internal or self.pes.cons.has_inequalities():
+            return ordinary, magnitude
+        if getattr(self, '_gp_owner', None) is not self.pes:
+            self._gp_owner = self.pes
+            self._gp_history = []
+        q, g, energy = self.pes.get_x(), self.pes.get_g(), self.pes.get_f()
+        history = self._gp_history
+        if history and energy > history[-1][2]:
+            history.clear()
+        history.append((q.copy(), g.copy(), energy))
+        history[:] = [point for point in history[-5:]
+                      if np.max(np.abs(self.pes.wrap_dx(point[0] - q)))
+                      <= 2.0 * self.delta]
+        if len(history) < 3 or len(self.pes._fit_pairs) < 6:
+            return ordinary, magnitude
+        free = self.pes.get_Ufree()
+        offsets = np.array([self.pes.wrap_dx(point[0] - q) for point in history])
+        directions = free @ (free.T @ np.column_stack((ordinary, offsets.T)))
+        basis, singular, _ = np.linalg.svd(directions, full_matrices=False)
+        if not singular.size or singular[0] < 1e-10:
+            return ordinary, magnitude
+        basis = basis[:, singular > 1e-6 * singular[0]]
+        d = basis.shape[1]
+        local_h = self.pes.get_HL_projected(basis).asarray()
+        eig, vec = eigh(local_h)
+        eig = np.maximum(np.abs(eig), 1e-4)
+        basis = basis @ vec
+        ordinary_z = basis.T @ ordinary
+        scale = max(float(np.sum(eig * ordinary_z**2)), 1e-8)
+        transform = basis * np.sqrt(scale / eig)
+        points = (offsets @ basis) * np.sqrt(eig / scale)
+        g0 = g @ transform / scale
+        count = len(history)
+        size = count * (d + 1)
+        # Squared-exponential covariance and its analytic mixed derivatives.
+        inv_l2 = 0.25
+        kernel = np.empty((size, size))
+        target = np.empty(size)
+        identity = np.eye(d)
+        for i, (_, old_g, old_e) in enumerate(history):
+            a = i * (d + 1)
+            target[a] = ((old_e - energy) / scale - g0 @ points[i]
+                         - 0.5 * points[i] @ points[i])
+            target[a+1:a+d+1] = old_g @ transform / scale - g0 - points[i]
+            for j in range(count):
+                b = j * (d + 1)
+                diff = points[i] - points[j]
+                k = np.exp(-0.5 * inv_l2 * (diff @ diff))
+                kernel[a, b] = k
+                kernel[a, b+1:b+d+1] = inv_l2 * diff * k
+                kernel[a+1:a+d+1, b] = -inv_l2 * diff * k
+                kernel[a+1:a+d+1, b+1:b+d+1] = (
+                    inv_l2 * identity - inv_l2**2 * np.outer(diff, diff)) * k
+        kernel.flat[::size+1] += 1e-7
+        try:
+            from scipy.linalg import cho_factor, cho_solve
+            factor = cho_factor(kernel, lower=True, check_finite=False)
+            weights = cho_solve(factor, target, check_finite=False)
+        except np.linalg.LinAlgError:
+            return ordinary, magnitude
+
+        def features(y):
+            diff = y - points
+            kval = np.exp(-0.5 * inv_l2 * np.sum(diff * diff, axis=1))
+            value = np.column_stack((kval, inv_l2 * diff * kval[:, None])).ravel()
+            deriv = np.empty((count, d + 1, d))
+            deriv[:, 0, :] = -inv_l2 * diff * kval[:, None]
+            deriv[:, 1:, :] = (inv_l2 * identity[None, :, :]
+                               - inv_l2**2 * diff[:, :, None] * diff[:, None, :]
+                               ) * kval[:, None, None]
+            return value, deriv.reshape(size, d)
+
+        origin_value, origin_deriv = features(np.zeros(d))
+        correction0 = origin_value @ weights
+        correction_g0 = origin_deriv.T @ weights
+
+        def objective(y):
+            value, deriv = features(y)
+            correction = value @ weights - correction0 - correction_g0 @ y
+            return (g0 @ y + 0.5 * y @ y + correction,
+                    g0 + y + deriv.T @ weights - correction_g0)
+
+        from scipy.optimize import minimize as minimize_surrogate
+        initial = ordinary_z * np.sqrt(eig / scale)
+        fit = minimize_surrogate(objective, initial, jac=True, method='BFGS',
+                                 options={'maxiter': 12, 'gtol': 1e-5})
+        if not np.all(np.isfinite(fit.x)):
+            return ordinary, magnitude
+        candidate = transform @ fit.x + self.pes.get_scons()
+        candidate_norm = np.linalg.norm(candidate)
+        candidate_magnitude = np.max(np.abs(candidate))
+        if (g @ candidate >= 0 or candidate_magnitude > self.delta
+                or candidate_norm > 1.5 * np.linalg.norm(ordinary)):
+            return ordinary, magnitude
+        predicted, _ = objective(fit.x)
+        baseline, _ = objective(initial)
+        value, _ = features(fit.x)
+        variance = max(0.0, 1.0 - value @ cho_solve(factor, value, check_finite=False))
+        if (predicted >= baseline or predicted >= 0
+                or np.sqrt(variance) > 0.5 * abs(predicted)):
+            return ordinary, magnitude
+        return candidate, candidate_magnitude
 
     def step(self):
         s, smag = self._predict_step()
