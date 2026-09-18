@@ -10,9 +10,9 @@ when the previous ratio ρ was well predicted. Connected molecules with fewer th
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
-tetrahedral O–P–O angles at phosphorus centers, on 2-coordinate
-C–N–N / N–N–N azide and diazo angles, and on F–Si–X, Cl–Si–X,
-and F–B–F angles at silicon or boron centers.
+tetrahedral O–P–O angles at phosphorus centers, on sulfoxide
+O–S–C angles at sulfur, and on F–Si–X, Cl–Si–X, and F–B–F
+angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4068,14 +4068,11 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
-                and int(numbers[int(angle.indices[1])]) == 7
-                and int(nbonds[int(angle.indices[1])]) == 2
-                and (
-                    int(numbers[int(angle.indices[0])]) == 7
-                    or int(numbers[int(angle.indices[2])]) == 7
-                )
+                and int(numbers[int(angle.indices[1])]) == 16
+                and {int(numbers[int(angle.indices[0])]),
+                     int(numbers[int(angle.indices[2])])} == {8, 6}
             ):
-                # Azide/diazo class: 2-coordinate C–N–N / N–N–N.
+                # Sulfoxide class: O–S–C at sulfur, not O–S–O / O–S–N.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
