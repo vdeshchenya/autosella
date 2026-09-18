@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Dimers after 80 steps
-may interpolate in the Newton metric e=H⁻¹g.
+when the previous ratio ρ was well predicted. Connected molecules
+downweight an improper/other limiter to 0.8.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5787,6 +5787,7 @@ class Sella(Optimizer):
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
+        s, smag = self._maybe_other_limiter_wo(s, smag, rs_kwargs)
         return self._maybe_gdiis(s, smag)
 
     def _dummy_dihedral_s_indices(self, intern):
@@ -5847,6 +5848,51 @@ class Sella(Optimizer):
             return s, smag
         return s2, smag2
 
+    def _other_s_indices(self, intern):
+        start = intern.ntrans + intern.nbonds + intern.nangles + intern.ndihedrals
+        return set(range(start, start + intern.nother))
+
+    def _maybe_other_limiter_wo(self, s, smag, rs_kwargs):
+        """Downweight only the limiter improper/other coordinate to 0.8."""
+        if not getattr(self, "_allow_angle_wa", False):
+            return s, smag
+        if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
+            return s, smag
+        intern = getattr(self.pes, "int", None)
+        if intern is None or intern.nother <= 0:
+            return s, smag
+        s = np.asarray(s, dtype=np.float64)
+        try:
+            wprobe = MaxInternalStep.__new__(MaxInternalStep)
+            wprobe.pes = self.pes
+            wprobe.wx = 1.0
+            wprobe.wb = 1.0
+            wprobe.wa = float(rs_kwargs.get('wa', 1.0))
+            wprobe.wd = 1.0
+            wprobe.wo = 1.0
+            wprobe.wc = float(rs_kwargs.get('wc', 1.0))
+            wprobe.w_index = None
+            wprobe.w_index_value = None
+            wprobe._weights_cache = None
+            w = MaxInternalStep._get_weights(wprobe)
+        except (RuntimeError, ValueError, AssertionError, AttributeError):
+            return s, smag
+        if len(w) != len(s):
+            return s, smag
+        idx = int(np.argmax(np.abs(s * w)))
+        if idx not in self._other_s_indices(intern):
+            return s, smag
+        kw = dict(rs_kwargs)
+        kw['w_index'] = idx
+        kw['w_index_value'] = 0.8
+        try:
+            s2, smag2 = MaxInternalStep(
+                self.pes, self.ord, self.delta, method=self.method, **kw
+            ).get_s()
+        except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
+            return s, smag
+        return s2, smag2
+
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
 
@@ -5875,18 +5921,7 @@ class Sella(Optimizer):
         nref = float(np.linalg.norm(s_qn))
         if not np.isfinite(nref) or nref < 1e-16:
             return s_qn, smag_qn
-        G = np.stack(gs)
-        err = G
-        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
-            try:
-                H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
-                if H.shape == (G.shape[1], G.shape[1]):
-                    newton, *_ = np.linalg.lstsq(H, G.T, rcond=None)
-                    newton = np.asarray(newton.T, dtype=np.float64)
-                    if newton.shape == G.shape and np.isfinite(newton).all():
-                        err = newton
-            except (np.linalg.LinAlgError, AttributeError, ValueError, TypeError):
-                err = G
+        err = np.stack(gs)
         norms = np.linalg.norm(err, axis=1)
         nmin = float(np.min(norms))
         if not np.isfinite(nmin) or nmin < 1e-16:
