@@ -5764,7 +5764,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 70:
+        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
@@ -5853,9 +5853,11 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc).
+        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
+        share this interpolant after 20 steps; dummy-wd and wa stay
+        connected-only.
         """
-        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
+        if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
@@ -6001,12 +6003,11 @@ class Sella(Optimizer):
         else:
             self.rho = 1.
 
-        if getattr(self, "_allow_angle_wa", False):
-            self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
-            self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
-            if len(self._gdiis_x) > 6:
-                self._gdiis_x = self._gdiis_x[-5:]
-                self._gdiis_g = self._gdiis_g[-5:]
+        self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
+        self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
+        if len(self._gdiis_x) > 6:
+            self._gdiis_x = self._gdiis_x[-5:]
+            self._gdiis_g = self._gdiis_g[-5:]
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
