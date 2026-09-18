@@ -6,8 +6,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules
-also floor δ at 0.05 before the 0.15-after-20 floor.
+when the previous ratio ρ was well predicted, including dimers.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5785,9 +5784,10 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc).
+        predicted (1/rho_inc < rho < rho_inc). Enabled for dimers as well as
+        connected molecules (cycle 120 was connected-only).
         """
-        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
+        if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
@@ -5933,12 +5933,11 @@ class Sella(Optimizer):
         else:
             self.rho = 1.
 
-        if getattr(self, "_allow_angle_wa", False):
-            self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
-            self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
-            if len(self._gdiis_x) > 6:
-                self._gdiis_x = self._gdiis_x[-5:]
-                self._gdiis_g = self._gdiis_g[-5:]
+        self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
+        self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
+        if len(self._gdiis_x) > 6:
+            self._gdiis_x = self._gdiis_x[-5:]
+            self._gdiis_g = self._gdiis_g[-5:]
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
@@ -6061,10 +6060,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
-        else:
-            # Connected: milder early floor than the 0.15-after-20 keep,
-            # so pre-20 shrinks cannot collapse to eta (1e-4).
-            opt.delta_min = 0.05
         for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
             if converged():
                 break
