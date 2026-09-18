@@ -3256,6 +3256,14 @@ for _z, _r in ((3, 0.76), (11, 1.02), (19, 1.38), (37, 1.52), (55, 1.67),
     _STIFFNESS_RADII[_z] = _r
 del _z, _r
 
+# Formal charge of the s-block metal ions (group 1: +1, group 2: +2) for the
+# angular stiffness of their contacts (_h0_ionic_bend, _h0_ionic_torsion);
+# zero for every other element, which keeps the covalent bend and torsion
+# guesses.
+_ION_CHARGE = np.zeros(len(covalent_radii), dtype=np.float64)
+_ION_CHARGE[[3, 11, 19, 37, 55]] = 1.0
+_ION_CHARGE[[4, 12, 20, 38, 56]] = 2.0
+
 # Row factors of the Almlof stretch curvature for the covalent bonds of the
 # p-block elements beyond the second row (Al-Ar, Ga-Kr, In-Xe, Tl-Rn).  The
 # single exponential gives every bond 0.36 Ha/Bohr^2 = 5.6 mdyn/A at
@@ -4291,6 +4299,73 @@ class Internals(BaseInternals):
         between C=O and C=S or a C-C bond."""
         return k_oop * units.Hartree
 
+    def _h0_ionic_bend(self, angle: Angle, mu0: float = 0.7300) -> float:
+        """Diagonal guess (eV/rad^2) for an angle with a bond to an s-block
+        metal ion (the ion at the apex or at an end).
+
+        The "bond" of a connected system between an alkali or alkaline-earth
+        cation and its ligand atom is an electrostatic contact, and the
+        angular stiffness of such a contact is the ion-dipole term: a ligand
+        of dipole mu in the field of the charge q at distance R has
+        E = -q mu cos(phi) / R^2, i.e. a rotational stiffness q mu / R^2 for
+        any rotation of the ligand about its contact atom (0.039 Ha/rad^2
+        for Na+...OH2 at 2.3 A, the same value the three-point-charge water
+        gives; in-plane rock 400 cm^-1, out-of-plane wag 490 cm^-1, the
+        librations of the monohydrated ion).  A rotation of the ligand in
+        the plane of two of its bonds moves the two M-X-Y angles by +/- phi,
+        so each bend carries half of it, k = q mu0 / (2 R^2) with the
+        water dipole mu0 = 0.73 au (1.855 D) as the reference ligand; for a
+        bend X-M-Y at the ion (a cation over a pi face or between two donor
+        atoms) the two contact distances enter as R_1 R_2.  Values: Li+ at
+        2.0 A 0.026, Na+ at 2.3 A 0.019, K+ at 2.8 A 0.013, Mg2+ at 2.0 A
+        0.051 Ha/rad^2.  The Fischer-Almlof bend guess gives 0.09-0.12
+        Ha/rad^2 for the same angles (its 0.089 floor and its slow
+        exp(-0.44 dr) decay are covalent calibrations), 5-15x the ionic
+        value, so the model kept the ion in a cage whose sideways stiffness
+        was that of a covalent centre while the radial terms (ionic radii,
+        _STIFFNESS_RADII) already have the ionic scale.
+        """
+        bab, bbc = angle.split()
+        numbers = self.all_atoms.numbers
+        q = float(_ION_CHARGE[numbers[np.asarray(angle.indices)]].max())
+        rab = bab.calc(self.all_atoms) / units.Bohr
+        rbc = bbc.calc(self.all_atoms) / units.Bohr
+        if _ION_CHARGE[numbers[angle.indices[1]]] > 0:
+            r2 = rab * rbc
+        elif _ION_CHARGE[numbers[angle.indices[0]]] > 0:
+            r2 = rab * rab
+        else:
+            r2 = rbc * rbc
+        return 0.5 * q * mu0 / max(r2, 1.0) * units.Hartree
+
+    def _h0_ionic_torsion(self, dihedral: Dihedral, ndih_ion: int,
+                          mu0: float = 0.7300) -> float:
+        """Diagonal guess (eV/rad^2) for a proper dihedral M-X-Y-Z whose
+        terminal atom M is an s-block metal ion: the rotation of the ion
+        about the ligand bond X-Y, i.e. the wag of the ion out of the
+        local plane of its contact atom X (the motion the bends of
+        _h0_ionic_bend do not describe).  Its stiffness is the same
+        ion-dipole term q mu0 / R^2 with R the contact distance M-X, shared
+        by the ndih_ion dihedrals that carry the wag through the bond M-X
+        (every M-X-Y-Z with Y a neighbour of X and Z a neighbour of Y
+        changes by the wag angle).  The Fischer-Almlof torsional constant
+        of the covalent bond X-Y, which these dihedrals received before,
+        describes the rotation of the substituents of Y against those of
+        X and has nothing to do with the ion's motion; it stays with the
+        covalent dihedrals about X-Y, whose 1/sqrt(n) share no longer
+        counts the ion.
+        """
+        a, b, c, d = (int(j) for j in dihedral.indices)
+        numbers = self.all_atoms.numbers
+        if _ION_CHARGE[numbers[a]] >= _ION_CHARGE[numbers[d]]:
+            q = float(_ION_CHARGE[numbers[a]])
+            bond = dihedral.split()[0].split()[0]
+        else:
+            q = float(_ION_CHARGE[numbers[d]])
+            bond = dihedral.split()[1].split()[1]
+        r = bond.calc(self.all_atoms) / units.Bohr
+        return q * mu0 / max(r * r, 1.0) / max(ndih_ion, 1) * units.Hartree
+
     def _h0_linear_bend(self, centre: int, k_bend: float = 0.10,
                         k_bend_h: float = 0.05) -> float:
         """Diagonal guess (eV/rad^2) for the coordinates that describe the
@@ -5020,10 +5095,17 @@ class Internals(BaseInternals):
         # by the intermolecular coordinates, and the intramolecular paths of
         # the fragments (and with them the basins they reach) stay as before.
         connected = (self.ntrans + self.nrotations) == 0
+        # Formal charges of the s-block metal ions (zero elsewhere, dummies
+        # included): their bends and terminal dihedrals in a connected
+        # system get the ion-dipole angular stiffness instead of the
+        # covalent Fischer-Almlof values (_h0_ionic_bend, _h0_ionic_torsion).
+        q_ion = _ION_CHARGE[self.all_atoms.numbers]
         for angle in self.internals['angles']:
             if connected and any(j in dummy_set for j in angle.indices):
                 # Dummy angle A-j-X or C-j-X of a near-linear centre j.
                 h0[idx] = self._h0_linear_bend(int(angle.indices[1]))
+            elif connected and q_ion[np.asarray(angle.indices)].max() > 0:
+                h0[idx] = self._h0_ionic_bend(angle)
             else:
                 h0[idx] = self._h0_angle(angle)
             idx += 1
@@ -5050,14 +5132,34 @@ class Internals(BaseInternals):
         # and an exact 1/n split, which would be too soft for double bonds).
         ndih = {}
         proper_centres = set()
+        # Proper dihedrals with an s-block metal ion at an end (connected
+        # systems): the wag of the ion about its contact atom, keyed by the
+        # contact bond (ion, X); they do not share the torsional constant
+        # of the covalent bond X-Y (_h0_ionic_torsion).
+        ndih_ion = {}
+
+        def ion_end(dihedral):
+            if not connected:
+                return None
+            a, b, c, d = (int(j) for j in dihedral.indices)
+            if q_ion[a] > 0 and q_ion[a] >= q_ion[d]:
+                return (a, b)
+            if q_ion[d] > 0:
+                return (d, c)
+            return None
+
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
                 continue
             if not is_proper(dihedral):
                 continue
             key = frozenset(int(j) for j in dihedral.indices[1:3])
-            ndih[key] = ndih.get(key, 0) + 1
             proper_centres.update(key)
+            contact = ion_end(dihedral)
+            if contact is not None:
+                ndih_ion[contact] = ndih_ion.get(contact, 0) + 1
+                continue
+            ndih[key] = ndih.get(key, 0) + 1
         # Class-resolved scale of the rotatable-bond torsions (see
         # _torsion_class_factor), from the covalent graph of the real atoms.
         scale_torsions = connected
@@ -5093,6 +5195,9 @@ class Internals(BaseInternals):
                 else:
                     h0[idx] = self._h0_dihedral(dihedral, nbonds,
                                                 proper=False)
+            elif ion_end(dihedral) is not None:
+                h0[idx] = self._h0_ionic_torsion(
+                    dihedral, ndih_ion.get(ion_end(dihedral), 1))
             else:
                 key = frozenset(int(j) for j in dihedral.indices[1:3])
                 if key not in tfac:
