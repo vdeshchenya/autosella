@@ -21,10 +21,10 @@ dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors). Dimers that contain a 1-coordinate
-carbonyl oxygen, or a 2-coordinate H-bonded ketone oxygen, use
-0.10 Ha guesses on at most two phenol C–O–H angles (2-coordinate O
-bonded to C and H; the ipso carbon is 3-coordinate with exactly one
-oxygen).
+carbonyl oxygen, or a 2-coordinate H-bonded alkyl ketone oxygen,
+use 0.10 Ha guesses on at most two phenol C–O–H angles
+(2-coordinate O bonded to C and H; the ipso carbon is 3-coordinate
+with exactly one oxygen).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4132,8 +4132,10 @@ class Internals(BaseInternals):
                 # Free 1-coordinate carbonyl oxygen (cycle 334 keep).
                 if len(real) == 1:
                     return True
-                # H-bonded ketone: O bonded to C and H; ketone carbon is
-                # 3-coordinate with one O and two C, at least one 4-coord C.
+                # H-bonded alkyl ketone: O bonded to C and H; ketone carbon
+                # is 3-coordinate with one O and two C, and at least one of
+                # those C is 4-coordinate with ≥2 hydrogens (not a packing-
+                # inflated aromatic carbon, cycle 335).
                 if len(real) != 2 or not any(int(numbers[nb]) == 1 for nb in real):
                     continue
                 real_c = [nb for nb in neighbors[carbons[0]] if int(nb) not in dummy_set]
@@ -4146,7 +4148,10 @@ class Internals(BaseInternals):
                     continue
                 for cn in c_neighbors:
                     real_cn = [nb for nb in neighbors[cn] if int(nb) not in dummy_set]
-                    if len(real_cn) == 4:
+                    if (
+                        len(real_cn) == 4
+                        and sum(int(numbers[nb]) == 1 for nb in real_cn) >= 2
+                    ):
                         return True
             return False
 
