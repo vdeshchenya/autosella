@@ -4136,8 +4136,13 @@ class Internals(BaseInternals):
                 return False
             o_idx = ia if za == 8 else ic
             real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
-                return False
+            return len(real_o) == 2
+
+        def _ether_oxygen(angle) -> bool:
+            ia, _, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                         int(angle.indices[2]))
+            o_idx = ia if int(numbers[ia]) == 8 else ic
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
             return all(int(numbers[nb]) > 1 for nb in real_o)
 
         oxazolidinone_occ_ok = set()
@@ -4145,7 +4150,10 @@ class Internals(BaseInternals):
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _oxazolidinone_occ(angle)]
             if 1 <= len(cands) <= 2:
-                oxazolidinone_occ_ok = set(cands)
+                oxazolidinone_occ_ok = {
+                    ia for ia in cands
+                    if _ether_oxygen(self.internals['angles'][ia])
+                }
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
