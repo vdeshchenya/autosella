@@ -17,9 +17,10 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.20 Ha guesses. Connected n_atoms≥30 use 0.10 Ha
-guesses on 2-coordinate pyridine/imine C–N–C angles (nitrogen bonded
-to two carbons, neither carbon bonded to oxygen) when 30≤n_atoms<80.
+dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
+guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
+two carbons that are not oxygen-substituted and not guanidinium (≥3 N
+neighbors).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4078,25 +4079,38 @@ class Internals(BaseInternals):
             i, j = bond.indices
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
-        for angle in self.internals['angles']:
+
+        def _pyridine_cnc(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if int(numbers[icen]) != 7 or int(nbonds[icen]) != 2:
+                return False
+            if int(numbers[ia]) != 6 or int(numbers[ic]) != 6:
+                return False
+            if any(int(numbers[nb]) == 8 for nb in neighbors[ia]):
+                return False
+            if any(int(numbers[nb]) == 8 for nb in neighbors[ic]):
+                return False
+            # Guanidinium carbon: ≥3 nitrogen neighbors (valid 135065494).
+            if sum(int(numbers[nb]) == 7 for nb in neighbors[ia]) >= 3:
+                return False
+            if sum(int(numbers[nb]) == 7 for nb in neighbors[ic]) >= 3:
+                return False
+            return True
+
+        pyridine_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _pyridine_cnc(angle)]
+            # Spare polypyridine hoppers (valid 11109414 has four C–N–C).
+            if 1 <= len(cands) <= 2:
+                pyridine_ok = set(cands)
+
+        for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
-            elif (
-                soft_pyridine_angle
-                and int(numbers[int(angle.indices[1])]) == 7
-                and int(nbonds[int(angle.indices[1])]) == 2
-                and int(numbers[int(angle.indices[0])]) == 6
-                and int(numbers[int(angle.indices[2])]) == 6
-                and not any(
-                    int(numbers[nb]) == 8
-                    for nb in neighbors[int(angle.indices[0])]
-                )
-                and not any(
-                    int(numbers[nb]) == 8
-                    for nb in neighbors[int(angle.indices[2])]
-                )
-            ):
-                # Pyridine/imine C–N–C (GAFF ca-na-ca class).
+            elif soft_pyridine_angle and ia in pyridine_ok:
+                # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
