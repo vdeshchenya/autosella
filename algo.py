@@ -5764,7 +5764,9 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
+            step_method = 'rfo'
+        elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
@@ -5905,22 +5907,6 @@ class Sella(Optimizer):
             return s_qn, smag_qn
         diis_coords = coeffs @ coords[::-1][:use]
         diis_step = diis_coords - coords[-1]
-        if not getattr(self, "_allow_angle_wa", False):
-            intern = getattr(self.pes, "int", None)
-            if intern is not None:
-                diis_step = np.array(diis_step, dtype=np.float64, copy=True)
-                ntr = int(intern.ntrans)
-                nrot = int(intern.nrotations)
-                if ntr > 0:
-                    nd = float(np.linalg.norm(diis_step[:ntr]))
-                    nq = float(np.linalg.norm(s_qn[:ntr]))
-                    if nd > nq and nd > 1e-16:
-                        diis_step[:ntr] *= nq / nd
-                if nrot > 0:
-                    nd = float(np.linalg.norm(diis_step[-nrot:]))
-                    nq = float(np.linalg.norm(s_qn[-nrot:]))
-                    if nd > nq and nd > 1e-16:
-                        diis_step[-nrot:] *= nq / nd
         ndiis = float(np.linalg.norm(diis_step))
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
