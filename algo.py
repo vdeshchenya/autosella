@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
-may interpolate even when ρ is outside that window.
+use MaxInternalStep wd=0.8.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5761,6 +5761,9 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
+            elif self.nsteps >= 80:
+                # Late dimer packing torsions: |s_d| <= 0.1/0.8 = 0.125.
+                rs_kwargs['wd'] = 0.8
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5856,16 +5859,12 @@ class Sella(Optimizer):
         and cosine ≥ 0.90. Accept only when the previous step was well
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only. Dimers after 80 may skip the ρ window.
+        connected-only.
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        # Cycle 176 dropped ρ on dimers from step 20 and hopped amines.
-        # After 80, packing is on Banerjee RFO; allow interpolants when
-        # ρ sits outside the quadratic window that skips long DES tails.
-        skip_rho = (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80
-        if (not skip_rho) and not (1.0 / self.rho_inc < rho < self.rho_inc):
+        if not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
