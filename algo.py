@@ -2,7 +2,8 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
+Dimers floor the trust radius at `delta_min=0.02` and switch to Banerjee
+RFO after 40 steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -17,9 +18,7 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.20 Ha guesses. Connected n_atoms≥30 use 0.10 Ha
-guesses on isolated gem-difluoro F–C–F angles (4-coordinate carbon
-with exactly two F neighbors; both carbon neighbors have no F).
+dummy centers use 0.20 Ha guesses.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4069,12 +4068,6 @@ class Internals(BaseInternals):
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
         soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
         numbers = np.asarray(self.all_atoms.numbers)
-        neigh = [[] for _ in range(self.natoms)]
-        for bond in self.internals['bonds']:
-            i, j = int(bond.indices[0]), int(bond.indices[1])
-            if 0 <= i < self.natoms and 0 <= j < self.natoms:
-                neigh[i].append(j)
-                neigh[j].append(i)
         for angle in self.internals['angles']:
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -4124,27 +4117,6 @@ class Internals(BaseInternals):
             ):
                 # Fluoride tetrahedral class: F–B–F.
                 h0[idx] = 0.10 * units.Hartree
-            elif (
-                getattr(self, 'adj_dummy_placement', False)
-                and int(numbers[int(angle.indices[1])]) == 6
-                and int(nbonds[int(angle.indices[1])]) == 4
-                and int(numbers[int(angle.indices[0])]) == 9
-                and int(numbers[int(angle.indices[2])]) == 9
-            ):
-                # Isolated gem-difluoro F–C–F: 4-coord C with exactly two F
-                # and two C; neither C neighbor is fluorinated.
-                c = int(angle.indices[1])
-                n_f = sum(1 for t in neigh[c] if int(numbers[t]) == 9)
-                n_c = sum(1 for t in neigh[c] if int(numbers[t]) == 6)
-                c_terms = [t for t in neigh[c] if int(numbers[t]) == 6]
-                isolated = all(
-                    not any(int(numbers[u]) == 9 for u in neigh[t])
-                    for t in c_terms
-                )
-                if n_f == 2 and n_c == 2 and isolated:
-                    h0[idx] = 0.10 * units.Hartree
-                else:
-                    h0[idx] = self._h0_angle(angle)
             else:
                 h0[idx] = self._h0_angle(angle)
             idx += 1
@@ -5933,7 +5905,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 40:
             step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
