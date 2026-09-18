@@ -5764,21 +5764,15 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        rs_cls = self.rs
-        step_kwargs = dict(rs_kwargs)
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
+        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
-        elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
-            step_method = 'rfo'
-            rs_cls = TrustRegion
-            step_kwargs = {}
 
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = rs_cls(
+                s, smag = self.rs(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **step_kwargs
+                    **rs_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -5786,9 +5780,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = rs_cls(
+            s, smag = self.rs(
                 self.pes, self.ord, self.delta, method=step_method,
-                **step_kwargs
+                **rs_kwargs
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
@@ -5982,8 +5976,8 @@ class Sella(Optimizer):
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
-            self.delta_min = 0.15
-            self.delta = max(self.delta, 0.15)
+            self.delta_min = 0.16
+            self.delta = max(self.delta, 0.16)
 
         # Update trust radius
         if rho is not None:
