@@ -4139,7 +4139,11 @@ class Internals(BaseInternals):
             ):
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 7}
+            if {za, zc} != {6, 7}:
+                return False
+            n_idx = ia if za == 7 else ic
+            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
+            return len(real_n) == 3
 
         oxazolidinone_ok = set()
         if soft_pyridine_angle:
