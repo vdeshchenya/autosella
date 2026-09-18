@@ -21,7 +21,7 @@ dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two C–C–C angles at a
-CH2 carbon adjacent to gem-difluoromethylene.
+3-coordinate carbon adjacent to a 2-coordinate alkyne carbon.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4102,39 +4102,40 @@ class Internals(BaseInternals):
                 return False
             return True
 
-        def _cf2_adj_ch2_ccc(angle) -> bool:
+        def _alkyne_aryl_ccc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if ia in dummy_set or icen in dummy_set or ic in dummy_set:
                 return False
-            if int(numbers[icen]) != 6 or int(nbonds[icen]) != 4:
+            if int(numbers[icen]) != 6:
+                return False
+            real_cen = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_cen) != 3:
                 return False
             if int(numbers[ia]) != 6 or int(numbers[ic]) != 6:
                 return False
-            nbs = neighbors[icen]
-            if sum(int(numbers[nb]) == 6 for nb in nbs) != 2:
-                return False
-            if sum(int(numbers[nb]) == 1 for nb in nbs) != 2:
-                return False
-            # Adjacent gem-difluoro carbon (leftover cyclobutane CH2 next to CF2).
-            def _is_cf2(idx: int) -> bool:
+
+            def _is_alkyne_c(idx: int) -> bool:
                 if int(numbers[idx]) != 6:
                     return False
-                return sum(int(numbers[nb]) == 9 for nb in neighbors[idx]) == 2
-            return _is_cf2(ia) or _is_cf2(ic)
+                real = [nb for nb in neighbors[idx] if int(nb) not in dummy_set]
+                return len(real) == 2 and all(int(numbers[nb]) == 6 for nb in real)
+
+            # Exactly one terminal is a 2-coordinate C–C alkyne (not nitrile).
+            return _is_alkyne_c(ia) != _is_alkyne_c(ic)
 
         pyridine_ok = set()
-        cf2_ch2_ok = set()
+        alkyne_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _pyridine_cnc(angle)]
             # Spare polypyridine hoppers (valid 11109414 has four C–N–C).
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
-            fcands = [ia for ia, angle in enumerate(self.internals['angles'])
-                      if _cf2_adj_ch2_ccc(angle)]
-            if 1 <= len(fcands) <= 2:
-                cf2_ch2_ok = set(fcands)
+            acands = [ia for ia, angle in enumerate(self.internals['angles'])
+                      if _alkyne_aryl_ccc(angle)]
+            if 1 <= len(acands) <= 2:
+                alkyne_ok = set(acands)
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
@@ -4142,8 +4143,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in cf2_ch2_ok:
-                # Isolated CH2–CF2 cyclobutane C–C–C.
+            elif soft_pyridine_angle and ia in alkyne_ok:
+                # Isolated aryl–alkyne C–C–C (leftover 363892164).
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
