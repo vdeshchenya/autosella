@@ -8,7 +8,7 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected dummy-involving
 angle guesses are 0.10 Ha when n_atoms<18 or n_atoms>=30. Connected
-n_atoms>=30 GDIIS interpolants accept cosine >= 0.85.
+n_atoms>=30 GDIIS interpolants skip the ρ window.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5862,14 +5862,14 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected n_atoms>=30
-        jobs use cosine ≥ 0.85; dimers and smaller connected jobs stay
-        at 0.90. Dummy-wd and wa stay connected-only.
+        predicted (1/rho_inc < rho < rho_inc). Connected n_atoms>=30 skip
+        that ρ window. Dummy-wd and wa stay connected-only.
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        if not (1.0 / self.rho_inc < rho < self.rho_inc):
+        skip_rho = getattr(self, "_allow_angle_wa", False) and len(self.atoms) >= 30
+        if not skip_rho and not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
@@ -5918,10 +5918,7 @@ class Sella(Optimizer):
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
-        min_cos = 0.90
-        if getattr(self, '_allow_angle_wa', False) and len(self.atoms) >= 30:
-            min_cos = 0.85
-        if cos < min_cos or cos < 0.0:
+        if cos < 0.90 or cos < 0.0:
             return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
