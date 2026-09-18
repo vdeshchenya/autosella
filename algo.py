@@ -154,7 +154,8 @@ def symmetrize_Y(S, Y, symm):
     else:  # pragma: no cover
         raise ValueError("Unknown symmetrization method {}".format(symm))
 
-def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
+def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None,
+             metric_diagonal=None):
     """Quasi-Newton update."""
     if len(S.shape) == 1:
         if np.linalg.norm(S) < 1e-8:
@@ -191,7 +192,7 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
     if method == 'BFGS':
         Bplus = _MS_BFGS(B, S, Ytilde)
     elif method == 'TS-BFGS':
-        Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs)
+        Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs, metric_diagonal)
         if S.shape[1] == 1:
             step = S[:, 0]
             residual = Ytilde[:, 0] - B @ step
@@ -228,10 +229,25 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
 def _MS_BFGS(B, S, Y):
     return Y @ solve(Y.T @ S, Y.T) - B @ S @ solve(S.T @ B @ S, S.T @ B)
 
-def _MS_TS_BFGS(B, S, Y, lams, vecs):
+def _MS_TS_BFGS(B, S, Y, lams, vecs, metric_diagonal=None):
     J = Y - B @ S
     X1 = S.T @ Y @ Y.T
     absBS = vecs @ (np.abs(lams[:, np.newaxis]) * (vecs.T @ S))
+    if (metric_diagonal is not None and lams.size and lams[0] < 0
+            and metric_diagonal.shape == (B.shape[0],)
+            and np.all(np.isfinite(metric_diagonal))
+            and np.all(metric_diagonal > 0)):
+        try:
+            root = np.sqrt(metric_diagonal)
+            reduced = B / root[:, None] / root[None, :]
+            if np.all(np.isfinite(reduced)):
+                values, vectors = eigh((reduced + reduced.T) / 2.0)
+                mapped = root[:, None] * vectors
+                physical = mapped @ (np.abs(values)[:, None] * (mapped.T @ S))
+                if np.all(np.isfinite(physical)):
+                    absBS = physical
+        except np.linalg.LinAlgError:
+            pass
     X2 = S.T @ absBS @ absBS.T
     U = lstsq((X1 + X2) @ S, X1 + X2)[0].T
     UJT = U @ J.T
@@ -411,8 +427,10 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        self.set_B(update_H(B, dx, dg, method=self.update_method,
-                            symm=self.symm, lams=lams, vecs=vecs))
+        self.set_B(update_H(
+            B, dx, dg, method=self.update_method, symm=self.symm,
+            lams=lams, vecs=vecs,
+            metric_diagonal=getattr(self, 'curvature_metric_diagonal', None)))
 
     def project(self, U):
         """Project B into the subspace defined by U."""
@@ -5421,10 +5439,13 @@ class InternalPES(PES):
             # Replay all observed secants after refitting the starting model,
             # preserving learned off-diagonal information exactly as updates.
             for old_dx, old_dg in self._fit_pairs:
-                model = update_H(model, old_dx, old_dg,
-                                 method=self.H.update_method, symm=self.H.symm)
+                model = update_H(
+                    model, old_dx, old_dg, method=self.H.update_method,
+                    symm=self.H.symm,
+                    metric_diagonal=self._curvature_metric_diagonal)
             self.H.set_B(model)
             return
+        self.H.curvature_metric_diagonal = self._curvature_metric_diagonal
         PES._update_H(self, dx, dg)
 
     def kick(self, dx, diag=False, **diag_kwargs):
