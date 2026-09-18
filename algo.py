@@ -8,7 +8,7 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected dummy-involving
 angle guesses are 0.10 Ha when n_atoms<18 or n_atoms>=30. Connected
-n_atoms>=30 GDIIS interpolants skip the ρ window.
+n_atoms>=30 jobs use Banerjee RFO after 80 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5773,8 +5773,11 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
-            step_method = 'rfo'
+        if self.nsteps >= 80:
+            if not getattr(self, "_allow_angle_wa", False):
+                step_method = 'rfo'
+            elif len(self.atoms) >= 30:
+                step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5862,14 +5865,14 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected n_atoms>=30 skip
-        that ρ window. Dummy-wd and wa stay connected-only.
+        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
+        share this interpolant after 20 steps; dummy-wd and wa stay
+        connected-only.
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        skip_rho = getattr(self, "_allow_angle_wa", False) and len(self.atoms) >= 30
-        if not skip_rho and not (1.0 / self.rho_inc < rho < self.rho_inc):
+        if not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
