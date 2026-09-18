@@ -4116,6 +4116,14 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
 
+        def _carboxyl_carbon(cn) -> bool:
+            nbs = [nbb for nbb in neighbors[cn] if int(nbb) not in dummy_set]
+            if len(nbs) != 3:
+                return False
+            if any(int(numbers[nbb]) == 7 for nbb in nbs):
+                return False
+            return sum(int(numbers[nbb]) == 8 for nbb in nbs) >= 2
+
         def _oxazolidinone_ccn(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
@@ -4132,11 +4140,7 @@ class Internals(BaseInternals):
             if n_n != 1 or n_c != 2 or n_h != 1:
                 return False
             carbons = [nb for nb in real_c if int(numbers[nb]) == 6]
-            if not any(
-                any(int(numbers[nbb]) == 8 for nbb in neighbors[cn]
-                    if int(nbb) not in dummy_set)
-                for cn in carbons
-            ):
+            if not any(_carboxyl_carbon(cn) for cn in carbons):
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
             return {za, zc} == {6, 7}
@@ -4145,7 +4149,7 @@ class Internals(BaseInternals):
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _oxazolidinone_ccn(angle)]
-            if len(cands) == 1:
+            if 1 <= len(cands) <= 2:
                 oxazolidinone_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
