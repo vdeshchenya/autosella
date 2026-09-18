@@ -5936,8 +5936,6 @@ class Sella(Optimizer):
             self._gp_history = []
         q, g, energy = self.pes.get_x(), self.pes.get_g(), self.pes.get_f()
         history = self._gp_history
-        if history and energy > history[-1][2]:
-            history.clear()
         history.append((q.copy(), g.copy(), energy))
         history[:] = [point for point in history[-5:]
                       if np.max(np.abs(self.pes.wrap_dx(point[0] - q)))
