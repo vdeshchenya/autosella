@@ -4482,7 +4482,7 @@ class InternalPES(PES):
         self._fit_blocks = None
         self._fit_pairs = []
         if H0 is None:
-            # Keep separate positive physical blocks for a bounded early fit.
+            # Keep physical blocks and a bounded correlation for an early fit.
             B = self.int.jacobian()
             Q, _ = qr(B, mode='economic')
             P = Q @ Q.T
@@ -4501,13 +4501,21 @@ class InternalPES(PES):
             out_of_plane = self._out_of_plane_curvature(B)
             if out_of_plane is not None:
                 self._fit_blocks.append(out_of_plane)
+            H0 = sum(self._fit_blocks, np.zeros_like(P))
+            coupling = self._stretch_bend_curvature(P, diagonal)
+            if coupling is not None:
+                self._fit_blocks.append(coupling)
             count = len(self._fit_blocks)
             ridge = np.full(count, 0.25)
             if auxiliary:
                 ridge[auxiliary_start:auxiliary_start + len(auxiliary)] /= len(auxiliary)
             self._fit_gram = np.diag(ridge)
             self._fit_rhs = ridge.copy()
-            H0 = sum(self._fit_blocks, np.zeros_like(P))
+            self._fit_lower = np.full(count, 0.5)
+            self._fit_upper = np.full(count, 2.0)
+            if coupling is not None:
+                self._fit_rhs[-1] = 0.0
+                self._fit_lower[-1], self._fit_upper[-1] = -1.0, 1.0
             self.set_H(H0, initialized=False)
         else:
             self.set_H(H0, initialized=True)
@@ -4519,6 +4527,39 @@ class InternalPES(PES):
         self._pinv_cache = _LRU2()
         self._qr_cache = _LRU2()
         self._Hc_cache = _LRU2()
+
+    def _stretch_bend_curvature(self, projector, diagonal):
+        """Bounded signed correlation on the real bond-angle incidence graph."""
+        if self.atoms.pbc.any():
+            return None
+        natoms = len(self.atoms)
+        bonds = {}
+        for index, bond in enumerate(self.int.internals['bonds']):
+            if all(i < natoms for i in bond.indices):
+                bonds[tuple(sorted(bond.indices))] = self.int.ntrans + index
+        adjacency = np.zeros_like(projector)
+        angle_start = self.int.ntrans + self.int.nbonds
+        for index, angle in enumerate(self.int.internals['angles']):
+            i, j, k = angle.indices
+            if max(i, j, k) >= natoms:
+                continue
+            angle_index = angle_start + index
+            for pair in ((i, j), (j, k)):
+                bond_index = bonds.get(tuple(sorted(pair)))
+                if bond_index is not None:
+                    adjacency[bond_index, angle_index] = 1.0
+                    adjacency[angle_index, bond_index] = 1.0
+        degree = np.sum(adjacency, axis=1)
+        connected = degree > 0
+        if not np.any(connected):
+            return None
+        normalization = np.zeros_like(degree)
+        normalization[connected] = 1.0 / np.sqrt(degree[connected])
+        adjacency *= normalization[:, None] * normalization[None, :]
+        scaled = projector * np.sqrt(diagonal)
+        block = 0.25 * scaled @ adjacency @ scaled.T
+        block = 0.5 * (block + block.T)
+        return block if np.all(np.isfinite(block)) else None
 
     def _auxiliary_curvature(self, jacobian):
         """Map across-angle and other nearby springs into separate fit blocks."""
@@ -5144,7 +5185,8 @@ class InternalPES(PES):
             target = dg / scale
             self._fit_gram += design.T @ design
             self._fit_rhs += design.T @ target
-            weights = np.clip(solve(self._fit_gram, self._fit_rhs), 0.5, 2.0)
+            weights = np.clip(solve(self._fit_gram, self._fit_rhs),
+                              self._fit_lower, self._fit_upper)
             self._fit_pairs.append((dx.copy(), dg.copy()))
             model = sum((weight * block for weight, block
                          in zip(weights, self._fit_blocks)),
