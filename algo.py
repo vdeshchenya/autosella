@@ -8,8 +8,8 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms≥30 replace two-coordinate dummy-atom linear bends
-with two orthogonal geomeTRIC LinearAngle coordinates.
+Connected n_atoms≥30 add two orthogonal geomeTRIC LinearAngle coordinates
+alongside dummy-atom linear bends.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3807,7 +3807,6 @@ class Internals(BaseInternals):
                             ))
                         except DuplicateInternalError:
                             pass
-                        continue
                     # First try to take the cross product of the two bond
                     # vectors. These two vectors are close to collinear, and
                     # may be exactly collinear, so there's a backup strategy
