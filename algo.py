@@ -4466,13 +4466,26 @@ class InternalPES(PES):
         self.dummies = self.int.dummies
         self.dim = len(self.get_x())
         self.ncart = self.int.ndof
+        self._fit_blocks = None
+        self._fit_pairs = []
         if H0 is None:
-            # Construct guess hessian and zero out components in
-            # infeasible subspace
+            # Keep separate positive physical blocks for a bounded early fit.
             B = self.int.jacobian()
             Q, _ = qr(B, mode='economic')
             P = Q @ Q.T
-            H0 = P @ self.int.guess_hessian() @ P
+            diagonal = np.diag(self.int.guess_hessian())
+            labels = np.array(
+                [3] * self.int.ntrans + [0] * self.int.nbonds
+                + [1] * self.int.nangles + [2] * self.int.ndihedrals
+                + [3] * self.int.nother + [3] * self.int.nrotations)
+            self._fit_blocks = [
+                (P * (diagonal * (labels == kind))) @ P
+                for kind in range(4) if np.any(labels == kind)
+            ]
+            count = len(self._fit_blocks)
+            self._fit_gram = 0.25 * np.eye(count)
+            self._fit_rhs = 0.25 * np.ones(count)
+            H0 = sum(self._fit_blocks, np.zeros_like(P))
             self.set_H(H0, initialized=False)
         else:
             self.set_H(H0, initialized=True)
@@ -4998,6 +5011,32 @@ class InternalPES(PES):
         dydt[2] = out[:, 1]
 
         return dydt.ravel()
+
+    def _update_H(self, dx, dg):
+        if self.last['x'] is None or self.last['g'] is None:
+            return
+        if (self._fit_blocks is not None and len(self._fit_pairs) < 6
+                and np.linalg.norm(dx) > 1e-8 and np.linalg.norm(dg) > 1e-10):
+            # Equalize secant weights so the first large bond correction
+            # does not dominate later angle and collective-mode information.
+            scale = np.linalg.norm(dg)
+            design = np.column_stack([block @ dx for block in self._fit_blocks]) / scale
+            target = dg / scale
+            self._fit_gram += design.T @ design
+            self._fit_rhs += design.T @ target
+            weights = np.clip(solve(self._fit_gram, self._fit_rhs), 0.5, 2.0)
+            self._fit_pairs.append((dx.copy(), dg.copy()))
+            model = sum((weight * block for weight, block
+                         in zip(weights, self._fit_blocks)),
+                        np.zeros_like(self.H.B))
+            # Replay all observed secants after refitting the starting model,
+            # preserving learned off-diagonal information exactly as updates.
+            for old_dx, old_dg in self._fit_pairs:
+                model = update_H(model, old_dx, old_dg,
+                                 method=self.H.update_method, symm=self.H.symm)
+            self.H.set_B(model)
+            return
+        PES._update_H(self, dx, dg)
 
     def kick(self, dx, diag=False, **diag_kwargs):
         ratio = PES.kick(self, dx, diag=diag, **diag_kwargs)
