@@ -3956,6 +3956,13 @@ class Internals(BaseInternals):
         Ca: float = 0.44,
         Da: float = -0.42,
     ) -> float:
+        indices = np.asarray(angle.indices, dtype=np.int32)
+        if np.all(indices < self.natoms):
+            numbers = self.all_atoms.numbers[indices]
+            if np.all(numbers > 0):
+                # Published Schlegel real-angle prior, Hartree/radian².
+                return (0.160 if numbers[0] == 1 or numbers[2] == 1
+                        else 0.250) * units.Hartree
         bab, bbc = angle.split()
         idxab = np.asarray(bab.indices, dtype=np.int32)
         idxbc = np.asarray(bbc.indices, dtype=np.int32)
