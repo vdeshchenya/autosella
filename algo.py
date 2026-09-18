@@ -5760,6 +5760,8 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
+            elif self.nsteps >= 20:
+                rs_kwargs['wx'] = 0.8
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5853,12 +5855,11 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected jobs may
-        interpolate from nsteps>=15; dimers stay at 20. Dummy-wd and wa
-        stay connected-only.
+        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
+        share this interpolant after 20 steps; dummy-wd and wa stay
+        connected-only.
         """
-        min_steps = 15 if getattr(self, "_allow_angle_wa", False) else 20
-        if self.nsteps < min_steps:
+        if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
