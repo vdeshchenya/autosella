@@ -5940,7 +5940,7 @@ class Sella(Optimizer):
         history[:] = [point for point in history[-5:]
                       if np.max(np.abs(self.pes.wrap_dx(point[0] - q)))
                       <= 2.0 * self.delta]
-        if len(history) < 3 or len(self.pes._fit_pairs) < 6:
+        if len(history) < 3:
             return ordinary, magnitude
         free = self.pes.get_Ufree()
         offsets = np.array([self.pes.wrap_dx(point[0] - q) for point in history])
