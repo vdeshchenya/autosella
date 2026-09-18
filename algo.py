@@ -20,9 +20,8 @@ dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors), and on at most two O–C–N angles at a
-3-coordinate carbamate carbon (exactly two O and one N; the N is not
-sulfur-bonded).
+guanidinium (≥3 N neighbors), and on at most two C–C–C angles at a
+CH2 carbon adjacent to gem-difluoromethylene.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4103,39 +4102,39 @@ class Internals(BaseInternals):
                 return False
             return True
 
-        def _carbamate_ocn(angle) -> bool:
+        def _cf2_adj_ch2_ccc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if ia in dummy_set or icen in dummy_set or ic in dummy_set:
                 return False
-            if int(numbers[icen]) != 6 or int(nbonds[icen]) != 3:
+            if int(numbers[icen]) != 6 or int(nbonds[icen]) != 4:
                 return False
-            # O–C–N at a carbamate/oxazolidinone carbonyl (leftover 363892164).
-            if {int(numbers[ia]), int(numbers[ic])} != {7, 8}:
+            if int(numbers[ia]) != 6 or int(numbers[ic]) != 6:
                 return False
             nbs = neighbors[icen]
-            if sum(int(numbers[nb]) == 8 for nb in nbs) != 2:
+            if sum(int(numbers[nb]) == 6 for nb in nbs) != 2:
                 return False
-            if sum(int(numbers[nb]) == 7 for nb in nbs) != 1:
+            if sum(int(numbers[nb]) == 1 for nb in nbs) != 2:
                 return False
-            # Spare sulfonyl carbamate (valid 135065494).
-            n_idx = ia if int(numbers[ia]) == 7 else ic
-            if any(int(numbers[nb]) == 16 for nb in neighbors[n_idx]):
-                return False
-            return True
+            # Adjacent gem-difluoro carbon (leftover cyclobutane CH2 next to CF2).
+            def _is_cf2(idx: int) -> bool:
+                if int(numbers[idx]) != 6:
+                    return False
+                return sum(int(numbers[nb]) == 9 for nb in neighbors[idx]) == 2
+            return _is_cf2(ia) or _is_cf2(ic)
 
         pyridine_ok = set()
-        carbamate_ok = set()
+        cf2_ch2_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _pyridine_cnc(angle)]
             # Spare polypyridine hoppers (valid 11109414 has four C–N–C).
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
-            ccands = [ia for ia, angle in enumerate(self.internals['angles'])
-                      if _carbamate_ocn(angle)]
-            if 1 <= len(ccands) <= 2:
-                carbamate_ok = set(ccands)
+            fcands = [ia for ia, angle in enumerate(self.internals['angles'])
+                      if _cf2_adj_ch2_ccc(angle)]
+            if 1 <= len(fcands) <= 2:
+                cf2_ch2_ok = set(fcands)
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
@@ -4143,8 +4142,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in carbamate_ok:
-                # Isolated carbamate/oxazolidinone O–C–N.
+            elif soft_pyridine_angle and ia in cf2_ch2_ok:
+                # Isolated CH2–CF2 cyclobutane C–C–C.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
