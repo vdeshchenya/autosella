@@ -11,8 +11,9 @@ at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, on O–S–O
-angles at sulfur centers, and on F–Si–X, Cl–Si–X, and F–B–F
-angles at silicon or boron centers.
+angles at sulfur centers that also have a sulfur neighbor,
+and on F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron
+centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4027,7 +4028,9 @@ class Internals(BaseInternals):
         return h0 * units.Hartree
 
     def guess_hessian(self, h0cart=70.) -> np.ndarray:
+        numbers = np.asarray(self.all_atoms.numbers)
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
+        nsulfur = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
         idx = 0
@@ -4039,12 +4042,17 @@ class Internals(BaseInternals):
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
-            nbonds[i] += 1
-            nbonds[j] += 1
+            ii, jj = int(i), int(j)
+            nbonds[ii] += 1
+            nbonds[jj] += 1
+            zi, zj = int(numbers[ii]), int(numbers[jj])
+            if zi == 16:
+                nsulfur[jj] += 1
+            if zj == 16:
+                nsulfur[ii] += 1
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
         soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
-        numbers = np.asarray(self.all_atoms.numbers)
         for angle in self.internals['angles']:
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -4069,10 +4077,11 @@ class Internals(BaseInternals):
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 16
+                and int(nsulfur[int(angle.indices[1])]) >= 1
                 and int(numbers[int(angle.indices[0])]) == 8
                 and int(numbers[int(angle.indices[2])]) == 8
             ):
-                # Complementary sulfate class: tetrahedral O–S–O at S.
+                # Disulfur-oxide class: O–S–O at S bonded to another S.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
