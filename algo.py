@@ -4482,6 +4482,9 @@ class InternalPES(PES):
                 (P * (diagonal * (labels == kind))) @ P
                 for kind in range(4) if np.any(labels == kind)
             ]
+            auxiliary = self._auxiliary_curvature(B)
+            if auxiliary is not None:
+                self._fit_blocks.append(auxiliary)
             count = len(self._fit_blocks)
             self._fit_gram = 0.25 * np.eye(count)
             self._fit_rhs = 0.25 * np.ones(count)
@@ -4497,6 +4500,46 @@ class InternalPES(PES):
         self._pinv_cache = _LRU2()
         self._qr_cache = _LRU2()
         self._Hc_cache = _LRU2()
+
+    def _auxiliary_curvature(self, jacobian):
+        """Map a nearby-distance spring model into the existing internals."""
+        positions = self.atoms.positions
+        radii = covalent_radii[self.atoms.numbers]
+        first, second = np.triu_indices(len(positions), 1)
+        differences = positions[first] - positions[second]
+        distances = np.linalg.norm(differences, axis=1)
+        references = radii[first] + radii[second]
+        bonded = {tuple(sorted(bond.indices)) for bond in self.int.internals['bonds']}
+        parent = list(range(len(positions)))
+
+        def root(index):
+            while parent[index] != index:
+                parent[index] = parent[parent[index]]
+                index = parent[index]
+            return index
+
+        for i, j in bonded:
+            if i < len(positions) and j < len(positions):
+                parent[root(i)] = root(j)
+        labels = [root(i) for i in range(len(positions))]
+        keep = np.array([(int(i), int(j)) not in bonded and labels[i] == labels[j]
+                         for i, j in zip(first, second)], dtype=bool)
+        keep &= (distances > 1e-8) & (distances < 2.5 * references)
+        first, second = first[keep], second[keep]
+        if first.size == 0:
+            return None
+        distances, references = distances[keep], references[keep]
+        directions = differences[keep] / distances[:, None]
+        pair_jacobian = np.zeros((len(first), jacobian.shape[1]))
+        rows = np.arange(len(first))[:, None]
+        axes = np.arange(3)
+        pair_jacobian[rows, 3 * first[:, None] + axes] = directions
+        pair_jacobian[rows, 3 * second[:, None] + axes] = -directions
+        stiffness = (0.3601 * np.exp(-1.944 * (distances - references) / units.Bohr)
+                     * units.Hartree / units.Bohr**2)
+        mapped = (np.sqrt(stiffness)[:, None] * pair_jacobian
+                  ) @ np.linalg.pinv(jacobian, rcond=1e-6)
+        return mapped.T @ mapped
 
     dpos = property(lambda self: self.dummies.positions.copy())
 
