@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules
-use Powell-symmetric-Broyden Hessian updates instead of TS-BFGS.
+when the previous ratio ρ was well predicted. Connected dummy-atom
+dihedrals use MaxInternalStep `wd_dummy=0.8` for the first 12 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5399,7 +5399,8 @@ class MaxInternalStep(BaseRestrictedStep):
     synonyms = ['mis', 'max internal step']
 
     def __init__(
-        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1., **kwargs
+        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1.,
+        wd_dummy=None, **kwargs
     ):
         if pes.int is None:
             raise ValueError(
@@ -5412,6 +5413,7 @@ class MaxInternalStep(BaseRestrictedStep):
         self.wd = wd
         self.wo = wo
         self.wc = wc  # Weight for cell DOF
+        self.wd_dummy = wd if wd_dummy is None else wd_dummy
         self._weights_cache = None
         BaseRestrictedStep.__init__(self, pes, *args, **kwargs)
 
@@ -5437,18 +5439,28 @@ class MaxInternalStep(BaseRestrictedStep):
             self.pes.int.ntrans, self.pes.int.nbonds,
             self.pes.int.nangles, self.pes.int.ndihedrals,
             self.pes.int.nother, self.pes.int.nrotations,
-            n_cell_dof,
+            n_cell_dof, self.wd, self.wd_dummy, self.wa,
         )
         if cached is not None and cached[0] == key:
             return cached[1]
+        intern = self.pes.int
         w = np.array(
-            [self.wx] * self.pes.int.ntrans
-            + [self.wb] * self.pes.int.nbonds
-            + [self.wa] * self.pes.int.nangles
-            + [self.wd] * self.pes.int.ndihedrals
-            + [self.wo] * self.pes.int.nother
-            + [self.wx] * self.pes.int.nrotations
+            [self.wx] * intern.ntrans
+            + [self.wb] * intern.nbonds
+            + [self.wa] * intern.nangles
+            + [self.wd] * intern.ndihedrals
+            + [self.wo] * intern.nother
+            + [self.wx] * intern.nrotations
         )
+        if self.wd_dummy != self.wd and intern.ndummies and intern.ndihedrals:
+            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
+            k = intern.ntrans + intern.nbonds + intern.nangles
+            for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
+                if not active:
+                    continue
+                if any(j in dummy_set for j in dih.indices):
+                    w[k] = self.wd_dummy
+                k += 1
         if n_cell_dof > 0:
             w = np.concatenate([w, [self.wc] * n_cell_dof])
         self._weights_cache = (key, w)
@@ -5755,6 +5767,11 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
+                # Cycle 122 wd_dummy=0.8 for all connected steps: train keep,
+                # valid extras include 135093104 16→17. Restrict to nsteps<12
+                # so 9-step train savings remain and 16-step extras do not.
+                if self.nsteps < 12:
+                    rs_kwargs['wd_dummy'] = 0.8
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -6058,9 +6075,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected:
-            # Powell symmetric Broyden on connected TS-BFGS Hessians.
-            opt.pes.H.update_method = 'PSB'
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
