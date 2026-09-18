@@ -4184,6 +4184,9 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in oxazolidinone_ok:
+                # Oxazolidinone ring C–C–N at 4-coordinate carbon.
+                h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
                 h0[idx] = 0.10 * units.Hartree
