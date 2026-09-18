@@ -11,7 +11,8 @@ at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, and F–B–F angles at silicon or boron centers.
+Cl–Si–X, F–P–X, and F–B–F angles at silicon, phosphorus, or boron
+centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4084,6 +4085,16 @@ class Internals(BaseInternals):
                 )
             ):
                 # Mixed chloride silane: Cl–Si–X.
+                h0[idx] = 0.10 * units.Hartree
+            elif (
+                soft_oxo_angle
+                and int(numbers[int(angle.indices[1])]) == 15
+                and (
+                    int(numbers[int(angle.indices[0])]) == 9
+                    or int(numbers[int(angle.indices[2])]) == 9
+                )
+            ):
+                # Mixed fluoride phosphorus: F–P–X.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
