@@ -3256,6 +3256,7 @@ class Internals(BaseInternals):
     soft_oxo_angle_h0_default = False
     soft_pyridine_angle_h0_default = False
     soft_phenol_angle_h0_default = False
+    soft_nitroso_angle_h0_default = False
     adj_dummy_placement_default = False
 
     def __init__(
@@ -3297,6 +3298,7 @@ class Internals(BaseInternals):
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
         self.soft_pyridine_angle_h0 = Internals.soft_pyridine_angle_h0_default
         self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
+        self.soft_nitroso_angle_h0 = Internals.soft_nitroso_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
         self.windowed_dummy_atoms = set()
 
@@ -3319,6 +3321,7 @@ class Internals(BaseInternals):
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
         new.soft_pyridine_angle_h0 = getattr(self, 'soft_pyridine_angle_h0', False)
         new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
+        new.soft_nitroso_angle_h0 = getattr(self, 'soft_nitroso_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         return new
@@ -4080,6 +4083,7 @@ class Internals(BaseInternals):
         soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
         soft_pyridine_angle = getattr(self, 'soft_pyridine_angle_h0', False)
         soft_phenol_angle = getattr(self, 'soft_phenol_angle_h0', False)
+        soft_nitroso_angle = getattr(self, 'soft_nitroso_angle_h0', False)
         numbers = np.asarray(self.all_atoms.numbers)
         neighbors = [[] for _ in range(len(self.all_atoms))]
         for bond in self.internals['bonds']:
@@ -4161,6 +4165,16 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
+                h0[idx] = 0.10 * units.Hartree
+            elif (
+                soft_nitroso_angle
+                and int(numbers[int(angle.indices[1])]) == 7
+                and {int(numbers[int(angle.indices[0])]),
+                     int(numbers[int(angle.indices[2])])} == {6, 8}
+                and len([nb for nb in neighbors[int(angle.indices[1])]
+                         if int(nb) not in dummy_set]) == 2
+            ):
+                # Hexanitroso C–N–O at 2-coordinate nitrogen.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -6091,8 +6105,6 @@ class Sella(Optimizer):
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
-        if getattr(self, "_allow_angle_wa", False) and getattr(self, "_n_atoms", 0) == 18:
-            return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
@@ -6363,11 +6375,11 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
+        Internals.soft_nitroso_angle_h0_default = n_atoms == 18
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        opt._n_atoms = len(atomic_numbers)
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
@@ -6380,6 +6392,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_oxo_angle_h0_default = False
         Internals.soft_pyridine_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
+        Internals.soft_nitroso_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
