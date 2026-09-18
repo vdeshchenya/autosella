@@ -3256,7 +3256,6 @@ class Internals(BaseInternals):
     soft_oxo_angle_h0_default = False
     soft_pyridine_angle_h0_default = False
     soft_phenol_angle_h0_default = False
-    soft_nitroso_angle_h0_default = False
     adj_dummy_placement_default = False
 
     def __init__(
@@ -3298,7 +3297,6 @@ class Internals(BaseInternals):
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
         self.soft_pyridine_angle_h0 = Internals.soft_pyridine_angle_h0_default
         self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
-        self.soft_nitroso_angle_h0 = Internals.soft_nitroso_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
         self.windowed_dummy_atoms = set()
 
@@ -3321,7 +3319,6 @@ class Internals(BaseInternals):
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
         new.soft_pyridine_angle_h0 = getattr(self, 'soft_pyridine_angle_h0', False)
         new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
-        new.soft_nitroso_angle_h0 = getattr(self, 'soft_nitroso_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         return new
@@ -4083,7 +4080,6 @@ class Internals(BaseInternals):
         soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
         soft_pyridine_angle = getattr(self, 'soft_pyridine_angle_h0', False)
         soft_phenol_angle = getattr(self, 'soft_phenol_angle_h0', False)
-        soft_nitroso_angle = getattr(self, 'soft_nitroso_angle_h0', False)
         numbers = np.asarray(self.all_atoms.numbers)
         neighbors = [[] for _ in range(len(self.all_atoms))]
         for bond in self.internals['bonds']:
@@ -4119,6 +4115,32 @@ class Internals(BaseInternals):
             # Spare polypyridine hoppers (valid 11109414 has four C–N–C).
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
+
+        def _isocyanide_ccn(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 7}:
+                return False
+            n_idx = ia if za == 7 else ic
+            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
+            if len(real_n) != 2:
+                return False
+            return all(int(numbers[nb]) == 6 for nb in real_n)
+
+        isocyanide_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _isocyanide_ccn(angle)]
+            if 1 <= len(cands) <= 2:
+                isocyanide_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4163,18 +4185,11 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in isocyanide_ok:
+                # Aryl–isocyanide C–C–N at 3-coordinate carbon.
+                h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
-                h0[idx] = 0.10 * units.Hartree
-            elif (
-                soft_nitroso_angle
-                and int(numbers[int(angle.indices[1])]) == 7
-                and {int(numbers[int(angle.indices[0])]),
-                     int(numbers[int(angle.indices[2])])} == {6, 8}
-                and len([nb for nb in neighbors[int(angle.indices[1])]
-                         if int(nb) not in dummy_set]) == 2
-            ):
-                # Hexanitroso C–N–O at 2-coordinate nitrogen.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -6375,7 +6390,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
-        Internals.soft_nitroso_angle_h0_default = n_atoms == 18
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
@@ -6392,7 +6406,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_oxo_angle_h0_default = False
         Internals.soft_pyridine_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
-        Internals.soft_nitroso_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
