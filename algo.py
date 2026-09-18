@@ -5244,6 +5244,11 @@ class PES:
         self.secant_cons_tol = 0.25
         self._secant_pairs = []
 
+        # Model matrix for the energy prediction of the next kick when the
+        # step was computed under the path-dependent contact model (see
+        # Sella._curved_step); None means the current H.
+        self._B_pred = None
+
     apos = property(lambda self: self.atoms.positions.copy())
     dpos = property(lambda self: None)
 
@@ -5627,6 +5632,14 @@ class PES:
         f0 = self.get_f()
         g0 = self.get_g()
         B0 = self.H.asarray()
+        # A step computed under the path-dependent contact model is judged
+        # (trust ratio) against that model's energy prediction, not the
+        # local one (see Sella._curved_step).
+        B_pred = getattr(self, '_B_pred', None)
+        self._B_pred = None
+        if (B_pred is not None and B0 is not None
+                and B_pred.shape == B0.shape):
+            B0 = B_pred
 
         dx_initial, dx_final, g_par = self.set_x(x0 + dx)
 
@@ -6372,6 +6385,109 @@ class InternalPES(PES):
             return None
         return self._analytic_model_from(shadow, Q, Binv)
 
+    @staticmethod
+    def _contact_model_from(int_obj, Binv) -> Optional[np.ndarray]:
+        """The contact block A(x) of the model (the non-local and vicinal
+        pair curvature with the contact bends, _h0_nonlocal_contacts) of
+        the Internals object int_obj at its current positions, in the
+        frame of the pseudo-inverse Binv of its Jacobian; None when the
+        system has no such pair."""
+        if Binv is None:
+            return None
+        try:
+            A = int_obj._h0_nonlocal_contacts(Binv=Binv)
+        except (ValueError, np.linalg.LinAlgError):
+            return None
+        if A is None or not np.all(np.isfinite(A)):
+            return None
+        return A
+
+    def _contact_model(self) -> Optional[np.ndarray]:
+        """A(x) at the current geometry (see _contact_model_from)."""
+        try:
+            Binv = self._get_Binv()
+        except (ValueError, np.linalg.LinAlgError):
+            return None
+        return self._contact_model_from(self.int, Binv)
+
+    def _contact_model_at_positions(self, pos, dpos) -> Optional[np.ndarray]:
+        """A at the Cartesian positions pos (atoms) and dpos (dummies),
+        evaluated with a shadow copy of the internal coordinates (the
+        current geometry, caches and rotation state stay untouched)."""
+        pos_now = self.atoms.positions
+        dpos_now = self.dummies.positions
+        if pos.shape != pos_now.shape or dpos.shape != dpos_now.shape:
+            return None
+        if self._shadow is None:
+            self._shadow = self.int.shadow_copy()
+        shadow = self._shadow
+        if (len(shadow.atoms) != len(pos_now)
+                or len(shadow.dummies) != len(dpos_now)):
+            return None
+        shadow.sync_rotation_state(self.int)
+        shadow.atoms.positions[:] = pos
+        if len(dpos_now):
+            shadow.dummies.positions[:] = dpos
+        try:
+            _, Binv = self._model_frame(shadow.jacobian())
+        except (ValueError, np.linalg.LinAlgError):
+            return None
+        return self._contact_model_from(shadow, Binv)
+
+    def _contact_model_ahead(self, A0, s):
+        """Change of the contact block along the internal step s about to
+        be taken, averaged over the step: returns (dA_g, dA_e) with
+
+            dA_g = int_0^1 [A(x(t)) - A(x(0))] dt,
+            dA_e = 2 int_0^1 (1 - t) [A(x(t)) - A(x(0))] dt,
+
+        so that g(x + s) = g + (H + dA_g) s and f(x + s) - f(x) = g.s +
+        s.(H + dA_e) s / 2 are the gradient and energy of the model whose
+        Hessian follows A along the step (H + A(x(t)) - A(x(0))).  x(t) is
+        the linearised Cartesian path x + t Binv s of atoms and dummies
+        (for fragment translation/rotation coordinates the first-order
+        realisation of the rigid-body step); A is evaluated on the shadow
+        internals, in the frame of each node, at the nodes of the same
+        composite Simpson rule as _analytic_model_average (panels of at
+        most 0.4 A of atomic displacement, at most four), exact for the
+        cubic (1 - t) A(t) when A is quadratic on a panel.  A0 is A at the
+        current geometry.  None when a node cannot be evaluated.
+        """
+        try:
+            Binv = self._get_Binv()
+        except (ValueError, np.linalg.LinAlgError):
+            return None
+        s = np.asarray(s, dtype=np.float64)
+        if Binv.ndim != 2 or Binv.shape[1] != s.shape[0]:
+            return None
+        dxc = (Binv @ s).reshape((-1, 3))
+        natoms = len(self.atoms)
+        if dxc.shape[0] != natoms + len(self.dummies):
+            return None
+        if not np.all(np.isfinite(dxc)):
+            return None
+        pos0 = self.atoms.positions.copy()
+        dpos0 = self.dummies.positions.copy()
+        dmax = float(np.max(np.linalg.norm(dxc[:natoms], axis=1))) if natoms else 0.
+        npanel = int(min(4, max(1, np.ceil(dmax / 0.4))))
+        acc_g = np.zeros_like(A0)
+        acc_e = np.zeros_like(A0)
+        for i in range(1, 2 * npanel + 1):
+            t = i / (2. * npanel)
+            A_i = self._contact_model_at_positions(pos0 + t * dxc[:natoms],
+                                                   dpos0 + t * dxc[natoms:])
+            if A_i is None or A_i.shape != A0.shape:
+                return None
+            w = 1.0 if i == 2 * npanel else (4.0 if i % 2 else 2.0)
+            dA = A_i - A0
+            acc_g += w * dA
+            acc_e += (w * (1.0 - t)) * dA
+        dA_g = acc_g / (6.0 * npanel)
+        dA_e = acc_e / (3.0 * npanel)
+        if not (np.all(np.isfinite(dA_g)) and np.all(np.isfinite(dA_e))):
+            return None
+        return dA_g, dA_e
+
     def _analytic_model_average(self, T_prev, T_now, pos_prev, dpos_prev):
         """Path average of T over the step just taken: composite Simpson
         on the Cartesian straight line, with enough panels (at most four)
@@ -7061,6 +7177,12 @@ _default_kwargs = dict(
         # several A (compounding along the chain), far beyond the region
         # where the quadratic model knows about non-bonded contacts.
         cart_ratio_mol=2.0,
+        # Predictor-corrector step under the geometry-following contact
+        # block of the model: s = -(H + <A(x(t)) - A(x)>)^-1 g instead of
+        # -H^-1 g, the path average taken along the step itself (see
+        # Sella._curved_step). The same A(x) already moves H between
+        # geometries and transports the secant pairs.
+        curved_step_contact=True,
         method='qn',
         eig=False
     ),
@@ -7231,6 +7353,7 @@ class Sella(Optimizer):
         self.delta_max_tr = default.get('delta_max_tr', self.delta_max_mol)
         self.sigma_dec_mol = default.get('sigma_dec_mol', self.sigma_dec)
         self.cart_ratio_mol = default.get('cart_ratio_mol', None)
+        self.curved_step_contact = default.get('curved_step_contact', False)
         self.method = method if method is not None else default['method']
         self.eig = eig if eig is not None else default['eig']
 
@@ -7351,6 +7474,7 @@ class Sella(Optimizer):
         self.pes._update_basis()
         self.pes.save()
         x0 = self.pes.get_x()
+        self.pes._B_pred = None
 
         rs_kwargs = {}
         if self.optimize_cell and isinstance(self.rs, type) and issubclass(
@@ -7382,8 +7506,109 @@ class Sella(Optimizer):
                 self.pes, self.ord, self.delta, method=self.method,
                 **rs_kwargs
             ).get_s()
+            s, smag = self._curved_step(s, smag, rs_kwargs)
 
         return s, smag
+
+    def _restricted_step_with(self, B, rs_kwargs):
+        """The restricted step (same radius, stepper and bounds as
+        _predict_step) under the model matrix B in place of the current
+        Hessian; the Hessian object and its eigendecomposition are left as
+        they were."""
+        H = self.pes.H
+        saved = (H.B, H._evals, H._evecs, H._eigen_computed, H.initialized)
+        try:
+            H.set_B(B)
+            return self.rs(
+                self.pes, self.ord, self.delta, method=self.method,
+                **rs_kwargs
+            ).get_s()
+        finally:
+            (H.B, H._evals, H._evecs, H._eigen_computed,
+             H.initialized) = saved
+
+    def _curved_step(self, s, smag, rs_kwargs):
+        """Predictor-corrector step under the geometry-following contact
+        block of the model (minimisation, every system with non-local or
+        inter-fragment pairs).
+
+        The model Hessian moves with the geometry, H(x) = H + T(x) - T(x_k)
+        (InternalPES._track_analytic_model), and the secant pairs are
+        transported with it, so H is the curvature at x_k.  The quadratic
+        step -H^-1 g nevertheless assumes that curvature over the whole
+        step although the model itself says how its contact block A(x)
+        changes along the way (Internals._h0_nonlocal_contacts: the
+        exponential pair curvature k(r) = Ab exp(-Bb (r - r_cov)), e-fold
+        per 0.27 A, with the hydrogen-bond, lone-pair-plane and X-H...pi
+        bends that scale with it, and the vicinal 1,4 pairs of a rotor):
+        a closing contact is met with the curvature it had before the
+        step -- 44 % too soft after 0.1 A, 2.5x after a 0.25 A fragment
+        step -- so the step overshoots into the wall, and an opening
+        contact (a rotor turning away from its eclipsed 1,4 pairs) is
+        stepped with a stiffness the model abandons half-way.  The step of
+        the path-dependent model solves g + [int_0^1 H(x_k + t s) dt] s =
+        0, i.e. s = -(H + dA_g(s))^-1 g with the path average dA_g of
+        InternalPES._contact_model_ahead, under the unchanged trust
+        region.  It is found by fixed-point iteration from the quadratic
+        step: one correction (dA_g of the quadratic step) removes the
+        first-order error, a second one is kept only when the iteration
+        contracts (a step that runs into a contact wall may not, and then
+        the single-correction step -- the Heun-type estimate -- is the
+        safe one).  The trust ratio of the step is judged against the same
+        model's energy prediction (dA_e), so the radius policy sees the
+        quality of the step actually taken.  The stretch diagonal of T is
+        left out of the correction on purpose: cycle 57 applied the whole
+        T for connected systems and lost in the short runs and on the
+        bonds that lengthen, where the Almlof exponential is not the
+        anharmonicity of the xTB bond and a stretch residual is removed by
+        the next step anyway, while the gains sat where the contact block
+        changes along the step (long runs, folding chains).
+        """
+        pes = self.pes
+        if (self.ord != 0 or not self.curved_step_contact
+                or not getattr(pes, '_track_nb', False)
+                or getattr(pes, 'H', None) is None or pes.H.B is None
+                or not hasattr(pes, '_contact_model_ahead')):
+            return s, smag
+        try:
+            B0 = pes.H.B
+            A0 = pes._contact_model()
+            if A0 is None or A0.shape != B0.shape:
+                return s, smag
+            s_prev = s
+            best = None
+            change_prev = None
+            for it in range(2):
+                # Path averages along the latest iterate; the energy
+                # prediction of the step finally taken therefore lags one
+                # iterate behind it (a second-order difference once the
+                # iteration contracts).
+                ahead = pes._contact_model_ahead(A0, s_prev)
+                if ahead is None:
+                    break
+                dA_g, dA_e = ahead
+                s_new, smag_new = self._restricted_step_with(B0 + dA_g,
+                                                             rs_kwargs)
+                if not np.all(np.isfinite(s_new)):
+                    break
+                change = float(np.max(np.abs(s_new - s_prev))) if len(s_new) else 0.
+                if it > 0 and change_prev is not None and change >= change_prev:
+                    # Not contracting: keep the single-correction step.
+                    break
+                best = (s_new, smag_new, B0 + dA_e)
+                s_prev = s_new
+                change_prev = change
+                if change < 1e-4:
+                    break
+            if best is None:
+                return s, smag
+            s_new, smag_new, B_pred = best
+            pes._B_pred = B_pred
+            return s_new, smag_new
+        except (ValueError, np.linalg.LinAlgError, RuntimeError,
+                AssertionError):
+            pes._B_pred = None
+            return s, smag
 
     def step(self):
         s, smag = self._predict_step()
