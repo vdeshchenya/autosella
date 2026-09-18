@@ -4,16 +4,16 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
+guess constants are 0.25 Ha instead of 0.5, except dummy dihedrals
+that touch a windowed C–C–C alkyne dummy (0.04 < ||u×v|| < 0.10
+at a carbon bonded to two carbons), which use 0.20 Ha. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
-tetrahedral O–P–O angles at phosphorus centers, on O–S–O
-angles at sulfur centers that also have a sulfur neighbor,
-and on F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron
-centers.
+tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
+Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -3288,6 +3288,7 @@ class Internals(BaseInternals):
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
+        self.windowed_dummy_atoms = set()
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3307,6 +3308,7 @@ class Internals(BaseInternals):
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
+        new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         return new
 
     def add_rotation(
@@ -3698,6 +3700,18 @@ class Internals(BaseInternals):
                         cross = np.cross(dx1, dx2)
                         cross_norm = float(np.linalg.norm(cross))
                         if (
+                            0.04 < cross_norm < 0.10
+                            and int(self.atoms.numbers[j]) == 6
+                        ):
+                            term_z = []
+                            for bterm in jbonds:
+                                t0, t1 = int(bterm.indices[0]), int(bterm.indices[1])
+                                t = t1 if t0 == j else t0
+                                if 0 <= t < self.natoms:
+                                    term_z.append(int(self.atoms.numbers[t]))
+                            if len(term_z) == 2 and term_z[0] == 6 and term_z[1] == 6:
+                                self.windowed_dummy_atoms.add(int(self.dinds[j]))
+                        if (
                             getattr(self, 'adj_dummy_placement', False)
                             and 0.04 < cross_norm < 0.10
                             and int(self.atoms.numbers[j]) == 6
@@ -4028,9 +4042,7 @@ class Internals(BaseInternals):
         return h0 * units.Hartree
 
     def guess_hessian(self, h0cart=70.) -> np.ndarray:
-        numbers = np.asarray(self.all_atoms.numbers)
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
-        nsulfur = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
         idx = 0
@@ -4042,17 +4054,12 @@ class Internals(BaseInternals):
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
-            ii, jj = int(i), int(j)
-            nbonds[ii] += 1
-            nbonds[jj] += 1
-            zi, zj = int(numbers[ii]), int(numbers[jj])
-            if zi == 16:
-                nsulfur[jj] += 1
-            if zj == 16:
-                nsulfur[ii] += 1
+            nbonds[i] += 1
+            nbonds[j] += 1
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
         soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
+        numbers = np.asarray(self.all_atoms.numbers)
         for angle in self.internals['angles']:
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -4073,15 +4080,6 @@ class Internals(BaseInternals):
                 and int(numbers[int(angle.indices[2])]) == 8
             ):
                 # Complementary phosphate class: tetrahedral O–P–O at P.
-                h0[idx] = 0.10 * units.Hartree
-            elif (
-                soft_oxo_angle
-                and int(numbers[int(angle.indices[1])]) == 16
-                and int(nsulfur[int(angle.indices[1])]) >= 1
-                and int(numbers[int(angle.indices[0])]) == 8
-                and int(numbers[int(angle.indices[2])]) == 8
-            ):
-                # Disulfur-oxide class: O–S–O at S bonded to another S.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -4116,7 +4114,16 @@ class Internals(BaseInternals):
             idx += 1
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
-                scale = 0.25 if getattr(self, 'soft_dummy_dihedral_h0', False) else 0.5
+                windowed = getattr(self, 'windowed_dummy_atoms', set())
+                if (
+                    getattr(self, 'soft_dummy_dihedral_h0', False)
+                    and any(int(j) in windowed for j in dihedral.indices)
+                ):
+                    scale = 0.20
+                elif getattr(self, 'soft_dummy_dihedral_h0', False):
+                    scale = 0.25
+                else:
+                    scale = 0.5
                 h0[idx] = scale * units.Hartree
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
