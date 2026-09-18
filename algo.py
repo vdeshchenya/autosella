@@ -4,11 +4,10 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. After 20 well-predicted
-steps, connected MaxInternalStep also restricts linearized Cartesian
-max-atom displacement to the same δ. Connected tails after 20 steps
-may replace the QN step with two-point interpolation GDIIS when the
-previous ratio ρ was well predicted.
+guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
+steps may replace the QN step with two-point interpolation GDIIS
+in the Newton metric (H^{-1}g residuals) when the previous ratio ρ
+was well predicted.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5400,8 +5399,7 @@ class MaxInternalStep(BaseRestrictedStep):
     synonyms = ['mis', 'max internal step']
 
     def __init__(
-        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1.,
-        max_atom=False, **kwargs
+        self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1., **kwargs
     ):
         if pes.int is None:
             raise ValueError(
@@ -5414,7 +5412,6 @@ class MaxInternalStep(BaseRestrictedStep):
         self.wd = wd
         self.wo = wo
         self.wc = wc  # Weight for cell DOF
-        self.max_atom = bool(max_atom)
         self._weights_cache = None
         BaseRestrictedStep.__init__(self, pes, *args, **kwargs)
 
@@ -5425,49 +5422,10 @@ class MaxInternalStep(BaseRestrictedStep):
         sw = np.abs(s * w)
         idx = np.argmax(np.abs(sw))
         val = sw[idx]
-        dval = None if dsda is None else np.sign(s[idx]) * dsda[idx] * w[idx]
-
-        if self.max_atom:
-            cval, cdval = self._cartesian_max_atom(s, dsda)
-            if cval is not None and cval >= val:
-                val = cval
-                dval = cdval
 
         if dsda is None:
             return val
-        return val, dval
-
-    def _cartesian_max_atom(self, s, dsda):
-        """Linearized max-atom Cartesian displacement (Å) and optional d/dα.
-
-        geomeTRIC enforces trust in Cartesian displacement because mixed-unit
-        internals can realize a large atom move from a modest torsion.
-        Only ASE atoms enter the max-atom norm (dummy internals are dropped).
-        """
-        Binv = np.asarray(self.pes._get_Binv(), dtype=np.float64)
-        s_arr = np.asarray(s, dtype=np.float64)
-        if Binv.ndim != 2 or Binv.shape[1] != s_arr.size:
-            return None, None
-        ncart = 3 * int(self.pes.atoms.get_positions().shape[0])
-        dx = (Binv @ s_arr).reshape(-1)[:ncart]
-        if dx.size < 3 or dx.size % 3:
-            return None, None
-        dxm = dx.reshape(-1, 3)
-        norms = np.linalg.norm(dxm, axis=1)
-        if not np.isfinite(norms).all():
-            return None, None
-        cidx = int(np.argmax(norms))
-        cval = float(norms[cidx])
-        if dsda is None:
-            return cval, None
-        dsda_arr = np.asarray(dsda, dtype=np.float64)
-        if dsda_arr.shape != s_arr.shape:
-            return None, None
-        ddx = (Binv @ dsda_arr).reshape(-1)[:ncart].reshape(-1, 3)
-        cdval = float(ddx[cidx] @ dxm[cidx] / max(cval, 1e-12))
-        if not np.isfinite(cdval):
-            return None, None
-        return cval, cdval
+        return val, np.sign(s[idx]) * dsda[idx] * w[idx]
 
     def _get_weights(self):
         """Build the per-DOF weight vector. Cached against
@@ -5797,14 +5755,6 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-                # Cycle 147 @20 saved long tails but extras on 31–45-step
-                # jobs. Cycle 148 @50 lost venetoclax and inflated
-                # 160853090. Apply Cartesian trust after 20 only when the
-                # previous step was well predicted.
-                if self.nsteps >= 20:
-                    rho = float(getattr(self, "rho", 1.0))
-                    if 1.0 / self.rho_inc < rho < self.rho_inc:
-                        rs_kwargs['max_atom'] = True
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5835,7 +5785,8 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc).
+        predicted (1/rho_inc < rho < rho_inc). Residuals are Newton
+        displacements H^{-1}g so the DIIS metric matches the QN step.
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5854,7 +5805,17 @@ class Sella(Optimizer):
         nref = float(np.linalg.norm(s_qn))
         if not np.isfinite(nref) or nref < 1e-16:
             return s_qn, smag_qn
-        err = np.stack(gs)
+        G = np.stack(gs)
+        err = G
+        try:
+            H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
+            if H.shape == (G.shape[1], G.shape[1]):
+                newton, *_ = np.linalg.lstsq(H, G.T, rcond=None)
+                newton = np.asarray(newton.T, dtype=np.float64)
+                if newton.shape == G.shape and np.isfinite(newton).all():
+                    err = newton
+        except (np.linalg.LinAlgError, AttributeError, ValueError, TypeError):
+            err = G
         norms = np.linalg.norm(err, axis=1)
         nmin = float(np.min(norms))
         if not np.isfinite(nmin) or nmin < 1e-16:
