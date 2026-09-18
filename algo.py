@@ -4135,6 +4135,8 @@ class Internals(BaseInternals):
             if not any(
                 any(int(numbers[nbb]) == 8 for nbb in neighbors[cn]
                     if int(nbb) not in dummy_set)
+                and any(int(numbers[nbb]) == 7 for nbb in neighbors[cn]
+                        if int(nbb) not in dummy_set)
                 for cn in carbons
             ):
                 return False
