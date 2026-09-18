@@ -7,8 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
-use Banerjee RFO, and may apply a PSB Hessian update on
-well-predicted RFO steps when the Bofill mix would be PSB-dominant.
+use Banerjee RFO and freeze the Hessian (no further TS-BFGS updates).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -205,13 +204,6 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
         Bplus = _MS_SR1(B, S, Ytilde)
     elif method == 'Greenstadt':
         Bplus = _MS_Greenstadt(B, S, Ytilde)
-    elif method == 'bofill':
-        try:
-            Bplus = _MS_Bofill(B, S, Ytilde)
-            if Bplus is None:
-                Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs)
-        except (np.linalg.LinAlgError, ValueError):
-            Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs)
     else:  # pragma: no cover
         raise ValueError('Unknown update method {}'.format(method))
 
@@ -258,24 +250,6 @@ def _MS_Greenstadt(B, S, Y):
     U = solve(S.T @ MS, MS.T).T
     UJT = U @ J.T
     return (UJT + UJT.T) - U @ (J.T @ S) @ U.T
-
-def _MS_Bofill(B, S, Y):
-    """Pure PSB on near-PSB secants (φ<0.5); else None (TS-BFGS)."""
-    s = np.asarray(S, dtype=np.float64)
-    y = np.asarray(Y, dtype=np.float64)
-    if s.ndim == 2:
-        s = s[:, -1]
-        y = y[:, -1]
-    z = y - B @ s
-    zz = float(z @ z)
-    ss = float(s @ s)
-    zs = float(z @ s)
-    if (not np.isfinite(zz)) or (not np.isfinite(ss)) or zz < 1e-30 or ss < 1e-30:
-        return None
-    mix = (zs * zs) / (zz * ss)
-    if (not np.isfinite(mix)) or mix >= 0.5:
-        return None
-    return _MS_PSB(B, S, Y)
 
 
 class NumericalHessian(LinearOperator):
@@ -412,6 +386,8 @@ class ApproximateHessian(LinearOperator):
 
     def update(self, dx, dg):
         """Perform a quasi-Newton update on B"""
+        if getattr(self, '_skip_update', False):
+            return
         if self.B is None:
             B = np.zeros(self.shape, dtype=self.dtype)
         else:
@@ -441,8 +417,10 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        return ApproximateHessian(n, 0, Bproj, self.update_method,
+        out = ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
+        out._skip_update = getattr(self, '_skip_update', False)
+        return out
 
     def asarray(self):
         if self.B is not None:
@@ -4245,7 +4223,9 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        out = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        out._skip_update = getattr(self.H, '_skip_update', False)
+        return out
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -5793,11 +5773,7 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
-            rho = float(getattr(self, "rho", 1.0))
-            if 1.0 / self.rho_inc < rho < self.rho_inc:
-                self.pes.H.update_method = 'bofill'
-            else:
-                self.pes.H.update_method = 'TS-BFGS'
+            self.pes.H._skip_update = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5951,6 +5927,8 @@ class Sella(Optimizer):
 
     def step(self):
         s, smag = self._predict_step()
+        if not getattr(self, "_allow_angle_wa", False) and self.nsteps >= 80:
+            self.pes.H._skip_update = True
 
         # Determine if we need to call the eigensolver, then step
         if self.nsteps_since_diag >= self.diag_every_n:
