@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. After 50 connected
-steps, an untruncated MIS step is re-solved with RFO.
+steps, MaxInternalStep is replaced by Euclidean TrustRegion.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5758,32 +5758,29 @@ class Sella(Optimizer):
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
-        def _mis_step(method):
-            if self.pes.cons.has_inequalities():
-                all_valid = False
-                step = None
-                mag = None
-                while not all_valid:
-                    step, mag = self.rs(
-                        self.pes, self.ord, self.delta, method=method,
-                        **rs_kwargs
-                    ).get_s()
-                    self.pes.set_x(x0 + step)
-                    all_valid = self.pes.cons.validate_inequalities()
-                    self.pes._update_basis()
-                    self.pes.restore()
-                self.pes._update_basis()
-                return step, mag
-            return self.rs(
-                self.pes, self.ord, self.delta, method=method,
-                **rs_kwargs
-            ).get_s()
+        rs_cls = self.rs
+        step_kwargs = dict(rs_kwargs)
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
+            rs_cls = TrustRegion
+            step_kwargs = {}
 
-        s, smag = _mis_step(self.method)
-        if (getattr(self, "_allow_angle_wa", False)
-                and self.nsteps >= 50
-                and smag < 0.999 * self.delta):
-            s, smag = _mis_step('rfo')
+        if self.pes.cons.has_inequalities():
+            all_valid = False
+            while not all_valid:
+                s, smag = rs_cls(
+                    self.pes, self.ord, self.delta, method=self.method,
+                    **step_kwargs
+                ).get_s()
+                self.pes.set_x(x0 + s)
+                all_valid = self.pes.cons.validate_inequalities()
+                self.pes._update_basis()
+                self.pes.restore()
+            self.pes._update_basis()
+        else:
+            s, smag = rs_cls(
+                self.pes, self.ord, self.delta, method=self.method,
+                **step_kwargs
+            ).get_s()
 
         return self._maybe_gdiis(s, smag)
 
