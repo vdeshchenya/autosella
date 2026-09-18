@@ -20,8 +20,8 @@ dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors), and on at most two C–C–C angles at a
-4-coordinate carbon adjacent to a 2-coordinate alkyne carbon.
+guanidinium (≥3 N neighbors). Connected 30≤n_atoms<80 delay
+two-point GDIIS until after 40 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4102,48 +4102,19 @@ class Internals(BaseInternals):
                 return False
             return True
 
-        def _alkyne_alkyl_ccc(angle) -> bool:
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if ia in dummy_set or icen in dummy_set or ic in dummy_set:
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_cen = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_cen) != 4:
-                return False
-            if int(numbers[ia]) != 6 or int(numbers[ic]) != 6:
-                return False
-
-            def _is_alkyne_c(idx: int) -> bool:
-                if int(numbers[idx]) != 6:
-                    return False
-                real = [nb for nb in neighbors[idx] if int(nb) not in dummy_set]
-                return len(real) == 2 and all(int(numbers[nb]) == 6 for nb in real)
-
-            return _is_alkyne_c(ia) != _is_alkyne_c(ic)
-
         pyridine_ok = set()
-        alkyne_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _pyridine_cnc(angle)]
             # Spare polypyridine hoppers (valid 11109414 has four C–N–C).
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
-            acands = [ia for ia, angle in enumerate(self.internals['angles'])
-                      if _alkyne_alkyl_ccc(angle)]
-            if 1 <= len(acands) <= 2:
-                alkyne_ok = set(acands)
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in alkyne_ok:
-                # Isolated alkyl–alkyne C–C–C (leftover cyclobutane joint).
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -6074,6 +6045,12 @@ class Sella(Optimizer):
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
+        n_at = int(getattr(self, "_n_atoms", 0) or 0)
+        # Delay connected GDIIS to 40 on 30≤n<80 (leftover 363892164 n=43).
+        # Paliperidone/venetoclax (n≥80) and n<30 keep the cycle-120 start.
+        if getattr(self, "_allow_angle_wa", False) and 30 <= n_at < 80:
+            if self.nsteps < 40:
+                return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
@@ -6347,6 +6324,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
+        opt._n_atoms = len(atomic_numbers)
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
