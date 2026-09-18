@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with
-at least 20 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
+when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -6132,7 +6132,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     connected = not bool(probe.internals["translations"])
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
-        Internals.soft_dummy_angle_h0_default = len(atomic_numbers) >= 20
+        n_atoms = len(atomic_numbers)
+        Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
