@@ -4,8 +4,8 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Connected non-dummy
-angles use the Lindh 1995 model Hessian.
+guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
+steps may replace the QN step with interpolation-only GDIIS.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3234,7 +3234,6 @@ class Constraints(BaseInternals):
 
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
-    use_lindh_angle_h0_default = False
 
     def __init__(
         self,
@@ -3271,7 +3270,6 @@ class Internals(BaseInternals):
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
-        self.use_lindh_angle_h0 = Internals.use_lindh_angle_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3288,7 +3286,6 @@ class Internals(BaseInternals):
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
-        new.use_lindh_angle_h0 = getattr(self, 'use_lindh_angle_h0', False)
         return new
 
     def add_rotation(
@@ -3929,21 +3926,6 @@ class Internals(BaseInternals):
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
         return h0 * units.Hartree / units.Bohr**2
 
-    def _lindh_rho(self, bond: Bond) -> float:
-        idx = np.asarray(bond.indices, dtype=np.int32)
-        numbers = self.all_atoms.numbers[idx]
-        rcov = covalent_radii[numbers].sum() / units.Bohr
-        rij = bond.calc(self.all_atoms) / units.Bohr
-        z1, z2 = int(numbers[0]), int(numbers[1])
-        first = (z1 <= 2, z2 <= 2)
-        if first[0] and first[1]:
-            alpha = 1.0
-        elif first[0] or first[1]:
-            alpha = 0.3949
-        else:
-            alpha = 0.28
-        return float(np.exp(alpha * (rcov**2 - rij**2)))
-
     def _h0_angle(
         self,
         angle: Angle,
@@ -3955,15 +3937,6 @@ class Internals(BaseInternals):
         bab, bbc = angle.split()
         idxab = np.asarray(bab.indices, dtype=np.int32)
         idxbc = np.asarray(bbc.indices, dtype=np.int32)
-        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
-        if (
-            getattr(self, 'use_lindh_angle_h0', False)
-            and not dummy_set.intersection(angle.indices)
-            and np.all(idxab < self.natoms)
-            and np.all(idxbc < self.natoms)
-        ):
-            # Lindh 1995: k_theta = 0.15 * rho_ab * rho_bc
-            return 0.15 * self._lindh_rho(bab) * self._lindh_rho(bbc) * units.Hartree
         rcovab = covalent_radii[self.all_atoms.numbers[idxab]].sum()
         rcovbc = covalent_radii[self.all_atoms.numbers[idxbc]].sum()
         rab = bab.calc(self.all_atoms)
@@ -5664,6 +5637,8 @@ class Sella(Optimizer):
         self.ord = order
         self.eta = eta
         self.delta_min = self.eta
+        self._gdiis_x = []
+        self._gdiis_g = []
         self.constraints_tol = constraints_tol
         self.diagkwargs = dict(gamma=gamma, threepoint=threepoint)
         self.rho = 1.
@@ -5799,7 +5774,73 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
-        return s, smag
+        return self._maybe_gdiis(s, smag)
+
+    def _maybe_gdiis(self, s_qn, smag_qn):
+        """Replace the QN step with interpolation-only controlled GDIIS.
+
+        Cycle 98 used Farkas–Schlegel 0.97/0.84/0.71 and never accepted a
+        GDIIS step. Keep c_i≥0 and ||s_DIIS|| ≤ ||s_QN||, but use milder
+        0.90/0.75/0.60 alignment cutoffs so interpolation can fire.
+        """
+        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
+            return s_qn, smag_qn
+        xs = self._gdiis_x
+        gs = self._gdiis_g
+        if len(xs) < 2 or len(xs) != len(gs):
+            return s_qn, smag_qn
+        s_qn = np.asarray(s_qn, dtype=np.float64)
+        if xs[-1].shape != s_qn.shape:
+            self._gdiis_x = []
+            self._gdiis_g = []
+            return s_qn, smag_qn
+        nref = float(np.linalg.norm(s_qn))
+        if not np.isfinite(nref) or nref < 1e-16:
+            return s_qn, smag_qn
+        err = np.stack(gs)
+        norms = np.linalg.norm(err, axis=1)
+        nmin = float(np.min(norms))
+        if not np.isfinite(nmin) or nmin < 1e-16:
+            return s_qn, smag_qn
+        err = err / nmin
+        coords = np.stack(xs)
+        cos_cut = {2: 0.90, 3: 0.75, 4: 0.60}
+        accepted = None
+        max_use = min(4, err.shape[0])
+        for use in range(2, max_use + 1):
+            use_vecs = err[::-1][:use]
+            A = use_vecs @ use_vecs.T
+            try:
+                coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
+            except np.linalg.LinAlgError:
+                break
+            if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
+                break
+            csum = float(np.sum(coeffs))
+            if abs(csum) < 1e-16:
+                break
+            coeffs = coeffs / csum
+            if np.any(coeffs < -1e-8):
+                break
+            pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
+            neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
+            if pos_sum > 15.0 or neg_sum > 15.0:
+                break
+            diis_coords = coeffs @ coords[::-1][:use]
+            diis_step = diis_coords - coords[-1]
+            ndiis = float(np.linalg.norm(diis_step))
+            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
+                break
+            cos = float(diis_step @ s_qn) / (ndiis * nref)
+            if cos < cos_cut.get(use, 0.50) or cos < 0.0:
+                break
+            accepted = diis_step
+        if accepted is None:
+            return s_qn, smag_qn
+        smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
+        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
+            return s_qn, smag_qn
+        return accepted, smag
 
     def step(self):
         s, smag = self._predict_step()
@@ -5852,6 +5893,8 @@ class Sella(Optimizer):
             )
             self.initialized = False
             self.rho = 1
+            self._gdiis_x = []
+            self._gdiis_g = []
             return
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
@@ -5884,6 +5927,13 @@ class Sella(Optimizer):
             self.rho = rho
         else:
             self.rho = 1.
+
+        if getattr(self, "_allow_angle_wa", False):
+            self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
+            self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
+            if len(self._gdiis_x) > 6:
+                self._gdiis_x = self._gdiis_x[-5:]
+                self._gdiis_g = self._gdiis_g[-5:]
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
@@ -6000,7 +6050,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     connected = not bool(probe.internals["translations"])
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
-        Internals.use_lindh_angle_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6012,7 +6061,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 break
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
-        Internals.use_lindh_angle_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
