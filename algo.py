@@ -4512,6 +4512,169 @@ class Internals(BaseInternals):
         w = min(1.0, max(0.0, (bo - bo_lo) / (bo_hi - bo_lo)))
         return s + (1.0 - s) * w
 
+    @staticmethod
+    def _signed_dihedral(pos: np.ndarray, a: int, b: int, c: int,
+                         d: int) -> float:
+        """Signed dihedral angle a-b-c-d (radians) at the positions pos."""
+        b0 = pos[a] - pos[b]
+        b1 = pos[c] - pos[b]
+        b2 = pos[d] - pos[c]
+        nb1 = np.linalg.norm(b1)
+        if nb1 < 1e-8:
+            return 0.0
+        b1 = b1 / nb1
+        v = b0 - (b0 @ b1) * b1
+        w = b2 - (b2 @ b1) * b1
+        return float(np.arctan2(np.cross(b1, v) @ w, v @ w))
+
+    @staticmethod
+    def _small_rings(adj: List[List[int]],
+                     ring_max: int) -> List[List[int]]:
+        """The smallest ring (at most ring_max atoms) through every bond of
+        the covalent graph adj, as ordered atom lists, each ring once."""
+        seen = set()
+        rings = []
+        for i in range(len(adj)):
+            for j in adj[i]:
+                if j < i:
+                    continue
+                # Breadth-first shortest path i -> j avoiding the bond i-j.
+                prev = {i: None}
+                front = [i]
+                found = False
+                for _ in range(ring_max - 1):
+                    new = []
+                    for u_ in front:
+                        for v in adj[u_]:
+                            if (u_ == i and v == j) or v in prev:
+                                continue
+                            prev[v] = u_
+                            new.append(v)
+                            if v == j:
+                                found = True
+                                break
+                        if found:
+                            break
+                    if found or not new:
+                        break
+                    front = new
+                if not found:
+                    continue
+                path = [j]
+                while path[-1] != i:
+                    path.append(prev[path[-1]])
+                key = frozenset(path)
+                if key not in seen:
+                    seen.add(key)
+                    rings.append(path[::-1])
+        return rings
+
+    def _h0_ring_pseudorotation(
+        self,
+        H0: np.ndarray,
+        adj: List[List[int]],
+        types: List[str],
+        dih_index: Dict[frozenset, List[int]],
+        f_pseudo: float = 0.2,
+        amp_min: float = 25.0,
+        bo_max: float = 1.8,
+        ring_max: int = 8,
+    ) -> np.ndarray:
+        """Soften the pseudorotation of puckered five-membered rings in the
+        guess Hessian H0 (the diagonal guess in the internal coordinates;
+        dih_index maps every central bond to the positions of its proper
+        dihedrals in H0).
+
+        The torsional guess treats every ring bond as an ethane-like rotor
+        (0.02-0.03 Ha/rad^2 per bond), which is right for the amplitude
+        (radial) puckering mode of a five-membered ring -- the model gives
+        cyclopentane 276 cm^-1 against the observed 283, and tetrahydrofuran
+        and pyrrolidine 300 -- but not for the pseudorotation, the phase
+        motion in which the five ring dihedrals (second harmonic around the
+        ring, phi_j = Phi cos(P + 4 pi j / 5) with Phi ~ 40-50 degrees)
+        change with the tangential pattern dphi_j/dP: the model stiffness
+        of that motion is (5/2) K Phi^2 ~ 0.035 Ha/rad^2 (220-230 cm^-1),
+        while physically the pseudorotation is free in cyclopentane, has
+        a 0.1-0.3 kcal/mol twist-envelope barrier in tetrahydrofuran and
+        pyrrolidine and 1-3 kcal/mol in substituted, heteroatom and
+        ring-fused rings, i.e. a curvature 2 V_2 of 0.001-0.01 Ha/rad^2.
+        A model 3-30x too stiff along a mode leaves the walker creeping
+        along it (the molecules whose five-membered ring changes its
+        pucker phase during the run pay a premium in force calls, ours and
+        the reference's).  The rank-1 deflation
+        H <- H - (1 - f) (H u)(H u)^T / (u^T H u), with u the tangential
+        pattern over all proper dihedrals about the ring bonds, scales the
+        curvature of the pseudorotation to the fraction f, keeps every
+        H-conjugate direction (in particular the radial mode) unchanged and
+        preserves positive semi-definiteness (Cauchy-Schwarz in the H inner
+        product); f = 0.2 (0.3x in the projected Cartesian mode) sets the
+        model at the stiff end of the physical range, 0.01 Ha/rad^2 -- a
+        model too stiff still converges, one too soft does not.
+
+        Rings that are not free pseudorotors keep the full guess: rings
+        with a double, aromatic or conjugated bond (a pi centre bonded to
+        another pi or lone-pair centre in the ring, or any ring bond with a
+        bond-order factor of bo_max or more), bridged rings (three or more
+        atoms shared with another ring of at most ring_max atoms) and
+        near-planar rings (pucker amplitude below amp_min degrees), whose
+        soft motion is the radial one.  Rings fused along one bond and
+        rings with one exocyclic pi centre (cyclopentanones, lactone-free
+        methylene rings) are included.
+        """
+        numbers = np.asarray(self.atoms.numbers)
+        pos = np.asarray(self.atoms.positions, dtype=np.float64)
+        rings = self._small_rings(adj, ring_max)
+        sets = [set(ring) for ring in rings]
+        jj = np.arange(5)
+        cos_j = np.cos(4.0 * np.pi * jj / 5.0)
+        sin_j = np.sin(4.0 * np.pi * jj / 5.0)
+        for ring, members in zip(rings, sets):
+            if len(ring) != 5:
+                continue
+            if any(other is not members and len(members & other) >= 3
+                   for other in sets):
+                continue
+            pi_atoms = [a for a in ring if types[a] == 'pi']
+            if len(pi_atoms) > 1:
+                continue
+            if pi_atoms:
+                p = ring.index(pi_atoms[0])
+                if (types[ring[(p - 1) % 5]] != 'sigma'
+                        or types[ring[(p + 1) % 5]] != 'sigma'):
+                    continue
+            phis = np.zeros(5, dtype=np.float64)
+            keys = []
+            for j in range(5):
+                a, b, c, d = (ring[(j - 1) % 5], ring[j], ring[(j + 1) % 5],
+                              ring[(j + 2) % 5])
+                rbc = np.linalg.norm(pos[c] - pos[b])
+                rcov = _STIFFNESS_RADII[numbers[b]] + _STIFFNESS_RADII[numbers[c]]
+                key = frozenset((b, c))
+                if (np.exp(-2.85 * (rbc - rcov) / units.Bohr) >= bo_max
+                        or not dih_index.get(key)):
+                    keys = None
+                    break
+                keys.append(key)
+                phis[j] = np.degrees(self._signed_dihedral(pos, a, b, c, d))
+            if keys is None:
+                continue
+            # Second-harmonic fit of the ring dihedrals and its phase
+            # derivative (the tangential, pseudorotation pattern).
+            amp_c = 0.4 * float(phis @ cos_j)
+            amp_s = 0.4 * float(phis @ sin_j)
+            if np.hypot(amp_c, amp_s) < amp_min:
+                continue
+            tang = amp_c * sin_j - amp_s * cos_j
+            u = np.zeros(H0.shape[0], dtype=np.float64)
+            for j, key in enumerate(keys):
+                u[dih_index[key]] = tang[j]
+            Hu = H0 @ u
+            uHu = float(u @ Hu)
+            if not uHu > 0.0:
+                continue
+            H0 = H0 - (1.0 - f_pseudo) * np.outer(Hu, Hu) / uHu
+        return H0
+
     def _h0_fragment(
         self,
         coord: Coordinate,
@@ -5174,6 +5337,9 @@ class Internals(BaseInternals):
         numbers = np.asarray(self.atoms.numbers)
         positions = np.asarray(self.atoms.positions, dtype=np.float64)
         tfac = {}
+        # Positions in h0 of the proper dihedrals of every central bond
+        # (for the ring pseudorotation term, _h0_ring_pseudorotation).
+        dih_index = {}
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
                 a, b, c, d = (int(j) for j in dihedral.indices)
@@ -5214,6 +5380,7 @@ class Internals(BaseInternals):
                     tfac[key] = fac
                 h0[idx] = (tfac[key] * self._h0_dihedral(dihedral, nbonds)
                            / np.sqrt(ndih[key]))
+                dih_index.setdefault(key, []).append(idx)
             idx += 1
         for rot in self.internals['rotations']:
             if self.allow_fragments:
@@ -5222,6 +5389,11 @@ class Internals(BaseInternals):
                 h0[idx] = h0cart
             idx += 1
         H0 = np.diag(np.abs(h0))
+        if connected:
+            # Puckered five-membered rings: soften the pseudorotation
+            # (phase) mode of the ring dihedrals, see
+            # _h0_ring_pseudorotation.
+            H0 = self._h0_ring_pseudorotation(H0, adj, types, dih_index)
         # Non-local contact curvature (folded chains, intramolecular
         # hydrogen bonds, and the contacts between the fragments of a
         # complex): a positive semi-definite pair term in the internal
