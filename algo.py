@@ -6,9 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. If a dummy-involving
-angle is the MaxInternalStep limiter, that coordinate is re-solved
-at wa=0.65.
+when the previous ratio ρ was well predicted. Dimers after 80 steps
+may interpolate even when ρ is outside that window.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5802,33 +5801,19 @@ class Sella(Optimizer):
             idx += 1
         return out
 
-    def _dummy_angle_s_indices(self, intern):
-        dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
-        idx = intern.ntrans + intern.nbonds
-        out = set()
-        for ang, active in zip(intern.internals['angles'], intern._active['angles']):
-            if not active:
-                continue
-            if any(j in dummy_set for j in ang.indices):
-                out.add(idx)
-            idx += 1
-        return out
-
     def _maybe_dummy_limiter_wd(self, s, smag, rs_kwargs):
-        """Downweight only the limiter dummy dihedral or dummy angle.
+        """Downweight only the limiter dummy dihedral to 0.8.
 
         Cycle 167 re-solved with global wd_dummy=0.8 whenever any dummy
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
-        Dummy-involving angles already have wa=0.75; if one is the MIS
-        limiter, scale only that index to 0.65.
         """
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
         if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
             return s, smag
         intern = getattr(self.pes, "int", None)
-        if intern is None or intern.ndummies == 0:
+        if intern is None or intern.ndummies == 0 or intern.ndihedrals == 0:
             return s, smag
         s = np.asarray(s, dtype=np.float64)
         try:
@@ -5849,15 +5834,11 @@ class Sella(Optimizer):
         if len(w) != len(s):
             return s, smag
         idx = int(np.argmax(np.abs(s * w)))
-        if intern.ndihedrals > 0 and idx in self._dummy_dihedral_s_indices(intern):
-            wval = 0.8
-        elif intern.nangles > 0 and idx in self._dummy_angle_s_indices(intern):
-            wval = 0.65
-        else:
+        if idx not in self._dummy_dihedral_s_indices(intern):
             return s, smag
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        kw['w_index_value'] = wval
+        kw['w_index_value'] = 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
@@ -5875,12 +5856,16 @@ class Sella(Optimizer):
         and cosine ≥ 0.90. Accept only when the previous step was well
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only.
+        connected-only. Dimers after 80 may skip the ρ window.
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        if not (1.0 / self.rho_inc < rho < self.rho_inc):
+        # Cycle 176 dropped ρ on dimers from step 20 and hopped amines.
+        # After 80, packing is on Banerjee RFO; allow interpolants when
+        # ρ sits outside the quadratic window that skips long DES tails.
+        skip_rho = (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80
+        if (not skip_rho) and not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
