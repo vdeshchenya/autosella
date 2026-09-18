@@ -5905,6 +5905,22 @@ class Sella(Optimizer):
             return s_qn, smag_qn
         diis_coords = coeffs @ coords[::-1][:use]
         diis_step = diis_coords - coords[-1]
+        if not getattr(self, "_allow_angle_wa", False):
+            intern = getattr(self.pes, "int", None)
+            if intern is not None:
+                diis_step = np.array(diis_step, dtype=np.float64, copy=True)
+                ntr = int(intern.ntrans)
+                nrot = int(intern.nrotations)
+                if ntr > 0:
+                    nd = float(np.linalg.norm(diis_step[:ntr]))
+                    nq = float(np.linalg.norm(s_qn[:ntr]))
+                    if nd > nq and nd > 1e-16:
+                        diis_step[:ntr] *= nq / nd
+                if nrot > 0:
+                    nd = float(np.linalg.norm(diis_step[-nrot:]))
+                    nq = float(np.linalg.norm(s_qn[-nrot:]))
+                    if nd > nq and nd > 1e-16:
+                        diis_step[-nrot:] *= nq / nd
         ndiis = float(np.linalg.norm(diis_step))
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
@@ -6122,7 +6138,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
-    Internals.soft_dummy_dihedral_h0_default = True
+    if connected:
+        Internals.soft_dummy_dihedral_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
