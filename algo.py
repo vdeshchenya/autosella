@@ -3930,6 +3930,21 @@ class Internals(BaseInternals):
         idx = np.asarray(bond.indices, dtype=np.int32)
         rcov = covalent_radii[self.all_atoms.numbers[idx]].sum()
         rij = bond.calc(self.all_atoms)
+        if np.all(idx < self.natoms):
+            # Wittbrodt--Schlegel period-pair Badger parameters, in Bohr.
+            offsets = (
+                (-0.2573, 0.3401, 0.6937, 0.7126, 0.8355, 0.9491),
+                (0.3401, 0.9652, 1.2843, 1.4725, 1.6549, 1.7190),
+                (0.6937, 1.2843, 1.6925, 1.8238, 2.1164, 2.3185),
+                (0.7126, 1.4725, 1.8238, 2.0203, 2.2137, 2.5206),
+                (0.8355, 1.6549, 2.1164, 2.2137, 2.3718, 2.5110),
+                (0.9491, 1.7190, 2.3185, 2.5206, 2.5110, 2.5110),
+            )
+            numbers = self.all_atoms.numbers[idx]
+            periods = np.searchsorted((2, 10, 18, 36, 54), numbers)
+            gap = rij / units.Bohr - offsets[periods[0]][periods[1]]
+            if np.all(numbers > 0) and gap > 1e-8:
+                return 1.734 / gap**3 * units.Hartree / units.Bohr**2
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
         return h0 * units.Hartree / units.Bohr**2
 
