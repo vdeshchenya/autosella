@@ -8,7 +8,7 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms<12 use Banerjee RFO after 20 steps instead of |λ| quasi-Newton.
+Connected n_atoms<12 use Banerjee RFO after 30 steps instead of |λ| quasi-Newton.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5775,7 +5775,7 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
-        if getattr(self, "_allow_angle_wa", False) and len(self.atoms) < 12 and self.nsteps >= 20:
+        if getattr(self, "_allow_angle_wa", False) and len(self.atoms) < 12 and self.nsteps >= 30:
             step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
