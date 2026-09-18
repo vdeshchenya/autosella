@@ -8,7 +8,7 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms≥80 restore default angle caps (`wa=1`) after 20 steps.
+Connected n_atoms<12 skip two-point GDIIS and keep the QN step.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5769,8 +5769,6 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-                if self.nsteps >= 20 and len(self.atoms) >= 80:
-                    rs_kwargs['wa'] = 1.0
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5869,6 +5867,8 @@ class Sella(Optimizer):
         connected-only.
         """
         if self.nsteps < 20:
+            return s_qn, smag_qn
+        if getattr(self, "_allow_angle_wa", False) and len(self.atoms) < 12:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
