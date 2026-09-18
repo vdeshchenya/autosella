@@ -5333,7 +5333,9 @@ class Internals(BaseInternals):
             if i < self.natoms and j < self.natoms:
                 adj[i].append(j)
                 adj[j].append(i)
-        types = self._torsion_centre_types(adj) if scale_torsions else None
+        # The centre labels serve the torsion classes (connected systems)
+        # and the ring scope of _h0_ring_pseudorotation (every system).
+        types = self._torsion_centre_types(adj)
         numbers = np.asarray(self.atoms.numbers)
         positions = np.asarray(self.atoms.positions, dtype=np.float64)
         tfac = {}
@@ -5389,11 +5391,11 @@ class Internals(BaseInternals):
                 h0[idx] = h0cart
             idx += 1
         H0 = np.diag(np.abs(h0))
-        if connected:
-            # Puckered five-membered rings: soften the pseudorotation
-            # (phase) mode of the ring dihedrals, see
-            # _h0_ring_pseudorotation.
-            H0 = self._h0_ring_pseudorotation(H0, adj, types, dih_index)
+        # Puckered five-membered rings: soften the pseudorotation (phase)
+        # mode of the ring dihedrals, see _h0_ring_pseudorotation.  The
+        # defect is a property of the ring, so the rings of the fragments
+        # of a complex are treated like those of a connected molecule.
+        H0 = self._h0_ring_pseudorotation(H0, adj, types, dih_index)
         # Non-local contact curvature (folded chains, intramolecular
         # hydrogen bonds, and the contacts between the fragments of a
         # complex): a positive semi-definite pair term in the internal
