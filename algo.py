@@ -22,7 +22,7 @@ guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors). Dimers that contain a 1-coordinate
 carbonyl oxygen, or a 2-coordinate H-bonded alkyl ketone oxygen,
-use 0.10 Ha guesses on at most two phenol C–O–H angles
+use 0.10 Ha guesses on at most three phenol C–O–H angles
 (2-coordinate O bonded to C and H; the ipso carbon is 3-coordinate
 with exactly one oxygen).
 
@@ -4180,7 +4180,7 @@ class Internals(BaseInternals):
         if soft_phenol_angle and _has_carbonyl_o():
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _phenol_coh(angle)]
-            if 1 <= len(cands) <= 2:
+            if 1 <= len(cands) <= 3:
                 phenol_ok = set(cands)
 
         for ia, angle in enumerate(self.internals['angles']):
