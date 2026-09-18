@@ -7,7 +7,8 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted, or with two-point
-interpolation GEDIIS (Li–Frisch) when that GDIIS step is not accepted.
+interpolation GEDIIS (Li–Frisch) when that GDIIS step is not accepted
+and the interpolant agrees with the QN direction (cosine ≥ 0.90).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5790,9 +5791,10 @@ class Sella(Optimizer):
 
         If that GDIIS step is not accepted, try two-point interpolation
         GEDIIS (Li–Frisch 2006) on the same last segment: convex energy
-        interpolant, predicted energy below the current point, and the
-        same length cap. GEDIIS does not use the ρ window (Li–Frisch
-        use it farther from the quadratic region).
+        interpolant, predicted energy below the current point, the same
+        length cap, and cosine ≥ 0.90. Cycle 126 without the cosine
+        gate hopped paliperidone/160853090. GEDIIS does not use the ρ
+        window (Li–Frisch use it farther from the quadratic region).
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5858,7 +5860,8 @@ class Sella(Optimizer):
         Minimize the quadratic energy model of convex combinations of the
         current and previous internals (pysisyphus Eq. 6, origin at the
         current geometry). Reject endpoints, a non-decrease in predicted
-        energy, and steps longer than the QN step or the trust radius.
+        energy, steps longer than the QN step or the trust radius, and
+        interpolants that do not agree with the QN direction (cosine).
         """
         xs = self._gdiis_x
         gs = self._gdiis_g
@@ -5904,7 +5907,7 @@ class Sella(Optimizer):
             return None
         if t_best < 1e-8 or t_best > 1.0 - 1e-8:
             return None
-        return self._accept_diis_step(t_best * dx, s_qn, smag_qn, nref, cosine=None)
+        return self._accept_diis_step(t_best * dx, s_qn, smag_qn, nref, cosine=0.90)
 
     def _accept_diis_step(self, diis_step, s_qn, smag_qn, nref, cosine):
         ndiis = float(np.linalg.norm(diis_step))
