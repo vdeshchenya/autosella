@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-in the Newton metric (H^{-1}g residuals) when the previous ratio ρ
-was well predicted.
+when the previous ratio ρ was well predicted. If gradient residuals
+reject, retry with Newton-metric residuals H^{-1}g.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5778,6 +5778,51 @@ class Sella(Optimizer):
 
         return self._maybe_gdiis(s, smag)
 
+    def _gdiis_interpolant(self, err, coords, s_qn, nref, smag_qn):
+        """Two-point interpolation GDIIS from residual matrix ``err``.
+
+        Returns ``(step, smag)`` or ``None`` if the interpolant is rejected.
+        """
+        norms = np.linalg.norm(err, axis=1)
+        nmin = float(np.min(norms))
+        if not np.isfinite(nmin) or nmin < 1e-16:
+            return None
+        err = err / nmin
+        use = 2
+        if err.shape[0] < use:
+            return None
+        use_vecs = err[::-1][:use]
+        A = use_vecs @ use_vecs.T
+        try:
+            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
+        except np.linalg.LinAlgError:
+            return None
+        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
+            return None
+        csum = float(np.sum(coeffs))
+        if abs(csum) < 1e-16:
+            return None
+        coeffs = coeffs / csum
+        if np.any(coeffs < -1e-8):
+            return None
+        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
+        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
+        if pos_sum > 15.0 or neg_sum > 15.0:
+            return None
+        diis_coords = coeffs @ coords[::-1][:use]
+        diis_step = diis_coords - coords[-1]
+        ndiis = float(np.linalg.norm(diis_step))
+        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
+            return None
+        cos = float(diis_step @ s_qn) / (ndiis * nref)
+        if cos < 0.90 or cos < 0.0:
+            return None
+        accepted = diis_step
+        smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
+        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
+            return None
+        return accepted, smag
+
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
 
@@ -5785,8 +5830,8 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Residuals are Newton
-        displacements H^{-1}g so the DIIS metric matches the QN step.
+        predicted (1/rho_inc < rho < rho_inc). Gradient residuals first;
+        if they reject, retry with Newton displacements H^{-1}g.
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5806,57 +5851,24 @@ class Sella(Optimizer):
         if not np.isfinite(nref) or nref < 1e-16:
             return s_qn, smag_qn
         G = np.stack(gs)
-        err = G
+        coords = np.stack(xs)
+        accepted = self._gdiis_interpolant(G, coords, s_qn, nref, smag_qn)
+        if accepted is not None:
+            return accepted
         try:
             H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
             if H.shape == (G.shape[1], G.shape[1]):
                 newton, *_ = np.linalg.lstsq(H, G.T, rcond=None)
                 newton = np.asarray(newton.T, dtype=np.float64)
                 if newton.shape == G.shape and np.isfinite(newton).all():
-                    err = newton
+                    accepted = self._gdiis_interpolant(
+                        newton, coords, s_qn, nref, smag_qn
+                    )
+                    if accepted is not None:
+                        return accepted
         except (np.linalg.LinAlgError, AttributeError, ValueError, TypeError):
-            err = G
-        norms = np.linalg.norm(err, axis=1)
-        nmin = float(np.min(norms))
-        if not np.isfinite(nmin) or nmin < 1e-16:
-            return s_qn, smag_qn
-        err = err / nmin
-        coords = np.stack(xs)
-        accepted = None
-        use = 2
-        if err.shape[0] < use:
-            return s_qn, smag_qn
-        use_vecs = err[::-1][:use]
-        A = use_vecs @ use_vecs.T
-        try:
-            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
-        except np.linalg.LinAlgError:
-            return s_qn, smag_qn
-        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-            return s_qn, smag_qn
-        csum = float(np.sum(coeffs))
-        if abs(csum) < 1e-16:
-            return s_qn, smag_qn
-        coeffs = coeffs / csum
-        if np.any(coeffs < -1e-8):
-            return s_qn, smag_qn
-        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-        if pos_sum > 15.0 or neg_sum > 15.0:
-            return s_qn, smag_qn
-        diis_coords = coeffs @ coords[::-1][:use]
-        diis_step = diis_coords - coords[-1]
-        ndiis = float(np.linalg.norm(diis_step))
-        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-            return s_qn, smag_qn
-        cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
-            return s_qn, smag_qn
-        accepted = diis_step
-        smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
-        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-            return s_qn, smag_qn
-        return accepted, smag
+            pass
+        return s_qn, smag_qn
 
     def step(self):
         s, smag = self._predict_step()
