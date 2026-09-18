@@ -5766,10 +5766,10 @@ class Sella(Optimizer):
         step_method = self.method
         rs_cls = self.rs
         step_kwargs = dict(rs_kwargs)
-        dimer = not getattr(self, "_allow_angle_wa", False)
-        if dimer and self.nsteps >= 80:
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 50:
             step_method = 'rfo'
-        if dimer and self.nsteps >= 70:
+        elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+            step_method = 'rfo'
             rs_cls = TrustRegion
             step_kwargs = {}
 
