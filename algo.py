@@ -4156,9 +4156,8 @@ class Internals(BaseInternals):
             return any(int(numbers[nb]) == 14 for nb in real_o)
 
         def _fused_small_cyclic_ether(angle) -> bool:
-            # N-substituted fused 4-/5-ring through ether O whose other
-            # neighbor is 3-coordinate (dihydrobenzofuran-amine), not
-            # carbocyclic fused THF.
+            # Fused 4-/5-ring aryl ether at a 4-coord carbon that also has
+            # an N-substituted carbon neighbor (N-benzylic dihydrobenzofuran).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             o_idx = ia if int(numbers[ia]) == 8 else ic
@@ -4169,25 +4168,22 @@ class Internals(BaseInternals):
                            if int(nb) not in dummy_set]
             if len(other_heavy) != 3:
                 return False
-
-            def _ring_has_n(atoms) -> bool:
-                for a in atoms:
-                    if int(numbers[a]) == 7:
-                        return True
-                    if any(int(numbers[nb]) == 7 and int(nb) not in dummy_set
-                           for nb in neighbors[a]):
-                        return True
+            has_cn = False
+            for nb in neighbors[vertex]:
+                j = int(nb)
+                if j in dummy_set or int(numbers[j]) != 6:
+                    continue
+                if any(int(numbers[k]) == 7 and int(k) not in dummy_set
+                       for k in neighbors[j]):
+                    has_cn = True
+                    break
+            if not has_cn:
                 return False
-
             v_nb = {int(nb) for nb in neighbors[vertex]
                     if int(nb) not in dummy_set}
-            found = False
-            rings_n = False
-            shared = (v_nb & {int(nb) for nb in neighbors[other]
-                              if int(nb) not in dummy_set}) - {o_idx}
-            if shared:
-                found = True
-                rings_n = _ring_has_n({o_idx, vertex, other} | shared)
+            if (v_nb & {int(nb) for nb in neighbors[other]
+                        if int(nb) not in dummy_set}) - {o_idx}:
+                return True
             for a in v_nb:
                 if a == o_idx:
                     continue
@@ -4197,10 +4193,8 @@ class Internals(BaseInternals):
                         continue
                     if other in (int(nb) for nb in neighbors[bi]
                                  if int(nb) not in dummy_set):
-                        found = True
-                        rings_n = rings_n or _ring_has_n(
-                            {o_idx, vertex, a, bi, other})
-            return found and rings_n
+                        return True
+            return False
 
         oxazolidinone_occ_ok = set()
         if soft_pyridine_angle:
