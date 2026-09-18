@@ -4136,7 +4136,9 @@ class Internals(BaseInternals):
                 return False
             o_idx = ia if za == 8 else ic
             real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            return len(real_o) == 2
+            if len(real_o) != 2:
+                return False
+            return all(int(numbers[nb]) > 1 for nb in real_o)
 
         oxazolidinone_occ_ok = set()
         if soft_pyridine_angle:
