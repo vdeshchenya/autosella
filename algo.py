@@ -10,8 +10,9 @@ when the previous ratio ρ was well predicted. Connected molecules with fewer th
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
-tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, Br–Si–X, and F–B–F angles at silicon or boron centers.
+tetrahedral O–P–O angles at phosphorus centers, on O–S–O
+angles at sulfur centers, and on F–Si–X, Cl–Si–X, and F–B–F
+angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4067,6 +4068,14 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
+                and int(numbers[int(angle.indices[1])]) == 16
+                and int(numbers[int(angle.indices[0])]) == 8
+                and int(numbers[int(angle.indices[2])]) == 8
+            ):
+                # Complementary sulfate class: tetrahedral O–S–O at S.
+                h0[idx] = 0.10 * units.Hartree
+            elif (
+                soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 14
                 and (
                     int(numbers[int(angle.indices[0])]) == 9
@@ -4084,16 +4093,6 @@ class Internals(BaseInternals):
                 )
             ):
                 # Mixed chloride silane: Cl–Si–X.
-                h0[idx] = 0.10 * units.Hartree
-            elif (
-                soft_oxo_angle
-                and int(numbers[int(angle.indices[1])]) == 14
-                and (
-                    int(numbers[int(angle.indices[0])]) == 35
-                    or int(numbers[int(angle.indices[2])]) == 35
-                )
-            ):
-                # Mixed bromide silane: Br–Si–X.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
