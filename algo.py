@@ -5786,6 +5786,7 @@ class Sella(Optimizer):
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
+        s, smag = self._maybe_connecting_limiter_wb(s, smag, rs_kwargs, step_method)
         return self._maybe_gdiis(s, smag)
 
     def _dummy_dihedral_s_indices(self, intern):
@@ -5846,6 +5847,94 @@ class Sella(Optimizer):
             return s, smag
         return s2, smag2
 
+    def _connecting_bond_s_indices(self, intern):
+        """Active bond indices that join distinct 1.25-covalent fragments."""
+        n = intern.natoms
+        atoms = intern.atoms
+        numbers = atoms.numbers
+        pos = atoms.positions
+        parent = np.arange(n, dtype=np.int32)
+
+        def find(a):
+            while parent[a] != a:
+                parent[a] = parent[parent[a]]
+                a = parent[a]
+            return int(a)
+
+        def union(a, b):
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                parent[rb] = ra
+
+        bonds = intern.internals['bonds']
+        active = intern._active['bonds']
+        lengths = []
+        for bond, is_act in zip(bonds, active):
+            i, j = (int(x) for x in bond.indices)
+            rij = np.inf
+            if is_act and 0 <= i < n and 0 <= j < n:
+                rij = float(np.linalg.norm(pos[j] - pos[i]))
+                rcov = float(covalent_radii[numbers[i]] + covalent_radii[numbers[j]])
+                if rij <= 1.25 * rcov:
+                    union(i, j)
+            lengths.append((is_act, i, j, rij))
+        out = set()
+        idx = intern.ntrans
+        for is_act, i, j, rij in lengths:
+            if not is_act:
+                continue
+            if 0 <= i < n and 0 <= j < n and find(i) != find(j):
+                out.add(idx)
+            idx += 1
+        return out
+
+    def _maybe_connecting_limiter_wb(self, s, smag, rs_kwargs, step_method):
+        """Downweight only the limiter connecting stretch to 0.8 on dimers.
+
+        Cycle 54–57 scaled every long connector and hopped packing wells.
+        Cycle 189 showed translations are not the MIS limiter. Cycle 168
+        kept by scaling only the limiter dummy dihedral. Do the same for
+        the connecting stretch after packing (nsteps≥20).
+        """
+        if getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
+            return s, smag
+        if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
+            return s, smag
+        intern = getattr(self.pes, "int", None)
+        if intern is None or intern.nbonds == 0:
+            return s, smag
+        s = np.asarray(s, dtype=np.float64)
+        try:
+            wprobe = MaxInternalStep.__new__(MaxInternalStep)
+            wprobe.pes = self.pes
+            wprobe.wx = 1.0
+            wprobe.wb = 1.0
+            wprobe.wa = float(rs_kwargs.get('wa', 1.0))
+            wprobe.wd = 1.0
+            wprobe.wo = 1.0
+            wprobe.wc = float(rs_kwargs.get('wc', 1.0))
+            wprobe.w_index = None
+            wprobe.w_index_value = None
+            wprobe._weights_cache = None
+            w = MaxInternalStep._get_weights(wprobe)
+        except (RuntimeError, ValueError, AssertionError, AttributeError):
+            return s, smag
+        if len(w) != len(s):
+            return s, smag
+        idx = int(np.argmax(np.abs(s * w)))
+        if idx not in self._connecting_bond_s_indices(intern):
+            return s, smag
+        kw = dict(rs_kwargs)
+        kw['w_index'] = idx
+        kw['w_index_value'] = 0.8
+        try:
+            s2, smag2 = MaxInternalStep(
+                self.pes, self.ord, self.delta, method=step_method, **kw
+            ).get_s()
+        except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
+            return s, smag
+        return s2, smag2
+
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
 
@@ -5882,44 +5971,40 @@ class Sella(Optimizer):
         err = err / nmin
         coords = np.stack(xs)
         accepted = None
-        sizes = (2, 3) if (
-            (not getattr(self, "_allow_angle_wa", False)) and err.shape[0] >= 3
-        ) else (2,)
-        for use in sizes:
-            if err.shape[0] < use:
-                continue
-            use_vecs = err[::-1][:use]
-            A = use_vecs @ use_vecs.T
-            try:
-                coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
-            except np.linalg.LinAlgError:
-                continue
-            if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-                continue
-            csum = float(np.sum(coeffs))
-            if abs(csum) < 1e-16:
-                continue
-            coeffs = coeffs / csum
-            if np.any(coeffs < -1e-8):
-                continue
-            pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-            neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-            if pos_sum > 15.0 or neg_sum > 15.0:
-                continue
-            diis_coords = coeffs @ coords[::-1][:use]
-            diis_step = diis_coords - coords[-1]
-            ndiis = float(np.linalg.norm(diis_step))
-            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-                continue
-            cos = float(diis_step @ s_qn) / (ndiis * nref)
-            if cos < 0.90 or cos < 0.0:
-                continue
-            accepted = diis_step
-            smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
-            if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-                continue
-            return accepted, smag
-        return s_qn, smag_qn
+        use = 2
+        if err.shape[0] < use:
+            return s_qn, smag_qn
+        use_vecs = err[::-1][:use]
+        A = use_vecs @ use_vecs.T
+        try:
+            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
+        except np.linalg.LinAlgError:
+            return s_qn, smag_qn
+        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
+            return s_qn, smag_qn
+        csum = float(np.sum(coeffs))
+        if abs(csum) < 1e-16:
+            return s_qn, smag_qn
+        coeffs = coeffs / csum
+        if np.any(coeffs < -1e-8):
+            return s_qn, smag_qn
+        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
+        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
+        if pos_sum > 15.0 or neg_sum > 15.0:
+            return s_qn, smag_qn
+        diis_coords = coeffs @ coords[::-1][:use]
+        diis_step = diis_coords - coords[-1]
+        ndiis = float(np.linalg.norm(diis_step))
+        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
+            return s_qn, smag_qn
+        cos = float(diis_step @ s_qn) / (ndiis * nref)
+        if cos < 0.90 or cos < 0.0:
+            return s_qn, smag_qn
+        accepted = diis_step
+        smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
+        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
+            return s_qn, smag_qn
+        return accepted, smag
 
     def step(self):
         s, smag = self._predict_step()
