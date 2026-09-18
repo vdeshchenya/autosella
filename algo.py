@@ -8126,6 +8126,174 @@ def _break_start_symmetry(numbers, pos_ang):
     return pos
 
 
+# Torsional pre-relaxation of XH3 rotors (methyl, ammonium, silyl, ...) that
+# start on the three-fold saddle of their rotor potential.
+#
+# Rationale: the rotation of an XH3 group about its X-frame bond is a
+# three-fold potential V(phi) = V3/2 (1 - cos 3 phi) whose minimum phase is
+# fixed by the frame (Hehre, Pople and Devaquet, J. Am. Chem. Soc. 98, 664
+# (1976); the torsion rules of conformer generators such as ETKDG): staggered
+# with respect to the substituents of a tetrahedral or pyramidal frame and of
+# a two-coordinate O / S (ethane, methylamine, methanol, dimethyl ether), but
+# eclipsed with the C=O bond of an aldehyde, ketone, acid or ester carbon
+# (acetaldehyde, acetone, methyl acetate), and eclipsed with the acyl carbon
+# for the N-methyl group of a secondary amide. Idealised input geometries
+# (template monomers of non-covalent complexes) often carry every methyl
+# group at an exactly staggered phase, which for the sp2 frames is the
+# saddle. At the saddle the torque vanishes by symmetry and the curvature is
+# negative, so a quasi-Newton optimiser with a positive model curvature sees
+# nothing to do: the rotor leaves the saddle only through the torque of the
+# environment, amplified by ~(1 + |k|/lambda_model) per step, and the
+# 60-degree relaxation surfaces in the endgame, when all other coordinates
+# are converged (five to fifteen extra force calls in a short dimer run); a
+# start with the rotor on a symmetry element may even converge on the saddle
+# itself. A rotor whose start phase lies within _ROTOR_SADDLE_WINDOW of the
+# class saddle is therefore rotated as a rigid group about the X-frame axis
+# to the class minimum phase before the first force call (a start phase off
+# the saddle by more than that carries a torque and is left to the
+# optimiser). Frames whose minimum phase depends on the wider environment
+# (aromatic and alkene carbons, tertiary amides, planar amines, carboxylate
+# and nitro groups), frames with long bonds and weak, geared rotors (Si, P,
+# S, B; O / S bonded to B, Si or P) and rotors whose start phase is
+# ambiguous are not touched. Constants are fixed a priori (not scanned): the
+# window is a third of the negative-curvature region of the three-fold
+# potential, the bond-length thresholds separate C=O / C=S from single bonds.
+_ROTOR_SADDLE_WINDOW = 10.0   # degrees from the saddle phase
+_ROTOR_DOUBLE_BOND = {8: 1.30, 16: 1.72}   # A: C=O / C=S upper bond lengths (C-O 1.33+, C-S 1.76+)
+_ROTOR_ETHER_PARTNERS = (1, 6, 7, 8, 16)   # frame O / S bonded to H, C, N, O or S
+_ROTOR_PLANAR_ANGLE_SUM = 350.0            # degrees: three-coordinate frame is planar above this
+
+
+def _rotor_phase(pos, hyd, c, b, y):
+    """Three-fold phase (degrees, in (-60, 60]) of the H atoms `hyd` of the
+    rotor c about the c-b axis relative to the frame substituent y: 0 when a
+    C-H bond eclipses b-y, +-60 when the group is staggered. Also returns the
+    modulus of the circular mean (1 for a symmetric XH3 group)."""
+    axis = pos[c] - pos[b]
+    axis /= np.linalg.norm(axis)
+    ref = pos[y] - pos[b]
+    ref -= (ref @ axis) * axis
+    nref = np.linalg.norm(ref)
+    if nref < 1e-6:
+        return 0.0, 0.0
+    ref /= nref
+    perp = np.cross(axis, ref)
+    z = 0.0
+    for h in hyd:
+        v = pos[h] - pos[c]
+        v -= (v @ axis) * axis
+        phi = np.arctan2(v @ perp, v @ ref)
+        z += np.exp(3j * phi)
+    z /= len(hyd)
+    return np.degrees(np.angle(z)) / 3.0, abs(z)
+
+
+def _rotor_class(numbers, pos, adj, dist, c, b):
+    """Reference substituent y of the frame atom b and the minimum phase of
+    the rotor c ('eclipsed' / 'staggered') by the rules above; None when the
+    frame is not covered."""
+    others = [k for k in adj[b] if k != c]
+    zb = numbers[b]
+    if len(others) == 3:
+        if zb not in (6, 7):
+            return None                        # Si, P, S frames: weak, geared rotors
+        heavy = [k for k in others if numbers[k] != 1]
+        return (heavy[0] if heavy else others[0]), 'staggered'   # sp3 carbon, ammonium
+    if len(others) == 2:
+        k1, k2 = others
+        if zb == 6:
+            double = [k for k in others if numbers[k] in _ROTOR_DOUBLE_BOND
+                      and dist[b, k] < _ROTOR_DOUBLE_BOND[numbers[k]]]
+            if len(double) == 1:
+                return double[0], 'eclipsed'   # aldehyde, ketone, acid, ester, amide carbon
+            return None                        # alkene, aromatic, carboxylate
+        u1 = pos[c] - pos[b]
+        u2 = pos[k1] - pos[b]
+        u3 = pos[k2] - pos[b]
+
+        def ang(u, v):
+            return np.degrees(np.arccos(np.clip(u @ v / (np.linalg.norm(u) * np.linalg.norm(v)), -1.0, 1.0)))
+
+        planar = ang(u1, u2) + ang(u1, u3) + ang(u2, u3) > _ROTOR_PLANAR_ANGLE_SUM
+        if zb == 7:
+            acyl = [k for k in others if numbers[k] == 6 and any(
+                numbers[m] in _ROTOR_DOUBLE_BOND and dist[k, m] < _ROTOR_DOUBLE_BOND[numbers[m]]
+                for m in adj[k] if m != b)]
+            if acyl:
+                other = k2 if acyl[0] == k1 else k1
+                if numbers[other] == 1:
+                    return acyl[0], 'eclipsed'  # secondary amide N-methyl
+                return None                     # tertiary amide
+            if planar:
+                return None                     # aniline, enamine
+            heavy = [k for k in others if numbers[k] != 1]
+            return (heavy[0] if heavy else others[0]), 'staggered'   # pyramidal amine
+        return None                             # boron, phosphine, sulfonium, sulfoxide
+    if len(others) == 1 and zb in (8, 16) and numbers[others[0]] in _ROTOR_ETHER_PARTNERS:
+        return others[0], 'staggered'          # alcohol, ether, ester O; thiol, sulfide S
+    return None
+
+
+def _prerelax_rotors(numbers, pos_ang):
+    """Rotate every XH3 rotor that starts within _ROTOR_SADDLE_WINDOW of its
+    three-fold saddle to the minimum phase of its frame class (see the note
+    above). Rotors are processed one at a time on the updated geometry, so a
+    pair of rotors on the same bond is placed consistently. Returns the
+    (possibly unchanged) positions."""
+    numbers = np.asarray(numbers)
+    natoms = len(numbers)
+    if natoms < 5:
+        return pos_ang
+    pos = np.array(pos_ang, dtype=float, copy=True)
+    rcov = covalent_radii[numbers]
+    dist = np.linalg.norm(pos[:, None, :] - pos[None, :, :], axis=2)
+    bonded = dist <= 1.25 * (rcov[:, None] + rcov[None, :])
+    np.fill_diagonal(bonded, False)
+    adj = [list(np.flatnonzero(bonded[i])) for i in range(natoms)]
+    for c in range(natoms):
+        if len(adj[c]) != 4:
+            continue
+        hyd = [j for j in adj[c] if numbers[j] == 1 and len(adj[j]) == 1]
+        if len(hyd) != 3:
+            continue
+        b = [j for j in adj[c] if j not in hyd][0]
+        rule = _rotor_class(numbers, pos, adj, dist, c, b)
+        if rule is None:
+            continue
+        y, minimum = rule
+        phase, weight = _rotor_phase(pos, hyd, c, b, y)
+        if weight < 0.5:
+            continue
+        if minimum == 'eclipsed':
+            saddle_dev = 60.0 - abs(phase)
+            turn = -phase
+        else:
+            saddle_dev = abs(phase)
+            turn = (60.0 if phase >= 0.0 else -60.0) - phase
+        if saddle_dev >= _ROTOR_SADDLE_WINDOW:
+            continue
+        # rigid rotation of the three H atoms about the b -> c axis; the
+        # sense of the rotation is verified on the resulting phase (the
+        # candidate nearer the minimum phase is kept)
+        axis = pos[c] - pos[b]
+        axis /= np.linalg.norm(axis)
+        K = np.array([[0.0, -axis[2], axis[1]],
+                      [axis[2], 0.0, -axis[0]],
+                      [-axis[1], axis[0], 0.0]])
+        best = None
+        for theta in (np.radians(turn), -np.radians(turn)):
+            R = np.eye(3) + np.sin(theta) * K + (1.0 - np.cos(theta)) * (K @ K)
+            trial = pos.copy()
+            trial[hyd] = (pos[hyd] - pos[c]) @ R.T + pos[c]
+            p_new, _ = _rotor_phase(trial, hyd, c, b, y)
+            dev = abs(p_new) if minimum == 'eclipsed' else 60.0 - abs(p_new)
+            if best is None or dev < best[0]:
+                best = (dev, trial)
+        if best[0] < saddle_dev:
+            pos = best[1]
+    return pos
+
+
 # Rigid-body pre-relaxation ("docking") of neutral multi-fragment starts on a
 # classical intermolecular surrogate.
 #
@@ -8446,8 +8614,11 @@ def _dock_start(atoms, wrapper):
 
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
-    # Multi-fragment starts leave their symmetry element before the first
-    # force call (see _break_start_symmetry); connected systems unchanged.
+    # XH3 rotors that start on their three-fold saddle are placed at the
+    # minimum phase of their frame class (see _prerelax_rotors); then
+    # multi-fragment starts leave their symmetry element before the first
+    # force call (see _break_start_symmetry); other starts are unchanged.
+    pos_ang = _prerelax_rotors(atomic_numbers, pos_ang)
     pos_ang = _break_start_symmetry(atomic_numbers, pos_ang)
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     wrapper = _WrappedCalc(calc)
