@@ -8,8 +8,9 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate oxygen
+Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H).
+Connected n_atoms≥80 skip two-point GDIIS after 50 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4009,7 +4010,7 @@ class Internals(BaseInternals):
                     or int(numbers[int(angle.indices[2])]) == 15
                 )
             ):
-                h0[idx] = 0.08 * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             else:
                 h0[idx] = self._h0_angle(angle)
             idx += 1
