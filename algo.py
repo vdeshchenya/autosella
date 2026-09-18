@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. After 40 dimer
-steps, Banerjee RFO is used when the previous ρ is well predicted;
+steps, Banerjee RFO latches on the first well-predicted ρ and stays;
 RFO is unconditional after 80. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
@@ -5788,6 +5788,7 @@ class Sella(Optimizer):
         self.delta_min = self.eta
         self._gdiis_x = []
         self._gdiis_g = []
+        self._dimer_rfo_latched = False
         self.constraints_tol = constraints_tol
         self.diagkwargs = dict(gamma=gamma, threepoint=threepoint)
         self.rho = 1.
@@ -5908,11 +5909,13 @@ class Sella(Optimizer):
         step_method = self.method
         if not getattr(self, "_allow_angle_wa", False):
             if self.nsteps >= 80:
-                step_method = 'rfo'
-            elif self.nsteps >= 40:
+                self._dimer_rfo_latched = True
+            elif self.nsteps >= 40 and not self._dimer_rfo_latched:
                 rho = float(getattr(self, "rho", 1.0))
                 if 1.0 / self.rho_inc < rho < self.rho_inc:
-                    step_method = 'rfo'
+                    self._dimer_rfo_latched = True
+            if self._dimer_rfo_latched:
+                step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
