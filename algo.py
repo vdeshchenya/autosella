@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. GDIIS cosine
-acceptance is 0.80 instead of 0.90.
+when the previous ratio ρ was well predicted. Connected molecules
+use Powell-symmetric-Broyden Hessian updates instead of TS-BFGS.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5784,9 +5784,8 @@ class Sella(Optimizer):
         Cycle 117's 2–4 point milder GDIIS passed train but inflated
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.80. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Cycle 120 used cosine 0.90;
-        0.80 accepts interpolants a bit farther from the QN direction.
+        and cosine ≥ 0.90. Accept only when the previous step was well
+        predicted (1/rho_inc < rho < rho_inc).
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5840,7 +5839,7 @@ class Sella(Optimizer):
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.80 or cos < 0.0:
+        if cos < 0.90 or cos < 0.0:
             return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
@@ -6059,6 +6058,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
+        if connected:
+            # Powell symmetric Broyden on connected TS-BFGS Hessians.
+            opt.pes.H.update_method = 'PSB'
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
