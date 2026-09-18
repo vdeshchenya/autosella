@@ -5764,15 +5764,19 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
+        rs_cls = self.rs
+        step_kwargs = dict(rs_kwargs)
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
+            rs_cls = TrustRegion
+            step_kwargs = {}
 
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = self.rs(
+                s, smag = rs_cls(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **rs_kwargs
+                    **step_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -5780,18 +5784,12 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = self.rs(
+            s, smag = rs_cls(
                 self.pes, self.ord, self.delta, method=step_method,
-                **rs_kwargs
+                **step_kwargs
             ).get_s()
 
-        dummy_lim = getattr(self, "_allow_angle_wa", False) and self._dummy_is_mis_limiter(
-            s, rs_kwargs
-        )
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
-        if (getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20
-                and not dummy_lim):
-            s, smag = self._maybe_dummy_excluded_tr(s, smag)
         return self._maybe_gdiis(s, smag)
 
     def _dummy_dihedral_s_indices(self, intern):
@@ -5847,50 +5845,6 @@ class Sella(Optimizer):
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
-            ).get_s()
-        except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
-            return s, smag
-        return s2, smag2
-
-    def _dummy_is_mis_limiter(self, s, rs_kwargs):
-        """True when the MIS max-|s w| coordinate is a dummy dihedral.
-
-        Exceptions fail closed (treat as dummy-limited) so TrustRegion cannot
-        replace cycle-168 limiter dummy-wd.
-        """
-        intern = getattr(self.pes, "int", None)
-        if intern is None or intern.ndummies == 0 or intern.ndihedrals == 0:
-            return False
-        s = np.asarray(s, dtype=np.float64)
-        try:
-            wprobe = MaxInternalStep.__new__(MaxInternalStep)
-            wprobe.pes = self.pes
-            wprobe.wx = 1.0
-            wprobe.wb = 1.0
-            wprobe.wa = float(rs_kwargs.get('wa', 1.0))
-            wprobe.wd = 1.0
-            wprobe.wo = 1.0
-            wprobe.wc = float(rs_kwargs.get('wc', 1.0))
-            wprobe.w_index = None
-            wprobe.w_index_value = None
-            wprobe._weights_cache = None
-            w = MaxInternalStep._get_weights(wprobe)
-        except (RuntimeError, ValueError, AssertionError, AttributeError):
-            return True
-        if len(w) != len(s):
-            return True
-        idx = int(np.argmax(np.abs(s * w)))
-        return idx in self._dummy_dihedral_s_indices(intern)
-
-    def _maybe_dummy_excluded_tr(self, s, smag):
-        """Euclidean TrustRegion after 20 connected steps unless dummy-limited.
-
-        Cycle 169 always-on TR@20 undid 135043047. Skip TR when the MIS
-        limiter is a dummy dihedral so those jobs keep limiter dummy-wd.
-        """
-        try:
-            s2, smag2 = TrustRegion(
-                self.pes, self.ord, self.delta, method=self.method
             ).get_s()
         except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
             return s, smag
