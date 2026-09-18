@@ -5848,17 +5848,17 @@ class Sella(Optimizer):
         Cycle 117's 2–4 point milder GDIIS passed train but inflated
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected jobs keep the
-        champion nsteps>=20 start; dimers may interpolate from nsteps>=10.
-        Dummy-wd and wa stay connected-only.
+        and cosine ≥ 0.90. Connected jobs also require a well-predicted
+        previous step (1/rho_inc < rho < rho_inc); dimers skip that ρ
+        window so long packing tails can interpolate. Dummy-wd and wa
+        stay connected-only.
         """
-        min_steps = 20 if getattr(self, "_allow_angle_wa", False) else 10
-        if self.nsteps < min_steps:
+        if self.nsteps < 20:
             return s_qn, smag_qn
-        rho = float(getattr(self, "rho", 1.0))
-        if not (1.0 / self.rho_inc < rho < self.rho_inc):
-            return s_qn, smag_qn
+        if getattr(self, "_allow_angle_wa", False):
+            rho = float(getattr(self, "rho", 1.0))
+            if not (1.0 / self.rho_inc < rho < self.rho_inc):
+                return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
         if len(xs) < 2 or len(xs) != len(gs):
