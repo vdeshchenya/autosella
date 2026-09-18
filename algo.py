@@ -5897,7 +5897,7 @@ class Sella(Optimizer):
         if abs(csum) < 1e-16:
             return s_qn, smag_qn
         coeffs = coeffs / csum
-        if np.any(coeffs < -1e-8):
+        if np.any(coeffs < -1e-8) and getattr(self, "_allow_angle_wa", False):
             return s_qn, smag_qn
         pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
         neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
@@ -5978,8 +5978,6 @@ class Sella(Optimizer):
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
-        elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
-            self.sigma_inc = 1.16
 
         # Update trust radius
         if rho is not None:
