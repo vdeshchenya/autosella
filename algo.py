@@ -5853,19 +5853,11 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). After 20 steps always;
-        connected jobs may also interpolate earlier when rms(s) is below
-        pysisyphus's 0.0025 GDIIS threshold. Dummy-wd and wa stay
+        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
+        share this interpolant after 20 steps; dummy-wd and wa stay
         connected-only.
         """
-        s_qn = np.asarray(s_qn, dtype=np.float64)
-        rms = float(np.sqrt(np.mean(np.square(s_qn)))) if s_qn.size else 0.0
-        small = (
-            getattr(self, "_allow_angle_wa", False)
-            and np.isfinite(rms)
-            and rms < 0.0025
-        )
-        if self.nsteps < 20 and not small:
+        if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
@@ -5874,6 +5866,7 @@ class Sella(Optimizer):
         gs = self._gdiis_g
         if len(xs) < 2 or len(xs) != len(gs):
             return s_qn, smag_qn
+        s_qn = np.asarray(s_qn, dtype=np.float64)
         if xs[-1].shape != s_qn.shape:
             self._gdiis_x = []
             self._gdiis_g = []
@@ -5889,40 +5882,44 @@ class Sella(Optimizer):
         err = err / nmin
         coords = np.stack(xs)
         accepted = None
-        use = 2
-        if err.shape[0] < use:
-            return s_qn, smag_qn
-        use_vecs = err[::-1][:use]
-        A = use_vecs @ use_vecs.T
-        try:
-            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
-        except np.linalg.LinAlgError:
-            return s_qn, smag_qn
-        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-            return s_qn, smag_qn
-        csum = float(np.sum(coeffs))
-        if abs(csum) < 1e-16:
-            return s_qn, smag_qn
-        coeffs = coeffs / csum
-        if np.any(coeffs < -1e-8):
-            return s_qn, smag_qn
-        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-        if pos_sum > 15.0 or neg_sum > 15.0:
-            return s_qn, smag_qn
-        diis_coords = coeffs @ coords[::-1][:use]
-        diis_step = diis_coords - coords[-1]
-        ndiis = float(np.linalg.norm(diis_step))
-        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-            return s_qn, smag_qn
-        cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
-            return s_qn, smag_qn
-        accepted = diis_step
-        smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
-        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-            return s_qn, smag_qn
-        return accepted, smag
+        sizes = (3, 2) if (
+            (not getattr(self, "_allow_angle_wa", False)) and err.shape[0] >= 3
+        ) else (2,)
+        for use in sizes:
+            if err.shape[0] < use:
+                continue
+            use_vecs = err[::-1][:use]
+            A = use_vecs @ use_vecs.T
+            try:
+                coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
+            except np.linalg.LinAlgError:
+                continue
+            if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
+                continue
+            csum = float(np.sum(coeffs))
+            if abs(csum) < 1e-16:
+                continue
+            coeffs = coeffs / csum
+            if np.any(coeffs < -1e-8):
+                continue
+            pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
+            neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
+            if pos_sum > 15.0 or neg_sum > 15.0:
+                continue
+            diis_coords = coeffs @ coords[::-1][:use]
+            diis_step = diis_coords - coords[-1]
+            ndiis = float(np.linalg.norm(diis_step))
+            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
+                continue
+            cos = float(diis_step @ s_qn) / (ndiis * nref)
+            if cos < 0.90 or cos < 0.0:
+                continue
+            accepted = diis_step
+            smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
+            if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
+                continue
+            return accepted, smag
+        return s_qn, smag_qn
 
     def step(self):
         s, smag = self._predict_step()
