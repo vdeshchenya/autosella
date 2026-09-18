@@ -14,7 +14,9 @@ tetrahedral O–P–O angles at phosphorus centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
-otherwise keep the Sella cross-product dummy plane.
+otherwise keep the Sella cross-product dummy plane. On that same
+n≥30 connected band the dummy–center–real angle is left unconstrained
+so dummy-angle H0 0.10 can act on it.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3758,7 +3760,11 @@ class Internals(BaseInternals):
                     # the angles O1-C-dummy and O2-C-dummy are supplementary,
                     # so constraining both over-constrains real atoms)
                     dangle1 = b1 + dbond
-                    self.cons.fix_angle(dangle1, replace_ok=False)
+                    if not getattr(self, 'adj_dummy_placement', False):
+                        # n<30 and dimers: keep Sella's dummy-angle constraint.
+                        # Connected n≥30 leave it free so dummy-angle H0 0.10
+                        # can act on the dummy–center–real bend.
+                        self.cons.fix_angle(dangle1, replace_ok=False)
                     dangle2 = b2 + dbond
                     # Fix the improper dihedral and update relevant internals
                     if b2.indices[1] == j:
