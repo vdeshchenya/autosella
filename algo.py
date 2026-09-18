@@ -6,9 +6,10 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected dummy-involving
-angle guesses are 0.10 Ha when n_atoms<18 or n_atoms>=30. Connected
-n_atoms>=30 floor δ at 0.18 after 20 steps.
+when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
+Connected n_atoms≥30 replace two-coordinate dummy-atom linear bends
+with two orthogonal geomeTRIC LinearAngle coordinates.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -1593,6 +1594,111 @@ class Dihedral(Internal):
     _eval1 = staticmethod(_gradient(_dihedral))
     _eval2 = staticmethod(_hessian(_dihedral))
     _eval_cell_grad = staticmethod(_dihedral_cell_grad_single)
+
+
+def _linear_angle(
+    pos: jnp.ndarray,
+    tvecs: jnp.ndarray,
+    e0: jnp.ndarray,
+    axis: jnp.ndarray,
+) -> float:
+    """geomeTRIC LinearAngle: BA+BC projections on two axes ⊥ AC."""
+    v_ac = pos[2] - pos[0] + tvecs[0] + tvecs[1]
+    ev = v_ac / jnp.maximum(jnp.linalg.norm(v_ac), 1e-18)
+    e0n = e0 / jnp.maximum(jnp.linalg.norm(e0), 1e-18)
+    e0p = e0n - ev * jnp.dot(ev, e0n)
+    n0 = jnp.linalg.norm(e0p)
+    fallback = jnp.eye(3)[jnp.argmin(ev * ev)]
+    fallback = fallback - ev * jnp.dot(ev, fallback)
+    fallback = fallback / jnp.maximum(jnp.linalg.norm(fallback), 1e-18)
+    e0p = jnp.where(n0 > 1e-8, e0p / jnp.maximum(n0, 1e-18), fallback)
+    e1 = jnp.cross(ev, e0p)
+    e1 = e1 / jnp.maximum(jnp.linalg.norm(e1), 1e-18)
+    e2 = jnp.cross(ev, e1)
+    e2 = e2 / jnp.maximum(jnp.linalg.norm(e2), 1e-18)
+    vba = -(pos[1] - pos[0] + tvecs[0])
+    vbc = pos[2] - pos[1] + tvecs[1]
+    eba = vba / jnp.maximum(jnp.linalg.norm(vba), 1e-18)
+    ebc = vbc / jnp.maximum(jnp.linalg.norm(vbc), 1e-18)
+    ax = jnp.asarray(axis, dtype=e1.dtype)
+    e_ax = e1 * (1.0 - ax) + e2 * ax
+    return eba @ e_ax + ebc @ e_ax
+
+
+_linear_angle_eval0 = jit(_linear_angle)
+_linear_angle_eval1 = jit(grad(_linear_angle, argnums=0))
+_linear_angle_eval2 = jit(jacfwd(jacrev(_linear_angle, argnums=0), argnums=0))
+
+
+class LinearAngle(Internal):
+    """Dummy-free linear bend: two orthogonal axes, geomeTRIC LinearAngle."""
+
+    nindices = 3
+    _eval0 = staticmethod(_linear_angle_eval0)
+    _eval1 = staticmethod(_linear_angle_eval1)
+    _eval2 = staticmethod(_linear_angle_eval2)
+
+    def __init__(
+        self,
+        indices: Tuple[int, ...],
+        ncvecs: Tuple[IVec, ...] = None,
+        axis: int = 0,
+        e0: np.ndarray = None,
+    ) -> None:
+        Internal.__init__(self, indices, ncvecs)
+        self.kwargs['axis'] = int(axis)
+        if e0 is None:
+            e0 = np.array([1.0, 0.0, 0.0], dtype=np.float64)
+        self.kwargs['e0'] = np.asarray(e0, dtype=np.float64).reshape(3).copy()
+
+    def reverse(self) -> 'LinearAngle':
+        return LinearAngle(
+            self.indices[::-1],
+            -self.kwargs['ncvecs'][::-1],
+            axis=self.kwargs['axis'],
+            e0=self.kwargs['e0'],
+        )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, LinearAngle):
+            return NotImplemented
+        if int(self.kwargs.get('axis', 0)) != int(other.kwargs.get('axis', 0)):
+            return False
+        if np.array_equal(self.indices, other.indices):
+            return True
+        if np.array_equal(self.indices, other.indices[::-1]):
+            return True
+        return False
+
+    def _eval_args(self, atoms: Atoms):
+        tvecs = jnp.asarray(
+            self.kwargs['ncvecs'] @ atoms.cell, dtype=np.float64
+        )
+        pos = atoms.positions[self.indices]
+        v = np.asarray(pos[2] - pos[0] + np.asarray(tvecs[0] + tvecs[1]))
+        n = np.linalg.norm(v)
+        if n > 1e-12:
+            ev = v / n
+            e0 = np.asarray(self.kwargs['e0'], dtype=np.float64)
+            if float(np.dot(ev, e0) ** 2) > 0.81:
+                e0 = np.eye(3)[int(np.argmin(ev * ev))]
+            e0 = e0 - ev * float(np.dot(ev, e0))
+            n0 = np.linalg.norm(e0)
+            if n0 > 1e-12:
+                self.kwargs['e0'] = e0 / n0
+        e0 = jnp.asarray(self.kwargs['e0'], dtype=np.float64)
+        axis = jnp.asarray(self.kwargs['axis'], dtype=np.float64)
+        return pos, tvecs, e0, axis
+
+    def calc(self, atoms: Atoms) -> float:
+        return float(self._eval0(*self._eval_args(atoms)))
+
+    def calc_gradient(self, atoms: Atoms) -> np.ndarray:
+        return np.array(self._eval1(*self._eval_args(atoms)))
+
+    def calc_hessian(self, atoms: Atoms) -> jnp.ndarray:
+        return np.array(self._eval2(*self._eval_args(atoms)))
+
 
 Bond.union = Angle
 
@@ -3238,6 +3344,7 @@ class Constraints(BaseInternals):
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
+    use_linear_angle_default = False
 
     def __init__(
         self,
@@ -3275,6 +3382,7 @@ class Internals(BaseInternals):
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
+        self.use_linear_angle = Internals.use_linear_angle_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3292,6 +3400,7 @@ class Internals(BaseInternals):
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
+        new.use_linear_angle = getattr(self, 'use_linear_angle', False)
         return new
 
     def add_rotation(
@@ -3396,6 +3505,8 @@ class Internals(BaseInternals):
         except ValueError:
             self.internals['other'].append(coord)
             self._active['other'].append(True)
+            self._batched_arrays_valid = False
+            self._cache.pop('all_positions', None)
         else:
             raise DuplicateInternalError()
 
@@ -3669,6 +3780,34 @@ class Internals(BaseInternals):
                     # sort bonds from shortest to longest to ensure
                     # permutational invariance
                     b1, b2 = sorted(jbonds, key=lambda x: x.calc(self.atoms))
+                    if getattr(self, 'use_linear_angle', False):
+                        a = int(b1.indices[1])
+                        c = int(b2.indices[1])
+                        ncvecs = (
+                            -b1.kwargs['ncvecs'][0],
+                            b2.kwargs['ncvecs'][0],
+                        )
+                        pos = self.atoms.positions
+                        v = pos[c] - pos[a]
+                        n = np.linalg.norm(v)
+                        if n < 1e-12:
+                            e0 = np.array([1.0, 0.0, 0.0], dtype=np.float64)
+                        else:
+                            ev = v / n
+                            e0 = np.eye(3)[int(np.argmin(ev * ev))]
+                        try:
+                            self.add_other(LinearAngle(
+                                (a, j, c), ncvecs=ncvecs, axis=0, e0=e0
+                            ))
+                        except DuplicateInternalError:
+                            pass
+                        try:
+                            self.add_other(LinearAngle(
+                                (a, j, c), ncvecs=ncvecs, axis=1, e0=e0
+                            ))
+                        except DuplicateInternalError:
+                            pass
+                        continue
                     # First try to take the cross product of the two bond
                     # vectors. These two vectors are close to collinear, and
                     # may be exactly collinear, so there's a backup strategy
@@ -4003,6 +4142,12 @@ class Internals(BaseInternals):
                 h0[idx] = scale * units.Hartree
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
+            idx += 1
+        for other in self.internals['other']:
+            if isinstance(other, LinearAngle):
+                h0[idx] = 0.10 * units.Hartree
+            else:
+                h0[idx] = h0cart
             idx += 1
         for rot in self.internals['rotations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
@@ -5985,9 +6130,8 @@ class Sella(Optimizer):
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
-            dmin = 0.18 if len(self.atoms) >= 30 else 0.15
-            self.delta_min = dmin
-            self.delta = max(self.delta, dmin)
+            self.delta_min = 0.15
+            self.delta = max(self.delta, 0.15)
 
         # Update trust radius
         if rho is not None:
@@ -6136,6 +6280,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
+        Internals.use_linear_angle_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6148,6 +6293,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
+        Internals.use_linear_angle_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
