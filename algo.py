@@ -10,6 +10,9 @@ when the previous ratio ρ was well predicted. Connected molecules with fewer th
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H).
+Connected n_atoms≥30 place two-coordinate dummy atoms on geomeTRIC's
+e0 axis when the unit-bond cross product is moderately ill-conditioned
+(0.04 < ||u×v|| < 0.10); otherwise keep the Sella cross-product dummy plane.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3240,6 +3243,7 @@ class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
     soft_oxo_angle_h0_default = False
+    e0_dummy_placement_default = False
 
     def __init__(
         self,
@@ -3278,6 +3282,7 @@ class Internals(BaseInternals):
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
+        self.e0_dummy_placement = Internals.e0_dummy_placement_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3296,6 +3301,7 @@ class Internals(BaseInternals):
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
+        new.e0_dummy_placement = getattr(self, 'e0_dummy_placement', False)
         return new
 
     def add_rotation(
@@ -3683,22 +3689,37 @@ class Internals(BaseInternals):
                         dx1 /= np.linalg.norm(dx1)
                         dx2 = b2.calc_vec(self.atoms)
                         dx2 /= np.linalg.norm(dx2)
-                        dpos = np.cross(dx1, dx2)
-                        dpos_norm = np.linalg.norm(dpos)
-                        if dpos_norm < 1e-4:
-                            # the aforementioned backup strategy
-                            # pick the cartesian basis vector that is maximally
-                            # orthogonal with the shorter of the two
-                            # displacement vectors.
-                            # note: this is not rotationally invariant, but
-                            # there's not much we can do about that
-                            dim = np.argmin(np.abs(dx1))
-                            dpos[:] = 0.
-                            dpos[dim] = 1.
-                            dpos -= dx1 * (dpos @ dx1)
-                            dpos /= np.linalg.norm(dpos)
-                        else:
-                            dpos /= dpos_norm
+                        dpos = None
+                        cross = np.cross(dx1, dx2)
+                        cross_norm = float(np.linalg.norm(cross))
+                        if getattr(self, 'e0_dummy_placement', False) and 0.04 < cross_norm < 0.10:
+                            axis = dx1 + dx2
+                            an = float(np.linalg.norm(axis))
+                            if an > 1e-8:
+                                ev = axis / an
+                                e0 = np.zeros(3, dtype=np.float64)
+                                e0[int(np.argmin(ev * ev))] = 1.0
+                                e0 = e0 - ev * float(np.dot(ev, e0))
+                                n0 = float(np.linalg.norm(e0))
+                                if n0 > 1e-12:
+                                    dpos = e0 / n0
+                        if dpos is None:
+                            dpos = cross
+                            dpos_norm = cross_norm
+                            if dpos_norm < 1e-4:
+                                # the aforementioned backup strategy
+                                # pick the cartesian basis vector that is maximally
+                                # orthogonal with the shorter of the two
+                                # displacement vectors.
+                                # note: this is not rotationally invariant, but
+                                # there's not much we can do about that
+                                dim = np.argmin(np.abs(dx1))
+                                dpos[:] = 0.
+                                dpos[dim] = 1.
+                                dpos -= dx1 * (dpos @ dx1)
+                                dpos /= np.linalg.norm(dpos)
+                            else:
+                                dpos /= dpos_norm
                         # Add the dummy atom
                         dpos += self.atoms.positions[j]
                         self.dummies += Atom('X', dpos)
@@ -6152,6 +6173,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
+        Internals.e0_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6165,6 +6187,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
         Internals.soft_oxo_angle_h0_default = False
+        Internals.e0_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
