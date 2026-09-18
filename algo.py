@@ -5476,14 +5476,6 @@ class PES:
         # step was computed under the path-dependent contact model (see
         # Sella._curved_step); None means the current H.
         self._B_pred = None
-        # Additive correction of the energy prediction of the next kick
-        # when the step was extrapolated along a creeping direction (see
-        # Sella._creep_step); None means no correction.
-        self._df_pred_corr = None
-        # Cartesian gradient of the latest evaluation, keyed by the state
-        # hash of the geometry it belongs to (see InternalPES.eval and
-        # creep_gradient).
-        self._g_cart_stash = None
 
     apos = property(lambda self: self.atoms.positions.copy())
     dpos = property(lambda self: None)
@@ -5880,14 +5872,6 @@ class PES:
         dx_initial, dx_final, g_par = self.set_x(x0 + dx)
 
         df_pred = self.get_df_pred(dx_initial, g0, B0)
-        # A step extrapolated along a creeping direction is judged against
-        # the model that generated it (the local curvature along that
-        # direction softened by the extrapolation factor, see
-        # Sella._creep_step), not against the local quadratic model.
-        df_corr = getattr(self, '_df_pred_corr', None)
-        self._df_pred_corr = None
-        if df_pred is not None and df_corr is not None:
-            df_pred = df_pred + df_corr
         dg_actual = self.get_g() - g_par
         df_actual = self.get_f() - f0
         if df_pred is None or abs(df_pred) < 1e-14:
@@ -6446,17 +6430,8 @@ class InternalPES(PES):
 
     def eval(self):
         f, g_cart = PES.eval(self)
-        self._g_cart_stash = (self._state_hash(), g_cart.copy())
         Binv = self._get_Binv()
         return f, g_cart @ Binv[:len(g_cart)]
-
-    def creep_gradient(self):
-        """Cartesian gradient (real atoms, flattened) of the latest
-        evaluation if it belongs to the current geometry, else None."""
-        stash = self._g_cart_stash
-        if stash is None or stash[0] != self._state_hash():
-            return None
-        return stash[1]
 
 
     def get_df_pred(self, dx, g, H):
@@ -7437,15 +7412,6 @@ _default_kwargs = dict(
         # geometries and transports the secant pairs. Connected systems
         # only (multi-fragment approach steps are re-routed by it).
         curved_step_contact=True,
-        # Multiple-root (Aitken delta-squared) acceleration of a creeping
-        # endgame: three consecutive collinear, geometrically shrinking
-        # descent steps whose gradient projection decays with them mark a
-        # direction along which the quasi-Newton iteration converges only
-        # linearly (a flat-bottomed mode, or one the model over-stiffens
-        # without the update sampling it); the next step's component along
-        # that direction is extrapolated to the geometric limit (see
-        # Sella._creep_step).
-        creep_accel=True,
         method='qn',
         eig=False
     ),
@@ -7617,10 +7583,6 @@ class Sella(Optimizer):
         self.sigma_dec_mol = default.get('sigma_dec_mol', self.sigma_dec)
         self.cart_ratio_mol = default.get('cart_ratio_mol', None)
         self.curved_step_contact = default.get('curved_step_contact', False)
-        self.creep_accel = default.get('creep_accel', False)
-        # History of the evaluated points of the current internal
-        # coordinate set (see _creep_record / _creep_step).
-        self._creep_hist = []
         self.method = method if method is not None else default['method']
         self.eig = eig if eig is not None else default['eig']
 
@@ -7736,18 +7698,12 @@ class Sella(Optimizer):
                     self.pes.diag(**self.diagkwargs)
                 self.nsteps_since_diag = -1
             self.initialized = True
-            # The creep history starts afresh with every internal
-            # coordinate set (the model is reset with it).
-            self._creep_hist = []
-            self._creep_record(False)
 
         self.pes.cons.disable_satisfied_inequalities()
         self.pes._update_basis()
         self.pes.save()
         x0 = self.pes.get_x()
         self.pes._B_pred = None
-        self.pes._df_pred_corr = None
-        self._creep_fired = False
 
         rs_kwargs = {}
         if self.optimize_cell and isinstance(self.rs, type) and issubclass(
@@ -7780,7 +7736,6 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
             s, smag = self._curved_step(s, smag, rs_kwargs)
-            s, smag = self._creep_step(s, smag, rs_kwargs)
 
         return s, smag
 
@@ -7891,184 +7846,8 @@ class Sella(Optimizer):
             pes._B_pred = None
             return s, smag
 
-    # Creep acceleration (see _creep_step): minimum cosine of each of the
-    # three steps with the latest one, window of the step ratio, allowed
-    # spread of the two consecutive ratios, cap of the extrapolation
-    # factor (the pure quartic mode converges with the ratio 0.755, i.e.
-    # a factor 4.08).
-    creep_cos = 0.85
-    creep_rho_min = 0.3
-    creep_rho_max = 0.9
-    creep_rho_tol = 0.25
-    creep_max_mult = 4.0
-
-    def _creep_record(self, special):
-        """Append the current point (real-atom positions, Cartesian
-        gradient, energy, and whether the step that led here was bounded
-        by the trust region or extrapolated) to the creep history; the
-        last four points are kept."""
-        if not self.creep_accel or self.ord != 0:
-            return
-        pes = self.pes
-        g = pes.creep_gradient() if hasattr(pes, 'creep_gradient') else None
-        if g is None:
-            self._creep_hist = []
-            return
-        self._creep_hist.append(dict(
-            pos=pes.atoms.positions.ravel().copy(),
-            g=np.asarray(g, dtype=np.float64).copy(),
-            f=float(pes.get_f()),
-            special=bool(special),
-        ))
-        del self._creep_hist[:-4]
-
-    def _creep_step(self, s, smag, rs_kwargs):
-        """Multiple-root (Aitken delta-squared) acceleration of a creeping
-        quasi-Newton endgame.
-
-        Along a flat-bottomed mode (the gradient vanishes with a multiple
-        root: a shallow contact or shared-proton coordinate, a face
-        rotation, an inversion), or along a mode the model keeps too stiff
-        while the update does not sample it, the secant iteration
-        converges only linearly: the steps shrink geometrically along one
-        direction (ratio 0.755 for a quartic mode under the secant
-        curvature, 1 - k/k_model for a wrong stiffness) and the
-        displacement criterion binds for many calls.  Aitken's process
-        turns three consecutive collinear steps d1, d2, d3 with the
-        consistent ratio rho = |d3|/|d2| = |d2|/|d1| into the estimate of
-        the limit: the remaining distance along the direction is
-        |d3| rho / (1 - rho), i.e. the next model step's component along
-        it (asymptotically rho |d3|) is short by the factor 1/(1 - rho).
-        The creep is recognised on the evaluated points of the current
-        internal coordinate set: three descent steps (energies decreasing),
-        none bounded by the trust region or extrapolated, collinear with
-        the latest one (cosine >= creep_cos), shrinking with ratios inside
-        [creep_rho_min, creep_rho_max] that agree within creep_rho_tol,
-        and gradient projections on the direction of one sign with
-        decreasing magnitude (the minimum along it has not been passed).
-        The model step's component along the direction (it must still
-        point forward) is multiplied by min(1/(1 - rho), creep_max_mult)
-        and bounded by the Aitken estimate and by the unchanged trust
-        region; the trust ratio of the step is judged against the model
-        that generated it (the curvature along the direction softened by
-        the same factor), so a landing at the minimum is neither punished
-        as an overshoot of the quadratic model nor credited as a
-        better-than-predicted step.  Misfires (a ratio that was still
-        falling) overshoot by at most a few of the small creeping steps
-        and are corrected by the following model step.
-        """
-        pes = self.pes
-        pes._df_pred_corr = None
-        self._creep_fired = False
-        if (self.ord != 0 or not self.creep_accel or not self.internal
-                or getattr(pes, 'int', None) is None
-                or getattr(pes, 'H', None) is None or pes.H.B is None):
-            return s, smag
-        hist = self._creep_hist
-        if len(hist) < 4:
-            return s, smag
-        p0, p1, p2, p3 = hist[-4:]
-        if p1['special'] or p2['special'] or p3['special']:
-            return s, smag
-        if not (p3['f'] < p2['f'] < p1['f'] < p0['f']):
-            return s, smag
-        try:
-            d = [p1['pos'] - p0['pos'], p2['pos'] - p1['pos'],
-                 p3['pos'] - p2['pos']]
-            norms = [float(np.linalg.norm(di)) for di in d]
-            if min(norms) <= 1e-12:
-                return s, smag
-            u = d[2] / norms[2]
-            a = [float(di @ u) for di in d]
-            if a[0] <= 0 or a[1] <= 0:
-                return s, smag
-            if min(a[i] / norms[i] for i in range(3)) < self.creep_cos:
-                return s, smag
-            rho_a = a[1] / a[0]
-            rho_b = a[2] / a[1]
-            for r in (rho_a, rho_b):
-                if not (self.creep_rho_min <= r <= self.creep_rho_max):
-                    return s, smag
-            if not (1. / (1. + self.creep_rho_tol) <= rho_b / rho_a
-                    <= 1. + self.creep_rho_tol):
-                return s, smag
-            gp = [float(p['g'] @ u) for p in (p0, p1, p2, p3)]
-            if not (gp[0] < gp[1] < gp[2] < gp[3] < 0.):
-                return s, smag
-
-            ncart = 3 * len(pes.atoms)
-            Binv = pes._get_Binv()[:ncart]
-            nint = Binv.shape[1]
-            if len(s) < nint:
-                return s, smag
-            dx = Binv @ s[:nint]
-            c = float(dx @ u)
-            if c <= 0.:
-                return s, smag
-            rho = rho_b
-            mult = min(1. / (1. - rho), self.creep_max_mult)
-            c_acc = min(mult * c, a[2] * rho / (1. - rho))
-            if c_acc <= c:
-                return s, smag
-            B = pes.curr.get('B')
-            if B is None:
-                B = pes.int.jacobian()
-            B = B[:, :ncart]
-            e_int = np.zeros_like(s)
-            e_int[:nint] = B @ ((c_acc - c) * u)
-            # Stay in the free subspace of the step (constraints of the
-            # dummy-atom coordinates untouched).
-            Ufree = pes.get_Ufree()
-            if Ufree is not None and Ufree.shape[0] == len(e_int):
-                e_int = Ufree @ (Ufree.T @ e_int)
-            s_acc = s + e_int
-
-            # The unchanged trust region bounds the extrapolated step.
-            rs = self.rs(pes, self.ord, self.delta, method=self.method,
-                         **rs_kwargs)
-            val = float(rs.cons(s_acc))
-            if not np.isfinite(val):
-                return s, smag
-            if val > self.delta:
-                lo, hi = 0., 1.
-                for _ in range(24):
-                    mid = 0.5 * (lo + hi)
-                    if rs.cons(s + mid * e_int) <= self.delta:
-                        lo = mid
-                    else:
-                        hi = mid
-                if lo <= 1e-3:
-                    return s, smag
-                s_acc = s + lo * e_int
-                val = float(rs.cons(s_acc))
-                c_acc = c + lo * (c_acc - c)
-            if not np.all(np.isfinite(s_acc)):
-                return s, smag
-
-            # Energy prediction of the step under the model that generated
-            # it: the local curvature k along u softened by the factor
-            # actually applied.
-            Bm = pes._B_pred if pes._B_pred is not None else pes.H.B
-            v = B @ u
-            k = float(v @ Bm @ v)
-            if not np.isfinite(k) or k <= 0.:
-                return s, smag
-            m_eff = c_acc / c
-            pes._df_pred_corr = -0.5 * k * (m_eff - 1.) * m_eff * c * c
-            self._creep_fired = True
-            return s_acc, val
-        except (ValueError, np.linalg.LinAlgError, RuntimeError,
-                AssertionError):
-            pes._df_pred_corr = None
-            self._creep_fired = False
-            return s, smag
-
     def step(self):
         s, smag = self._predict_step()
-        # Whether the step is bounded by the trust region or extrapolated
-        # (either excludes it from a creep pattern, see _creep_step).
-        special = (smag >= self.delta * (1. - 1e-9)
-                   or getattr(self, '_creep_fired', False))
 
         # Determine if we need to call the eigensolver, then step
         if self.nsteps_since_diag >= self.diag_every_n:
@@ -8118,10 +7897,7 @@ class Sella(Optimizer):
             )
             self.initialized = False
             self.rho = 1
-            self._creep_hist = []
             return
-
-        self._creep_record(special)
 
         # Update trust radius
         if rho is not None:
