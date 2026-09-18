@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. After 50 connected
-steps, a trust-truncated MIS step is re-solved with RFO.
+steps, an untruncated MIS step is re-solved with RFO.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5782,7 +5782,7 @@ class Sella(Optimizer):
         s, smag = _mis_step(self.method)
         if (getattr(self, "_allow_angle_wa", False)
                 and self.nsteps >= 50
-                and smag >= 0.999 * self.delta):
+                and smag < 0.999 * self.delta):
             s, smag = _mis_step('rfo')
 
         return self._maybe_gdiis(s, smag)
