@@ -5767,6 +5767,8 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
+            self.delta_min = 0.10
+            self.delta = max(self.delta, 0.10)
 
         if self.pes.cons.has_inequalities():
             all_valid = False
