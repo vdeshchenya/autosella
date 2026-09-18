@@ -4057,11 +4057,12 @@ class Internals(BaseInternals):
         contain (n1 is the terminal neighbour with the largest bond-order
         factor, or the most strongly bonded neighbour when none is
         terminal); its stiffness is the out-of-plane guess of
-        guess_hessian (_h0_out_of_plane).  Connected systems only: the
-        fragments of a complex keep their coordinate sets and paths (see
-        guess_hessian)."""
-        if (self.ntrans + self.nrotations) != 0:
-            return
+        guess_hessian (_h0_out_of_plane).  The fragments of a complex get
+        the coordinate as well: the carbonyl / carboxyl / carboxylate
+        fragments of a hydrogen-bonded pair have the same 2-5x too soft
+        model wag, the partner's pull on the oxygen displaces it in the
+        first steps, and the update has to learn the mode back before the
+        displacement criteria along it are met."""
         numbers = np.asarray(self.atoms.numbers)
         positions = np.asarray(self.atoms.positions, dtype=np.float64)
         adj = [[int(j) for j, _ in neighbors[i] if j < self.natoms]
