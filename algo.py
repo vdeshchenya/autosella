@@ -16,8 +16,8 @@ Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
-dihedrals at windowed C–C–C alkyne (n≥30) centers use 0.18 Ha
-guesses; C–N–O isocyanate dummy centers use 0.20 Ha.
+dihedrals at windowed C–C–C alkyne (n≥30), C–N–O isocyanate, and
+C–N–C isocyanide dummy centers use 0.20 Ha guesses.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3289,7 +3289,6 @@ class Internals(BaseInternals):
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
         self.windowed_dummy_atoms = set()
-        self.isocyanate_dummy_atoms = set()
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3310,7 +3309,6 @@ class Internals(BaseInternals):
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
-        new.isocyanate_dummy_atoms = set(getattr(self, 'isocyanate_dummy_atoms', set()))
         return new
 
     def add_rotation(
@@ -3719,7 +3717,17 @@ class Internals(BaseInternals):
                                     self.windowed_dummy_atoms.add(int(self.dinds[j]))
                                 elif zpair == {7, 8}:
                                     # Isocyanate N=C=O, including near-collinear.
-                                    self.isocyanate_dummy_atoms.add(int(self.dinds[j]))
+                                    self.windowed_dummy_atoms.add(int(self.dinds[j]))
+                        elif int(self.atoms.numbers[j]) == 7:
+                            term_z = []
+                            for bterm in jbonds:
+                                t0, t1 = int(bterm.indices[0]), int(bterm.indices[1])
+                                t = t1 if t0 == j else t0
+                                if 0 <= t < self.natoms:
+                                    term_z.append(int(self.atoms.numbers[t]))
+                            if len(term_z) == 2 and term_z[0] == 6 and term_z[1] == 6:
+                                # Isocyanide C–N–C, including near-collinear.
+                                self.windowed_dummy_atoms.add(int(self.dinds[j]))
                         if (
                             getattr(self, 'adj_dummy_placement', False)
                             and 0.04 < cross_norm < 0.10
@@ -4124,17 +4132,11 @@ class Internals(BaseInternals):
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
                 windowed = getattr(self, 'windowed_dummy_atoms', set())
-                isocyanate = getattr(self, 'isocyanate_dummy_atoms', set())
                 if (
-                    getattr(self, 'soft_dummy_dihedral_h0', False)
-                    and any(int(j) in isocyanate for j in dihedral.indices)
-                ):
-                    scale = 0.20
-                elif (
                     getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in windowed for j in dihedral.indices)
                 ):
-                    scale = 0.18
+                    scale = 0.20
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
                     scale = 0.25
                 else:
