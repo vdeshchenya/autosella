@@ -21,8 +21,8 @@ dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
-ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and
-fused-aryl 4-/5-membered cyclic ethers, and on at most two carboxyl/ester
+ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
+cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles. Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4156,8 +4156,9 @@ class Internals(BaseInternals):
             return any(int(numbers[nb]) == 14 for nb in real_o)
 
         def _fused_small_cyclic_ether(angle) -> bool:
-            # 4-/5-ring through ether O whose other neighbor is 3-coordinate
-            # (dihydrobenzofuran / oxazolidinone carbonyl), not THF.
+            # N-substituted fused 4-/5-ring through ether O whose other
+            # neighbor is 3-coordinate (dihydrobenzofuran-amine), not
+            # carbocyclic fused THF.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             o_idx = ia if int(numbers[ia]) == 8 else ic
@@ -4168,11 +4169,22 @@ class Internals(BaseInternals):
                            if int(nb) not in dummy_set]
             if len(other_heavy) != 3:
                 return False
+
+            def _ring_has_n(atoms) -> bool:
+                for a in atoms:
+                    if int(numbers[a]) == 7:
+                        return True
+                    if any(int(numbers[nb]) == 7 and int(nb) not in dummy_set
+                           for nb in neighbors[a]):
+                        return True
+                return False
+
             v_nb = {int(nb) for nb in neighbors[vertex]
                     if int(nb) not in dummy_set}
-            if (v_nb & {int(nb) for nb in neighbors[other]
-                        if int(nb) not in dummy_set}) - {o_idx}:
-                return True
+            shared = (v_nb & {int(nb) for nb in neighbors[other]
+                              if int(nb) not in dummy_set}) - {o_idx}
+            if shared:
+                return _ring_has_n({o_idx, vertex, other} | shared)
             for a in v_nb:
                 if a == o_idx:
                     continue
@@ -4182,7 +4194,7 @@ class Internals(BaseInternals):
                         continue
                     if other in (int(nb) for nb in neighbors[bi]
                                  if int(nb) not in dummy_set):
-                        return True
+                        return _ring_has_n({o_idx, vertex, a, bi, other})
             return False
 
         oxazolidinone_occ_ok = set()
