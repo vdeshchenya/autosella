@@ -16,7 +16,7 @@ Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
-dihedrals on that same ill-conditioned window use 0.20 Ha guesses.
+dihedrals at windowed C–C–C alkyne centers use 0.20 Ha guesses.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3701,8 +3701,16 @@ class Internals(BaseInternals):
                         if (
                             getattr(self, 'adj_dummy_placement', False)
                             and 0.04 < cross_norm < 0.10
+                            and int(self.atoms.numbers[j]) == 6
                         ):
-                            self.windowed_dummy_atoms.add(int(self.dinds[j]))
+                            term_z = []
+                            for bterm in jbonds:
+                                t0, t1 = int(bterm.indices[0]), int(bterm.indices[1])
+                                t = t1 if t0 == j else t0
+                                if 0 <= t < self.natoms:
+                                    term_z.append(int(self.atoms.numbers[t]))
+                            if len(term_z) == 2 and term_z[0] == 6 and term_z[1] == 6:
+                                self.windowed_dummy_atoms.add(int(self.dinds[j]))
                         if (
                             getattr(self, 'adj_dummy_placement', False)
                             and 0.04 < cross_norm < 0.10
