@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
-use the Schlegel flowchart Hessian update with Banerjee RFO.
+use the Schlegel flowchart Hessian update on well-predicted RFO steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5794,8 +5794,12 @@ class Sella(Optimizer):
 
         step_method = self.method
         if not getattr(self, "_allow_angle_wa", False) and self.nsteps >= 80:
-            self.pes.H.update_method = 'flowchart'
             step_method = 'rfo'
+            rho = float(getattr(self, "rho", 1.0))
+            if 1.0 / self.rho_inc < rho < self.rho_inc:
+                self.pes.H.update_method = 'flowchart'
+            else:
+                self.pes.H.update_method = 'TS-BFGS'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
