@@ -8,8 +8,7 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms≥30 place two-coordinate dummy atoms 1 Bohr from
-the linear center (QUILD) instead of 1 Å.
+Connected n_atoms≥80 restore default angle caps (`wa=1`) after 20 steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3239,7 +3238,6 @@ class Constraints(BaseInternals):
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
-    bohr_dummy_placement_default = False
 
     def __init__(
         self,
@@ -3277,7 +3275,6 @@ class Internals(BaseInternals):
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
-        self.bohr_dummy_placement = Internals.bohr_dummy_placement_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3295,7 +3292,6 @@ class Internals(BaseInternals):
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
-        new.bohr_dummy_placement = getattr(self, 'bohr_dummy_placement', False)
         return new
 
     def add_rotation(
@@ -3699,10 +3695,7 @@ class Internals(BaseInternals):
                             dpos /= np.linalg.norm(dpos)
                         else:
                             dpos /= dpos_norm
-                        # Add the dummy atom. QUILD places dummy atoms 1 Bohr
-                        # from the linear center; Sella's default is 1 Å.
-                        if getattr(self, 'bohr_dummy_placement', False):
-                            dpos = dpos * float(units.Bohr)
+                        # Add the dummy atom
                         dpos += self.atoms.positions[j]
                         self.dummies += Atom('X', dpos)
                         self._batched_arrays_valid = False
@@ -5776,6 +5769,8 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
+                if self.nsteps >= 20 and len(self.atoms) >= 80:
+                    rs_kwargs['wa'] = 1.0
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -6142,7 +6137,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
-        Internals.bohr_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6155,7 +6149,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
-        Internals.bohr_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
