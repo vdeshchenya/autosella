@@ -4,12 +4,11 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Connected dummy-set
-dihedrals use MaxInternalStep `wd_dummy=0.8`. After MaxInternalStep,
-connected Newton steps may be scaled to the 1D quadratic minimum
-along s. Connected tails after 20 steps may replace the QN step
-with two-point interpolation GDIIS when the previous ratio ρ was
-well predicted.
+guess constants are 0.25 Ha instead of 0.5. Connected MaxInternalStep
+also restricts linearized Cartesian max-atom displacement to the same
+δ. Connected tails after 20 steps may replace the QN step with
+two-point interpolation GDIIS when the previous ratio ρ was well
+predicted.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5402,7 +5401,7 @@ class MaxInternalStep(BaseRestrictedStep):
 
     def __init__(
         self, pes, *args, wx=1., wb=1., wa=1., wd=1., wo=1., wc=1.,
-        wd_dummy=None, **kwargs
+        max_atom=False, **kwargs
     ):
         if pes.int is None:
             raise ValueError(
@@ -5415,7 +5414,7 @@ class MaxInternalStep(BaseRestrictedStep):
         self.wd = wd
         self.wo = wo
         self.wc = wc  # Weight for cell DOF
-        self.wd_dummy = wd if wd_dummy is None else wd_dummy
+        self.max_atom = bool(max_atom)
         self._weights_cache = None
         BaseRestrictedStep.__init__(self, pes, *args, **kwargs)
 
@@ -5426,10 +5425,49 @@ class MaxInternalStep(BaseRestrictedStep):
         sw = np.abs(s * w)
         idx = np.argmax(np.abs(sw))
         val = sw[idx]
+        dval = None if dsda is None else np.sign(s[idx]) * dsda[idx] * w[idx]
+
+        if self.max_atom:
+            cval, cdval = self._cartesian_max_atom(s, dsda)
+            if cval is not None and cval >= val:
+                val = cval
+                dval = cdval
 
         if dsda is None:
             return val
-        return val, np.sign(s[idx]) * dsda[idx] * w[idx]
+        return val, dval
+
+    def _cartesian_max_atom(self, s, dsda):
+        """Linearized max-atom Cartesian displacement (Å) and optional d/dα.
+
+        geomeTRIC enforces trust in Cartesian displacement because mixed-unit
+        internals can realize a large atom move from a modest torsion.
+        Only ASE atoms enter the max-atom norm (dummy internals are dropped).
+        """
+        Binv = np.asarray(self.pes._get_Binv(), dtype=np.float64)
+        s_arr = np.asarray(s, dtype=np.float64)
+        if Binv.ndim != 2 or Binv.shape[1] != s_arr.size:
+            return None, None
+        ncart = 3 * int(self.pes.atoms.get_positions().shape[0])
+        dx = (Binv @ s_arr).reshape(-1)[:ncart]
+        if dx.size < 3 or dx.size % 3:
+            return None, None
+        dxm = dx.reshape(-1, 3)
+        norms = np.linalg.norm(dxm, axis=1)
+        if not np.isfinite(norms).all():
+            return None, None
+        cidx = int(np.argmax(norms))
+        cval = float(norms[cidx])
+        if dsda is None:
+            return cval, None
+        dsda_arr = np.asarray(dsda, dtype=np.float64)
+        if dsda_arr.shape != s_arr.shape:
+            return None, None
+        ddx = (Binv @ dsda_arr).reshape(-1)[:ncart].reshape(-1, 3)
+        cdval = float(ddx[cidx] @ dxm[cidx] / max(cval, 1e-12))
+        if not np.isfinite(cdval):
+            return None, None
+        return cval, cdval
 
     def _get_weights(self):
         """Build the per-DOF weight vector. Cached against
@@ -5441,28 +5479,18 @@ class MaxInternalStep(BaseRestrictedStep):
             self.pes.int.ntrans, self.pes.int.nbonds,
             self.pes.int.nangles, self.pes.int.ndihedrals,
             self.pes.int.nother, self.pes.int.nrotations,
-            n_cell_dof, self.wd, self.wd_dummy, self.wa,
+            n_cell_dof,
         )
         if cached is not None and cached[0] == key:
             return cached[1]
-        intern = self.pes.int
         w = np.array(
-            [self.wx] * intern.ntrans
-            + [self.wb] * intern.nbonds
-            + [self.wa] * intern.nangles
-            + [self.wd] * intern.ndihedrals
-            + [self.wo] * intern.nother
-            + [self.wx] * intern.nrotations
+            [self.wx] * self.pes.int.ntrans
+            + [self.wb] * self.pes.int.nbonds
+            + [self.wa] * self.pes.int.nangles
+            + [self.wd] * self.pes.int.ndihedrals
+            + [self.wo] * self.pes.int.nother
+            + [self.wx] * self.pes.int.nrotations
         )
-        if self.wd_dummy != self.wd and intern.ndummies and intern.ndihedrals:
-            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
-            k = intern.ntrans + intern.nbonds + intern.nangles
-            for dih, active in zip(intern.internals['dihedrals'], intern._active['dihedrals']):
-                if not active:
-                    continue
-                if any(j in dummy_set for j in dih.indices):
-                    w[k] = self.wd_dummy
-                k += 1
         if n_cell_dof > 0:
             w = np.concatenate([w, [self.wc] * n_cell_dof])
         self._weights_cache = (key, w)
@@ -5769,7 +5797,9 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-                rs_kwargs['wd_dummy'] = 0.8
+                # geomeTRIC-style Cartesian trust: also cap linearized
+                # max-atom displacement at δ (Å), inside the MIS solver.
+                rs_kwargs['max_atom'] = True
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5791,36 +5821,7 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
-        return self._maybe_gdiis(*self._maybe_quadratic_alpha(s, smag))
-
-    def _maybe_quadratic_alpha(self, s, smag):
-        """Scale a connected MIS step to the 1D quadratic minimum along s.
-
-        Cycle 37 halved only when df_pred>0 (α*<1/2) and was bit-identical.
-        Cycle 134 applied this to the champion and saved paliperidone without
-        extra force calls. Combined here with wd_dummy=0.8 so the dummy-linear
-        train/valid savings can sit under a shorter interior Newton tail.
-        Dimers keep the unscaled MIS+GDIIS path.
-        """
-        if not getattr(self, "_allow_angle_wa", False):
-            return s, smag
-        s = np.asarray(s, dtype=np.float64)
-        g = np.asarray(self.pes.get_g(), dtype=np.float64)
-        H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
-        if g.shape != s.shape or H.shape != (s.size, s.size):
-            return s, smag
-        gs = float(np.dot(g, s))
-        sHs = float(s @ H @ s)
-        if (not np.isfinite(gs)) or (not np.isfinite(sHs)) or sHs <= 0.0 or gs >= 0.0:
-            return s, smag
-        alpha = -gs / sHs
-        if not (0.0 < alpha < 1.0):
-            return s, smag
-        s_new = alpha * s
-        smag_new = float(alpha) * float(smag)
-        if (not np.isfinite(smag_new)) or smag_new < 1e-16:
-            return s, smag
-        return s_new, smag_new
+        return self._maybe_gdiis(s, smag)
 
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
