@@ -8,7 +8,7 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected dummy-involving
 angle guesses are 0.10 Ha when n_atoms<18 or n_atoms>=30. Connected
-n_atoms>=30 jobs use Banerjee RFO after 80 steps.
+n_atoms>=30 dummy-involving stretches use 0.10 Ha/Bohr².
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3238,6 +3238,7 @@ class Constraints(BaseInternals):
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
+    soft_dummy_bond_h0_default = False
 
     def __init__(
         self,
@@ -3275,6 +3276,7 @@ class Internals(BaseInternals):
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
+        self.soft_dummy_bond_h0 = Internals.soft_dummy_bond_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3292,6 +3294,7 @@ class Internals(BaseInternals):
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
+        new.soft_dummy_bond_h0 = getattr(self, 'soft_dummy_bond_h0', False)
         return new
 
     def add_rotation(
@@ -3982,14 +3985,18 @@ class Internals(BaseInternals):
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
+        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
+        soft_dummy_bond = getattr(self, 'soft_dummy_bond_h0', False)
         for bond in self.internals['bonds']:
-            h0[idx] = self._h0_bond(bond)
+            if soft_dummy_bond and any(j in dummy_set for j in bond.indices):
+                h0[idx] = 0.10 * units.Hartree / units.Bohr**2
+            else:
+                h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
             nbonds[i] += 1
             nbonds[j] += 1
-        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
         for angle in self.internals['angles']:
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
@@ -5773,11 +5780,8 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if self.nsteps >= 80:
-            if not getattr(self, "_allow_angle_wa", False):
-                step_method = 'rfo'
-            elif len(self.atoms) >= 30:
-                step_method = 'rfo'
+        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+            step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -6138,6 +6142,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
+        Internals.soft_dummy_bond_h0_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6150,6 +6155,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
+        Internals.soft_dummy_bond_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
