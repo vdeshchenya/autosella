@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
-use Banerjee RFO and skip TS-BFGS updates with negative s·y.
+use Banerjee RFO and floor the trust radius at 0.10.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -386,13 +386,6 @@ class ApproximateHessian(LinearOperator):
 
     def update(self, dx, dg):
         """Perform a quasi-Newton update on B"""
-        if getattr(self, '_skip_neg_curv', False):
-            s = np.asarray(dx, dtype=np.float64).reshape(-1)
-            y = np.asarray(dg, dtype=np.float64).reshape(-1)
-            n = min(s.size, y.size)
-            if n and np.isfinite(s[:n]).all() and np.isfinite(y[:n]).all():
-                if float(s[:n] @ y[:n]) < 0.0:
-                    return
         if self.B is None:
             B = np.zeros(self.shape, dtype=self.dtype)
         else:
@@ -5774,7 +5767,6 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
-            self.pes.H._skip_neg_curv = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -5928,8 +5920,6 @@ class Sella(Optimizer):
 
     def step(self):
         s, smag = self._predict_step()
-        if not getattr(self, "_allow_angle_wa", False) and self.nsteps >= 80:
-            self.pes.H._skip_neg_curv = True
 
         # Determine if we need to call the eigensolver, then step
         if self.nsteps_since_diag >= self.diag_every_n:
@@ -5989,6 +5979,9 @@ class Sella(Optimizer):
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
+        elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+            self.delta_min = 0.10
+            self.delta = max(self.delta, 0.10)
 
         # Update trust radius
         if rho is not None:
