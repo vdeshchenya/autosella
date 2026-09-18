@@ -8135,9 +8135,21 @@ def _break_start_symmetry(numbers, pos_ang):
 # (1976); the torsion rules of conformer generators such as ETKDG): staggered
 # with respect to the substituents of a tetrahedral or pyramidal frame and of
 # a two-coordinate O / S (ethane, methylamine, methanol, dimethyl ether), but
-# eclipsed with the C=O bond of an aldehyde, ketone, acid or ester carbon
-# (acetaldehyde, acetone, methyl acetate), and eclipsed with the acyl carbon
-# for the N-methyl group of a secondary amide. Idealised input geometries
+# eclipsed with the C=O bond of an aldehyde, ketone, acid or amide carbon
+# (acetaldehyde, acetone, acetic acid, acetamide), and eclipsed with the acyl
+# carbon for the N-methyl group of a secondary amide. The acetyl methyl of an
+# ester (methyl acetate) is the exception: its intrinsic three-fold barrier
+# is the smallest of the acyl series (V3 ~ 0.3 kcal/mol, an order of
+# magnitude below the aldehyde / amide values), and on the GFN2-xTB surface
+# the C=O-eclipsed phase is the saddle — the group settles staggered with
+# respect to C=O, i.e. with one C-H bond eclipsing the C-O(alkyl) bond (every
+# neutral ester complex of the training data leaves the C=O-eclipsed template
+# phase by 30-60 degrees, in the reference optimiser as much as in ours,
+# while acids, ketones and amides stay within ~15 degrees of it). A weak
+# preference of that size is overridden by an ionic contact (a cation on the
+# carbonyl O or an anion on the methyl hydrogens keeps the group eclipsed),
+# so the ester rule is only applied in systems without a formal charge; ester
+# carbons of ionic systems keep the acyl (eclipsed) rule. Idealised input geometries
 # (template monomers of non-covalent complexes) often carry every methyl
 # group at an exactly staggered phase, which for the sp2 frames is the
 # saddle. At the saddle the torque vanishes by symmetry and the curvature is
@@ -8188,10 +8200,11 @@ def _rotor_phase(pos, hyd, c, b, y):
     return np.degrees(np.angle(z)) / 3.0, abs(z)
 
 
-def _rotor_class(numbers, pos, adj, dist, c, b):
+def _rotor_class(numbers, pos, adj, dist, c, b, ionic=False):
     """Reference substituent y of the frame atom b and the minimum phase of
     the rotor c ('eclipsed' / 'staggered') by the rules above; None when the
-    frame is not covered."""
+    frame is not covered. `ionic` marks a system with a formal charge, where
+    the ester carbon keeps the acyl rule."""
     others = [k for k in adj[b] if k != c]
     zb = numbers[b]
     if len(others) == 3:
@@ -8205,7 +8218,11 @@ def _rotor_class(numbers, pos, adj, dist, c, b):
             double = [k for k in others if numbers[k] in _ROTOR_DOUBLE_BOND
                       and dist[b, k] < _ROTOR_DOUBLE_BOND[numbers[k]]]
             if len(double) == 1:
-                return double[0], 'eclipsed'   # aldehyde, ketone, acid, ester, amide carbon
+                other = k2 if double[0] == k1 else k1
+                if (not ionic and numbers[double[0]] == 8 and numbers[other] == 8
+                        and any(numbers[m] != 1 for m in adj[other] if m != b)):
+                    return double[0], 'staggered'   # ester carbon: C-H eclipses C-O(alkyl)
+                return double[0], 'eclipsed'   # aldehyde, ketone, acid, amide carbon
             return None                        # alkene, aromatic, carboxylate
         u1 = pos[c] - pos[b]
         u2 = pos[k1] - pos[b]
@@ -8250,6 +8267,7 @@ def _prerelax_rotors(numbers, pos_ang):
     bonded = dist <= 1.25 * (rcov[:, None] + rcov[None, :])
     np.fill_diagonal(bonded, False)
     adj = [list(np.flatnonzero(bonded[i])) for i in range(natoms)]
+    ionic = bool(np.any(np.abs(_dock_formal_charges(numbers, adj, dist)) > 1e-6))
     for c in range(natoms):
         if len(adj[c]) != 4:
             continue
@@ -8257,7 +8275,7 @@ def _prerelax_rotors(numbers, pos_ang):
         if len(hyd) != 3:
             continue
         b = [j for j in adj[c] if j not in hyd][0]
-        rule = _rotor_class(numbers, pos, adj, dist, c, b)
+        rule = _rotor_class(numbers, pos, adj, dist, c, b, ionic)
         if rule is None:
             continue
         y, minimum = rule
