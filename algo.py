@@ -6,9 +6,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. The two GDIIS points
-are the current iterate and the earlier history point with the
-smallest residual.
+when the previous ratio ρ was well predicted.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5777,7 +5775,45 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
+        s, smag = self._maybe_euclid_trust(s, smag)
         return self._maybe_gdiis(s, smag)
+
+    def _maybe_euclid_trust(self, s_mis, smag_mis):
+        """Replace an oversized MIS step with Euclidean TrustRegion.
+
+        Cycle 157's always-on TrustRegion after 20 connected steps saved
+        long tails but inflated 30–45-step jobs. QN restriction only
+        changes alpha, so TR is a shorter similar-direction mix when MIS
+        allows ||s|| >> delta. Accept TR only when it stays aligned with
+        MIS (cosine >= 0.90) and MIS is at least twice as long Euclidean.
+        """
+        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
+            return s_mis, smag_mis
+        s_mis = np.asarray(s_mis, dtype=np.float64)
+        nmis = float(np.linalg.norm(s_mis))
+        if (not np.isfinite(nmis)) or nmis < 1e-16:
+            return s_mis, smag_mis
+        try:
+            s_tr, smag_tr = TrustRegion(
+                self.pes, self.ord, self.delta, method=self.method,
+            ).get_s()
+        except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
+            return s_mis, smag_mis
+        s_tr = np.asarray(s_tr, dtype=np.float64)
+        if s_tr.shape != s_mis.shape:
+            return s_mis, smag_mis
+        ntr = float(np.linalg.norm(s_tr))
+        if (not np.isfinite(ntr)) or ntr < 1e-16:
+            return s_mis, smag_mis
+        if nmis <= 2.0 * ntr:
+            return s_mis, smag_mis
+        cos = float(s_tr @ s_mis) / (ntr * nmis)
+        if (not np.isfinite(cos)) or cos < 0.90:
+            return s_mis, smag_mis
+        smag = float(smag_tr)
+        if (not np.isfinite(smag)) or smag < 1e-16:
+            return s_mis, smag_mis
+        return s_tr, smag
 
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
@@ -5786,8 +5822,7 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Pair the current point
-        with the earlier history vector of smallest residual norm.
+        predicted (1/rho_inc < rho < rho_inc).
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5817,10 +5852,7 @@ class Sella(Optimizer):
         use = 2
         if err.shape[0] < use:
             return s_qn, smag_qn
-        last = err.shape[0] - 1
-        earlier = np.argsort(norms[:last])
-        pick = np.array([int(earlier[0]), last], dtype=np.int64)
-        use_vecs = err[pick]
+        use_vecs = err[::-1][:use]
         A = use_vecs @ use_vecs.T
         try:
             coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
@@ -5838,7 +5870,7 @@ class Sella(Optimizer):
         neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
         if pos_sum > 15.0 or neg_sum > 15.0:
             return s_qn, smag_qn
-        diis_coords = coeffs @ coords[pick]
+        diis_coords = coeffs @ coords[::-1][:use]
         diis_step = diis_coords - coords[-1]
         ndiis = float(np.linalg.norm(diis_step))
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
