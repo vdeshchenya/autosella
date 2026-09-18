@@ -3963,6 +3963,13 @@ class Internals(BaseInternals):
                 # Published Schlegel real-angle prior, Hartree/radian².
                 return (0.160 if numbers[0] == 1 or numbers[2] == 1
                         else 0.250) * units.Hartree
+        for dummy in indices[indices >= self.natoms]:
+            model = getattr(self, '_linear_bend_priors', {}).get(int(dummy))
+            if model is not None:
+                center, adjacent, stiffness = model
+                if (indices[1] == center
+                        and set(indices) <= adjacent | {center, int(dummy)}):
+                    return stiffness
         bab, bbc = angle.split()
         idxab = np.asarray(bab.indices, dtype=np.int32)
         idxbc = np.asarray(bbc.indices, dtype=np.int32)
@@ -4005,6 +4012,27 @@ class Internals(BaseInternals):
         return h0 * units.Hartree
 
     def guess_hessian(self, h0cart=70.) -> np.ndarray:
+        self._linear_bend_priors = {}
+        self._linear_bend_torsions = set()
+        if not self.atoms.pbc.any():
+            neighbors = [set() for _ in range(self.natoms)]
+            for bond in self.internals['bonds']:
+                first, second = bond.indices
+                if first < self.natoms and second < self.natoms:
+                    neighbors[first].add(second)
+                    neighbors[second].add(first)
+            for center, dummy in enumerate(self.dinds):
+                adjacent = neighbors[center]
+                if dummy < self.natoms or len(adjacent) != 2:
+                    continue
+                outer = sorted(adjacent)
+                edges = self.atoms.positions[outer] - self.atoms.positions[center]
+                lengths = np.linalg.norm(edges, axis=1)
+                if np.any(lengths < 1e-8) or edges[0] @ edges[1] >= 0:
+                    continue
+                numbers = self.atoms.numbers[outer]
+                stiffness = (0.160 if 1 in numbers else 0.250) * units.Hartree
+                self._linear_bend_priors[int(dummy)] = (center, adjacent, stiffness)
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.005 * units.Hartree
@@ -4026,6 +4054,14 @@ class Internals(BaseInternals):
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
                 h0[idx] = 0.5 * units.Hartree
+                for dummy in dummy_set.intersection(dihedral.indices):
+                    model = self._linear_bend_priors.get(dummy)
+                    if model is not None:
+                        center, adjacent, stiffness = model
+                        if (set(dihedral.indices[1:3]) == {center, dummy}
+                                and {dihedral.indices[0], dihedral.indices[3]} == adjacent):
+                            h0[idx] = stiffness
+                            self._linear_bend_torsions.add(tuple(dihedral.indices))
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
             idx += 1
@@ -4520,6 +4556,13 @@ class InternalPES(PES):
                 [3] * self.int.ntrans + [0] * self.int.nbonds
                 + [1] * self.int.nangles + [2] * self.int.ndihedrals
                 + [3] * self.int.nother + [3] * self.int.nrotations)
+            row = self.int.ntrans + self.int.nbonds + self.int.nangles
+            for torsion, active in zip(self.int.internals['dihedrals'],
+                                       self.int._active['dihedrals']):
+                if active:
+                    if tuple(torsion.indices) in self.int._linear_bend_torsions:
+                        labels[row] = 1
+                    row += 1
             self._fit_blocks = [
                 (P * (diagonal * (labels == kind))) @ P
                 for kind in range(4) if np.any(labels == kind)
