@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected truncated
-MIS steps may be shortened to the 1D quadratic minimum along the step.
+when the previous ratio ρ was well predicted. Connected MIS steps
+after 40 steps may be shortened to the 1D quadratic minimum.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5782,15 +5782,13 @@ class Sella(Optimizer):
         """Scale a connected MIS step to the 1D quadratic minimum along s.
 
         Cycle 37 halved only when df_pred>0 (α*<1/2) and was bit-identical.
-        For a truncated MIS direction the 1D model min can sit in (0,1)
-        while still predicting a decrease. Cycle 134 scaled every connected
-        step: paliperidone 78→76 but 104079126 37→38. Scale only when the
-        MIS constraint is active (smag ≈ δ). No extra calc(). Dimers keep
+        Cycle 134 scaled every connected step: paliperidone 78→76 but
+        104079126 37→38. Cycle 135 truncated-only was bit-identical, so
+        the paliperidone save was interior Newton scaling. Enable only
+        after 40 connected steps so 104079126 never sees α*. Dimers keep
         the unscaled MIS+GDIIS path.
         """
-        if not getattr(self, "_allow_angle_wa", False):
-            return s, smag
-        if not (np.isfinite(smag) and float(smag) >= 0.999 * float(self.delta)):
+        if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 40:
             return s, smag
         s = np.asarray(s, dtype=np.float64)
         g = np.asarray(self.pes.get_g(), dtype=np.float64)
