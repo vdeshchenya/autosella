@@ -5952,6 +5952,10 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
     opt = Sella(atoms, internal=True, order=0, allow_fragments=True, logfile=None)
+    # Collective coordinates amplify internal motion differently from bond,
+    # angle and torsion coordinates. Keep their conservative initial radius.
+    if opt.pes.int.ntrans == 0 and opt.pes.int.nrotations == 0:
+        opt.delta = 0.2
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
