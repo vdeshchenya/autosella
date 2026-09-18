@@ -11,8 +11,8 @@ at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, F–P–X, and F–B–F angles at silicon, phosphorus, or boron
-centers.
+Cl–Si–X, F–P–X at phosphorus with at most three fluorine neighbors,
+and F–B–F angles at silicon, phosphorus, or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4027,7 +4027,9 @@ class Internals(BaseInternals):
         return h0 * units.Hartree
 
     def guess_hessian(self, h0cart=70.) -> np.ndarray:
+        numbers = np.asarray(self.all_atoms.numbers)
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
+        nfluor = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
         idx = 0
@@ -4039,12 +4041,17 @@ class Internals(BaseInternals):
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
-            nbonds[i] += 1
-            nbonds[j] += 1
+            ii, jj = int(i), int(j)
+            nbonds[ii] += 1
+            nbonds[jj] += 1
+            zi, zj = int(numbers[ii]), int(numbers[jj])
+            if zi == 9:
+                nfluor[jj] += 1
+            if zj == 9:
+                nfluor[ii] += 1
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
         soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
-        numbers = np.asarray(self.all_atoms.numbers)
         for angle in self.internals['angles']:
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -4089,12 +4096,13 @@ class Internals(BaseInternals):
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 15
+                and int(nfluor[int(angle.indices[1])]) <= 3
                 and (
                     int(numbers[int(angle.indices[0])]) == 9
                     or int(numbers[int(angle.indices[2])]) == 9
                 )
             ):
-                # Mixed fluoride phosphorus: F–P–X.
+                # Mixed fluoride phosphorus except PF4/PF5: F–P–X.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
