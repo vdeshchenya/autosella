@@ -7,9 +7,10 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted, or with two-point
-interpolation GEDIIS (Li–Frisch) when that GDIIS step is not accepted,
-the interpolant agrees with the QN direction (cosine ≥ 0.90), and
-the previous step was uphill.
+when the previous ratio ρ was well predicted, or with two-point
+interpolation GEDIIS (Li–Frisch) as a fallback in that same ρ window
+when GDIIS is not accepted, the interpolant agrees with QN (cosine
+≥ 0.90), and the previous step was uphill.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5793,20 +5794,19 @@ class Sella(Optimizer):
         If that GDIIS step is not accepted, try two-point interpolation
         GEDIIS (Li–Frisch 2006) on the same last segment: convex energy
         interpolant, predicted energy below the current point, the same
-        length cap, and cosine ≥ 0.90. Cycle 126 without the cosine
-        gate hopped paliperidone/160853090. Cycle 127 with cosine was
-        energy-safe but inflated those two; require the last step to
-        have been uphill so GEDIIS only backtracks after an energy rise.
-        GEDIIS does not use the ρ window.
+        length cap, cosine ≥ 0.90, and an uphill last step. Cycle 128
+        still inflated paliperidone outside the quadratic ρ window;
+        GEDIIS now uses that same ρ gate as GDIIS (last GEDIIS repair).
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
         s_qn = np.asarray(s_qn, dtype=np.float64)
         rho = float(getattr(self, "rho", 1.0))
-        if 1.0 / self.rho_inc < rho < self.rho_inc:
-            accepted = self._gdiis_two_point(s_qn, smag_qn)
-            if accepted is not None:
-                return accepted
+        if not (1.0 / self.rho_inc < rho < self.rho_inc):
+            return s_qn, smag_qn
+        accepted = self._gdiis_two_point(s_qn, smag_qn)
+        if accepted is not None:
+            return accepted
         accepted = self._gediis_two_point(s_qn, smag_qn)
         if accepted is not None:
             return accepted
