@@ -5848,17 +5848,14 @@ class Sella(Optimizer):
         Cycle 117's 2–4 point milder GDIIS passed train but inflated
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90. Connected jobs also require a well-predicted
-        previous step (1/rho_inc < rho < rho_inc); dimers skip that ρ
-        window so long packing tails can interpolate. Dummy-wd and wa
-        stay connected-only.
+        and cosine ≥ 0.90 on connected jobs (0.80 on dimers). Accept only
+        when the previous step was well predicted (1/rho_inc < rho < rho_inc).
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
-        if getattr(self, "_allow_angle_wa", False):
-            rho = float(getattr(self, "rho", 1.0))
-            if not (1.0 / self.rho_inc < rho < self.rho_inc):
-                return s_qn, smag_qn
+        rho = float(getattr(self, "rho", 1.0))
+        if not (1.0 / self.rho_inc < rho < self.rho_inc):
+            return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
         if len(xs) < 2 or len(xs) != len(gs):
@@ -5906,7 +5903,8 @@ class Sella(Optimizer):
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
+        cos_min = 0.90 if getattr(self, "_allow_angle_wa", False) else 0.80
+        if cos < cos_min or cos < 0.0:
             return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
