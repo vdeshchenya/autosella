@@ -20,8 +20,10 @@ dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors). Connected 30≤n_atoms<80 delay
-two-point GDIIS until after 40 steps.
+guanidinium (≥3 N neighbors). Dimers that contain a 1-coordinate
+carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
+angles (2-coordinate O bonded to C and H; the ipso carbon is
+3-coordinate with exactly one oxygen).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3253,6 +3255,7 @@ class Internals(BaseInternals):
     soft_dummy_angle_h0_default = False
     soft_oxo_angle_h0_default = False
     soft_pyridine_angle_h0_default = False
+    soft_phenol_angle_h0_default = False
     adj_dummy_placement_default = False
 
     def __init__(
@@ -3293,6 +3296,7 @@ class Internals(BaseInternals):
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
         self.soft_pyridine_angle_h0 = Internals.soft_pyridine_angle_h0_default
+        self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
         self.windowed_dummy_atoms = set()
 
@@ -3314,6 +3318,7 @@ class Internals(BaseInternals):
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
         new.soft_pyridine_angle_h0 = getattr(self, 'soft_pyridine_angle_h0', False)
+        new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         return new
@@ -4074,6 +4079,7 @@ class Internals(BaseInternals):
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
         soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
         soft_pyridine_angle = getattr(self, 'soft_pyridine_angle_h0', False)
+        soft_phenol_angle = getattr(self, 'soft_phenol_angle_h0', False)
         numbers = np.asarray(self.all_atoms.numbers)
         neighbors = [[] for _ in range(len(self.all_atoms))]
         for bond in self.internals['bonds']:
@@ -4110,11 +4116,51 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 pyridine_ok = set(cands)
 
+        def _has_carbonyl_o() -> bool:
+            for i, z in enumerate(numbers):
+                if int(i) in dummy_set or int(z) != 8:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if len(real) == 1 and int(numbers[real[0]]) == 6:
+                    return True
+            return False
+
+        def _phenol_coh(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 8:
+                return False
+            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_o) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {1, 6}:
+                return False
+            c_idx = ia if za == 6 else ic
+            real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
+                return False
+            if sum(int(numbers[nb]) == 8 for nb in real_c) != 1:
+                return False
+            return True
+
+        phenol_ok = set()
+        if soft_phenol_angle and _has_carbonyl_o():
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _phenol_coh(angle)]
+            if 1 <= len(cands) <= 2:
+                phenol_ok = set(cands)
+
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_phenol_angle and ia in phenol_ok:
+                # Phenol C–O–H on dimers that also have a carbonyl oxygen.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -6045,12 +6091,6 @@ class Sella(Optimizer):
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
-        n_at = int(getattr(self, "_n_atoms", 0) or 0)
-        # Delay connected GDIIS to 40 on 30≤n<80 (leftover 363892164 n=43).
-        # Paliperidone/venetoclax (n≥80) and n<30 keep the cycle-120 start.
-        if getattr(self, "_allow_angle_wa", False) and 30 <= n_at < 80:
-            if self.nsteps < 40:
-                return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
@@ -6314,6 +6354,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
+    Internals.soft_phenol_angle_h0_default = not connected
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
@@ -6324,7 +6365,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        opt._n_atoms = len(atomic_numbers)
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
@@ -6336,6 +6376,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_angle_h0_default = False
         Internals.soft_oxo_angle_h0_default = False
         Internals.soft_pyridine_angle_h0_default = False
+        Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
