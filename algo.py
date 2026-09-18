@@ -3379,6 +3379,74 @@ class Internals(BaseInternals):
             q = getattr(srot, 'q_prev', None)
             rot.q_prev = None if q is None else np.array(q, copy=True)
 
+    def symmetry_maps(self, tol):
+        """Point-group operations of the current geometry (per-atom rmsd of
+        the mapped geometry within tol) as maps of the extended (atoms +
+        dummies) Cartesian displacements, for the symmetry images of the
+        secant pairs: a list of (perm, R, dperm, dflip, dcentre) with
+        u'_i = R u_{perm[i]} for the atoms and, for the dummy k of the
+        linear centre dcentre[k], u'_k = R u_{dperm[k]} when the operation
+        maps the dummy of the image centre onto the dummy itself, or
+        u'_k = 2 R u_{perm[dcentre[k]]} - R u_{dperm[k]} when it maps it
+        onto its inversion through the centre (the dummy is placed
+        perpendicular to the chain, so the inverted dummy satisfies the
+        same bond and angle constraints, and the inversion through the
+        centre turns the mirrored dummy path into a path in the frame of
+        the current dummy).  An operation that maps a dummy elsewhere (a
+        chain on a rotation axis, whose dummy has no symmetry-related
+        azimuth) is dropped, as is one that maps a linear centre onto a
+        centre without a dummy.  Connected molecules only: the translation
+        and rotation coordinates of fragments are not internal
+        coordinates of a Cartesian displacement field."""
+        if self.fragment_atom_groups is not None:
+            return []
+        if (self.internals['translations'] or self.internals['rotations']
+                or self.internals['other']):
+            return []
+        nat = self.natoms
+        if nat < 3:
+            return []
+        pos = self.atoms.positions
+        ops = _symmetry_operations(self.atoms.numbers, pos, tol)
+        if not ops:
+            return []
+        ndum = self.ndummies
+        dpos = self.dummies.positions if ndum else None
+        dinds = self.dinds
+        dcentre = -np.ones(ndum, dtype=np.int64)
+        for j in range(nat):
+            k = int(dinds[j])
+            if k >= 0:
+                dcentre[k - nat] = j
+        maps = []
+        for perm, det, R, c in ops:
+            dperm = -np.ones(ndum, dtype=np.int64)
+            dflip = np.ones(ndum, dtype=np.float64)
+            ok = True
+            for k in range(ndum):
+                j = int(dcentre[k])
+                if j < 0:
+                    ok = False
+                    break
+                kk = int(dinds[perm[j]])
+                if kk < 0:
+                    ok = False
+                    break
+                xk = dpos[k]
+                r = R @ (dpos[kk - nat] - c) + c
+                if np.linalg.norm(r - xk) <= 3.0 * tol:
+                    pass
+                elif np.linalg.norm(r - (2.0 * pos[j] - xk)) <= 3.0 * tol:
+                    dflip[k] = -1.0
+                else:
+                    ok = False
+                    break
+                dperm[k] = kk - nat
+            if not ok:
+                continue
+            maps.append((perm, R, dperm, dflip, dcentre))
+        return maps
+
     def add_rotation(
         self,
         indices: Union[Tuple[int, ...], Rotation] = None,
@@ -4986,6 +5054,105 @@ def _split_cons_subspace(drdxnred, tol_factor=1e-6):
         ncons = 0
     return Q[:, :ncons], Q[:, ncons:]
 
+
+# Symmetry images of the secant pairs (InternalPES._symmetry_images).  The
+# energy is exactly invariant under permutations of identical nuclei and
+# under every orthogonal map of the coordinates, so at a geometry that is
+# itself (nearly) invariant under such an operation every measured secant
+# pair has an exact image pair, and the multi-secant update learns as many
+# directions per force call as the point group has operations.
+_SYM_TOL = 0.05        # A, per-atom rmsd of R.P.x - x below which an operation is used
+_SYM_STEP_FRAC = 0.5   # ... or when it is below this fraction of the rms step just taken
+_SYM_MAX_PERM = 48     # permutations kept per search
+_SYM_MAX_NODES = 20000  # backtracking nodes per search
+
+
+def _isometric_permutations(numbers, pos, tol, max_perm=_SYM_MAX_PERM,
+                            max_nodes=_SYM_MAX_NODES):
+    """Permutations P of same-element atoms with |d(i,k) - d(Pi,Pk)| < tol
+    for every pair of atoms (the distance-preserving relabelings, i.e.
+    the candidate point-group operations), by backtracking over the
+    atoms with distance pruning; heavy atoms with the most distinct
+    distance spectra are assigned first.  The identity is included.
+    The search stops after max_perm permutations or max_nodes nodes
+    (every permutation returned is a genuine isometry)."""
+    n = len(numbers)
+    if n < 2:
+        return []
+    numbers = np.asarray(numbers)
+    d = np.linalg.norm(pos[:, None, :] - pos[None, :, :], axis=2)
+    order = sorted(range(n), key=lambda i: (numbers[i] <= 1, -float(np.std(d[i]))))
+    order = np.array(order, dtype=np.int64)
+    cands = [np.flatnonzero(numbers == numbers[i]) for i in range(n)]
+    perm = -np.ones(n, dtype=np.int64)
+    used = np.zeros(n, dtype=bool)
+    sols = []
+    nodes = [0]
+
+    def bt(k):
+        if len(sols) >= max_perm or nodes[0] > max_nodes:
+            return
+        if k == n:
+            sols.append(perm.copy())
+            return
+        i = order[k]
+        done = order[:k]
+        di = d[i, done]
+        pdone = perm[done]
+        for j in cands[i]:
+            if used[j]:
+                continue
+            nodes[0] += 1
+            if k and np.max(np.abs(d[j, pdone] - di)) >= tol:
+                continue
+            perm[i] = j
+            used[j] = True
+            bt(k + 1)
+            perm[i] = -1
+            used[j] = False
+
+    bt(0)
+    return sols
+
+
+def _symmetry_operations(numbers, pos, tol_r, tol_d=None):
+    """Point-group operations of the geometry pos within a per-atom rmsd
+    tol_r: list of (perm, det, R, c) with R (pos[perm] - c) + c ~ pos, det
+    = +-1 the determinant of the orthogonal map R (Kabsch fit in both
+    determinant branches: a planar molecule realises a permutation both
+    as a rotation and as a reflection, and the identity permutation as
+    the reflection through the molecular plane).  The trivial operation
+    is excluded."""
+    n = len(numbers)
+    if n < 3:
+        return []
+    if tol_d is None:
+        tol_d = 3.0 * tol_r
+    c = pos.mean(axis=0)
+    Q = pos - c
+    ops = []
+    ident = np.arange(n)
+    for perm in _isometric_permutations(numbers, pos, tol_d):
+        P = Q[perm]
+        try:
+            U, _, Vt = np.linalg.svd(P.T @ Q)
+        except np.linalg.LinAlgError:
+            continue
+        d0 = 1.0 if np.linalg.det(U @ Vt) >= 0 else -1.0
+        trivial = bool(np.all(perm == ident))
+        for det in (1.0, -1.0):
+            if trivial and det > 0:
+                continue
+            D = np.array([1.0, 1.0, det * d0])
+            R = (U * D) @ Vt
+            R = R.T
+            resid = P @ R.T - Q
+            rmsd = float(np.sqrt(np.mean(np.sum(resid * resid, axis=1))))
+            if rmsd <= tol_r:
+                ops.append((perm, det, R, c))
+    return ops
+
+
 class PES:
     n_cell_dof = 0
 
@@ -5264,7 +5431,7 @@ class PES:
 
         self.curr['L'] = L
 
-    def _update_H(self, dx, dg, T_now=None, tbar=None):
+    def _update_H(self, dx, dg, T_now=None, tbar=None, images=None):
         if self.last['x'] is None or self.last['g'] is None:
             return
         if self.secant_memory <= 1 or not self.H.initialized:
@@ -5272,12 +5439,13 @@ class PES:
                 dg = np.asarray(dg, dtype=np.float64) + (T_now @ dx - tbar)
             self.H.update(dx, dg)
             return
-        S, Y = self._collect_secant_pairs(dx, dg, T_now, tbar)
+        S, Y = self._collect_secant_pairs(dx, dg, T_now, tbar, images)
         if S is None:
             return
         self.H.update(S, Y)
 
-    def _collect_secant_pairs(self, dx, dg, T_now=None, tbar=None):
+    def _collect_secant_pairs(self, dx, dg, T_now=None, tbar=None,
+                              images=None):
         """Return (S, Y) column matrices of the recent secant pairs.
 
         The newest pair is column 0 (symmetrize_Y2 keeps column 0 exact and
@@ -5286,6 +5454,17 @@ class PES:
         and from the endgame enter with the same weight, and older steps
         that are (nearly) linearly dependent on newer ones are dropped so
         that the m x m secant system of _MS_TS_BFGS stays well conditioned.
+
+        Symmetry images: images is a list of maps (s, y, tb) -> (s', y',
+        tb') of a pair under the point-group operations of the current
+        geometry (InternalPES._symmetry_images).  The energy is invariant
+        under them, so every stored pair has an exact image pair -- the
+        pair the same steps would have produced from the mirrored /
+        permuted start -- and the update learns up to |G| directions per
+        force call.  The images of a pair follow it in the candidate order
+        (a real pair always precedes its images and the older pairs),
+        subject to the same dependence and consistency filters; the
+        transport term tbar is mapped alike.
 
         Secant transport: a pair measured over the step x_j -> x_j+1 gives
         the path-averaged Hessian, y_j = H_avg s_j.  When the model has an
@@ -5311,10 +5490,18 @@ class PES:
                 tbar = None
         self._secant_pairs.insert(0, (dx / nrm, dg / nrm, tbar))
         del self._secant_pairs[self.secant_memory:]
+        n = len(dx)
+        candidates = []
+        for s, y, tb in self._secant_pairs:
+            candidates.append((s, y, tb))
+            if not images or len(s) != n:
+                continue
+            for image in images:
+                candidates.append(image(s, y, tb))
         basis = []
         S_cols = []
         Y_cols = []
-        for s, y, tb in self._secant_pairs:
+        for s, y, tb in candidates:
             if tb is not None and T_now is not None:
                 y = y + (T_now @ s - tb)
             r = s.copy()
@@ -5535,6 +5722,9 @@ class InternalPES(PES):
         if self._transport:
             self._pos_prev = (self.atoms.positions.copy(),
                               self.dummies.positions.copy())
+        # Geometry at the previous update, for the tolerance of the
+        # symmetry images (see _symmetry_images).
+        self._sym_pos_prev = self.atoms.positions.copy()
 
     dpos = property(lambda self: self.dummies.positions.copy())
 
@@ -6271,13 +6461,89 @@ class InternalPES(PES):
         tbar = T_avg @ dx
         return T_now, tbar
 
+    def _symmetry_images(self):
+        """Image maps of the secant pairs under the point-group operations
+        of the current geometry (Internals.symmetry_maps): a list of
+        functions (s, y, tb) -> (s', y', tb').  The energy is invariant
+        under the permutation of identical nuclei and the orthogonal map
+        of an operation, so at a geometry invariant under it every pair
+        measured along the last steps has the exact image the same steps
+        would have produced from the mirrored / permuted start.  The image
+        is formed through Cartesian space with the Jacobian of the current
+        geometry: s' = B G (B^+ s) for the displacement and y' = B^+T G
+        (B^T y) for the gradient change (atoms only, the dummies carry no
+        force), which is the signed permutation of the coordinates when
+        the coordinate set is closed under the operation and the correct
+        linear combination when it is not (a single improper dihedral at
+        a symmetric centre).  An operation is used when the mapped
+        geometry is within max(_SYM_TOL, _SYM_STEP_FRAC times the rms
+        atomic step just taken) of the actual one: at _SYM_TOL = 0.05 A the
+        curvature error of an image (2 a eps with the stretch
+        anharmonicity a ~ 2 /A) is about 20 % for the stiffest coordinates
+        and a few per cent for the bends, below the guess error of any
+        direction the real pairs have not sampled, and an image displaced
+        by less than half the step is at least as accurate as the real
+        pair itself, whose secant averages the Hessian over the whole
+        step.  Only the images of the stored real pairs are formed; the
+        memory of real pairs is unchanged."""
+        pos_now = self.atoms.positions
+        prev = self._sym_pos_prev
+        self._sym_pos_prev = pos_now.copy()
+        step_rms = 0.0
+        if prev is not None and prev.shape == pos_now.shape:
+            step_rms = float(np.sqrt(np.mean(np.sum((pos_now - prev) ** 2,
+                                                   axis=1))))
+        tol = max(_SYM_TOL, _SYM_STEP_FRAC * step_rms)
+        try:
+            maps = self.int.symmetry_maps(tol)
+        except (ValueError, IndexError, np.linalg.LinAlgError):
+            return []
+        if not maps:
+            return []
+        B = self.int.jacobian()
+        Binv = self._get_Binv()
+        nat = len(self.atoms)
+        ncart = 3 * nat
+        if B.shape[1] != Binv.shape[0] or Binv.shape[0] < ncart:
+            return []
+        Ba = B[:, :ncart]
+        Binva = Binv[:ncart]
+
+        def make(perm, R, dperm, dflip, dcentre):
+            Rt = R.T
+            inv = dflip < 0
+
+            def disp(s):
+                u = (Binv @ s).reshape((-1, 3))
+                va = u[:nat][perm] @ Rt
+                if len(dperm):
+                    vd = u[nat:][dperm] @ Rt
+                    if np.any(inv):
+                        vd[inv] = 2.0 * va[dcentre[inv]] - vd[inv]
+                    v = np.concatenate([va, vd])
+                else:
+                    v = va
+                return B @ v.ravel()
+
+            def cov(w):
+                wa = (w @ Ba).reshape((-1, 3))
+                return (wa[perm] @ Rt).ravel() @ Binva
+
+            def image(s, y, tb):
+                return disp(s), cov(y), (None if tb is None else cov(tb))
+
+            return image
+
+        return [make(*m) for m in maps]
+
     def _update_H(self, dx, dg):
+        images = self._symmetry_images()
         if getattr(self, '_transport', False):
             T_now, tbar = self._track_analytic_model(dx)
-            PES._update_H(self, dx, dg, T_now, tbar)
+            PES._update_H(self, dx, dg, T_now, tbar, images)
             return
         self._track_nonlocal_contacts()
-        PES._update_H(self, dx, dg)
+        PES._update_H(self, dx, dg, images=images)
 
     def write_traj(self):
         if self.traj is not None:
