@@ -4639,53 +4639,64 @@ class InternalPES(PES):
     dpos = property(lambda self: self.dummies.positions.copy())
 
     def _out_of_plane_curvature(self, jacobian):
-        """Permutation-averaged, centered umbrella springs in native internals."""
+        """Permutation-averaged Fischer out-of-plane angular curvature."""
         if self.atoms.pbc.any():
             return None
         from itertools import permutations
         positions = self.atoms.positions
+        radii = covalent_radii[self.atoms.numbers]
         neighbors = [set() for _ in positions]
         for bond in self.int.internals['bonds']:
             i, j = bond.indices
             if i < len(positions) and j < len(positions):
                 neighbors[i].add(j)
                 neighbors[j].add(i)
-        quadruples, stiffness = [], []
+        rows, stiffness = [], []
         cosine_limit = np.cos(self.int.atol)
         for center, adjacent in enumerate(neighbors):
             if len(adjacent) != 3:
                 continue
-            valid = []
-            for outer in permutations(sorted(adjacent)):
-                indices = (center,) + outer
-                edges = np.diff(positions[list(indices)], axis=0)
+            local_rows, local_stiffness = [], []
+            for first, second, third in permutations(sorted(adjacent)):
+                outer = [first, second, third]
+                edges = positions[outer] - positions[center]
                 lengths = np.linalg.norm(edges, axis=1)
                 if np.any(lengths < 1e-8):
                     continue
-                directions = edges / lengths[:, None]
-                cosines = np.sum(directions[:-1] * directions[1:], axis=1)
-                if np.any(np.abs(cosines) >= cosine_limit):
+                u, v, w = edges / lengths[:, None]
+                plane_cosine = float(v @ w)
+                if abs(plane_cosine) >= cosine_limit:
                     continue
-                valid.append(indices)
-            if valid:
-                quadruples.extend(valid)
-                stiffness.extend([0.045 * units.Hartree / len(valid)] * len(valid))
-        if not quadruples:
+                normal = np.cross(v, w)
+                plane_sine = np.linalg.norm(normal)
+                sine = float(u @ normal) / plane_sine
+                cosine_squared = 1.0 - sine * sine
+                if cosine_squared <= 1e-12:
+                    continue
+                cosine = np.sqrt(cosine_squared)
+                gradients = np.array([
+                    normal / plane_sine - sine * u,
+                    np.cross(w, u) / plane_sine
+                    - sine * (v - plane_cosine * w) / plane_sine**2,
+                    np.cross(u, v) / plane_sine
+                    - sine * (w - plane_cosine * v) / plane_sine**2,
+                ]) / (lengths[:, None] * cosine)
+                row = np.zeros(jacobian.shape[1])
+                for atom, gradient in zip(outer, gradients):
+                    row[3 * atom:3 * atom + 3] = gradient
+                row[3 * center:3 * center + 3] = -gradients.sum(axis=0)
+                reference = (radii[center] + radii[outer]) / units.Bohr
+                value = (0.0025 + 0.0061 * (reference[1] * reference[2])**0.80
+                         * cosine_squared**2
+                         * np.exp(-3.0 * (lengths[0] / units.Bohr - reference[0])))
+                local_rows.append(row)
+                local_stiffness.append(value * units.Hartree)
+            if local_rows:
+                rows.extend(local_rows)
+                stiffness.extend(np.asarray(local_stiffness) / len(local_rows))
+        if not rows:
             return None
-        indices = np.asarray(quadruples, dtype=np.int32)
-        count = len(indices)
-        padded_count = ((count + BLOCK_SIZE - 1) // BLOCK_SIZE) * BLOCK_SIZE
-        padded = np.tile(indices[0], (padded_count, 1))
-        padded[:count] = indices
-        gradients = np.asarray(device_get(_dihedral_grad_batched(
-            positions[padded], np.zeros((padded_count, 3, 3)))))[:count]
-        if not np.all(np.isfinite(gradients)):
-            return None
-        cartesian = np.zeros((count, jacobian.shape[1]))
-        rows = np.arange(count)[:, None, None]
-        columns = 3 * indices[:, :, None] + np.arange(3)
-        cartesian[rows, columns] = gradients
-        mapped = ((np.sqrt(stiffness)[:, None] * cartesian)
+        mapped = ((np.sqrt(stiffness)[:, None] * np.asarray(rows))
                   @ np.linalg.pinv(jacobian, rcond=1e-6))
         block = mapped.T @ mapped
         return block if np.all(np.isfinite(block)) else None
