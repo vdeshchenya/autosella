@@ -21,8 +21,7 @@ dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors). Dimers that contain a 1-coordinate
-carbonyl oxygen, or a 2-coordinate H-bonded alkyl ketone or
-aldehyde oxygen, use 0.10 Ha guesses on at most two phenol C–O–H
+carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
 3-coordinate with exactly one oxygen).
 
@@ -4122,46 +4121,8 @@ class Internals(BaseInternals):
                 if int(i) in dummy_set or int(z) != 8:
                     continue
                 real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if not real:
-                    continue
-                if any(int(numbers[nb]) not in (1, 6) for nb in real):
-                    continue
-                carbons = [nb for nb in real if int(numbers[nb]) == 6]
-                if len(carbons) != 1:
-                    continue
-                # Free 1-coordinate carbonyl oxygen (cycle 334 keep).
-                if len(real) == 1:
+                if len(real) == 1 and int(numbers[real[0]]) == 6:
                     return True
-                # H-bonded alkyl ketone: O bonded to C and H; ketone carbon
-                # is 3-coordinate with one O and two C, and at least one of
-                # those C is 4-coordinate with ≥2 hydrogens (not a packing-
-                # inflated aromatic carbon, cycle 335).
-                if len(real) != 2 or not any(int(numbers[nb]) == 1 for nb in real):
-                    continue
-                real_c = [nb for nb in neighbors[carbons[0]] if int(nb) not in dummy_set]
-                if len(real_c) != 3:
-                    continue
-                if sum(int(numbers[nb]) == 8 for nb in real_c) != 1:
-                    continue
-                c_neighbors = [nb for nb in real_c if int(numbers[nb]) == 6]
-                h_neighbors = [nb for nb in real_c if int(numbers[nb]) == 1]
-                if len(c_neighbors) == 2:
-                    for cn in c_neighbors:
-                        real_cn = [nb for nb in neighbors[cn] if int(nb) not in dummy_set]
-                        if (
-                            len(real_cn) == 4
-                            and sum(int(numbers[nb]) == 1 for nb in real_cn) >= 2
-                        ):
-                            return True
-                elif len(c_neighbors) == 1 and len(h_neighbors) == 1:
-                    # H-bonded alkyl aldehyde (leftover acetaldehyde).
-                    real_cn = [nb for nb in neighbors[c_neighbors[0]]
-                               if int(nb) not in dummy_set]
-                    if (
-                        len(real_cn) == 4
-                        and sum(int(numbers[nb]) == 1 for nb in real_cn) >= 2
-                    ):
-                        return True
             return False
 
         def _phenol_coh(angle) -> bool:
@@ -4185,12 +4146,60 @@ class Internals(BaseInternals):
                 return False
             return True
 
+        def _true_phenol(angle) -> bool:
+            if not _phenol_coh(angle):
+                return False
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            c_idx = ia if int(numbers[ia]) == 6 else ic
+            ring_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set
+                      and int(numbers[nb]) == 6]
+            if len(ring_c) != 2:
+                return False
+            for cn in ring_c:
+                real_cn = [nb for nb in neighbors[cn] if int(nb) not in dummy_set]
+                if len(real_cn) != 3:
+                    return False
+            return True
+
+        def _alkyl_alpha(c_idx) -> bool:
+            real_cn = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+            return (
+                len(real_cn) == 4
+                and sum(int(numbers[nb]) == 1 for nb in real_cn) >= 2
+            )
+
+        def _has_alkyl_carbonyl_c() -> bool:
+            for i, z in enumerate(numbers):
+                if int(i) in dummy_set or int(z) != 6:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if len(real) != 3:
+                    continue
+                if sum(int(numbers[nb]) == 8 for nb in real) != 1:
+                    continue
+                carbons = [nb for nb in real if int(numbers[nb]) == 6]
+                hydrogens = [nb for nb in real if int(numbers[nb]) == 1]
+                if len(carbons) == 2:
+                    if any(_alkyl_alpha(cn) for cn in carbons):
+                        return True
+                elif len(carbons) == 1 and len(hydrogens) == 1:
+                    if _alkyl_alpha(carbons[0]):
+                        return True
+            return False
+
         phenol_ok = set()
-        if soft_phenol_angle and _has_carbonyl_o():
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _phenol_coh(angle)]
-            if 1 <= len(cands) <= 2:
-                phenol_ok = set(cands)
+        if soft_phenol_angle:
+            coh = [ia for ia, angle in enumerate(self.internals['angles'])
+                   if _phenol_coh(angle)]
+            true_ph = [ia for ia, angle in enumerate(self.internals['angles'])
+                       if _true_phenol(angle)]
+            # Cycle 334 keep: spare 1-coord carbonyl plus any C–O–H.
+            if _has_carbonyl_o() and 1 <= len(coh) <= 2:
+                phenol_ok = set(coh)
+            elif _has_alkyl_carbonyl_c() and 1 <= len(true_ph) <= 2:
+                # Leftover acetaldehyde–phenol: true phenol only.
+                phenol_ok = set(true_ph)
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
