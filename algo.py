@@ -6,9 +6,9 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. After 20 connected
-well-predicted steps, MaxInternalStep is replaced by Euclidean
-TrustRegion.
+when the previous ratio ρ was well predicted. The two GDIIS points
+are the current iterate and the earlier history point with the
+smallest residual.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5759,20 +5759,12 @@ class Sella(Optimizer):
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
-        rs_cls = self.rs
-        step_kwargs = dict(rs_kwargs)
-        rho = float(getattr(self, "rho", 1.0))
-        if (getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20
-                and 1.0 / self.rho_inc < rho < self.rho_inc):
-            rs_cls = TrustRegion
-            step_kwargs = {}
-
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = rs_cls(
+                s, smag = self.rs(
                     self.pes, self.ord, self.delta, method=self.method,
-                    **step_kwargs
+                    **rs_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -5780,9 +5772,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = rs_cls(
+            s, smag = self.rs(
                 self.pes, self.ord, self.delta, method=self.method,
-                **step_kwargs
+                **rs_kwargs
             ).get_s()
 
         return self._maybe_gdiis(s, smag)
@@ -5794,7 +5786,8 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc).
+        predicted (1/rho_inc < rho < rho_inc). Pair the current point
+        with the earlier history vector of smallest residual norm.
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
@@ -5824,7 +5817,10 @@ class Sella(Optimizer):
         use = 2
         if err.shape[0] < use:
             return s_qn, smag_qn
-        use_vecs = err[::-1][:use]
+        last = err.shape[0] - 1
+        earlier = np.argsort(norms[:last])
+        pick = np.array([int(earlier[0]), last], dtype=np.int64)
+        use_vecs = err[pick]
         A = use_vecs @ use_vecs.T
         try:
             coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
