@@ -8,8 +8,10 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms≥30 add two orthogonal geomeTRIC LinearAngle coordinates
-alongside dummy-atom linear bends.
+Connected n_atoms≥30 replace two-coordinate dummy-atom linear bends
+with two orthogonal geomeTRIC LinearAngle coordinates. LinearAngle
+seconds are 3-atom finite differences; geodesic ODE timeouts fall back
+to iterative realization with a 1.0 Å Cartesian hop cap.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -79,8 +81,6 @@ from ase import Atoms
 from ase.build import niggli_reduce
 
 from ase.utils import basestring
-
-from ase.visualize import view
 
 from ase.calculators.singlepoint import SinglePointCalculator
 
@@ -1602,18 +1602,17 @@ def _linear_angle(
     e0: jnp.ndarray,
     axis: jnp.ndarray,
 ) -> float:
-    """geomeTRIC LinearAngle: BA+BC projections on two axes ⊥ AC."""
+    """geomeTRIC LinearAngle: BA+BC projections on two axes ⊥ AC.
+
+    e0 is a frozen reference axis (repositioned only after accepted steps),
+    matching geomeTRIC value()/derivative() rather than re-orthogonalizing
+    inside every evaluation.
+    """
     v_ac = pos[2] - pos[0] + tvecs[0] + tvecs[1]
     ev = v_ac / jnp.maximum(jnp.linalg.norm(v_ac), 1e-18)
     e0n = e0 / jnp.maximum(jnp.linalg.norm(e0), 1e-18)
-    e0p = e0n - ev * jnp.dot(ev, e0n)
-    n0 = jnp.linalg.norm(e0p)
-    fallback = jnp.eye(3)[jnp.argmin(ev * ev)]
-    fallback = fallback - ev * jnp.dot(ev, fallback)
-    fallback = fallback / jnp.maximum(jnp.linalg.norm(fallback), 1e-18)
-    e0p = jnp.where(n0 > 1e-8, e0p / jnp.maximum(n0, 1e-18), fallback)
-    e1 = jnp.cross(ev, e0p)
-    e1 = e1 / jnp.maximum(jnp.linalg.norm(e1), 1e-18)
+    c1 = jnp.cross(ev, e0n)
+    e1 = c1 / jnp.maximum(jnp.linalg.norm(c1), 1e-18)
     e2 = jnp.cross(ev, e1)
     e2 = e2 / jnp.maximum(jnp.linalg.norm(e2), 1e-18)
     vba = -(pos[1] - pos[0] + tvecs[0])
@@ -1627,7 +1626,6 @@ def _linear_angle(
 
 _linear_angle_eval0 = jit(_linear_angle)
 _linear_angle_eval1 = jit(grad(_linear_angle, argnums=0))
-_linear_angle_eval2 = jit(jacfwd(jacrev(_linear_angle, argnums=0), argnums=0))
 
 
 class LinearAngle(Internal):
@@ -1636,7 +1634,6 @@ class LinearAngle(Internal):
     nindices = 3
     _eval0 = staticmethod(_linear_angle_eval0)
     _eval1 = staticmethod(_linear_angle_eval1)
-    _eval2 = staticmethod(_linear_angle_eval2)
 
     def __init__(
         self,
@@ -1675,20 +1672,26 @@ class LinearAngle(Internal):
             self.kwargs['ncvecs'] @ atoms.cell, dtype=np.float64
         )
         pos = atoms.positions[self.indices]
-        v = np.asarray(pos[2] - pos[0] + np.asarray(tvecs[0] + tvecs[1]))
-        n = np.linalg.norm(v)
-        if n > 1e-12:
-            ev = v / n
-            e0 = np.asarray(self.kwargs['e0'], dtype=np.float64)
-            if float(np.dot(ev, e0) ** 2) > 0.81:
-                e0 = np.eye(3)[int(np.argmin(ev * ev))]
-            e0 = e0 - ev * float(np.dot(ev, e0))
-            n0 = np.linalg.norm(e0)
-            if n0 > 1e-12:
-                self.kwargs['e0'] = e0 / n0
         e0 = jnp.asarray(self.kwargs['e0'], dtype=np.float64)
         axis = jnp.asarray(self.kwargs['axis'], dtype=np.float64)
         return pos, tvecs, e0, axis
+
+    def reposition_e0(self, atoms: Atoms) -> None:
+        """geomeTRIC LinearAngle.reposition_e0 after an accepted step."""
+        tvecs = np.asarray(self.kwargs['ncvecs'] @ atoms.cell, dtype=np.float64)
+        pos = np.asarray(atoms.positions[self.indices], dtype=np.float64)
+        v = pos[2] - pos[0] + tvecs[0] + tvecs[1]
+        n = np.linalg.norm(v)
+        if n < 1e-12:
+            return
+        ev = v / n
+        e0 = np.asarray(self.kwargs['e0'], dtype=np.float64).reshape(3)
+        if float(np.dot(ev, e0) ** 2) > 0.81:
+            e0 = np.eye(3)[int(np.argmin(ev * ev))]
+        e0 = e0 - ev * float(np.dot(ev, e0))
+        n0 = np.linalg.norm(e0)
+        if n0 > 1e-12:
+            self.kwargs['e0'] = e0 / n0
 
     def calc(self, atoms: Atoms) -> float:
         return float(self._eval0(*self._eval_args(atoms)))
@@ -1696,8 +1699,22 @@ class LinearAngle(Internal):
     def calc_gradient(self, atoms: Atoms) -> np.ndarray:
         return np.array(self._eval1(*self._eval_args(atoms)))
 
-    def calc_hessian(self, atoms: Atoms) -> jnp.ndarray:
-        return np.array(self._eval2(*self._eval_args(atoms)))
+    def calc_hessian(self, atoms: Atoms) -> np.ndarray:
+        """geomeTRIC LinearAngle.second_derivative: 3-atom central FD, h=1e-3 Å."""
+        pos0, tvecs, e0, axis = self._eval_args(atoms)
+        pos = np.array(pos0, dtype=np.float64, copy=True)
+        h = 1.0e-3
+        hess = np.zeros((3, 3, 3, 3), dtype=np.float64)
+        eval1 = self._eval1
+        for i in range(3):
+            for j in range(3):
+                pos[i, j] += h
+                gp = np.array(eval1(pos, tvecs, e0, axis))
+                pos[i, j] -= 2.0 * h
+                gm = np.array(eval1(pos, tvecs, e0, axis))
+                pos[i, j] += h
+                hess[i, j, :, :] = (gp - gm) / (2.0 * h)
+        return hess
 
 
 Bond.union = Angle
@@ -3807,6 +3824,7 @@ class Internals(BaseInternals):
                             ))
                         except DuplicateInternalError:
                             pass
+                        continue
                     # First try to take the cross product of the two bond
                     # vectors. These two vectors are close to collinear, and
                     # may be exactly collinear, so there's a backup strategy
@@ -4828,8 +4846,12 @@ class InternalPES(PES):
         """ODE-based stepper for internal coordinate updates.
 
         Uses LSODA to integrate the geodesic equation for reliable convergence
-        on large or ill-conditioned steps.
+        on large or ill-conditioned steps. Timeouts and integrator failures
+        restore the starting geometry and return None so set_x can fall back
+        to the iterative stepper instead of raising.
         """
+        apos0 = self.atoms.positions.copy()
+        dpos0 = self.dummies.positions.copy()
         dx = self.wrap_dx(target - self.get_x())
         t0 = 0.
         Binv = self._get_Binv()
@@ -4838,6 +4860,7 @@ class InternalPES(PES):
                         Binv @ dx,
                         Binv @ self.curr.get('g', np.zeros_like(dx))))
         ode = LSODA(self._q_ode, t0, y0, t_bound=1., atol=1e-6)
+        y = y0
 
         while ode.status == 'running':
             ode.step()
@@ -4845,14 +4868,19 @@ class InternalPES(PES):
             t0 = ode.t
             self.bad_int = self.int.check_for_bad_internals()
             if self.bad_int is not None:
-                break
+                self.atoms.positions = apos0
+                self.dummies.positions = dpos0
+                self.bad_int = None
+                return None
             if ode.nfev > 1000:
-                view(self.atoms + self.dummies)
-                raise RuntimeError("Geometry update ODE is taking too long "
-                                   "to converge!")
+                self.atoms.positions = apos0
+                self.dummies.positions = dpos0
+                return None
 
         if ode.status == 'failed':
-            raise RuntimeError("Geometry update ODE failed to converge!")
+            self.atoms.positions = apos0
+            self.dummies.positions = dpos0
+            return None
 
         nxa = 3 * len(self.atoms)
         nxd = 3 * len(self.dummies)
@@ -4866,27 +4894,68 @@ class InternalPES(PES):
         return dx_initial, dx_final, g_final
 
     # Position getter/setter
+    def _reposition_linear_e0(self):
+        intern = getattr(self, 'int', None)
+        if intern is None:
+            return
+        atoms = intern.atoms
+        for coord in intern.internals.get('other', ()):
+            if isinstance(coord, LinearAngle):
+                coord.reposition_e0(atoms)
+
     def set_x(self, target):
         """Update internal coordinates to target values.
 
-        Uses fast iterative stepper by default, with ODE fallback for robustness.
+        ODE first, iterative fallback on timeout/failure. Reject Cartesian
+        realizations whose max-atom hop exceeds 1.0 Å (retry a halved
+        internal target, else stay put).
         """
-        if self.iterative_stepper:
-            res = self._set_x_iterative(target)
-            if res is not None:
-                q_after_ode = self.int.calc().copy()
-                proj_moved = self._project_to_constraints()
-                dx_initial, dx_final_ode, g_final = res
-                dx_final = self._add_proj_delta(dx_final_ode, q_after_ode,
-                                                proj_moved)
-                return dx_initial, dx_final, g_final
-        # Fall back to ODE solver
-        res = self._set_x_ode(target)
-        q_after_ode = self.int.calc().copy()
-        proj_moved = self._project_to_constraints()
-        dx_initial, dx_final_ode, g_final = res
-        dx_final = self._add_proj_delta(dx_final_ode, q_after_ode, proj_moved)
-        return dx_initial, dx_final, g_final
+        pos0 = self.atoms.positions.copy()
+        dpos0 = self.dummies.positions.copy()
+        x0 = self.get_x()
+
+        def _realize(tgt):
+            res = None
+            if self.iterative_stepper:
+                res = self._set_x_iterative(tgt)
+            if res is None:
+                res = self._set_x_ode(tgt)
+            if res is None:
+                res = self._set_x_iterative(tgt)
+            return res
+
+        def _hop_ok():
+            if len(self.atoms) == 0:
+                return True
+            disp = np.linalg.norm(self.atoms.positions - pos0, axis=1)
+            return float(np.max(disp)) <= 1.0
+
+        def _finish(res):
+            q_after = self.int.calc().copy()
+            proj_moved = self._project_to_constraints()
+            dx_initial, dx_final_ode, g_final = res
+            dx_final = self._add_proj_delta(dx_final_ode, q_after, proj_moved)
+            self._reposition_linear_e0()
+            return dx_initial, dx_final, g_final
+
+        res = _realize(target)
+        if res is not None and not _hop_ok():
+            self.atoms.positions = pos0
+            self.dummies.positions = dpos0
+            mid = x0 + 0.5 * self.wrap_dx(target - x0)
+            res = _realize(mid)
+            if res is not None and not _hop_ok():
+                self.atoms.positions = pos0
+                self.dummies.positions = dpos0
+                res = None
+        if res is None:
+            self.atoms.positions = pos0
+            self.dummies.positions = dpos0
+            z = np.zeros_like(x0)
+            g0 = self.curr.get('g', np.zeros_like(x0))
+            g_final = self.int.jacobian() @ g0
+            return z, z, g_final
+        return _finish(res)
 
     def _add_proj_delta(self, dx_int_final, q_after_ode, proj_moved):
         """Combine ODE-tangent dx with the projection's IC delta.
