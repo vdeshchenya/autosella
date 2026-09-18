@@ -4646,12 +4646,15 @@ class InternalPES(PES):
         self.ncart = self.int.ndof
         self._fit_blocks = None
         self._fit_pairs = []
+        self._curvature_metric_diagonal = None
         if H0 is None:
             # Keep physical blocks and a bounded correlation for an early fit.
             B = self.int.jacobian()
             Q, _ = qr(B, mode='economic')
             P = Q @ Q.T
             diagonal = np.diag(self.int.guess_hessian())
+            if np.all(np.isfinite(diagonal)) and np.all(diagonal > 0):
+                self._curvature_metric_diagonal = diagonal.copy()
             labels = np.array(
                 [3] * self.int.ntrans + [0] * self.int.nbonds
                 + [1] * self.int.nangles + [2] * self.int.ndihedrals
@@ -5564,6 +5567,30 @@ class QuasiNewton(BaseStepper):
         self.ones = np.ones_like(self.L)
         self.ones[:self.order] = -1
 
+    def set_curvature_metric(self, metric):
+        # Leave the native positive-spectrum branch exactly unchanged.
+        if self.order != 0 or not self.H.evals.size or self.H.evals[0] >= 0:
+            return
+        try:
+            factor = np.linalg.cholesky((metric + metric.T) / 2.0)
+            reduced = solve_triangular(factor, self.H.asarray(), lower=True)
+            reduced = solve_triangular(factor, reduced.T, lower=True).T
+            if not np.all(np.isfinite(reduced)):
+                return
+            values, vectors = eigh((reduced + reduced.T) / 2.0)
+            mapped = factor @ vectors
+            positive = (mapped * np.abs(values)) @ mapped.T
+            if not np.all(np.isfinite(positive)):
+                return
+            values, vectors = eigh((positive + positive.T) / 2.0)
+        except np.linalg.LinAlgError:
+            return
+        if not np.all(np.isfinite(values)) or not np.all(np.isfinite(vectors)):
+            return
+        self.L = np.abs(values)
+        self.V = vectors
+        self.Vg = self.V.T @ self.g
+
     def get_s(self, alpha: float) -> Tuple[np.ndarray, np.ndarray]:
         denom = self.L + alpha * self.ones
         sproj = self.Vg / denom
@@ -5707,6 +5734,14 @@ class BaseRestrictedStep:
                 order,
                 d1=d1,
             )
+
+        metric_diagonal = getattr(self.pes, '_curvature_metric_diagonal', None)
+        if (isinstance(self.stepper, QuasiNewton) and order == 0
+                and self.stepper.H.evals.size and self.stepper.H.evals[0] < 0
+                and self._W_is_identity and metric_diagonal is not None
+                and metric_diagonal.size == self.P.shape[1]):
+            metric = (self.P * metric_diagonal) @ self.P.T
+            self.stepper.set_curvature_metric(metric)
 
         if tol is None:
             tol = 1e-10 if self.stepper.newton_safe else 1e-15
