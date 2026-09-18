@@ -8082,7 +8082,7 @@ def _start_fragments(numbers, pos_ang, scale=1.25):
     return groups
 
 
-def _break_start_symmetry(numbers, pos_ang):
+def _break_start_symmetry(numbers, pos_ang, groups=None):
     """Displace every fragment of a multi-fragment start as a rigid body by
     _SYMMETRY_BREAK_TRANS A along a random direction and (fragments of two
     or more atoms) _SYMMETRY_BREAK_ROT rad about a random axis through its
@@ -8104,8 +8104,17 @@ def _break_start_symmetry(numbers, pos_ang):
     ~(1 + |k|/lambda_model) per step, while a stable mode absorbs it in one
     or two steps at negligible energy cost (~0.5*k*delta^2 < 1e-3 eV).
     Connected systems are returned unchanged (one fragment: their internal
-    coordinates carry no such rigid-body symmetry element)."""
-    groups = _start_fragments(numbers, pos_ang)
+    coordinates carry no such rigid-body symmetry element).
+
+    The displacement belongs to the geometry the optimizer actually starts
+    from: a docked start (_dock_start) is a stationary point of the rigid-
+    body surrogate, and when that surrogate minimum lies on a symmetry
+    element the rigid-body minimisation re-symmetrises the pose to its
+    gradient tolerance, undoing an earlier displacement; the docked pose is
+    therefore displaced again (with the docking's fragment list, `groups`)
+    before its verification call."""
+    if groups is None:
+        groups = _start_fragments(numbers, pos_ang)
     if len(groups) < 2:
         return pos_ang
     rng = np.random.RandomState(_SYMMETRY_BREAK_SEED)
@@ -8603,6 +8612,11 @@ def _dock_start(atoms, wrapper):
         return
     if np.sqrt(np.mean(np.sum(move ** 2, axis=1))) < _DOCK_MIN_RMSD:
         return
+    # The docked pose is a stationary point of the surrogate and is often
+    # symmetric; it leaves its symmetry element the same way the start did
+    # (see _break_start_symmetry) before the verification call, so that the
+    # cached evaluation is the geometry the optimizer starts from.
+    pos1 = _break_start_symmetry(atoms.numbers, pos1, groups)
     atoms.positions = pos1
     e1 = atoms.get_potential_energy()
     if e1 < e0:
