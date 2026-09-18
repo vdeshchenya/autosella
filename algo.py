@@ -4155,6 +4155,42 @@ class Internals(BaseInternals):
                     if _ether_oxygen(self.internals['angles'][ia])
                 }
 
+        def _carboxyl_carbon(cn) -> bool:
+            nbs = [nbb for nbb in neighbors[cn] if int(nbb) not in dummy_set]
+            if len(nbs) != 3:
+                return False
+            if any(int(numbers[nbb]) == 7 for nbb in nbs):
+                return False
+            return sum(int(numbers[nbb]) == 8 for nbb in nbs) >= 2
+
+        def _carboxyl_ccn(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            n_n = sum(int(numbers[nb]) == 7 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
+            if n_n != 1 or n_c != 2 or n_h != 1:
+                return False
+            carbons = [nb for nb in real_c if int(numbers[nb]) == 6]
+            if not any(_carboxyl_carbon(cn) for cn in carbons):
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {6, 7}
+
+        carboxyl_ccn_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _carboxyl_ccn(angle)]
+            if 1 <= len(cands) <= 2:
+                carboxyl_ccn_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4200,6 +4236,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in oxazolidinone_occ_ok:
                 # Oxazolidinone C5 O–C–C at 4-coordinate carbon.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
+                # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
