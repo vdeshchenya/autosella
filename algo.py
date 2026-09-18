@@ -7,7 +7,8 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected dummy-involving
-angle guesses are 0.10 Ha when n_atoms<18 and Lindh 1995 k_θ when n_atoms>=30.
+angle guesses are 0.10 Ha when n_atoms<18 or n_atoms>=30. Connected
+n_atoms>=30 GDIIS interpolants accept cosine >= 0.85.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3237,7 +3238,6 @@ class Constraints(BaseInternals):
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
-    lindh_dummy_angle_h0_default = False
 
     def __init__(
         self,
@@ -3275,7 +3275,6 @@ class Internals(BaseInternals):
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
-        self.lindh_dummy_angle_h0 = Internals.lindh_dummy_angle_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3293,7 +3292,6 @@ class Internals(BaseInternals):
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
-        new.lindh_dummy_angle_h0 = getattr(self, 'lindh_dummy_angle_h0', False)
         return new
 
     def add_rotation(
@@ -3934,21 +3932,6 @@ class Internals(BaseInternals):
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
         return h0 * units.Hartree / units.Bohr**2
 
-    def _lindh_rho(self, bond: Bond) -> float:
-        idx = np.asarray(bond.indices, dtype=np.int32)
-        numbers = self.all_atoms.numbers[idx]
-        rcov = covalent_radii[numbers].sum() / units.Bohr
-        rij = bond.calc(self.all_atoms) / units.Bohr
-        z1, z2 = int(numbers[0]), int(numbers[1])
-        first = (z1 <= 2, z2 <= 2)
-        if first[0] and first[1]:
-            alpha = 1.0
-        elif first[0] or first[1]:
-            alpha = 0.3949
-        else:
-            alpha = 0.28
-        return float(np.exp(alpha * (rcov**2 - rij**2)))
-
     def _h0_angle(
         self,
         angle: Angle,
@@ -4008,17 +3991,9 @@ class Internals(BaseInternals):
             nbonds[j] += 1
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
-        lindh_dummy_angle = getattr(self, 'lindh_dummy_angle_h0', False)
         for angle in self.internals['angles']:
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                if lindh_dummy_angle:
-                    bab, bbc = angle.split()
-                    h0[idx] = (
-                        0.15 * self._lindh_rho(bab) * self._lindh_rho(bbc)
-                        * units.Hartree
-                    )
-                else:
-                    h0[idx] = 0.10 * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             else:
                 h0[idx] = self._h0_angle(angle)
             idx += 1
@@ -5887,9 +5862,9 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
-        share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only.
+        predicted (1/rho_inc < rho < rho_inc). Connected n_atoms>=30
+        jobs use cosine ≥ 0.85; dimers and smaller connected jobs stay
+        at 0.90. Dummy-wd and wa stay connected-only.
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
@@ -5943,7 +5918,10 @@ class Sella(Optimizer):
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
+        min_cos = 0.90
+        if getattr(self, '_allow_angle_wa', False) and len(self.atoms) >= 30:
+            min_cos = 0.85
+        if cos < min_cos or cos < 0.0:
             return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
@@ -6160,7 +6138,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
-        Internals.lindh_dummy_angle_h0_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -6173,7 +6150,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
-        Internals.lindh_dummy_angle_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
