@@ -11,9 +11,9 @@ at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H).
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
-plane at 2-coordinate carbon centers, and on a geomeTRIC e0 axis at
-2-coordinate C–N–C nitrogen centers, when the linear-frame cross
-product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
+plane at 2-coordinate carbon centers, and on a LINP perpendicular
+axis at 2-coordinate C–N–C nitrogen centers, when the linear-frame
+cross product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
@@ -3734,25 +3734,40 @@ class Internals(BaseInternals):
                             and 0.04 < cross_norm < 0.10
                             and int(self.atoms.numbers[j]) == 7
                         ):
-                            # C–N–C nitrogen: geomeTRIC e0 dummy (cycle 272
-                            # adjacent dummy saved leftover by only one call).
+                            # C–N–C nitrogen: Schlegel LINP dummy, perpendicular
+                            # to the substituent plane (axis × ref).
                             term_z = []
+                            terms = []
                             for bterm in jbonds:
                                 t0, t1 = int(bterm.indices[0]), int(bterm.indices[1])
                                 t = t1 if t0 == j else t0
                                 if 0 <= t < self.natoms:
                                     term_z.append(int(self.atoms.numbers[t]))
+                                    terms.append(t)
                             if len(term_z) == 2 and term_z[0] == 6 and term_z[1] == 6:
                                 axis = dx1 + dx2
                                 an = float(np.linalg.norm(axis))
                                 if an > 1e-8:
                                     ev = axis / an
-                                    e0 = np.zeros(3, dtype=np.float64)
-                                    e0[int(np.argmin(ev * ev))] = 1.0
-                                    e0 = e0 - ev * float(np.dot(ev, e0))
-                                    n0 = float(np.linalg.norm(e0))
-                                    if n0 > 1e-12:
-                                        dpos = e0 / n0
+                                    posj = np.asarray(self.atoms.positions[j], dtype=np.float64)
+                                    numbers = np.asarray(self.atoms.numbers)
+                                    cands = []
+                                    for t in terms:
+                                        for bnb in bonds[t]:
+                                            k0, k1 = int(bnb.indices[0]), int(bnb.indices[1])
+                                            k = k1 if k0 == t else k0
+                                            if k == j or k >= self.natoms:
+                                                continue
+                                            z = int(numbers[k])
+                                            cands.append((0 if z >= 6 else 1, k))
+                                    cands.sort()
+                                    for _, k in cands:
+                                        ref = np.asarray(self.atoms.positions[k], dtype=np.float64) - posj
+                                        linp = np.cross(ev, ref)
+                                        vn = float(np.linalg.norm(linp))
+                                        if vn > 1e-8:
+                                            dpos = linp / vn
+                                            break
                         if dpos is None:
                             dpos = cross
                             dpos_norm = cross_norm
