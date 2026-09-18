@@ -4495,15 +4495,18 @@ class InternalPES(PES):
                 (P * (diagonal * (labels == kind))) @ P
                 for kind in range(4) if np.any(labels == kind)
             ]
+            auxiliary_start = len(self._fit_blocks)
             auxiliary = self._auxiliary_curvature(B)
-            if auxiliary is not None:
-                self._fit_blocks.append(auxiliary)
+            self._fit_blocks.extend(auxiliary)
             out_of_plane = self._out_of_plane_curvature(B)
             if out_of_plane is not None:
                 self._fit_blocks.append(out_of_plane)
             count = len(self._fit_blocks)
-            self._fit_gram = 0.25 * np.eye(count)
-            self._fit_rhs = 0.25 * np.ones(count)
+            ridge = np.full(count, 0.25)
+            if auxiliary:
+                ridge[auxiliary_start:auxiliary_start + len(auxiliary)] /= len(auxiliary)
+            self._fit_gram = np.diag(ridge)
+            self._fit_rhs = ridge.copy()
             H0 = sum(self._fit_blocks, np.zeros_like(P))
             self.set_H(H0, initialized=False)
         else:
@@ -4518,7 +4521,7 @@ class InternalPES(PES):
         self._Hc_cache = _LRU2()
 
     def _auxiliary_curvature(self, jacobian):
-        """Map a nearby-distance spring model into the existing internals."""
+        """Map across-angle and other nearby springs into separate fit blocks."""
         positions = self.atoms.positions
         radii = covalent_radii[self.atoms.numbers]
         first, second = np.triu_indices(len(positions), 1)
@@ -4527,6 +4530,7 @@ class InternalPES(PES):
         references = radii[first] + radii[second]
         bonded = {tuple(sorted(bond.indices)) for bond in self.int.internals['bonds']}
         parent = list(range(len(positions)))
+        neighbors = [set() for _ in positions]
 
         def root(index):
             while parent[index] != index:
@@ -4537,13 +4541,17 @@ class InternalPES(PES):
         for i, j in bonded:
             if i < len(positions) and j < len(positions):
                 parent[root(i)] = root(j)
+                neighbors[i].add(j)
+                neighbors[j].add(i)
         labels = [root(i) for i in range(len(positions))]
         keep = np.array([(int(i), int(j)) not in bonded and labels[i] == labels[j]
                          for i, j in zip(first, second)], dtype=bool)
         keep &= (distances > 1e-8) & (distances < 2.5 * references)
         first, second = first[keep], second[keep]
         if first.size == 0:
-            return None
+            return []
+        across_angle = np.array([bool(neighbors[i] & neighbors[j])
+                                 for i, j in zip(first, second)], dtype=bool)
         distances, references = distances[keep], references[keep]
         directions = differences[keep] / distances[:, None]
         pair_jacobian = np.zeros((len(first), jacobian.shape[1]))
@@ -4555,7 +4563,8 @@ class InternalPES(PES):
                      * units.Hartree / units.Bohr**2)
         mapped = (np.sqrt(stiffness)[:, None] * pair_jacobian
                   ) @ np.linalg.pinv(jacobian, rcond=1e-6)
-        return mapped.T @ mapped
+        return [mapped[mask].T @ mapped[mask]
+                for mask in (across_angle, ~across_angle) if np.any(mask)]
 
     dpos = property(lambda self: self.dummies.positions.copy())
 
