@@ -6,7 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was not a poor underprediction.
+when the previous ratio ρ was well predicted. Connected MIS steps
+may be shortened to the 1D quadratic minimum along the step.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5775,7 +5776,35 @@ class Sella(Optimizer):
                 **rs_kwargs
             ).get_s()
 
-        return self._maybe_gdiis(s, smag)
+        return self._maybe_gdiis(*self._maybe_quadratic_alpha(s, smag))
+
+    def _maybe_quadratic_alpha(self, s, smag):
+        """Scale a connected MIS step to the 1D quadratic minimum along s.
+
+        Cycle 37 halved only when df_pred>0 (α*<1/2) and was bit-identical.
+        For a truncated MIS direction the 1D model min can sit in (0,1)
+        while still predicting a decrease. No extra calc(). Dimers keep
+        the unscaled MIS+GDIIS path.
+        """
+        if not getattr(self, "_allow_angle_wa", False):
+            return s, smag
+        s = np.asarray(s, dtype=np.float64)
+        g = np.asarray(self.pes.get_g(), dtype=np.float64)
+        H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
+        if g.shape != s.shape or H.shape != (s.size, s.size):
+            return s, smag
+        gs = float(np.dot(g, s))
+        sHs = float(s @ H @ s)
+        if (not np.isfinite(gs)) or (not np.isfinite(sHs)) or sHs <= 0.0 or gs >= 0.0:
+            return s, smag
+        alpha = -gs / sHs
+        if not (0.0 < alpha < 1.0):
+            return s, smag
+        s_new = alpha * s
+        smag_new = float(alpha) * float(smag)
+        if (not np.isfinite(smag_new)) or smag_new < 1e-16:
+            return s, smag
+        return s_new, smag_new
 
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
@@ -5783,15 +5812,13 @@ class Sella(Optimizer):
         Cycle 117's 2–4 point milder GDIIS passed train but inflated
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90. Skip only when the previous step underperformed
-        the quadratic model (rho <= 1/rho_inc). Cycle 120 also skipped
-        unexpectedly downhill steps (rho >= rho_inc); those last segments
-        are the interpolants this gate keeps.
+        and cosine ≥ 0.90. Accept only when the previous step was well
+        predicted (1/rho_inc < rho < rho_inc).
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        if not (rho > 1.0 / self.rho_inc):
+        if not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
