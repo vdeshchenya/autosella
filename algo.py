@@ -5975,9 +5975,9 @@ class Sella(Optimizer):
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
-            self.sigma_inc = 1.16
-            self.delta_min = 0.16
-            self.delta = max(self.delta, 0.16)
+            self.sigma_inc = 1.17
+            self.delta_min = 0.15
+            self.delta = max(self.delta, 0.15)
 
         # Update trust radius
         if rho is not None:
