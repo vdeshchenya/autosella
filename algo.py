@@ -9,8 +9,8 @@ steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms≥30 place two-coordinate dummy atoms on geomeTRIC's
-e0 axis when the unit-bond cross product is ill-conditioned
-(||u×v||<0.10), otherwise keeping the Sella cross-product dummy plane.
+e0 axis when the unit-bond cross product is moderately ill-conditioned
+(0.04 < ||u×v|| < 0.10); otherwise keep the Sella cross-product dummy plane.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3687,9 +3687,10 @@ class Internals(BaseInternals):
                         dpos = None
                         cross = np.cross(dx1, dx2)
                         cross_norm = float(np.linalg.norm(cross))
-                        if getattr(self, 'e0_dummy_placement', False) and cross_norm < 0.10:
-                            # e0 only when cross(u,v) is ill-conditioned
-                            # (~6° from collinear). Milder bends keep cross.
+                        if getattr(self, 'e0_dummy_placement', False) and 0.04 < cross_norm < 0.10:
+                            # e0 only for moderately ill-conditioned frames
+                            # (~2.3–5.7° from collinear). Almost-linear and
+                            # milder bends keep the Sella cross-product plane.
                             axis = dx1 + dx2
                             an = float(np.linalg.norm(axis))
                             if an > 1e-8:
