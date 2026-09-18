@@ -5388,7 +5388,8 @@ class InternalPES(PES):
         # Batch the two D_rdot @ vector products into one (D_rdot @ matrix)
         # matmul, then one Binv @ matrix matmul, halving the matmul count.
         D_rdot = self.int.hessian_rdot(dxdt)
-        Binv = self._ode_Binv
+        # Include the changing Badger row metric in the path connection.
+        Binv = self._get_Binv()
         rhs = np.column_stack((dxdt, g))     # (ndof, 2)
         out = -Binv @ (D_rdot @ rhs)          # (ndof, 2)
         dydt[1] = out[:, 0]
