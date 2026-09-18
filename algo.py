@@ -19,8 +19,8 @@ otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
-two carbons that are not oxygen-substituted and not guanidinium (≥3 N
-neighbors).
+two carbons that are not oxygen- or sulfur-substituted and not
+guanidinium (≥3 N neighbors).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4095,6 +4095,9 @@ class Internals(BaseInternals):
             if sum(int(numbers[nb]) == 7 for nb in neighbors[ia]) >= 3:
                 return False
             if sum(int(numbers[nb]) == 7 for nb in neighbors[ic]) >= 3:
+                return False
+            # Thiazole/thiadiazole carbon (valid 123107365 extra).
+            if any(int(numbers[nb]) == 16 for nb in neighbors[ia] + neighbors[ic]):
                 return False
             return True
 
