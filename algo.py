@@ -8,7 +8,7 @@ guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
 use Banerjee RFO, and may apply a Bofill Hessian update on
-well-predicted RFO steps.
+well-predicted RFO steps when the SR1/PSB mix is intermediate.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -208,6 +208,8 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
     elif method == 'bofill':
         try:
             Bplus = _MS_Bofill(B, S, Ytilde)
+            if Bplus is None:
+                Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs)
         except (np.linalg.LinAlgError, ValueError):
             Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs)
     else:  # pragma: no cover
@@ -258,7 +260,7 @@ def _MS_Greenstadt(B, S, Y):
     return (UJT + UJT.T) - U @ (J.T @ S) @ U.T
 
 def _MS_Bofill(B, S, Y):
-    """Bofill 1994: φ SR1 + (1−φ) PSB, φ = (z·s)² / ((z·z)(s·s))."""
+    """Bofill mix only for 0.2 < φ < 0.8; else None (caller uses TS-BFGS)."""
     s = np.asarray(S, dtype=np.float64)
     y = np.asarray(Y, dtype=np.float64)
     if s.ndim == 2:
@@ -268,17 +270,16 @@ def _MS_Bofill(B, S, Y):
     zz = float(z @ z)
     ss = float(s @ s)
     zs = float(z @ s)
+    if (not np.isfinite(zz)) or (not np.isfinite(ss)) or zz < 1e-30 or ss < 1e-30:
+        return None
+    mix = (zs * zs) / (zz * ss)
+    if (not np.isfinite(mix)) or mix <= 0.2 or mix >= 0.8:
+        return None
     try:
         sr1 = _MS_SR1(B, S, Y)
+        psb = _MS_PSB(B, S, Y)
     except (np.linalg.LinAlgError, ValueError):
-        return _MS_PSB(B, S, Y)
-    psb = _MS_PSB(B, S, Y)
-    if (not np.isfinite(zz)) or (not np.isfinite(ss)) or zz < 1e-30 or ss < 1e-30:
-        return psb
-    mix = (zs * zs) / (zz * ss)
-    if not np.isfinite(mix):
-        return psb
-    mix = min(1.0, max(0.0, float(mix)))
+        return None
     return mix * sr1 + (1.0 - mix) * psb
 
 
