@@ -192,6 +192,19 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
         Bplus = _MS_BFGS(B, S, Ytilde)
     elif method == 'TS-BFGS':
         Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs)
+        if S.shape[1] == 1:
+            step = S[:, 0]
+            residual = Ytilde[:, 0] - B @ step
+            snorm = np.linalg.norm(step)
+            enorm = np.linalg.norm(residual)
+            if snorm > 1e-8 and enorm > 1e-12:
+                unit_residual = residual / enorm
+                cosine = float(np.clip(unit_residual @ (step / snorm), -1.0, 1.0))
+                # Weighting SR1 by cosine squared cancels its singular
+                # residual-dot-step denominator before evaluation.
+                Bplus = ((1.0 - cosine**2) * Bplus
+                         + cosine * (enorm / snorm)
+                         * np.outer(unit_residual, unit_residual))
     elif method == 'PSB':
         Bplus = _MS_PSB(B, S, Ytilde)
     elif method == 'DFP':
