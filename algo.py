@@ -5640,7 +5640,6 @@ class Sella(Optimizer):
         self.delta_min = self.eta
         self._gdiis_x = []
         self._gdiis_g = []
-        self._use_euclid_trust = False
         self.constraints_tol = constraints_tol
         self.diagkwargs = dict(gamma=gamma, threepoint=threepoint)
         self.rho = 1.
@@ -5780,17 +5779,18 @@ class Sella(Optimizer):
         return self._maybe_gdiis(s, smag)
 
     def _maybe_euclid_trust(self, s_mis, smag_mis):
-        """Sticky Euclidean TrustRegion after the first oversized MIS step.
+        """Replace a strongly oversized MIS step with Euclidean TrustRegion.
 
-        Cycle 161's per-step cosine/length accept mixed TR and MIS and
-        inflated phenol-monoatomic 52→65. Once a well-aligned TR step is
-        accepted (cosine >= 0.90 and ||s_MIS|| > 2 ||s_TR||), keep using
-        TrustRegion for the rest of that connected run.
+        Cycle 161's 2x length gate still fired on phenol-monoatomic and
+        30-45-step extras. Require ||s_MIS|| > 4 ||s_TR|| so only extreme
+        MIS Euclidean overshoot is shortened, keeping cosine >= 0.90.
         """
         if not getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
             return s_mis, smag_mis
         s_mis = np.asarray(s_mis, dtype=np.float64)
-        sticky = bool(getattr(self, "_use_euclid_trust", False))
+        nmis = float(np.linalg.norm(s_mis))
+        if (not np.isfinite(nmis)) or nmis < 1e-16:
+            return s_mis, smag_mis
         try:
             s_tr, smag_tr = TrustRegion(
                 self.pes, self.ord, self.delta, method=self.method,
@@ -5803,14 +5803,11 @@ class Sella(Optimizer):
         ntr = float(np.linalg.norm(s_tr))
         if (not np.isfinite(ntr)) or ntr < 1e-16:
             return s_mis, smag_mis
-        if not sticky:
-            nmis = float(np.linalg.norm(s_mis))
-            if nmis <= 2.0 * ntr:
-                return s_mis, smag_mis
-            cos = float(s_tr @ s_mis) / (ntr * nmis)
-            if (not np.isfinite(cos)) or cos < 0.90:
-                return s_mis, smag_mis
-            self._use_euclid_trust = True
+        if nmis <= 4.0 * ntr:
+            return s_mis, smag_mis
+        cos = float(s_tr @ s_mis) / (ntr * nmis)
+        if (not np.isfinite(cos)) or cos < 0.90:
+            return s_mis, smag_mis
         smag = float(smag_tr)
         if (not np.isfinite(smag)) or smag < 1e-16:
             return s_mis, smag_mis
@@ -5838,7 +5835,6 @@ class Sella(Optimizer):
         if xs[-1].shape != s_qn.shape:
             self._gdiis_x = []
             self._gdiis_g = []
-            self._use_euclid_trust = False
             return s_qn, smag_qn
         nref = float(np.linalg.norm(s_qn))
         if not np.isfinite(nref) or nref < 1e-16:
@@ -5939,7 +5935,6 @@ class Sella(Optimizer):
             self.rho = 1
             self._gdiis_x = []
             self._gdiis_g = []
-            self._use_euclid_trust = False
             return
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
