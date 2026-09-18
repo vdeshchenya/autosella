@@ -8324,19 +8324,21 @@ def _prerelax_rotors(numbers, pos_ang):
 # knows the shape of that approach without any force call: it is relaxed in
 # the rigid-body coordinates of every fragment (intramolecular geometry
 # frozen), and the quasi-Newton optimisation starts from the relaxed pose,
-# which then only has to be corrected by the surrogate's error. The
-# surrogate is trusted only where the first force call confirms it: the
-# rigid-body projections of its force field and of the true one must point
-# the same way (cosine >= _DOCK_MIN_COS), the relaxation must move the pose
-# by at least _DOCK_MIN_RMSD (a shorter approach is cheaper for the
-# quasi-Newton steps than the extra force call the docked pose costs), and
-# the docked pose must lower the true energy, otherwise the run continues
-# from the original start (its evaluation is cached, no force call is
-# repeated). Ionic complexes are not docked: a non-polarisable point-charge
-# model is unreliable for ions (charge transfer, polarisation), so a start
-# with a fragment carrying a net formal charge (valence rules on the bond
-# graph) or an odd electron count keeps the plain quasi-Newton path.
-_DOCK_MIN_COS = 0.5
+# which then only has to be corrected by the surrogate's error. The docking
+# makes no force call of its own: the docked pose is the first point of the
+# quasi-Newton run, so a docked start costs exactly as many calls as an
+# undocked one (the force call at the original start that used to gate the
+# docking -- rigid-body force cosine, energy decrease -- was one wasted call
+# per docked run, while the energy gate refused only a handful of starts and
+# the docked poses that turned out to be bad had passed both gates). The
+# docking is accepted on the
+# surrogate alone: the relaxation must move the pose by at least
+# _DOCK_MIN_RMSD (a shorter approach is left to the quasi-Newton steps) and
+# by no more than _DOCK_MAX_MOVE per atom (runaway guard). Ionic complexes
+# are not docked: a non-polarisable point-charge model is unreliable for
+# ions (charge transfer, polarisation), so a start with a fragment carrying
+# a net formal charge (valence rules on the bond graph) or an odd electron
+# count keeps the plain quasi-Newton path.
 _DOCK_MIN_RMSD = 0.5      # A, all-atom rmsd between the start and the docked pose
 _DOCK_MAX_MOVE = 6.0      # A, largest atomic displacement accepted (runaway guard)
 _DOCK_CHARGE_PER_EN = 0.22  # e per unit Pauling electronegativity difference per bond
@@ -8521,19 +8523,6 @@ def _dock_energy_gradient(pos, terms):
     return energy, grad
 
 
-def _dock_rigid_field(pos, groups, field):
-    """Least-squares projection of a per-atom vector field onto the rigid-body
-    motions (unit-weight translation + rotation) of every fragment."""
-    out = np.zeros_like(field)
-    for group in groups:
-        r = pos[group] - pos[group].mean(axis=0)
-        f = field[group]
-        inertia = np.sum(r * r) * np.eye(3) - r.T @ r
-        omega = np.linalg.lstsq(inertia, np.cross(r, f).sum(axis=0), rcond=None)[0]
-        out[group] = f.sum(axis=0) / len(group) + np.cross(omega, r)
-    return out
-
-
 def _dock_rotation(omega):
     """Rotation matrix exp([omega]x) and the right Jacobian J_r of SO(3),
     d(exp([omega + delta]x)) = exp([omega]x) exp([J_r delta]x) + O(delta^2)."""
@@ -8592,26 +8581,16 @@ def _dock_relax(pos0, groups, terms):
     return place(res.x)[0]
 
 
-def _dock_start(atoms, wrapper):
-    """Dock a neutral multi-fragment start (see the note above). Uses one
-    force call for the gate and one for the docked pose; when the docked pose
-    is rejected, the start evaluation is re-installed in the calculator cache
-    so that the optimizer's first evaluation costs no call."""
+def _dock_start(atoms):
+    """Dock a neutral multi-fragment start (see the note above) on the
+    surrogate alone; makes no force call. The docked pose, when accepted,
+    replaces the start and becomes the optimizer's first evaluated point."""
     pos0 = atoms.get_positions()
     groups = _start_fragments(atoms.numbers, pos0)
     if len(groups) < 2:
         return
     terms = _dock_surrogate_terms(atoms.numbers, pos0, groups)
     if terms is None:
-        return
-    e0 = atoms.get_potential_energy()
-    f0 = atoms.get_forces()
-    _, g_sur = _dock_energy_gradient(pos0, terms)
-    a = _dock_rigid_field(pos0, groups, f0).ravel()
-    b = _dock_rigid_field(pos0, groups, -g_sur).ravel()
-    na = np.linalg.norm(a)
-    nb = np.linalg.norm(b)
-    if na <= 0.0 or nb <= 0.0 or a @ b < _DOCK_MIN_COS * na * nb:
         return
     pos1 = _dock_relax(pos0, groups, terms)
     move = pos1 - pos0
@@ -8622,12 +8601,6 @@ def _dock_start(atoms, wrapper):
     if np.sqrt(np.mean(np.sum(move ** 2, axis=1))) < _DOCK_MIN_RMSD:
         return
     atoms.positions = pos1
-    e1 = atoms.get_potential_energy()
-    if e1 < e0:
-        return
-    atoms.positions = pos0
-    wrapper.atoms = atoms.copy()
-    wrapper.results = {"energy": e0, "forces": f0}
 
 
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
@@ -8639,12 +8612,12 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = _prerelax_rotors(atomic_numbers, pos_ang)
     pos_ang = _break_start_symmetry(atomic_numbers, pos_ang)
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
-    wrapper = _WrappedCalc(calc)
-    atoms.calc = wrapper
     # Neutral multi-fragment starts are docked on the classical surrogate
     # first (see _dock_start); connected systems and ionic complexes are
-    # untouched and make no force call here.
-    _dock_start(atoms, wrapper)
+    # untouched. No force call is made before the optimizer's first one.
+    _dock_start(atoms)
+    wrapper = _WrappedCalc(calc)
+    atoms.calc = wrapper
     # allow_fragments=True: disconnected fragments (e.g. non-covalent dimers)
     # get explicit centroid translation + rotation internals (TRIC-style,
     # Wang & Song 2016) instead of being stitched together by long
@@ -8654,10 +8627,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     # (Internals._h0_fragment).
     opt = Sella(atoms, internal=True, order=0, logfile=None,
                 allow_fragments=True)
-    # The optimizer's first evaluation is served from the calculator cache
-    # when the start was already costed by _dock_start, so the step budget is
-    # reduced by the calls made so far beyond that one.
-    for _ in opt.irun(fmax=0, steps=max_force_calls - max(1, wrapper.call_count)):
+    # The optimizer's first evaluation is one force call; every step after it
+    # costs one more, so the step budget is the call budget less that one.
+    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
         if converged():
             break
     # Return the last geometry that was actually EVALUATED, not whatever the
