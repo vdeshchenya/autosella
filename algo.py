@@ -6342,6 +6342,36 @@ class Sella(Optimizer):
             return ordinary, magnitude
         return candidate, candidate_magnitude
 
+    def _new_covalent_contact(self):
+        """Detect unseen contacts using the existing automatic bond rule."""
+        if (not self.internal or not isinstance(self.user_internal, bool)
+                or self.pes.atoms.pbc.any()
+                or self.pes.cons.residual().size
+                or self.pes.cons.has_inequalities()):
+            return False
+        atoms = self.pes.atoms
+        numbers = atoms.numbers
+        count = len(atoms)
+        seen = getattr(self, '_seen_covalent_contacts', None)
+        if seen is None:
+            seen = set()
+            self._seen_covalent_contacts = seen
+        seen.update(tuple(sorted(bond.indices))
+                    for bond in self.pes.int.internals['bonds']
+                    if all(0 <= i < count and numbers[i] > 0
+                           for i in bond.indices))
+        first, second = np.triu_indices(count, 1)
+        real = (numbers[first] > 0) & (numbers[second] > 0)
+        first, second = first[real], second[real]
+        radii = covalent_radii[numbers]
+        distance = np.linalg.norm(atoms.positions[first] - atoms.positions[second],
+                                  axis=1)
+        close = distance <= 1.25 * (radii[first] + radii[second])
+        contacts = set(zip(first[close].tolist(), second[close].tolist()))
+        new = bool(contacts - seen)
+        seen.update(contacts)
+        return new
+
     def step(self):
         s, smag = self._predict_step()
 
@@ -6368,7 +6398,8 @@ class Sella(Optimizer):
 
         # Check for bad internals, and if found, reset PES object.
         # This skips the trust radius update.
-        if self.internal and self.pes.int.check_for_bad_internals():
+        if self.internal and (self.pes.int.check_for_bad_internals()
+                              or self._new_covalent_contact()):
             if False:
                 cell_mask = self.pes.cell_mask
                 exp_cell_factor = self.pes.exp_cell_factor
