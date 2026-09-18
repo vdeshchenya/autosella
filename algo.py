@@ -4910,6 +4910,7 @@ class InternalPES(PES):
     # Position getter/setter
     def set_x(self, target):
         """Backtrack realized nonbonded collisions without requesting forces."""
+        self._collision_step_fraction = 1.0
         if self.atoms.pbc.any():
             return self._set_x_unchecked(target)
         positions = self.atoms.positions.copy()
@@ -4940,6 +4941,7 @@ class InternalPES(PES):
             candidate = self.atoms.positions
             distances = np.linalg.norm(candidate[first] - candidate[second], axis=1)
             if np.all(distances >= minimum):
+                self._collision_step_fraction = 0.5**attempt
                 return result
         self.atoms.positions = positions.copy()
         self.dummies.positions = dummy_positions.copy()
@@ -6172,6 +6174,7 @@ class Sella(Optimizer):
             self.nsteps_since_diag += 1
 
         rho = self.pes.kick(s, ev, **self.diagkwargs)
+        smag *= getattr(self.pes, '_collision_step_fraction', 1.0)
 
         # Check for bad internals, and if found, reset PES object.
         # This skips the trust radius update.
