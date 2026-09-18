@@ -7,7 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Dimers after 80 steps
-use MaxInternalStep wd=0.8.
+may scale the RFO/QN step to the 1D quadratic minimum along s.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5761,9 +5761,6 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-            elif self.nsteps >= 80:
-                # Late dimer packing torsions: |s_d| <= 0.1/0.8 = 0.125.
-                rs_kwargs['wd'] = 0.8
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -5790,6 +5787,7 @@ class Sella(Optimizer):
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
+        s, smag = self._maybe_quadratic_alpha(s, smag)
         return self._maybe_gdiis(s, smag)
 
     def _dummy_dihedral_s_indices(self, intern):
@@ -5849,6 +5847,36 @@ class Sella(Optimizer):
         except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
             return s, smag
         return s2, smag2
+
+    def _maybe_quadratic_alpha(self, s, smag):
+        """Scale a late dimer RFO/QN step to the 1D quadratic minimum along s.
+
+        Connected α* (cycle 134) could not meet Δ. After 80 dimer steps the
+        Banerjee RFO direction can overshoot packing; α* shortens it with
+        no extra calc(). Requires s·H·s>0, g·s<0, and 0<α*<1.
+        """
+        if getattr(self, "_allow_angle_wa", False) or self.nsteps < 80:
+            return s, smag
+        s = np.asarray(s, dtype=np.float64)
+        try:
+            g = np.asarray(self.pes.get_g(), dtype=np.float64)
+            H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
+        except (RuntimeError, ValueError, AttributeError, np.linalg.LinAlgError):
+            return s, smag
+        if g.shape != s.shape or H.shape != (s.size, s.size):
+            return s, smag
+        gs = float(np.dot(g, s))
+        sHs = float(s @ H @ s)
+        if (not np.isfinite(gs)) or (not np.isfinite(sHs)) or sHs <= 0.0 or gs >= 0.0:
+            return s, smag
+        alpha = -gs / sHs
+        if not (0.0 < alpha < 1.0):
+            return s, smag
+        s_new = alpha * s
+        smag_new = float(alpha) * float(smag)
+        if (not np.isfinite(smag_new)) or smag_new < 1e-16:
+            return s, smag
+        return s_new, smag_new
 
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
