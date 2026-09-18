@@ -6,8 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Dimers after 86 steps
-use the Schlegel flowchart Hessian update on well-predicted RFO steps.
+when the previous ratio ρ was well predicted. Dimers after 80 steps
+may apply a BFGS Hessian update on well-predicted RFO steps.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -223,7 +223,7 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
 
 
 def _flowchart_pick(B, S, Y):
-    """Schlegel flowchart: SR1, else BFGS, else PSB (JCC 2018)."""
+    """Schlegel flowchart BFGS arm only; SR1/PSB fall back to TS-BFGS."""
     s = np.asarray(S, dtype=np.float64)
     y = np.asarray(Y, dtype=np.float64)
     if s.ndim == 2:
@@ -238,10 +238,10 @@ def _flowchart_pick(B, S, Y):
     sr1_quot = float(z @ s) / (max(nz, 1e-16) * ns)
     bfgs_quot = float(y @ s) / (max(ny, 1e-16) * ns)
     if np.isfinite(sr1_quot) and sr1_quot < -0.1:
-        return 'SR1'
+        return 'TS-BFGS'
     if np.isfinite(bfgs_quot) and bfgs_quot > 0.1:
         return 'BFGS'
-    return 'PSB'
+    return 'TS-BFGS'
 
 
 def _MS_BFGS(B, S, Y):
@@ -5796,7 +5796,7 @@ class Sella(Optimizer):
         if not getattr(self, "_allow_angle_wa", False) and self.nsteps >= 80:
             step_method = 'rfo'
             rho = float(getattr(self, "rho", 1.0))
-            if self.nsteps >= 86 and 1.0 / self.rho_inc < rho < self.rho_inc:
+            if 1.0 / self.rho_inc < rho < self.rho_inc:
                 self.pes.H.update_method = 'flowchart'
             else:
                 self.pes.H.update_method = 'TS-BFGS'
