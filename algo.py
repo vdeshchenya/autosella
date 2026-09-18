@@ -4,7 +4,7 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. After 20 steps, connected
+guess constants are 0.25 Ha instead of 0.5. After 50 steps, connected
 MaxInternalStep also restricts linearized Cartesian max-atom
 displacement to the same δ. Connected tails after 20 steps may replace
 the QN step with two-point interpolation GDIIS when the previous
@@ -5797,10 +5797,10 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-                # Cycle 146 always-on Cartesian trust hopped 135043047
-                # +38 kcal. Delay until nsteps>=20 so early dummy-linear
-                # MIS steps stay on the champion path.
-                if self.nsteps >= 20:
+                # Cycle 146 always-on hopped 135043047. Cycle 147 @20 was
+                # energy-safe but extras on 31–45 step jobs ate venetoclax
+                # / paliperidone / 160853090 savings. Start at 50.
+                if self.nsteps >= 50:
                     rs_kwargs['max_atom'] = True
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
