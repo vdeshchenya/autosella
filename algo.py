@@ -4,11 +4,11 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Connected MaxInternalStep
-also restricts linearized Cartesian max-atom displacement to the same
-δ. Connected tails after 20 steps may replace the QN step with
-two-point interpolation GDIIS when the previous ratio ρ was well
-predicted.
+guess constants are 0.25 Ha instead of 0.5. After 20 steps, connected
+MaxInternalStep also restricts linearized Cartesian max-atom
+displacement to the same δ. Connected tails after 20 steps may replace
+the QN step with two-point interpolation GDIIS when the previous
+ratio ρ was well predicted.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5797,9 +5797,11 @@ class Sella(Optimizer):
             # Δ too small). |s_a| <= 0.1/0.75 ≈ 0.133.
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
-                # geomeTRIC-style Cartesian trust: also cap linearized
-                # max-atom displacement at δ (Å), inside the MIS solver.
-                rs_kwargs['max_atom'] = True
+                # Cycle 146 always-on Cartesian trust hopped 135043047
+                # +38 kcal. Delay until nsteps>=20 so early dummy-linear
+                # MIS steps stay on the champion path.
+                if self.nsteps >= 20:
+                    rs_kwargs['max_atom'] = True
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
