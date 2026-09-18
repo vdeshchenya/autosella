@@ -7,6 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted, including dimers.
+Connected molecules also floor δ at 0.05 before the 0.15-after-20 floor.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -6060,6 +6061,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
+        else:
+            opt.delta_min = 0.05
         for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
             if converged():
                 break
