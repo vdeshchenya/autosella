@@ -11,14 +11,15 @@ at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, and F–B–F angles at silicon or boron centers, and 0.25 Ha/Bohr²
-guesses on P–O stretches.
+Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.20 Ha guesses.
+dummy centers use 0.20 Ha guesses. Connected n_atoms≥30 use 0.10 Ha
+guesses on isolated gem-difluoro F–C–C angles (4-coordinate carbon
+with exactly two F neighbors; the carbon terminal has no F).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4057,27 +4058,23 @@ class Internals(BaseInternals):
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
-        numbers = np.asarray(self.all_atoms.numbers)
-        soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
         for bond in self.internals['bonds']:
-            i, j = bond.indices
-            if (
-                soft_oxo_angle
-                and int(i) < self.natoms
-                and int(j) < self.natoms
-                and {int(numbers[int(i)]), int(numbers[int(j)])} == {8, 15}
-            ):
-                # Phosphate/phosphite P–O stretches, n<12.
-                h0[idx] = 0.25 * units.Hartree / units.Bohr**2
-            else:
-                h0[idx] = self._h0_bond(bond)
+            h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
+            i, j = bond.indices
             nbonds[i] += 1
             nbonds[j] += 1
         dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
+        soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
         numbers = np.asarray(self.all_atoms.numbers)
+        neigh = [[] for _ in range(self.natoms)]
+        for bond in self.internals['bonds']:
+            i, j = int(bond.indices[0]), int(bond.indices[1])
+            if 0 <= i < self.natoms and 0 <= j < self.natoms:
+                neigh[i].append(j)
+                neigh[j].append(i)
         for angle in self.internals['angles']:
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -4127,6 +4124,34 @@ class Internals(BaseInternals):
             ):
                 # Fluoride tetrahedral class: F–B–F.
                 h0[idx] = 0.10 * units.Hartree
+            elif (
+                getattr(self, 'adj_dummy_placement', False)
+                and int(numbers[int(angle.indices[1])]) == 6
+                and int(nbonds[int(angle.indices[1])]) == 4
+                and (
+                    (
+                        int(numbers[int(angle.indices[0])]) == 9
+                        and int(numbers[int(angle.indices[2])]) == 6
+                    )
+                    or (
+                        int(numbers[int(angle.indices[0])]) == 6
+                        and int(numbers[int(angle.indices[2])]) == 9
+                    )
+                )
+            ):
+                # Isolated gem-difluoro F–C–C: 4-coord C with exactly two F
+                # and two C; the C terminal is not fluorinated.
+                c = int(angle.indices[1])
+                a = int(angle.indices[0])
+                b = int(angle.indices[2])
+                n_f = sum(1 for t in neigh[c] if int(numbers[t]) == 9)
+                n_c = sum(1 for t in neigh[c] if int(numbers[t]) == 6)
+                c_term = a if int(numbers[a]) == 6 else b
+                c_term_has_f = any(int(numbers[t]) == 9 for t in neigh[c_term])
+                if n_f == 2 and n_c == 2 and not c_term_has_f:
+                    h0[idx] = 0.10 * units.Hartree
+                else:
+                    h0[idx] = self._h0_angle(angle)
             else:
                 h0[idx] = self._h0_angle(angle)
             idx += 1
