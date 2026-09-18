@@ -4367,8 +4367,7 @@ class Internals(BaseInternals):
         return q * mu0 / max(r * r, 1.0) / max(ndih_ion, 1) * units.Hartree
 
     def _h0_linear_bend(self, centre: int, k_bend: float = 0.10,
-                        k_bend_h: float = 0.05, k_cumulene: float = 0.14,
-                        r_multiple: float = 0.895) -> float:
+                        k_bend_h: float = 0.05) -> float:
         """Diagonal guess (eV/rad^2) for the coordinates that describe the
         bending of a near-linear two-bonded centre A-centre-C through its
         dummy atom X: the dummy angles A-centre-X and C-centre-X (bend
@@ -4378,48 +4377,16 @@ class Internals(BaseInternals):
         Linear-bend force constants are far below the Fischer-Almlof bend
         value (0.31-0.37 Ha/rad^2 for these angles) and below the 0.5
         Ha/rad^2 Sella assigns to dummy dihedrals: C-C#C and C-C#N bends
-        are 0.28-0.35 mdyn A/rad^2 = 0.06-0.08 Ha/rad^2, the all-carbon
-        allene 0.27 = 0.06, and the D-H...A bend of a proton-shared
-        hydrogen bond 0.02-0.05.  k_bend covers the sp centres, k_bend_h
-        the hydrogen centres; both sit at the stiff end of their range
-        because a quasi-Newton step along a mode whose model stiffness is
-        r times the true one leaves the fraction |1 - 1/r| of the error,
-        so a model twice too stiff (0.5 per step) beats one twice too
-        soft (no progress).
-        Heterocumulene centres - two multiple bonds with a heteroatom at
-        or next to the centre: isocyanate and isothiocyanate (HNCO 0.60-
-        0.77, CH3NCS 0.63 mdyn A/rad^2), carbodiimide, ketene (0.37-0.54),
-        ketenimine, azide (HN3 0.53), diazo, and the triatomics CO2 0.77,
-        OCS 0.64, CS2 0.57, N2O 0.65 - are the one class above k_bend, at
-        0.09-0.18 Ha/rad^2 (Wilson-GF fits of the textbook fundamentals
-        with the same unit-Jacobian bend coordinate; 1 Ha/rad^2 = 4.36
-        mdyn A/rad^2), and get k_cumulene.  A bond counts as multiple when
-        it is shorter than r_multiple times the sum of the stiffness radii
-        (C=C 1.31, C=N 1.21-1.30, C=O 1.16, C=S 1.56, N=N 1.24 A are at
-        0.80-0.88; the 1.43-1.46 A C-C bonds next to a triple bond,
-        cyanamide's 1.34 A C-N and the 1.32-1.35 A C-N of an ynamine at
-        0.90-0.95)."""
-        numbers = self.atoms.numbers
-        z = int(numbers[centre])
-        if z == 1:
-            return k_bend_h * units.Hartree
-        partners = []
-        multiple = True
-        for bond in self.internals['bonds']:
-            i, j = (int(x) for x in bond.indices)
-            if centre not in (i, j):
-                continue
-            other = j if i == centre else i
-            if other >= self.natoms:
-                continue  # the dummy bond
-            rref = _STIFFNESS_RADII[z] + _STIFFNESS_RADII[numbers[other]]
-            if bond.calc(self.all_atoms) >= r_multiple * rref:
-                multiple = False
-            partners.append(int(numbers[other]))
-        if (len(partners) == 2 and multiple
-                and not (z == 6 and partners == [6, 6])):
-            return k_cumulene * units.Hartree
-        return k_bend * units.Hartree
+        are 0.28-0.35 mdyn A/rad^2 = 0.06-0.08 Ha/rad^2, cumulene and azide
+        bends (CO2 0.57, allene 0.55, HN3 0.5 mdyn A/rad^2) 0.11-0.13, and
+        the D-H...A bend of a proton-shared hydrogen bond 0.02-0.05.
+        k_bend covers the sp centres, k_bend_h the hydrogen centres; both
+        sit at the stiff end of their range because a quasi-Newton step
+        along a mode whose model stiffness is r times the true one leaves
+        the fraction |1 - 1/r| of the error, so a model twice too stiff
+        (0.5 per step) beats one twice too soft (no progress)."""
+        z = int(self.atoms.numbers[centre])
+        return (k_bend_h if z == 1 else k_bend) * units.Hartree
 
     def _torsion_centre_types(self, adj: List[List[int]]) -> List[str]:
         """Local hybridisation label of every real atom for the torsional
@@ -4491,12 +4458,9 @@ class Internals(BaseInternals):
         bo_lo: float = 1.5,
         bo_hi: float = 2.2,
         ring_max: int = 8,
-        k_rot: Optional[float] = None,
     ) -> float:
         """Class-resolved scale of the Fischer-Almlof torsional guess for the
-        rotation about the acyclic bond b-c.  Bonds without a planar sp2
-        end are passed on to _rotor_floor_factor when the rotational
-        stiffness k_rot the guess assigns to the bond is given.
+        rotation about the acyclic bond b-c.
 
         The Fischer-Almlof torsional constant, once shared over the n
         redundant dihedrals of a bond (1/sqrt(n) in guess_hessian), puts the
@@ -4527,10 +4491,7 @@ class Internals(BaseInternals):
         """
         tb, tc = types[b], types[c]
         if 'pi' not in (tb, tc):
-            if k_rot is None:
-                return 1.0
-            return self._rotor_floor_factor(b, c, adj, k_rot,
-                                            ring_max=ring_max)
+            return 1.0
         if 'sigma' in (tb, tc):
             s = s_pi_sigma
         elif tb == 'pi' and tc == 'pi':
@@ -4549,64 +4510,6 @@ class Internals(BaseInternals):
             return 1.0
         w = min(1.0, max(0.0, (bo - bo_lo) / (bo_hi - bo_lo)))
         return s + (1.0 - s) * w
-
-    # Main-group non-metals and metalloids: bonds between two of these are
-    # covalent rotors; bonds to alkali/alkaline-earth ions in a connected
-    # ion complex are not (a ligand turns freely about an ionic contact).
-    _rotor_nonmetals = frozenset((1, 5, 6, 7, 8, 9, 14, 15, 16, 17,
-                                  32, 33, 34, 35, 51, 52, 53))
-
-    def _rotor_floor_factor(
-        self,
-        b: int,
-        c: int,
-        adj: List[List[int]],
-        k_rot: float,
-        k_floor: float = 0.014,
-        ring_max: int = 8,
-    ) -> float:
-        """Scale that lifts the rotational stiffness of an acyclic single
-        bond b-c between sigma and lone-pair centres to at least k_floor
-        (Ha/rad^2) when one of the atoms is phosphorus and the other a
-        main-group non-metal.  k_rot (eV/rad^2) is the stiffness the guess
-        assigns to the rotation about the bond as a whole: the
-        Fischer-Almlof constant with its bond-order factor times sqrt(n)
-        for the n redundant dihedrals guess_hessian shares it over.
-
-        The Fischer-Almlof torsional constant falls off as (r r_cov)^-4,
-        so for the long bonds of phosphorus it is a fraction of the
-        rotational barrier curvature: shared over the dihedrals it gives
-        0.002-0.010 Ha/rad^2 for C-P (methylphosphine V3 = 1.96 kcal/mol,
-        9/2 V3 = 0.014), 0.001-0.004 for S-P and 0.003-0.005 for B-P,
-        0.007-0.014 for O-P (phosphites and phosphates, V ~ 1-3 kcal/mol,
-        0.007-0.02) and 0.004-0.014 for N-P (aminophosphines, whose P-N
-        rotation is hindered by the lone-pair conjugation, 0.015-0.03).
-        A model that is 2-12x too soft overshoots along the mode at every
-        quasi-Newton step (error factor |1 - 1/r| > 1) until the update
-        has learned it; the floor puts these bonds at the methylphosphine
-        level, the soft end of the class.  The same floor on the other
-        heavy non-metals is not applied: thiols and disilane sit below it
-        (methanethiol V3 = 1.27, disilane 1.2 kcal/mol), and disulfide
-        and polysilane rotors that turn through 30-60 degrees see a
-        secant stiffness well below the curvature at their minimum, for
-        which the soft formula value was the better model.  Bonds at a
-        near-linear centre carry no proper dihedrals and are not touched.
-        First-row bonds keep the formula (an
-        ethane-like bond gives 0.026, an ether 0.022 - above the floor
-        unless the bond starts stretched, which is a different defect),
-        as do ring bonds (puckering, see _torsion_class_factor), bonds to
-        a planar centre (their own classes) and bonds to metal ions.
-        """
-        numbers = np.asarray(self.atoms.numbers)
-        zb, zc = int(numbers[b]), int(numbers[c])
-        if 15 not in (zb, zc):
-            return 1.0
-        if zb not in self._rotor_nonmetals or zc not in self._rotor_nonmetals:
-            return 1.0
-        floor = k_floor * units.Hartree
-        if k_rot >= floor or self._in_small_ring(b, c, adj, ring_max):
-            return 1.0
-        return floor / k_rot
 
     def _h0_fragment(
         self,
@@ -5258,9 +5161,7 @@ class Internals(BaseInternals):
                 continue
             ndih[key] = ndih.get(key, 0) + 1
         # Class-resolved scale of the rotatable-bond torsions (see
-        # _torsion_class_factor for bonds to a planar sp2 centre and
-        # _rotor_floor_factor for the phosphorus bonds among the sigma/
-        # lone-pair ones), from the covalent graph of the real atoms.
+        # _torsion_class_factor), from the covalent graph of the real atoms.
         scale_torsions = connected
         adj = [[] for _ in range(self.natoms)]
         for pair in bonded:
@@ -5299,7 +5200,6 @@ class Internals(BaseInternals):
                     dihedral, ndih_ion.get(ion_end(dihedral), 1))
             else:
                 key = frozenset(int(j) for j in dihedral.indices[1:3])
-                h_fa = self._h0_dihedral(dihedral, nbonds)
                 if key not in tfac:
                     fac = 1.0
                     if scale_torsions:
@@ -5308,14 +5208,11 @@ class Internals(BaseInternals):
                         rcovbc = (_STIFFNESS_RADII[numbers[b]]
                                   + _STIFFNESS_RADII[numbers[c]])
                         bo = np.exp(-2.85 * (rbc - rcovbc) / units.Bohr)
-                        # h_fa depends on the central bond only, so the
-                        # rotational stiffness of the bond as a whole is
-                        # sqrt(n) times the shared per-dihedral value.
                         fac = self._torsion_class_factor(
-                            b, c, types, adj, float(bo),
-                            k_rot=float(h_fa * np.sqrt(ndih[key])))
+                            b, c, types, adj, float(bo))
                     tfac[key] = fac
-                h0[idx] = tfac[key] * h_fa / np.sqrt(ndih[key])
+                h0[idx] = (tfac[key] * self._h0_dihedral(dihedral, nbonds)
+                           / np.sqrt(ndih[key]))
             idx += 1
         for rot in self.internals['rotations']:
             if self.allow_fragments:
