@@ -5774,15 +5774,18 @@ class Sella(Optimizer):
 
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+            reset_this = False
             if self.nsteps == 80 and not getattr(self, "_h0_reset_done", False):
                 rho = float(getattr(self, "rho", 1.0))
                 if 1.0 / self.rho_inc < rho < self.rho_inc:
                     try:
                         self.pes.reset_model_hessian()
+                        reset_this = True
                     except (np.linalg.LinAlgError, ValueError, AttributeError):
                         pass
                 self._h0_reset_done = True
-            step_method = 'rfo'
+            if self.nsteps >= 81 or not reset_this:
+                step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
