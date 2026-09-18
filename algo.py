@@ -17,7 +17,7 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
+dummy centers use 0.20 Ha guesses. Connected 18≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors).
@@ -6312,7 +6312,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
-        Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
+        Internals.soft_pyridine_angle_h0_default = 18 <= n_atoms < 80
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
