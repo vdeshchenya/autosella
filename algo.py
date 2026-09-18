@@ -7181,7 +7181,8 @@ _default_kwargs = dict(
         # block of the model: s = -(H + <A(x(t)) - A(x)>)^-1 g instead of
         # -H^-1 g, the path average taken along the step itself (see
         # Sella._curved_step). The same A(x) already moves H between
-        # geometries and transports the secant pairs.
+        # geometries and transports the secant pairs. Connected systems
+        # only (multi-fragment approach steps are re-routed by it).
         curved_step_contact=True,
         method='qn',
         eig=False
@@ -7529,8 +7530,8 @@ class Sella(Optimizer):
 
     def _curved_step(self, s, smag, rs_kwargs):
         """Predictor-corrector step under the geometry-following contact
-        block of the model (minimisation, every system with non-local or
-        inter-fragment pairs).
+        block of the model (minimisation, connected systems: the non-local
+        intramolecular and vicinal pairs).
 
         The model Hessian moves with the geometry, H(x) = H + T(x) - T(x_k)
         (InternalPES._track_analytic_model), and the secant pairs are
@@ -7562,10 +7563,17 @@ class Sella(Optimizer):
         bonds that lengthen, where the Almlof exponential is not the
         anharmonicity of the xTB bond and a stretch residual is removed by
         the next step anyway, while the gains sat where the contact block
-        changes along the step (long runs, folding chains).
+        changes along the step (long runs, folding chains).  Multi-fragment
+        systems keep the quadratic step (cycle 78 applied the correction
+        to their inter-fragment block as well: the corrected rigid-body
+        approach steps, x0.7-1.9 on the contact block at the 0.25 cap,
+        re-route the approach of ionic complexes between basins 1-3
+        kcal/mol apart -- a wash in count, a loss in calls -- while the
+        connected long walks gained).
         """
         pes = self.pes
         if (self.ord != 0 or not self.curved_step_contact
+                or self._has_tr_internals()
                 or not getattr(pes, '_track_nb', False)
                 or getattr(pes, 'H', None) is None or pes.H.B is None
                 or not hasattr(pes, '_contact_model_ahead')):
