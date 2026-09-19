@@ -4444,6 +4444,30 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
+        def _sulfoxide_osc(angle) -> bool:
+            # 3-coordinate sulfoxide O–S–C (S has O, C, C).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 16:
+                return False
+            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_s) != 3:
+                return False
+            zs = [int(numbers[nb]) for nb in real_s]
+            if zs.count(8) != 1 or zs.count(6) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {6, 8}
+
+        sulfoxide_ok = set()
+        if soft_dummy_angle and int(self.natoms) < 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _sulfoxide_osc(angle)]
+            if 1 <= len(cands) <= 2:
+                sulfoxide_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4481,34 +4505,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
-        def _ester_coc(angle) -> bool:
-            # 2-coordinate ester C–O–C; one carbon is carboxyl/ester (2 O).
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 8:
-                return False
-            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-            return _carboxyl_carbon(ia) or _carboxyl_carbon(ic)
-
-        ester_coc_ok = set()
-        if soft_phenol_angle:
-            n_carboxyl = sum(
-                1 for i, z in enumerate(numbers)
-                if int(i) not in dummy_set and int(z) == 6
-                and _carboxyl_carbon(i))
-            if n_carboxyl >= 2:
-                cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                         if _ester_coc(angle)]
-                if 1 <= len(cands) <= 2:
-                    ester_coc_ok = set(cands)
-
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -4536,11 +4532,11 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
+            elif soft_dummy_angle and ia in sulfoxide_ok:
+                # Sulfoxide O–S–C on connected n_atoms<18.
+                h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_phenol_angle and ia in ester_coc_ok:
-                # Ester C–O–C on dimers with two carboxyl/ester carbons.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
