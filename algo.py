@@ -26,8 +26,9 @@ cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N, and on
-at most two 2-coordinate C–N–O angles in a C/N/O 5-ring
-except on molecules that already have that C–N–N class.
+at most two sulfone C–S–C angles at 4-coordinate sulfur
+with exactly two oxygen and two carbon neighbors except on
+molecules that already have that C–N–N class.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4304,58 +4305,28 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
-        def _no_in_cno_five_ring(n1, o_idx) -> bool:
-            # N–O edge in a 5-cycle of only C, N, and O.
-            n1, o_idx = int(n1), int(o_idx)
-            for a in neighbors[o_idx]:
-                ai = int(a)
-                if ai in dummy_set or ai == n1:
-                    continue
-                if int(numbers[ai]) not in (6, 7, 8):
-                    continue
-                for b in neighbors[ai]:
-                    bi = int(b)
-                    if bi in dummy_set or bi in (n1, o_idx, ai):
-                        continue
-                    if int(numbers[bi]) not in (6, 7, 8):
-                        continue
-                    for c in neighbors[bi]:
-                        ci = int(c)
-                        if ci in dummy_set or ci in (n1, o_idx, ai, bi):
-                            continue
-                        if int(numbers[ci]) not in (6, 7, 8):
-                            continue
-                        if n1 in (int(nb) for nb in neighbors[ci]
-                                  if int(nb) not in dummy_set):
-                            return True
-            return False
-
-        def _oxazole_cno(angle) -> bool:
-            # 2-coordinate C–N–O in a C/N/O 5-ring (isoxazole/oxadiazole).
+        def _sulfone_csc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 7:
+            if int(numbers[icen]) != 16:
                 return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 2:
+            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_s) != 4:
                 return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 8}:
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_s)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_s)
+            if n_o != 2 or n_c != 2:
                 return False
-            o_idx = ia if za == 8 else ic
-            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
-                return False
-            return _no_in_cno_five_ring(icen, o_idx)
+            return int(numbers[ia]) == 6 and int(numbers[ic]) == 6
 
-        oxazole_ok = set()
+        sulfone_ok = set()
         if soft_pyridine_angle and not azo_cnn_ok:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _oxazole_cno(angle)]
+                     if _sulfone_csc(angle)]
             if 1 <= len(cands) <= 2:
-                oxazole_ok = set(cands)
+                sulfone_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4409,8 +4380,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in oxazole_ok:
-                # 2-coordinate isoxazole/oxadiazole C–N–O.
+            elif soft_pyridine_angle and ia in sulfone_ok:
+                # Sulfone C–S–C at 4-coordinate S (two O, two C).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
