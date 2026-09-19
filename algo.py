@@ -26,9 +26,8 @@ cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N, and on
-exactly one urea N–C–N angle at a 3-coordinate carbon with
-oxygen and two nitrogens, except on molecules that already
-have that C–N–N class, a 2-coordinate carbon, or a CF3 carbon.
+at most two 5-ring furan C–O–C angles, except on molecules
+that already have that C–N–N class or a 2-coordinate carbon.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4277,6 +4276,32 @@ class Internals(BaseInternals):
                             return True
             return False
 
+        def _co_in_five_ring(n1, n2) -> bool:
+            # O–C edge in a 5-cycle of only carbon and oxygen.
+            n1, n2 = int(n1), int(n2)
+            for a in neighbors[n2]:
+                ai = int(a)
+                if ai in dummy_set or ai == n1:
+                    continue
+                if int(numbers[ai]) not in (6, 8):
+                    continue
+                for b in neighbors[ai]:
+                    bi = int(b)
+                    if bi in dummy_set or bi in (n1, n2, ai):
+                        continue
+                    if int(numbers[bi]) not in (6, 8):
+                        continue
+                    for c in neighbors[bi]:
+                        ci = int(c)
+                        if ci in dummy_set or ci in (n1, n2, ai, bi):
+                            continue
+                        if int(numbers[ci]) not in (6, 8):
+                            continue
+                        if n1 in (int(nb) for nb in neighbors[ci]
+                                  if int(nb) not in dummy_set):
+                            return True
+            return False
+
         def _azo_cnn(angle) -> bool:
             # 2-coordinate C–N–N in a C/N 5-ring; both N 2-coordinate
             # (cycle 375 extras were 3-coord N or acyclic azo).
@@ -4305,22 +4330,21 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
-        def _urea_ncn(angle) -> bool:
-            # Urea N–C–N at 3-coordinate C {O, N, N}.
+        def _furan_coc(angle) -> bool:
+            # 2-coordinate furan C–O–C in a C/O 5-ring.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 6:
+            if int(numbers[icen]) != 8:
                 return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 3:
-                return False
-            zs = [int(numbers[nb]) for nb in real_c]
-            if zs.count(8) != 1 or zs.count(7) != 2:
+            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_o) != 2:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 7 and zc == 7
+            if za != 6 or zc != 6:
+                return False
+            return _co_in_five_ring(icen, ia)
 
         def _has_2coord_c() -> bool:
             for i, z in enumerate(numbers):
@@ -4331,22 +4355,12 @@ class Internals(BaseInternals):
                     return True
             return False
 
-        def _has_cf3() -> bool:
-            for i, z in enumerate(numbers):
-                if int(i) in dummy_set or int(z) != 6:
-                    continue
-                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if len(real) == 4 and sum(int(numbers[nb]) == 9 for nb in real) == 3:
-                    return True
-            return False
-
-        urea_ok = set()
-        if (soft_pyridine_angle and not azo_cnn_ok
-                and not _has_2coord_c() and not _has_cf3()):
+        furan_ok = set()
+        if soft_pyridine_angle and not azo_cnn_ok and not _has_2coord_c():
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _urea_ncn(angle)]
-            if len(cands) == 1:
-                urea_ok = set(cands)
+                     if _furan_coc(angle)]
+            if 1 <= len(cands) <= 2:
+                furan_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4400,8 +4414,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in urea_ok:
-                # Isolated urea N–C–N.
+            elif soft_pyridine_angle and ia in furan_ok:
+                # 5-ring furan C–O–C.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
