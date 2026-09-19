@@ -29,7 +29,7 @@ N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
 oxygen-substituted, and on at most two 4-coordinate alcohol
-O–C–C angles (2-coordinate O bonded to H).
+O–C–C angles whose carbon terminal is 3-coordinate.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4338,7 +4338,7 @@ class Internals(BaseInternals):
                 css_ok = set(cands)
 
         def _alcohol_occ(angle) -> bool:
-            # 4-coordinate alcohol O–C–C (GAFF c3-c3-oh).
+            # 4-coordinate alcohol O–C–C with a 3-coordinate carbon terminal.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4352,10 +4352,15 @@ class Internals(BaseInternals):
             if {za, zc} != {6, 8}:
                 return False
             o_idx = ia if za == 8 else ic
+            c_term = ic if za == 8 else ia
             real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
             if len(real_o) != 2:
                 return False
-            return any(int(numbers[nb]) == 1 for nb in real_o)
+            if not any(int(numbers[nb]) == 1 for nb in real_o):
+                return False
+            real_term = [nb for nb in neighbors[c_term]
+                         if int(nb) not in dummy_set]
+            return len(real_term) == 3
 
         alcohol_occ_ok = set()
         if soft_medium_angle:
@@ -4420,7 +4425,7 @@ class Internals(BaseInternals):
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in alcohol_occ_ok:
-                # 4-coordinate alcohol O–C–C on 12≤n<30.
+                # Allylic/vinyl alcohol O–C–C on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
