@@ -27,7 +27,7 @@ Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N, and on
 at most two C–O–C angles at 2-coordinate oxygen with a
-Br-substituted carbon.
+3-coordinate Br-substituted carbon.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
 oxygen-substituted.
@@ -4312,7 +4312,8 @@ class Internals(BaseInternals):
                 azo_cnn_ok = set(cands)
 
         def _bromo_coc(angle) -> bool:
-            # 2-coordinate ether C–O–C with a Br-substituted carbon.
+            # 2-coordinate ether C–O–C; Br on a 3-coordinate carbon
+            # (cycle 408 extra was 4-coordinate alkyl bromo-ether).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4327,6 +4328,8 @@ class Internals(BaseInternals):
                 return False
             for c_idx in (ia, ic):
                 real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+                if len(real_c) != 3:
+                    continue
                 if any(int(numbers[nb]) == 35 for nb in real_c):
                     return True
             return False
@@ -4418,7 +4421,7 @@ class Internals(BaseInternals):
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in bromo_coc_ok:
-                # Bromo-ether C–O–C at 2-coordinate oxygen.
+                # Aryl/vinyl bromo-ether C–O–C (3-coordinate Br carbon).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
