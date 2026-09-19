@@ -26,8 +26,9 @@ cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N, and on
-at most two 2-coordinate P–O–C angles, except on molecules
-that already have that C–N–N class or a P–O–P oxygen.
+at most two 2-coordinate imine C–N–H angles, except on
+molecules that already have that C–N–N class, a
+2-coordinate carbon, or a guanidinium carbon.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4304,35 +4305,45 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
-        def _poc(angle) -> bool:
-            # 2-coordinate P–O–C, the ester analog of n<12 P–O–H.
+        def _imine_cnh(angle) -> bool:
+            # 2-coordinate imine C–N–H.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 8:
+            if int(numbers[icen]) != 7:
                 return False
-            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 2:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 15}
+            return {za, zc} == {1, 6}
 
-        def _has_pop() -> bool:
+        def _has_2coord_c() -> bool:
             for i, z in enumerate(numbers):
-                if int(i) in dummy_set or int(z) != 8:
+                if int(i) in dummy_set or int(z) != 6:
                     continue
                 real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if len(real) == 2 and all(int(numbers[nb]) == 15 for nb in real):
+                if len(real) == 2:
                     return True
             return False
 
-        poc_ok = set()
-        if soft_pyridine_angle and not azo_cnn_ok and not _has_pop():
+        def _has_guanidinium_c() -> bool:
+            for i, z in enumerate(numbers):
+                if int(i) in dummy_set or int(z) != 6:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if sum(int(numbers[nb]) == 7 for nb in real) >= 3:
+                    return True
+            return False
+
+        imine_ok = set()
+        if (soft_pyridine_angle and not azo_cnn_ok
+                and not _has_2coord_c() and not _has_guanidinium_c()):
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _poc(angle)]
+                     if _imine_cnh(angle)]
             if 1 <= len(cands) <= 2:
-                poc_ok = set(cands)
+                imine_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4386,8 +4397,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in poc_ok:
-                # 2-coordinate phosphate-ester P–O–C.
+            elif soft_pyridine_angle and ia in imine_ok:
+                # 2-coordinate imine C–N–H.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
