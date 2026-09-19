@@ -3289,6 +3289,31 @@ for (_z0, _z1), _f in (((13, 18), 0.58), ((31, 36), 0.50), ((49, 54), 0.42),
     _STIFFNESS_SCALE[_z0:_z1 + 1] = _f
 del _z0, _z1, _f
 
+# Hydride factors of the Almlof stretch curvature: the bond of a hydrogen
+# to N, O, F, S or Cl.  The exponential is a hydrocarbon calibration (C-H
+# 5.3 against 4.9-5.4 mdyn/A), but the polar X-H bonds are stiffer than
+# their length says: the harmonic force constants are N-H 7.0 (NH3) /
+# 6.6 (CH3NH2) against 5.8 from the exponential, O-H 8.45 (H2O) / 7.6
+# (CH3OH) against 5.6, F-H 9.7 against 4.8, S-H 4.3 against 3.5 and H-Cl
+# 5.2 against 3.9 (the last two with the row factor), i.e. the guess is
+# 1.2x (N-H), 1.4x (O-H), 2x (F-H), 1.25x (S-H) and 1.3x (H-Cl) too
+# soft, while C-H, C-C, C-N, C-O, C=O and the halogenated C-X bonds are
+# within 10 % (C-C and C=C 20 % stiff).  A too-soft stretch guess is the
+# expensive sign: the quasi-Newton step overshoots the bond by the
+# stiffness ratio, so the start error of the bond contracts by |1 -
+# k/k0| = 0.2-0.5 per step instead of 0.05-0.1, and the max-force
+# criterion needs the O-H / N-H bonds inside 5e-4 A of equilibrium.  The
+# connected starts carry X-H errors of 0.02-0.09 A (thermal snapshots):
+# a molecule whose worst N-H / O-H error exceeds 0.04 A costs +2.9 /
+# +3.3 calls beyond the size / displacement fit on the two splits (t 3.1
+# / 3.8), while the same error on a C-H bond costs nothing.  One factor
+# per heavy element of the hydride bond, from the class means of the
+# harmonic constants above, connected systems only like the row factors.
+_HYDRIDE_SCALE = np.ones(len(covalent_radii), dtype=np.float64)
+for _z, _f in ((7, 1.2), (8, 1.4), (9, 2.0), (16, 1.25), (17, 1.3)):
+    _HYDRIDE_SCALE[_z] = _f
+del _z, _f
+
 class Internals(BaseInternals):
     def __init__(
         self,
@@ -4193,8 +4218,11 @@ class Internals(BaseInternals):
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
         if (self.ntrans + self.nrotations) == 0 and numbers.min() > 0:
             # Connected system, bond between real atoms: the row factors of
-            # the heavier p-block elements (see _STIFFNESS_SCALE).
+            # the heavier p-block elements (see _STIFFNESS_SCALE) and the
+            # hydride factor of a polar X-H bond (see _HYDRIDE_SCALE).
             h0 *= _STIFFNESS_SCALE[numbers].prod()
+            if numbers.min() == 1 and numbers.max() > 1:
+                h0 *= _HYDRIDE_SCALE[numbers.max()]
         return h0 * units.Hartree / units.Bohr**2
 
     def _h0_stretch_diagonal(self) -> Optional[np.ndarray]:
