@@ -24,7 +24,8 @@ guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
 ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
 cyclic ethers, on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two C–S–C angles at
-2-coordinate thioether sulfur next to a 4-coordinate C(S,C,C,H). Dimers that contain a 1-coordinate
+2-coordinate thioether sulfur next to a 4-coordinate C(S,C,C,H)
+(0.06 Ha, GAFF c3-ss-c3). Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
 3-coordinate with exactly one oxygen).
@@ -4326,8 +4327,8 @@ class Internals(BaseInternals):
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in thioether_csc_ok:
-                # Thioether C–S–C at 2-coordinate sulfur.
-                h0[idx] = 0.10 * units.Hartree
+                # Thioether C–S–C at 2-coordinate sulfur (GAFF c3-ss-c3).
+                h0[idx] = 0.06 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
                 h0[idx] = 0.10 * units.Hartree
