@@ -8,7 +8,7 @@ guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted, except connected
-n_atoms<18 which skip the ρ window. Connected molecules with fewer than 18 atoms or
+12≤n_atoms<18 which skip the ρ window. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
@@ -6327,7 +6327,9 @@ class Sella(Optimizer):
             return s_qn, smag_qn
         intern = getattr(self.pes, "int", None)
         n_atoms = int(getattr(intern, "natoms", 30)) if intern is not None else 30
-        skip_rho = bool(getattr(self, "_allow_angle_wa", False) and n_atoms < 18)
+        skip_rho = bool(
+            getattr(self, "_allow_angle_wa", False) and 12 <= n_atoms < 18
+        )
         rho = float(getattr(self, "rho", 1.0))
         if not skip_rho and not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
