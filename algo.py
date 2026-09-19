@@ -5,7 +5,7 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<12 which use 0.20 Ha. Connected tails after 20
+n_atoms<18 which use 0.20 Ha. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
@@ -4453,7 +4453,7 @@ class Internals(BaseInternals):
                 ):
                     scale = 0.20
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
-                    scale = 0.20 if int(self.natoms) < 12 else 0.25
+                    scale = 0.20 if int(self.natoms) < 18 else 0.25
                 else:
                     scale = 0.5
                 h0[idx] = scale * units.Hartree
