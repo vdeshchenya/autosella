@@ -7,7 +7,9 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
-at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses
+at 2-coordinate carbon centers (nitrogen-center dummy angles stay
+on Fischer–Almlöf).
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -23,8 +25,7 @@ two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
 ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
 cyclic ethers, and on at most two carboxyl/ester
-Cα C–C–N angles, and on at most two 3-coordinate aryl-CF3
-ipso angles that include the CF3 carbon. Dimers that contain a 1-coordinate
+Cα C–C–N angles. Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
 3-coordinate with exactly one oxygen).
@@ -4246,48 +4247,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 carboxyl_ccn_ok = set(cands)
 
-        def _is_cf3_carbon(idx) -> bool:
-            real = [nb for nb in neighbors[idx] if int(nb) not in dummy_set]
-            if int(numbers[idx]) != 6 or len(real) != 4:
-                return False
-            n_f = sum(int(numbers[nb]) == 9 for nb in real)
-            n_c = sum(int(numbers[nb]) == 6 for nb in real)
-            return n_f == 3 and n_c == 1
-
-        def _has_linear_carbon() -> bool:
-            for i, z in enumerate(numbers):
-                if int(i) in dummy_set or int(z) != 6:
-                    continue
-                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if len(real) == 2:
-                    return True
-            return False
-
-        def _aryl_cf3_ipso(angle) -> bool:
-            # Angle at a 3-coordinate carbon attached to exactly one CF3,
-            # with the CF3 carbon as a terminal. Alkyl-CF3 (4-coord attach,
-            # cycle 372 upadacitinib extra) stays on Fischer.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 3:
-                return False
-            cf3s = [nb for nb in real_c if _is_cf3_carbon(int(nb))]
-            if len(cf3s) != 1:
-                return False
-            return int(ia) == int(cf3s[0]) or int(ic) == int(cf3s[0])
-
-        aryl_cf3_ok = set()
-        if soft_pyridine_angle and not _has_linear_carbon():
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _aryl_cf3_ipso(angle)]
-            if 1 <= len(cands) <= 2:
-                aryl_cf3_ok = set(cands)
-
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4327,7 +4286,16 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                h0[idx] = 0.10 * units.Hartree
+                # Cycle 374: keep dummy-angle 0.10 only at 2-coordinate
+                # carbon linear centers. Nitrogen-center dummy angles
+                # (isocyanide) stay on Fischer–Almlöf.
+                real_idx = [int(j) for j in angle.indices
+                            if int(j) not in dummy_set]
+                lin = [j for j in real_idx if int(nbonds[j]) == 2]
+                if lin and any(int(numbers[j]) != 6 for j in lin):
+                    h0[idx] = self._h0_angle(angle)
+                else:
+                    h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -4336,9 +4304,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in aryl_cf3_ok:
-                # 3-coordinate aryl-CF3 ipso angles that include CF3.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
