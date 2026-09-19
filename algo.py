@@ -4,15 +4,15 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
-guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
+guess constants are 0.25 Ha instead of 0.5, except connected
+n_atoms<12 which use 0.20 Ha. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, and F–B–F angles at silicon or boron centers, and on
-at most six 4-coordinate Br–C–Br angles.
+Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4374,27 +4374,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
-        def _brcbr(angle) -> bool:
-            # 4-coordinate gem-dibromo Br–C–Br (leftover 135041973).
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 35 and zc == 35
-
-        brcbr_ok = set()
-        if soft_oxo_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _brcbr(angle)]
-            if 1 <= len(cands) <= 6:
-                brcbr_ok = set(cands)
-
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -4462,9 +4441,6 @@ class Internals(BaseInternals):
             ):
                 # Fluoride tetrahedral class: F–B–F.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_oxo_angle and ia in brcbr_ok:
-                # 4-coordinate gem-dibromo Br–C–Br (GAFF br-c-br).
-                h0[idx] = 0.10 * units.Hartree
             else:
                 h0[idx] = self._h0_angle(angle)
             idx += 1
@@ -4477,7 +4453,7 @@ class Internals(BaseInternals):
                 ):
                     scale = 0.20
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
-                    scale = 0.25
+                    scale = 0.20 if int(self.natoms) < 12 else 0.25
                 else:
                     scale = 0.5
                 h0[idx] = scale * units.Hartree
