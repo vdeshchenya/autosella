@@ -5,7 +5,7 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<22
+n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
@@ -6604,7 +6604,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and 18 <= n_atoms < 22:
+        if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
