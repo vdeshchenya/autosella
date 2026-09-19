@@ -26,9 +26,9 @@ cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N, and on
-at most two sulfone C–S–C angles at 4-coordinate sulfur
-with exactly two oxygen and two carbon neighbors except on
-molecules that already have that C–N–N class.
+at most two sulfonamide C–S–N angles at 4-coordinate sulfur
+with carbon, nitrogen, and two oxygens except on molecules
+that already have that C–N–N class.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4305,7 +4305,7 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
-        def _sulfone_csc(angle) -> bool:
+        def _sulfonamide_csn(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4317,16 +4317,18 @@ class Internals(BaseInternals):
                 return False
             n_o = sum(int(numbers[nb]) == 8 for nb in real_s)
             n_c = sum(int(numbers[nb]) == 6 for nb in real_s)
-            if n_o != 2 or n_c != 2:
+            n_n = sum(int(numbers[nb]) == 7 for nb in real_s)
+            if n_o != 2 or n_c != 1 or n_n != 1:
                 return False
-            return int(numbers[ia]) == 6 and int(numbers[ic]) == 6
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {6, 7}
 
-        sulfone_ok = set()
+        sulfonamide_ok = set()
         if soft_pyridine_angle and not azo_cnn_ok:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _sulfone_csc(angle)]
+                     if _sulfonamide_csn(angle)]
             if 1 <= len(cands) <= 2:
-                sulfone_ok = set(cands)
+                sulfonamide_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4380,8 +4382,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in sulfone_ok:
-                # Sulfone C–S–C at 4-coordinate S (two O, two C).
+            elif soft_pyridine_angle and ia in sulfonamide_ok:
+                # Sulfonamide C–S–N at 4-coordinate S.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
