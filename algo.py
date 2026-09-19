@@ -11,7 +11,8 @@ at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, and F–B–F angles at silicon or boron centers.
+Cl–Si–X, and F–B–F angles at silicon or boron centers, and on
+at most six 4-coordinate Br–C–Br angles.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -28,9 +29,7 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on at most two 4-coordinate
-C–C–S angles at carbon bonded to a 2-coordinate disulfide
-when the molecule also has a 4-coordinate nitrogen.
+oxygen-substituted.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4338,42 +4337,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _has_4coord_n() -> bool:
-            for i, z in enumerate(numbers):
-                if int(i) in dummy_set or int(z) != 7:
-                    continue
-                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if len(real) == 4:
-                    return True
-            return False
-
-        def _thiosulfonate_ccs(angle) -> bool:
-            # 4-coordinate C–C–S whose sulfur is 2-coordinate disulfide.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 16}:
-                return False
-            s_idx = ia if za == 16 else ic
-            real_s = [nb for nb in neighbors[s_idx] if int(nb) not in dummy_set]
-            if len(real_s) != 2:
-                return False
-            return any(int(numbers[nb]) == 16 for nb in real_s)
-
-        thiosulfonate_ccs_ok = set()
-        if soft_medium_angle and _has_4coord_n():
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _thiosulfonate_ccs(angle)]
-            if 1 <= len(cands) <= 2:
-                thiosulfonate_ccs_ok = set(cands)
-
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4411,6 +4374,27 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
+        def _brcbr(angle) -> bool:
+            # 4-coordinate gem-dibromo Br–C–Br (leftover 135041973).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return za == 35 and zc == 35
+
+        brcbr_ok = set()
+        if soft_oxo_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _brcbr(angle)]
+            if 1 <= len(cands) <= 6:
+                brcbr_ok = set(cands)
+
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -4428,9 +4412,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in thiosulfonate_ccs_ok:
-                # Thiosulfonate C–C–S at disulfide carbon (4-coord N present).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
@@ -4480,6 +4461,9 @@ class Internals(BaseInternals):
                 and int(numbers[int(angle.indices[2])]) == 9
             ):
                 # Fluoride tetrahedral class: F–B–F.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_oxo_angle and ia in brcbr_ok:
+                # 4-coordinate gem-dibromo Br–C–Br (GAFF br-c-br).
                 h0[idx] = 0.10 * units.Hartree
             else:
                 h0[idx] = self._h0_angle(angle)
