@@ -23,8 +23,8 @@ two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
 ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
 cyclic ethers, and on at most two carboxyl/ester
-Cα C–C–N angles, and on at most two 3-coordinate pyrazole/imidazole
-NH C–N–N angles. Dimers that contain a 1-coordinate
+Cα C–C–N angles, and on at most two isolated CF3 F–C–C
+angles. Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
 3-coordinate with exactly one oxygen).
@@ -4246,32 +4246,73 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 carboxyl_ccn_ok = set(cands)
 
-        def _pyrazole_cnn(angle) -> bool:
-            # 3-coordinate pyrazole/imidazole NH: C–N–N at N bonded to
-            # C, N, and H. Distinct from 2-coordinate azide C–N–N (cycle 301).
+        def _has_linear_carbon() -> bool:
+            for i, z in enumerate(numbers):
+                if int(i) in dummy_set or int(z) != 6:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if len(real) == 2:
+                    return True
+            return False
+
+        def _has_siloxane() -> bool:
+            for i, z in enumerate(numbers):
+                if int(i) in dummy_set or int(z) != 8:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if any(int(numbers[nb]) == 14 for nb in real):
+                    return True
+            return False
+
+        def _has_aryl_fluorine() -> bool:
+            # F bonded to a 3-coordinate carbon (aryl/vinyl F, not CF3).
+            for i, z in enumerate(numbers):
+                if int(i) in dummy_set or int(z) != 9:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if len(real) != 1 or int(numbers[real[0]]) != 6:
+                    continue
+                creal = [nb for nb in neighbors[int(real[0])]
+                         if int(nb) not in dummy_set]
+                if len(creal) == 3:
+                    return True
+            return False
+
+        def _isolated_cf3_fcc(angle) -> bool:
+            # F–C–C at 4-coordinate CF3 whose attached carbon is not
+            # fluorinated. Cycle 310's gem-CF2 F–C–C extraed leftover;
+            # a 1–2 cap on all F–C–C skipped every CF3 (three angles).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 7:
+            if int(numbers[icen]) != 6:
                 return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 3:
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
                 return False
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
-            n_n = sum(int(numbers[nb]) == 7 for nb in real_n)
-            n_h = sum(int(numbers[nb]) == 1 for nb in real_n)
-            if n_c != 1 or n_n != 1 or n_h != 1:
+            n_f = sum(int(numbers[nb]) == 9 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            if n_f != 3 or n_c != 1:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 7}
+            if {za, zc} != {6, 9}:
+                return False
+            c_idx = ia if za == 6 else ic
+            attach = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+            return not any(int(numbers[nb]) == 9 for nb in attach)
 
-        pyrazole_cnn_ok = set()
-        if soft_pyridine_angle:
+        cf3_fcc_ok = set()
+        if (soft_pyridine_angle
+                and not _has_linear_carbon()
+                and not _has_siloxane()
+                and not _has_aryl_fluorine()):
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _pyrazole_cnn(angle)]
-            if 1 <= len(cands) <= 2:
-                pyrazole_cnn_ok = set(cands)
+                     if _isolated_cf3_fcc(angle)]
+            # Three F–C–C per CF3; keep two so the 1–2 family cap applies
+            # without dropping the whole group.
+            if len(cands) >= 1:
+                cf3_fcc_ok = set(cands[:2])
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4322,8 +4363,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in pyrazole_cnn_ok:
-                # Pyrazole/imidazole NH C–N–N at 3-coordinate nitrogen.
+            elif soft_pyridine_angle and ia in cf3_fcc_ok:
+                # Isolated CF3 F–C–C (two of three angles).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
