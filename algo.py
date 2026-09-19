@@ -6,7 +6,9 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
-geodesic ODE steps recompute Binv at every RHS. Connected
+geodesic ODE steps recompute Binv at every RHS. Rank-deficient
+Jacobian SVD fallbacks count singular values relative to the
+largest (Sella 2.6 `_svd_rank`). Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -21,9 +23,7 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.20 Ha guesses, as do dummy-involving
-dihedrals at 2-coordinate isocyanide nitrogen centers (two
-carbon terminals, one of them terminal isocyanide C). Connected 30≤n_atoms<80 use 0.10 Ha
+dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
@@ -3748,25 +3748,6 @@ class Internals(BaseInternals):
                                 elif zpair == {7, 8}:
                                     # Isocyanate N=C=O, including near-collinear.
                                     self.windowed_dummy_atoms.add(int(self.dinds[j]))
-                        elif (
-                            int(self.atoms.numbers[j]) == 7
-                        ):
-                            term_z = []
-                            term_ids = []
-                            for bterm in jbonds:
-                                t0, t1 = int(bterm.indices[0]), int(bterm.indices[1])
-                                t = t1 if t0 == j else t0
-                                if 0 <= t < self.natoms:
-                                    term_z.append(int(self.atoms.numbers[t]))
-                                    term_ids.append(t)
-                            if (
-                                len(term_z) == 2
-                                and set(term_z) == {6, 6}
-                                and any(len(bonds[t]) == 1 for t in term_ids)
-                            ):
-                                # Isocyanide C–N–C at nitrogen; one carbon
-                                # is the terminal isocyanide carbon.
-                                self.windowed_dummy_atoms.add(int(self.dinds[j]))
                         if (
                             getattr(self, 'adj_dummy_placement', False)
                             and 0.04 < cross_norm < 0.10
@@ -4630,6 +4611,17 @@ class _LRU2:
         self._entries[self._next] = (key, value)
         self._next = 1 - self._next
 
+def _svd_rank(s, rtol=1e-6):
+    """Numerical rank from a singular-value spectrum, relative to the largest.
+
+    Counts singular values above ``rtol * s[0]``. Using a relative
+    cutoff keeps the rank scale-invariant for poorly scaled dummy-linear
+    Jacobians (Sella 2.6.0).
+    """
+    if len(s) == 0:
+        return 0
+    return int(np.sum(s > rtol * s[0]))
+
 def _split_cons_subspace(drdxnred, tol_factor=1e-6):
     """Split (n_int) into Ucons (rowspace of drdxnred) and Ufree (its complement).
 
@@ -5131,7 +5123,7 @@ class InternalPES(PES):
         if len(rdiag) > 0 and rdiag.min() < 1e-6 * rdiag.max():
             # Rank-deficient: fall back to SVD for safe truncation
             Ui, Si, VTi = np.linalg.svd(B, full_matrices=False)
-            nnred = np.sum(Si > 1e-6)
+            nnred = _svd_rank(Si)
             Q = Ui[:, :nnred]
             R = np.diag(Si[:nnred]) @ VTi[:nnred]
 
@@ -5526,7 +5518,7 @@ class InternalPES(PES):
                 cons = self.cons
             B = internal.jacobian()
             Ui, Si, VTi = np.linalg.svd(B, full_matrices=False)
-            nnred = np.sum(Si > 1e-6)
+            nnred = _svd_rank(Si)
             Unred = Ui[:, :nnred]
             Vnred = VTi[:nnred].T
             Siinv = np.diag(1 / Si[:nnred])
@@ -5645,7 +5637,7 @@ class InternalPES(PES):
         # Get Jacobian and calculate redundant and non-redundant spaces
         B = self.int.jacobian()[:, :ncart]
         Ui, Si, VTi = np.linalg.svd(B, full_matrices=True)
-        nnred = np.sum(Si > 1e-6)
+        nnred = _svd_rank(Si)
         Unred = Ui[:, :nnred]
         Ured = Ui[:, nnred:]
 
