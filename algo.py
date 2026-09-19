@@ -6332,6 +6332,37 @@ class Sella(Optimizer):
             return (float(np.sum(value - 0.5 * angle_stiffness * delta**2)),
                     angle_transform.T @ (gradient - angle_stiffness * delta))
 
+        def bending_features(y):
+            delta = angle_transform @ y
+            angles = reference_angles + delta
+            if (not np.all(np.isfinite(angles)) or np.any(angles <= 0.0)
+                    or np.any(angles >= 2.0 * np.pi)):
+                raise ValueError('GP bending feature leaves the angular domain')
+            sine = np.sin(angles)
+            difference = -2.0 * np.sin(reference_angles + delta / 2.0) * np.sin(delta / 2.0)
+            denominator_base = sine**2 + 3.0 * reference_sine_squared
+            h = np.tanh(2.0 * np.sin(angles / 2.0))
+            dh = np.cos(angles / 2.0) * (1.0 - h**2)
+            denominator = denominator_base * h
+            ddenominator = 2.0 * sine * np.cos(angles) * h + denominator_base * dh
+            root = np.sqrt(reference_h / denominator)
+            coordinate = -2.0 * difference * root
+            slope = 2.0 * root * (sine + 0.5 * difference * ddenominator / denominator)
+            feature = y + embedding[angle_rows].T @ (coordinate - delta)
+            mapping = (np.eye(d) + embedding[angle_rows].T
+                       @ ((slope - 1.0)[:, None] * angle_transform))
+            if not np.all(np.isfinite(feature)) or not np.all(np.isfinite(mapping)):
+                raise ValueError('Nonfinite GP bending feature')
+            return feature, mapping
+
+        try:
+            warped_history = [bending_features(point) for point in points]
+        except ValueError:
+            return ordinary, magnitude
+        kernel_points = np.array([point for point, _ in warped_history])
+        kernel_maps = np.array([mapping @ old_mapping
+                                for (_, mapping), old_mapping
+                                in zip(warped_history, derivative_maps)])
         count = len(history)
         size = count * (d + 1)
         # Squared-exponential covariance and its analytic mixed derivatives.
@@ -6351,14 +6382,14 @@ class Sella(Optimizer):
                                    - derivative_maps[i].T @ (g0 + points[i] + extra_gradient))
             for j in range(count):
                 b = j * (d + 1)
-                diff = points[i] - points[j]
+                diff = kernel_points[i] - kernel_points[j]
                 k = np.exp(-0.5 * inv_l2 * (diff @ diff))
                 kernel[a, b] = k
-                kernel[a, b+1:b+d+1] = (inv_l2 * diff * k) @ derivative_maps[j]
-                kernel[a+1:a+d+1, b] = derivative_maps[i].T @ (-inv_l2 * diff * k)
+                kernel[a, b+1:b+d+1] = (inv_l2 * diff * k) @ kernel_maps[j]
+                kernel[a+1:a+d+1, b] = kernel_maps[i].T @ (-inv_l2 * diff * k)
                 mixed = (inv_l2 * identity - inv_l2**2 * np.outer(diff, diff)) * k
                 kernel[a+1:a+d+1, b+1:b+d+1] = (
-                    derivative_maps[i].T @ mixed @ derivative_maps[j])
+                    kernel_maps[i].T @ mixed @ kernel_maps[j])
         kernel.flat[::size+1] += 1e-7
         try:
             from scipy.linalg import cho_factor, cho_solve
@@ -6368,7 +6399,8 @@ class Sella(Optimizer):
             return ordinary, magnitude
 
         def features(y):
-            diff = y - points
+            feature, query_map = bending_features(y)
+            diff = feature - kernel_points
             kval = np.exp(-0.5 * inv_l2 * np.sum(diff * diff, axis=1))
             value = np.column_stack((kval, inv_l2 * diff * kval[:, None]))
             deriv = np.empty((count, d + 1, d))
@@ -6376,10 +6408,10 @@ class Sella(Optimizer):
             deriv[:, 1:, :] = (inv_l2 * identity[None, :, :]
                                - inv_l2**2 * diff[:, :, None] * diff[:, None, :]
                                ) * kval[:, None, None]
-            for i, mapping in enumerate(derivative_maps):
+            for i, mapping in enumerate(kernel_maps):
                 value[i, 1:] = value[i, 1:] @ mapping
                 deriv[i, 1:, :] = mapping.T @ deriv[i, 1:, :]
-            return value.ravel(), deriv.reshape(size, d)
+            return value.ravel(), deriv.reshape(size, d) @ query_map
 
         origin_value, origin_deriv = features(np.zeros(d))
         correction0 = origin_value @ weights
@@ -6407,8 +6439,11 @@ class Sella(Optimizer):
         if (g @ candidate >= 0 or candidate_magnitude > self.delta
                 or candidate_norm > 1.5 * np.linalg.norm(ordinary)):
             return ordinary, magnitude
-        predicted, _ = objective(fit.x)
-        baseline, _ = objective(initial)
+        try:
+            predicted, _ = objective(fit.x)
+            baseline, _ = objective(initial)
+        except ValueError:
+            return ordinary, magnitude
         value, _ = features(fit.x)
         variance = max(0.0, 1.0 - value @ cho_solve(factor, value, check_finite=False))
         if (predicted >= baseline or predicted >= 0
