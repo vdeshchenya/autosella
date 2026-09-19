@@ -28,8 +28,8 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on at most two 4-coordinate C–C–Cl
-angles whose carbon terminal is not 3-coordinate.
+oxygen-substituted, and on at most two alkyl C–O–H angles
+at 4-coordinate carbon.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4337,30 +4337,30 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _ccl(angle) -> bool:
-            # 4-coordinate C–C–Cl; skip 3-coordinate carbon terminal.
+        def _alkyl_coh(angle) -> bool:
+            # Alkyl C–O–H at 2-coordinate O with 4-coordinate carbon.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 6:
+            if int(numbers[icen]) != 8:
                 return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
+            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_o) != 2:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 17}:
+            if {za, zc} != {1, 6}:
                 return False
-            c_term = ia if za == 6 else ic
-            real_ct = [nb for nb in neighbors[c_term] if int(nb) not in dummy_set]
-            return len(real_ct) != 3
+            c_idx = ia if za == 6 else ic
+            real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+            return len(real_c) == 4
 
-        ccl_ok = set()
+        coh_ok = set()
         if soft_medium_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _ccl(angle)]
+                     if _alkyl_coh(angle)]
             if 1 <= len(cands) <= 2:
-                ccl_ok = set(cands)
+                coh_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4417,8 +4417,8 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in ccl_ok:
-                # 4-coordinate C–C–Cl skipping 3-coord carbon terminals.
+            elif soft_medium_angle and ia in coh_ok:
+                # Alkyl C–O–H on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
