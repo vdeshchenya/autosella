@@ -5704,7 +5704,7 @@ class QuasiNewton(BaseStepper):
     alphamin = 0.
     alphamax = np.inf
     slope = -1
-    tiny_eig_thresh = 0.0
+    eig_shift_eps = 0.0
     synonyms = [
         'qn',
         'quasi-newton',
@@ -5732,16 +5732,12 @@ class QuasiNewton(BaseStepper):
 
         self.ones = np.ones_like(self.L)
         self.ones[:self.order] = -1
-        thresh = float(getattr(QuasiNewton, 'tiny_eig_thresh', 0.0) or 0.0)
-        if thresh > 0.0 and self.order == 0:
-            tiny = np.abs(self.L) < thresh
-            if np.any(tiny):
+        eps = float(getattr(QuasiNewton, 'eig_shift_eps', 0.0) or 0.0)
+        if eps > 0.0 and self.order == 0:
+            lmin = float(np.min(np.abs(self.L)))
+            if lmin < eps:
                 self.L = np.array(self.L, dtype=np.float64, copy=True)
-                self.Vg = np.array(self.Vg, dtype=np.float64, copy=True)
-                self.L[tiny] = 1.0
-                self.Vg[tiny] = 0.0
-                self.ones = np.array(self.ones, dtype=np.float64, copy=True)
-                self.ones[tiny] = 1.0
+                self.L += (eps - lmin)
 
     def get_s(self, alpha: float) -> Tuple[np.ndarray, np.ndarray]:
         denom = self.L + alpha * self.ones
@@ -6363,14 +6359,14 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
 
-        prev_thresh = QuasiNewton.tiny_eig_thresh
+        prev_eps = QuasiNewton.eig_shift_eps
         n_atoms = getattr(self, '_n_atoms', None)
         if (
             getattr(self, '_allow_angle_wa', False)
             and n_atoms is not None
             and 30 <= int(n_atoms) < 80
         ):
-            QuasiNewton.tiny_eig_thresh = 1e-5
+            QuasiNewton.eig_shift_eps = 0.001
         try:
             if self.pes.cons.has_inequalities():
                 all_valid = False
@@ -6392,7 +6388,7 @@ class Sella(Optimizer):
 
             s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
         finally:
-            QuasiNewton.tiny_eig_thresh = prev_thresh
+            QuasiNewton.eig_shift_eps = prev_eps
         return self._maybe_gdiis(s, smag)
 
     def _dummy_dihedral_s_indices(self, intern):
