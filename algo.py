@@ -21,10 +21,9 @@ dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
-ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
-cyclic ethers, and on at most two carboxyl/ester
-Cα C–C–N angles, and on at most two C–C–C angles at
-3-coordinate carbon bonded to 2-coordinate isocyanide nitrogen. Dimers that contain a 1-coordinate
+ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si, N-substituted fused-aryl 4-/5-membered
+cyclic ethers, and methoxy O–CH3, and on at most two carboxyl/ester
+Cα C–C–N angles. Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
 3-coordinate with exactly one oxygen).
@@ -4197,6 +4196,17 @@ class Internals(BaseInternals):
                         return True
             return False
 
+        def _methoxy_ether(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            o_idx = ia if int(numbers[ia]) == 8 else ic
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            other = next(int(nb) for nb in real_o if int(nb) != icen)
+            real_other = [nb for nb in neighbors[other]
+                          if int(nb) not in dummy_set]
+            return (int(numbers[other]) == 6 and len(real_other) == 4
+                    and sum(int(numbers[nb]) == 1 for nb in real_other) == 3)
+
         oxazolidinone_occ_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
@@ -4208,6 +4218,7 @@ class Internals(BaseInternals):
                     and not _siloxane_oxygen(self.internals['angles'][ia])
                     and not _fused_small_cyclic_ether(
                         self.internals['angles'][ia])
+                    and not _methoxy_ether(self.internals['angles'][ia])
                 }
 
         def _carboxyl_carbon(cn) -> bool:
@@ -4245,41 +4256,6 @@ class Internals(BaseInternals):
                      if _carboxyl_ccn(angle)]
             if 1 <= len(cands) <= 2:
                 carboxyl_ccn_ok = set(cands)
-
-        def _isocyanide_ipso_ccc(angle) -> bool:
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 3:
-                return False
-            n_n = sum(int(numbers[nb]) == 7 for nb in real_c)
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
-            if n_n != 1 or n_c != 2:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 6}:
-                return False
-            n_idx = next(int(nb) for nb in real_c if int(numbers[nb]) == 7)
-            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
-            if len(real_n) != 2:
-                return False
-            if not all(int(numbers[nb]) == 6 for nb in real_n):
-                return False
-            other = next(int(nb) for nb in real_n if int(nb) != icen)
-            real_term = [nb for nb in neighbors[other]
-                         if int(nb) not in dummy_set]
-            return len(real_term) == 1
-
-        isocyanide_ipso_ok = set()
-        if soft_pyridine_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _isocyanide_ipso_ccc(angle)]
-            if 1 <= len(cands) <= 2:
-                isocyanide_ipso_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4329,9 +4305,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in isocyanide_ipso_ok:
-                # Aryl–isocyanide ipso C–C–C at 3-coordinate carbon.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
