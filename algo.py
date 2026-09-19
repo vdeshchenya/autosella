@@ -4444,29 +4444,33 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _sulfoxide_osc(angle) -> bool:
-            # 3-coordinate sulfoxide O–S–C (S has O, C, C).
+        def _noxide_cnc(angle) -> bool:
+            # 3-coordinate N-oxide C–N–C; N has O, C, C and O is 1-coord.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 16:
+            if int(numbers[icen]) != 7:
                 return False
-            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_s) != 3:
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
                 return False
-            zs = [int(numbers[nb]) for nb in real_s]
+            zs = [int(numbers[nb]) for nb in real_n]
             if zs.count(8) != 1 or zs.count(6) != 2:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 8}
+            if za != 6 or zc != 6:
+                return False
+            o_idx = next(int(nb) for nb in real_n if int(numbers[nb]) == 8)
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            return len(real_o) == 1
 
-        sulfoxide_ok = set()
-        if soft_dummy_angle and int(self.natoms) < 18:
+        noxide_ok = set()
+        if soft_dummy_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _sulfoxide_osc(angle)]
+                     if _noxide_cnc(angle)]
             if 1 <= len(cands) <= 2:
-                sulfoxide_ok = set(cands)
+                noxide_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4532,8 +4536,8 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_dummy_angle and ia in sulfoxide_ok:
-                # Sulfoxide O–S–C on connected n_atoms<18.
+            elif soft_dummy_angle and ia in noxide_ok:
+                # N-oxide C–N–C on connected n<18 or n≥30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
