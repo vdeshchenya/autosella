@@ -25,9 +25,9 @@ ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-subst
 cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
-N–N edge lies in a 5-membered ring of only C and N, and 0.005 Ha
-guesses on carbamate C–N dihedrals when the molecule has exactly
-one 3-coordinate C {O, O, N} bonded to a 3-coordinate N.
+N–N edge lies in a 5-membered ring of only C and N.
+Connected 18≤n_atoms<30 use 0.10 Ha guesses on at most two
+C–S–O angles at sulfur.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -3263,6 +3263,7 @@ class Internals(BaseInternals):
     soft_dummy_angle_h0_default = False
     soft_oxo_angle_h0_default = False
     soft_pyridine_angle_h0_default = False
+    soft_medium_angle_h0_default = False
     soft_phenol_angle_h0_default = False
     adj_dummy_placement_default = False
 
@@ -3304,6 +3305,7 @@ class Internals(BaseInternals):
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
         self.soft_pyridine_angle_h0 = Internals.soft_pyridine_angle_h0_default
+        self.soft_medium_angle_h0 = Internals.soft_medium_angle_h0_default
         self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
         self.windowed_dummy_atoms = set()
@@ -3326,6 +3328,7 @@ class Internals(BaseInternals):
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
         new.soft_pyridine_angle_h0 = getattr(self, 'soft_pyridine_angle_h0', False)
+        new.soft_medium_angle_h0 = getattr(self, 'soft_medium_angle_h0', False)
         new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
@@ -4087,6 +4090,7 @@ class Internals(BaseInternals):
         soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
         soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
         soft_pyridine_angle = getattr(self, 'soft_pyridine_angle_h0', False)
+        soft_medium_angle = getattr(self, 'soft_medium_angle_h0', False)
         soft_phenol_angle = getattr(self, 'soft_phenol_angle_h0', False)
         numbers = np.asarray(self.all_atoms.numbers)
         neighbors = [[] for _ in range(len(self.all_atoms))]
@@ -4304,38 +4308,23 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
-        def _carbamate_cn_bond(j, k) -> bool:
-            # Carbamate/oxazolidinone C–N: 3-coord C {O, O, N}, 3-coord N.
-            if any(x in dummy_set for x in (j, k)):
+        def _cso(angle) -> bool:
+            # Sulfoxide/sulfone C–S–O.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[j]) == 7 and int(numbers[k]) == 6:
-                j, k = k, j
-            if int(numbers[j]) != 6 or int(numbers[k]) != 7:
+            if int(numbers[icen]) != 16:
                 return False
-            real_c = [nb for nb in neighbors[j] if int(nb) not in dummy_set]
-            if len(real_c) != 3:
-                return False
-            if sum(int(numbers[nb]) == 8 for nb in real_c) != 2:
-                return False
-            if sum(int(numbers[nb]) == 7 for nb in real_c) != 1:
-                return False
-            real_n = [nb for nb in neighbors[k] if int(nb) not in dummy_set]
-            return len(real_n) == 3
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {6, 8}
 
-        carbamate_cn_dih_ok = set()
-        if soft_pyridine_angle and not azo_cnn_ok:
-            bonds = set()
-            cands = []
-            for idh, dihedral in enumerate(self.internals['dihedrals']):
-                idx4 = tuple(int(x) for x in dihedral.indices)
-                if any(x in dummy_set for x in idx4):
-                    continue
-                j, k = idx4[1], idx4[2]
-                if _carbamate_cn_bond(j, k):
-                    bonds.add(tuple(sorted((j, k))))
-                    cands.append(idh)
-            if len(bonds) == 1:
-                carbamate_cn_dih_ok = set(cands)
+        cso_ok = set()
+        if soft_medium_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _cso(angle)]
+            if 1 <= len(cands) <= 2:
+                cso_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4389,6 +4378,9 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
+            elif soft_medium_angle and ia in cso_ok:
+                # Sulfoxide/sulfone C–S–O on 18≤n<30.
+                h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
                 h0[idx] = 0.10 * units.Hartree
@@ -4441,7 +4433,7 @@ class Internals(BaseInternals):
             else:
                 h0[idx] = self._h0_angle(angle)
             idx += 1
-        for idh, dihedral in enumerate(self.internals['dihedrals']):
+        for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
                 windowed = getattr(self, 'windowed_dummy_atoms', set())
                 if (
@@ -4454,9 +4446,6 @@ class Internals(BaseInternals):
                 else:
                     scale = 0.5
                 h0[idx] = scale * units.Hartree
-            elif soft_pyridine_angle and idh in carbamate_cn_dih_ok:
-                # Carbamate C–N torsion (~half Fischer).
-                h0[idx] = 0.005 * units.Hartree
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
             idx += 1
@@ -6594,6 +6583,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
+        Internals.soft_medium_angle_h0_default = 18 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
@@ -6609,6 +6599,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_angle_h0_default = False
         Internals.soft_oxo_angle_h0_default = False
         Internals.soft_pyridine_angle_h0_default = False
+        Internals.soft_medium_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
