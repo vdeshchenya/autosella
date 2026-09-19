@@ -4444,38 +4444,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _alcohol_occ(angle) -> bool:
-            # 4-coordinate alcohol O–C–C with a 3-coordinate carbon terminal.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 8}:
-                return False
-            o_idx = ia if za == 8 else ic
-            c_term = ic if za == 8 else ia
-            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
-                return False
-            if not any(int(numbers[nb]) == 1 for nb in real_o):
-                return False
-            real_term = [nb for nb in neighbors[c_term]
-                         if int(nb) not in dummy_set]
-            return len(real_term) == 3
-
-        alcohol_occ_ok = set()
-        if soft_dummy_angle and int(self.natoms) < 18:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _alcohol_occ(angle)]
-            if 1 <= len(cands) <= 2:
-                alcohol_occ_ok = set(cands)
-
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4539,9 +4507,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_dummy_angle and ia in alcohol_occ_ok:
-                # Allylic/vinyl 4-coordinate alcohol O–C–C on connected n<18.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
@@ -6754,7 +6719,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and 18 <= n_atoms < 20:
+        if connected and n_atoms < 20:
             opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
