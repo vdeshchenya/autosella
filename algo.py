@@ -4550,9 +4550,10 @@ class Internals(BaseInternals):
         adj: List[List[int]],
         bo: float,
         s_pi_sigma: float = 0.6,
-        s_pi_lp: float = 0.45,
-        s_carbonyl_lp: float = 0.7,
-        s_pi_pi: float = 0.65,
+        s_pi_lp: float = 0.35,
+        s_carbonyl_lp: float = 1.0,
+        s_pi_pi: float = 0.5,
+        s_carbonyl_pi: float = 0.65,
         bo_lo: float = 1.5,
         bo_hi: float = 2.2,
         ring_max: int = 8,
@@ -4586,24 +4587,43 @@ class Internals(BaseInternals):
         ring_max atoms are left alone: their dihedrals describe ring
         puckering, not a rotation, and the 1/sqrt(n) evidence shows ring
         torsions want the full constant.
+
+        Carbonyl-like centres (a terminal O or S neighbour: carbonyl,
+        carboxyl, thiocarbonyl, nitro, N-oxide) conjugate more strongly
+        than ring or vinyl centres, for the lone-pair class and for the
+        sp2-sp2 class alike.  The carbonyl-lone-pair link keeps the full
+        constant: GFN2-xTB's amide and ester conjugation is stiffer than
+        the experimental barriers (a 0.7 factor cost ~0.3 calls per bond
+        on connected molecules and on the fragments of complexes, with
+        and without the out-of-plane coordinate of the carbonyl centre).
+        Carbonyl- or nitro-conjugated sp2-sp2 links (enones, aryl ketones,
+        acids and amides, nitroarenes: 5-8 kcal/mol, 0.016-0.025 Ha/rad^2)
+        keep s_carbonyl_pi, while the plain biaryl / styrene / aryl-azine
+        links (V2 = 2-3 kcal/mol, 0.006-0.010) and the sp2-lone-pair links
+        (anisole, phenol, aniline: 0.010-0.017) sit at the stiff end of
+        their own ranges with s_pi_pi and s_pi_lp.
         """
         tb, tc = types[b], types[c]
         if 'pi' not in (tb, tc):
             return 1.0
+        numbers = np.asarray(self.atoms.numbers)
+
+        def carbonyl_like(p):
+            return any(
+                int(numbers[j]) in (8, 16) and len(adj[j]) == 1
+                for j in adj[p]
+            )
+
         if 'sigma' in (tb, tc):
             s = s_pi_sigma
         elif tb == 'pi' and tc == 'pi':
-            s = s_pi_pi
+            s = s_carbonyl_pi if (carbonyl_like(b) or carbonyl_like(c)) \
+                else s_pi_pi
         else:
             # pi centre bonded to a lone-pair heteroatom: carbonyl-like
             # centres (a terminal O or S neighbour) conjugate strongly.
             p = b if tb == 'pi' else c
-            numbers = np.asarray(self.atoms.numbers)
-            carbonyl = any(
-                int(numbers[j]) in (8, 16) and len(adj[j]) == 1
-                for j in adj[p]
-            )
-            s = s_carbonyl_lp if carbonyl else s_pi_lp
+            s = s_carbonyl_lp if carbonyl_like(p) else s_pi_lp
         if self._in_small_ring(b, c, adj, ring_max):
             return 1.0
         w = min(1.0, max(0.0, (bo - bo_lo) / (bo_hi - bo_lo)))
