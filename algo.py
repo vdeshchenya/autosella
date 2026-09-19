@@ -25,13 +25,12 @@ ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-subst
 cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
-N–N edge lies in a 5-membered ring of only C and N.
+N–N edge lies in a 5-membered ring of only C and N, and on
+at most two 3-coordinate O–C–Br angles whose oxygen is
+2-coordinate.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on at most four pyridine/imidazole
-N-oxide O–N–C angles (3-coordinate N bonded to two carbons
-and one terminal oxygen) when n_atoms<40. Connected 30≤n_atoms<40
-use the same N-oxide O–N–C 0.10 Ha class.
+oxygen-substituted.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4312,6 +4311,32 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
+        def _ocbr(angle) -> bool:
+            # 3-coordinate C O–C–Br with 2-coordinate ether oxygen
+            # (GAFF br-c-o). Skip carbonyl O (degree 1).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {8, 35}:
+                return False
+            o_idx = ia if za == 8 else ic
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            return len(real_o) == 2
+
+        ocbr_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _ocbr(angle)]
+            if 1 <= len(cands) <= 2:
+                ocbr_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4338,37 +4363,6 @@ class Internals(BaseInternals):
                      if _css(angle)]
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
-
-        def _noxide_onc(angle) -> bool:
-            # Pyridine/imidazole N-oxide O–N–C: 3-coord N {C, C, O},
-            # terminal oxygen (GAFF c3-n4-o).
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 7:
-                return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 3:
-                return False
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
-            n_o = sum(int(numbers[nb]) == 8 for nb in real_n)
-            if n_c != 2 or n_o != 1:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 8}:
-                return False
-            o_idx = ia if za == 8 else ic
-            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            return len(real_o) == 1
-
-        noxide_ok = set()
-        if ((soft_pyridine_angle or soft_medium_angle)
-                and int(self.natoms) < 40):
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _noxide_onc(angle)]
-            if 1 <= len(cands) <= 4:
-                noxide_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4422,11 +4416,11 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in ocbr_ok:
+                # 3-coordinate ether O–C–Br (GAFF br-c-o).
+                h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
-                h0[idx] = 0.10 * units.Hartree
-            elif (soft_pyridine_angle or soft_medium_angle) and ia in noxide_ok:
-                # Pyridine/imidazole N-oxide O–N–C on 12≤n<40.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
