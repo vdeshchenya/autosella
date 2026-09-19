@@ -4349,9 +4349,10 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 sulfonamide_ok = set(cands)
 
-        def _bromo_coc(angle) -> bool:
-            # 2-coordinate ether C–O–C; Br on a 3-coordinate carbon
-            # (cycle 408 extra was 4-coordinate alkyl bromo-ether).
+        def _hetero_coc(angle) -> bool:
+            # 2-coordinate ether C–O–C; both carbons 3-coordinate.
+            # Exactly one carbon has exactly one N/Cl/Br/I neighbor.
+            # Skip S-substituted ethers (cycle 408/409 extras and 104073139).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4364,20 +4365,23 @@ class Internals(BaseInternals):
             za, zc = int(numbers[ia]), int(numbers[ic])
             if za != 6 or zc != 6:
                 return False
-            for c_idx in (ia, ic):
-                real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
-                if len(real_c) != 3:
-                    continue
-                if any(int(numbers[nb]) == 35 for nb in real_c):
-                    return True
-            return False
+            real_a = [nb for nb in neighbors[ia] if int(nb) not in dummy_set]
+            real_c = [nb for nb in neighbors[ic] if int(nb) not in dummy_set]
+            if len(real_a) != 3 or len(real_c) != 3:
+                return False
+            if any(int(numbers[nb]) == 16 for nb in real_a + real_c):
+                return False
+            het = {7, 17, 35, 53}
+            ha = sum(int(numbers[nb]) in het for nb in real_a)
+            hc = sum(int(numbers[nb]) in het for nb in real_c)
+            return (ha, hc) in ((1, 0), (0, 1))
 
-        bromo_coc_ok = set()
+        hetero_coc_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _bromo_coc(angle)]
+                     if _hetero_coc(angle)]
             if 1 <= len(cands) <= 2:
-                bromo_coc_ok = set(cands)
+                hetero_coc_ok = set(cands)
 
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
@@ -4461,8 +4465,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in sulfonamide_ok:
                 # Tertiary/2-coordinate sulfonamide C–S–N.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in bromo_coc_ok:
-                # Aryl/vinyl bromo-ether C–O–C (3-coordinate Br carbon).
+            elif soft_pyridine_angle and ia in hetero_coc_ok:
+                # 3-coordinate hetero/halo-aryl ether C–O–C.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
