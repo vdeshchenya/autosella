@@ -4444,8 +4444,8 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _ssc(angle) -> bool:
-            # Thiosulfonate S–S–C at 4-coordinate S (O, O, S, C).
+        def _oso(angle) -> bool:
+            # Thiosulfonate O–S–O at 4-coordinate S (O, O, S, C).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4459,14 +4459,14 @@ class Internals(BaseInternals):
             if zs_s.count(8) != 2 or zs_s.count(16) != 1 or zs_s.count(6) != 1:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 16}
+            return za == 8 and zc == 8
 
-        ssc_ok = set()
+        oso_ok = set()
         if soft_medium_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _ssc(angle)]
+                     if _oso(angle)]
             if 1 <= len(cands) <= 2:
-                ssc_ok = set(cands)
+                oso_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4532,8 +4532,8 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in ssc_ok:
-                # Thiosulfonate S–S–C at 4-coordinate S on 12≤n<30.
+            elif soft_medium_angle and ia in oso_ok:
+                # Thiosulfonate O–S–O at 4-coordinate S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
