@@ -8597,6 +8597,153 @@ def _prerelax_rotors(numbers, pos_ang):
     return pos
 
 
+# Pyramidalisation of three-coordinate P / As / Sb centres that start planar.
+#
+# Rationale: a trivalent pnictogen centre heavier than nitrogen is pyramidal
+# at every minimum (bond angles 92-101 degrees: PH3 93.5, PF3 97.8, PMe3
+# 98.6, PCl3 100.3, P(OMe)3 ~100; AsH3 92, AsF3 96, AsMe3 96; SbH3 91.6,
+# SbMe3 94), with an inversion barrier of 30-40 kcal/mol for phosphorus and
+# more for the heavier elements, so the planar arrangement is the saddle of
+# the inversion mode: zero gradient by symmetry and a strongly negative
+# curvature (|k| ~ 1.4 Ha/rad^2 against a model bend curvature of ~0.3).
+# Idealised input geometries (2D-to-3D templates) place such centres planar
+# or within 0.1 A of the plane. A quasi-Newton walker with the positive model
+# curvature leaves the saddle only through the environment's torque,
+# amplified by ~(1 + |k|/k_model) per step, and then still has to travel the
+# 0.8-0.9 A of the centre's height; every planar-start phosphine of the
+# training data ends pyramidal, ~3 calls above the size/displacement trend of
+# the connected population. Each such centre is therefore placed at its class
+# geometry before the first force call, on the side it already leans to (the
+# side the walker's first steps would amplify). Construction: every
+# substituent subtree is rotated rigidly about an axis through the centre,
+# perpendicular to the bond and to the normal of the neighbour plane, until
+# the bond lies at the elevation -tau below that plane, where
+# sin^2 tau = (2 cos theta + 1) / 3 gives the mutual angle theta of a
+# threefold-symmetric arrangement; bond lengths and every substituent's own
+# geometry are preserved and the centre keeps its position. Not touched:
+# centres in rings (their substituent subtrees are not independent), centres
+# with a one-coordinate N / O / S / Se neighbour (a double bond: sp2 P(V) as
+# in P=O, P=S) or with an s-block metal neighbour, and any move that changes
+# the bond graph or buries atoms in each other (a non-bonded, non-geminal
+# contact inside _PYR_CLASH_X times the UFF 12-6 minimum distance, where the
+# 12-6 repulsion is thousands of well depths; tighter-than-usual contacts
+# above that are ordinary strain of a template geometry and are left to the
+# walker); when the leaning side is buried and the other side is not, the
+# other side is used. Constants are fixed a priori (not scanned): the class
+# angles are the textbook values above, the planarity threshold is the one
+# of the rotor rule.
+_PYR_ANGLE = {15: 98.0, 33: 96.0, 51: 95.0}   # degrees: X-P-X, X-As-X, X-Sb-X class angles
+_PYR_TERMINAL = (7, 8, 16, 34)                 # one-coordinate N / O / S / Se neighbour: double bond
+_PYR_CLASH_X = 0.5                             # fraction of the UFF 12-6 minimum distance: buried below
+
+
+def _pyr_subtree(adj, root, exclude):
+    """Atoms reachable from `root` without passing through `exclude`."""
+    seen = {exclude, root}
+    stack = [root]
+    out = [root]
+    while stack:
+        i = stack.pop()
+        for j in adj[i]:
+            if j not in seen:
+                seen.add(j)
+                stack.append(j)
+                out.append(j)
+    return out
+
+
+def _pyr_tilt(pos, c, nb, subs, normal, tau):
+    """Rigid rotation of every substituent subtree of the centre c about an
+    axis through c so that each bond c -> j ends at the elevation -tau below
+    the neighbour plane (`normal` points from that plane to the centre's
+    side, where the lone pair goes). Returns None for a degenerate frame."""
+    trial = pos.copy()
+    for j, sub in zip(nb, subs):
+        u = pos[j] - pos[c]
+        u /= np.linalg.norm(u)
+        u_in = u - (u @ normal) * normal
+        nin = np.linalg.norm(u_in)
+        if nin < 1e-8:
+            return None
+        u_in /= nin
+        axis = np.cross(normal, u_in)      # a positive rotation moves the bond toward -normal
+        ang = np.arcsin(np.clip(u @ normal, -1.0, 1.0)) + tau   # elevation -> -tau
+        K = np.array([[0.0, -axis[2], axis[1]],
+                      [axis[2], 0.0, -axis[0]],
+                      [-axis[1], axis[0], 0.0]])
+        R = np.eye(3) + np.sin(ang) * K + (1.0 - np.cos(ang)) * (K @ K)
+        trial[sub] = (pos[sub] - pos[c]) @ R.T + pos[c]
+    return trial
+
+
+def _pyramidalise_centres(numbers, pos_ang):
+    """Place every planar-start three-coordinate P / As / Sb centre at its
+    pyramidal class geometry (see the note above). Centres are processed one
+    at a time on the updated geometry. Returns the (possibly unchanged)
+    positions."""
+    numbers = np.asarray(numbers)
+    natoms = len(numbers)
+    centres = np.flatnonzero(np.isin(numbers, list(_PYR_ANGLE)))
+    if natoms < 4 or len(centres) == 0:
+        return pos_ang
+    pos = np.array(pos_ang, dtype=float, copy=True)
+    rcov = covalent_radii[numbers]
+
+    def bond_matrix(p):
+        d = np.linalg.norm(p[:, None, :] - p[None, :, :], axis=2)
+        b = d <= 1.25 * (rcov[:, None] + rcov[None, :])
+        np.fill_diagonal(b, False)
+        return b
+
+    bonded = bond_matrix(pos)
+    adj = [list(np.flatnonzero(bonded[i])) for i in range(natoms)]
+    excluded = bonded | ((bonded.astype(int) @ bonded.astype(int)) > 0)   # bonded and geminal pairs
+    np.fill_diagonal(excluded, True)
+    lj_x = np.array([_UFF_LJ.get(int(z), (4.0, 0.2))[0] for z in numbers])
+    x_ij = np.sqrt(lj_x[:, None] * lj_x[None, :])
+    for c in centres:
+        nb = adj[c]
+        if len(nb) != 3:
+            continue
+        if any((numbers[j] in _PYR_TERMINAL and len(adj[j]) == 1)
+               or numbers[j] in _ALKALI or numbers[j] in _ALKALINE_EARTH for j in nb):
+            continue
+        u = [(pos[j] - pos[c]) / np.linalg.norm(pos[j] - pos[c]) for j in nb]
+        angle_sum = 0.0
+        for a in range(3):
+            for b in range(a + 1, 3):
+                angle_sum += np.degrees(np.arccos(np.clip(u[a] @ u[b], -1.0, 1.0)))
+        if angle_sum <= _ROTOR_PLANAR_ANGLE_SUM:
+            continue                            # already pyramidal: the walker has its torque
+        subs = [_pyr_subtree(adj, j, c) for j in nb]
+        if any(k in sub for sub, j in zip(subs, nb) for k in nb if k != j):
+            continue                            # ring through the centre
+        normal = np.cross(pos[nb[1]] - pos[nb[0]], pos[nb[2]] - pos[nb[0]])
+        nrm = np.linalg.norm(normal)
+        if nrm < 1e-8:
+            continue
+        normal /= nrm
+        if (pos[c] - pos[nb].mean(axis=0)) @ normal < 0.0:
+            normal = -normal                    # the side the centre leans to
+        theta = np.radians(_PYR_ANGLE[int(numbers[c])])
+        tau = np.arcsin(np.sqrt((2.0 * np.cos(theta) + 1.0) / 3.0))
+        moved = [k for sub in subs for k in sub]
+        for side in (1.0, -1.0):
+            trial = _pyr_tilt(pos, c, nb, subs, side * normal, tau)
+            if trial is None:
+                break
+            if not np.array_equal(bond_matrix(trial), bonded):
+                continue
+            d = np.linalg.norm(trial[moved][:, None, :] - trial[None, :, :], axis=2)
+            ratio = d / x_ij[moved]
+            ratio[excluded[moved]] = np.inf
+            if ratio.min() < _PYR_CLASH_X:
+                continue
+            pos = trial
+            break
+    return pos
+
+
 # Rigid-body pre-relaxation ("docking") of neutral multi-fragment starts on a
 # classical intermolecular surrogate.
 #
@@ -8891,10 +9038,13 @@ def _dock_start(atoms):
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
     # XH3 rotors that start on their three-fold saddle are placed at the
-    # minimum phase of their frame class (see _prerelax_rotors); then
-    # multi-fragment starts leave their symmetry element before the first
-    # force call (see _break_start_symmetry); other starts are unchanged.
+    # minimum phase of their frame class (see _prerelax_rotors), planar
+    # three-coordinate P / As / Sb centres at their pyramidal class geometry
+    # (see _pyramidalise_centres); then multi-fragment starts leave their
+    # symmetry element before the first force call (see
+    # _break_start_symmetry); other starts are unchanged.
     pos_ang = _prerelax_rotors(atomic_numbers, pos_ang)
+    pos_ang = _pyramidalise_centres(atomic_numbers, pos_ang)
     pos_ang = _break_start_symmetry(atomic_numbers, pos_ang)
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
     # Neutral multi-fragment starts are docked on the classical surrogate
