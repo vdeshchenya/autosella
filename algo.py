@@ -6287,6 +6287,51 @@ class Sella(Optimizer):
             for _, _, _, old_basis in history])
         # The current transform lies in the current tangent range exactly.
         derivative_maps[-1] = np.eye(d)
+        angle_rows = []
+        diagonal = getattr(self.pes, '_curvature_metric_diagonal', None)
+        if diagonal is not None:
+            internals = self.pes.int
+            row = internals.ntrans + internals.nbonds
+            for angle, active in zip(internals.internals['angles'],
+                                     internals._active['angles']):
+                if not active:
+                    continue
+                if (all(0 <= i < len(self.pes.atoms) for i in angle.indices)
+                        and 0.0 < q[row] < np.pi
+                        and np.sin(q[row])**2 > 64.0 * np.finfo(float).eps
+                        and np.isfinite(diagonal[row]) and diagonal[row] > 0.0):
+                    angle_rows.append(row)
+                row += 1
+        angle_rows = np.asarray(angle_rows, dtype=int)
+        reference_angles = q[angle_rows]
+        angle_transform = transform[angle_rows]
+        angle_stiffness = (diagonal[angle_rows] / scale if angle_rows.size
+                           else np.empty(0))
+        reference_sine_squared = np.sin(reference_angles)**2
+        reference_h = np.tanh(2.0 * np.sin(reference_angles / 2.0))
+
+        def bending_correction(y):
+            delta = angle_transform @ y
+            angles = reference_angles + delta
+            if (not np.all(np.isfinite(angles)) or np.any(angles <= 0.0)
+                    or np.any(angles >= 2.0 * np.pi)):
+                raise ValueError('GP bending query leaves the angular domain')
+            sine = np.sin(angles)
+            difference = -2.0 * np.sin(reference_angles + delta / 2.0) * np.sin(delta / 2.0)
+            denominator_base = sine**2 + 3.0 * reference_sine_squared
+            h = np.tanh(2.0 * np.sin(angles / 2.0))
+            dh = np.cos(angles / 2.0) * (1.0 - h**2)
+            denominator = denominator_base * h
+            ddenominator = 2.0 * sine * np.cos(angles) * h + denominator_base * dh
+            prefactor = 2.0 * angle_stiffness * reference_h
+            value = prefactor * difference**2 / denominator
+            gradient = prefactor * (-2.0 * difference * sine / denominator
+                                    - difference**2 * ddenominator / denominator**2)
+            if not np.all(np.isfinite(value)) or not np.all(np.isfinite(gradient)):
+                raise ValueError('Nonfinite GP bending correction')
+            return (float(np.sum(value - 0.5 * angle_stiffness * delta**2)),
+                    angle_transform.T @ (gradient - angle_stiffness * delta))
+
         count = len(history)
         size = count * (d + 1)
         # Squared-exponential covariance and its analytic mixed derivatives.
@@ -6296,10 +6341,14 @@ class Sella(Optimizer):
         identity = np.eye(d)
         for i, (_, old_g, old_e, _) in enumerate(history):
             a = i * (d + 1)
+            try:
+                extra_mean, extra_gradient = bending_correction(points[i])
+            except ValueError:
+                return ordinary, magnitude
             target[a] = ((old_e - energy) / scale - g0 @ points[i]
-                         - 0.5 * points[i] @ points[i])
+                         - 0.5 * points[i] @ points[i] - extra_mean)
             target[a+1:a+d+1] = (old_g @ transform / scale
-                                   - derivative_maps[i].T @ (g0 + points[i]))
+                                   - derivative_maps[i].T @ (g0 + points[i] + extra_gradient))
             for j in range(count):
                 b = j * (d + 1)
                 diff = points[i] - points[j]
@@ -6339,13 +6388,17 @@ class Sella(Optimizer):
         def objective(y):
             value, deriv = features(y)
             correction = value @ weights - correction0 - correction_g0 @ y
-            return (g0 @ y + 0.5 * y @ y + correction,
-                    g0 + y + deriv.T @ weights - correction_g0)
+            extra_mean, extra_gradient = bending_correction(y)
+            return (g0 @ y + 0.5 * y @ y + correction + extra_mean,
+                    g0 + y + deriv.T @ weights - correction_g0 + extra_gradient)
 
         from scipy.optimize import minimize as minimize_surrogate
         initial = ordinary_z * np.sqrt(eig / scale)
-        fit = minimize_surrogate(objective, initial, jac=True, method='BFGS',
-                                 options={'maxiter': 12, 'gtol': 1e-5})
+        try:
+            fit = minimize_surrogate(objective, initial, jac=True, method='BFGS',
+                                     options={'maxiter': 12, 'gtol': 1e-5})
+        except ValueError:
+            return ordinary, magnitude
         if not np.all(np.isfinite(fit.x)):
             return ordinary, magnitude
         candidate = transform @ fit.x + self.pes.get_scons()
