@@ -28,10 +28,10 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on at most two pyridine/imidazole
+oxygen-substituted, and on at most four pyridine/imidazole
 N-oxide O–N–C angles (3-coordinate N bonded to two carbons
-and one terminal oxygen). Connected 30≤n_atoms<80 use the
-same N-oxide O–N–C 0.10 Ha class.
+and one terminal oxygen) when n_atoms<40. Connected 30≤n_atoms<40
+use the same N-oxide O–N–C 0.10 Ha class.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4363,10 +4363,11 @@ class Internals(BaseInternals):
             return len(real_o) == 1
 
         noxide_ok = set()
-        if soft_pyridine_angle or soft_medium_angle:
+        if ((soft_pyridine_angle or soft_medium_angle)
+                and int(self.natoms) < 40):
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _noxide_onc(angle)]
-            if 1 <= len(cands) <= 2:
+            if 1 <= len(cands) <= 4:
                 noxide_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
@@ -4425,7 +4426,7 @@ class Internals(BaseInternals):
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif (soft_pyridine_angle or soft_medium_angle) and ia in noxide_ok:
-                # Pyridine/imidazole N-oxide O–N–C on 12≤n<80.
+                # Pyridine/imidazole N-oxide O–N–C on 12≤n<40.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
