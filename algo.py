@@ -4444,34 +4444,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _noxide_cnc(angle) -> bool:
-            # 3-coordinate N-oxide C–N–C; N has O, C, C and O is 1-coord.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 7:
-                return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 3:
-                return False
-            zs = [int(numbers[nb]) for nb in real_n]
-            if zs.count(8) != 1 or zs.count(6) != 2:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-            o_idx = next(int(nb) for nb in real_n if int(numbers[nb]) == 8)
-            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            return len(real_o) == 1
-
-        noxide_ok = set()
-        if soft_dummy_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _noxide_cnc(angle)]
-            if 1 <= len(cands) <= 2:
-                noxide_ok = set(cands)
-
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4535,9 +4507,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_dummy_angle and ia in noxide_ok:
-                # N-oxide C–N–C on connected n<18 or n≥30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
@@ -6592,8 +6561,9 @@ class Sella(Optimizer):
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
-            self.delta_min = 0.15
-            self.delta = max(self.delta, 0.15)
+            floor = 0.18 if int(getattr(self, "_n_atoms", 30)) < 18 else 0.15
+            self.delta_min = floor
+            self.delta = max(self.delta, floor)
 
         # Update trust radius
         if rho is not None:
@@ -6739,9 +6709,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     Internals.soft_phenol_angle_h0_default = not connected
+    n_atoms = len(atomic_numbers)
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
-        n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
@@ -6750,6 +6720,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
+        opt._n_atoms = n_atoms
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if not connected:
