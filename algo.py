@@ -154,14 +154,8 @@ def symmetrize_Y(S, Y, symm):
     else:  # pragma: no cover
         raise ValueError("Unknown symmetrization method {}".format(symm))
 
-def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None,
-             eps=None, proj=None):
-    """Quasi-Newton update.
-
-    eps, proj: prior relative uncertainty of the model per coordinate and
-    the orthonormal basis of the feasible subspace, the metric of the
-    TS-BFGS update (see _MS_TS_BFGS); None keeps Bofill's |B| metric.
-    """
+def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
+    """Quasi-Newton update."""
     if len(S.shape) == 1:
         if np.linalg.norm(S) < 1e-8:
             return B
@@ -197,7 +191,7 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None,
     if method == 'BFGS':
         Bplus = _MS_BFGS(B, S, Ytilde)
     elif method == 'TS-BFGS':
-        Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs, eps=eps, proj=proj)
+        Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs)
     elif method == 'PSB':
         Bplus = _MS_PSB(B, S, Ytilde)
     elif method == 'DFP':
@@ -221,41 +215,12 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None,
 def _MS_BFGS(B, S, Y):
     return Y @ solve(Y.T @ S, Y.T) - B @ S @ solve(S.T @ B @ S, S.T @ B)
 
-def _MS_TS_BFGS(B, S, Y, lams, vecs, eps=None, proj=None):
-    """Multi-secant TS-BFGS update (Bofill) with an optional prior metric.
-
-    The update is the Powell-symmetric family dB = U J^T + J U^T
-    - U (J^T S) U^T (J = Y - B S, U^T S = I), the least change of the
-    model that satisfies the secant conditions; the direction U decides
-    which entries of the model absorb the residual J.  Bofill's choice
-    U ~ (S^T Y) Y + (S^T |B| S) |B| S weights every coordinate by its
-    curvature, i.e. it treats the model as equally uncertain in relative
-    terms everywhere, so the residual of a step that moves stiff and soft
-    coordinates together (the approach steps of a rotor or of two
-    fragments, when the bonds and bends have not yet relaxed) is charged
-    largely to the stiff block.  With eps -- the prior relative
-    uncertainty of the guess per coordinate class, Internals.
-    guess_uncertainty: bonds a few tenths, torsions and rigid-body
-    coordinates near one -- the direction becomes E U (E = diag(eps)),
-    the weighted least-change (maximum-a-posteriori) update under a prior
-    whose spread per entry is eps_i eps_j times the curvature scale.  The
-    residual then goes preferentially to the coordinates the guess knows
-    least about, which are the ones the endgame is limited by, and the
-    stiff block stays close to the calibrated guess.  proj (an
-    orthonormal basis of the feasible subspace of the redundant
-    coordinates) keeps the weighted direction inside that subspace, so
-    the update still lives where the steps and gradients do.
-    """
+def _MS_TS_BFGS(B, S, Y, lams, vecs):
     J = Y - B @ S
     X1 = S.T @ Y @ Y.T
     absBS = vecs @ (np.abs(lams[:, np.newaxis]) * (vecs.T @ S))
     X2 = S.T @ absBS @ absBS.T
-    X = X1 + X2
-    if eps is not None:
-        X = X * eps[np.newaxis, :]
-        if proj is not None:
-            X = (X @ proj) @ proj.T
-    U = lstsq(X @ S, X)[0].T
+    U = lstsq((X1 + X2) @ S, X1 + X2)[0].T
     UJT = U @ J.T
     return (UJT + UJT.T) - U @ (J.T @ S) @ U.T
 
@@ -361,10 +326,6 @@ class ApproximateHessian(LinearOperator):
         self.update_method = update_method
         self.symm = symm
         self.initialized = initialized
-        # Prior relative uncertainty of the model per coordinate (the
-        # metric of the TS-BFGS update, see _MS_TS_BFGS); None keeps the
-        # plain |B| metric.  Set by the PES that owns the model.
-        self.prior_eps = None
         # Lazy eigendecomposition: only compute when needed
         self._evals = None
         self._evecs = None
@@ -419,12 +380,8 @@ class ApproximateHessian(LinearOperator):
         # Mark eigendecomposition as stale - will recompute on next access
         self._eigen_computed = False
 
-    def update(self, dx, dg, proj=None):
-        """Perform a quasi-Newton update on B
-
-        proj: orthonormal basis of the feasible subspace for the prior
-        metric of the update (only used together with prior_eps).
-        """
+    def update(self, dx, dg):
+        """Perform a quasi-Newton update on B"""
         if self.B is None:
             B = np.zeros(self.shape, dtype=self.dtype)
         else:
@@ -441,14 +398,8 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        eps = self.prior_eps
-        if eps is not None and eps.shape != (self.dim,):
-            eps = None
-        if proj is not None and (eps is None or proj.shape[0] != self.dim):
-            proj = None
         self.set_B(update_H(B, dx, dg, method=self.update_method,
-                            symm=self.symm, lams=lams, vecs=vecs,
-                            eps=eps, proj=proj))
+                            symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
         """Project B into the subspace defined by U."""
@@ -5568,73 +5519,6 @@ class Internals(BaseInternals):
             H0 = H0 + Hnb
         return H0
 
-    # Prior relative uncertainty of the guess Hessian per coordinate class
-    # (the metric of the secant update, _MS_TS_BFGS).  Only the ratios
-    # matter.  The values are the spread of the calibrated guess against
-    # the curvature the walkers measure, as found by the model surveys:
-    # the Almlof stretch with its row factors is within about 20 % of the
-    # local bond curvature (Badger's rule, followed by the transport);
-    # the halved Fischer-Almlof bend is within about 30 % (rho 0.75-0.95
-    # at sp3 centres, 1.15-1.35 at sp2 centres); the linear-bend and
-    # ion-contact bends are class averages of modes that spread by a
-    # factor 1.2-2; the torsional constant is a one-parameter model of a
-    # barrier whose effective stiffness depends on the amplitude of the
-    # relaxation (factors 1.5-2.2 either way, likewise the out-of-plane
-    # and umbrella impropers); the azimuths of linear units and the
-    # rigid-body coordinates of fragments (floor plus contact model) are
-    # known to no better than a factor of a few.
-    _PRIOR_EPS = dict(bond=0.2, angle=0.3, linear=0.5, ion=0.5,
-                      dihedral=0.7, azimuth=1.0, rigid=1.0)
-
-    def guess_uncertainty(self) -> Optional[np.ndarray]:
-        """Prior relative uncertainty of guess_hessian per internal
-        coordinate, in the index order of guess_hessian (translations,
-        bonds, angles, dihedrals, rotations); None if the coordinate set
-        is not the one guess_hessian describes."""
-        E = self._PRIOR_EPS
-        eps = np.zeros(self.nint, dtype=np.float64)
-        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
-        q_ion = _ION_CHARGE[self.all_atoms.numbers]
-        idx = 0
-        try:
-            for trans in self.internals['translations']:
-                eps[idx] = E['rigid']
-                idx += 1
-            for bond in self.internals['bonds']:
-                eps[idx] = E['bond']
-                idx += 1
-            for angle in self.internals['angles']:
-                ind = [int(j) for j in angle.indices]
-                if any(j in dummy_set for j in ind):
-                    # Bend of a near-linear centre against its dummy.
-                    eps[idx] = E['linear']
-                elif q_ion[ind].max() > 0:
-                    eps[idx] = E['ion']
-                else:
-                    eps[idx] = E['angle']
-                idx += 1
-            for dihedral in self.internals['dihedrals']:
-                a, b, c, d = (int(j) for j in dihedral.indices)
-                if b in dummy_set or c in dummy_set:
-                    # The linear-bend dihedral A-j-X-C.
-                    eps[idx] = E['linear']
-                elif a in dummy_set or d in dummy_set:
-                    eps[idx] = E['azimuth']
-                else:
-                    eps[idx] = E['dihedral']
-                idx += 1
-            for other in self.internals['other']:
-                eps[idx] = E['rigid']
-                idx += 1
-            for rot in self.internals['rotations']:
-                eps[idx] = E['rigid']
-                idx += 1
-        except IndexError:
-            return None
-        if idx != self.nint:
-            return None
-        return eps
-
 logger = logging.getLogger(__name__)
 
 class _LRU2:
@@ -6065,24 +5949,18 @@ class PES:
 
         self.curr['L'] = L
 
-    def _secant_prior_proj(self):
-        """Orthonormal basis of the feasible subspace for the prior metric
-        of the update (InternalPES); None in Cartesian coordinates."""
-        return None
-
     def _update_H(self, dx, dg, T_now=None, tbar=None, images=None):
         if self.last['x'] is None or self.last['g'] is None:
             return
-        proj = self._secant_prior_proj()
         if self.secant_memory <= 1 or not self.H.initialized:
             if T_now is not None and tbar is not None:
                 dg = np.asarray(dg, dtype=np.float64) + (T_now @ dx - tbar)
-            self.H.update(dx, dg, proj=proj)
+            self.H.update(dx, dg)
             return
         S, Y = self._collect_secant_pairs(dx, dg, T_now, tbar, images)
         if S is None:
             return
-        self.H.update(S, Y, proj=proj)
+        self.H.update(S, Y)
 
     def _collect_secant_pairs(self, dx, dg, T_now=None, tbar=None,
                               images=None):
@@ -6347,12 +6225,6 @@ class InternalPES(PES):
             # with the atoms (see _track_nonlocal_contacts).
             self._nb_prev = getattr(self.int, '_h0_nonlocal_last', None)
             self._track_nb = True
-            # Prior relative uncertainty of the guess per coordinate: the
-            # metric of the secant update (_MS_TS_BFGS).
-            eps = self.int.guess_uncertainty()
-            if (eps is not None and eps.shape == (self.dim,)
-                    and np.all(np.isfinite(eps)) and eps.min() > 0):
-                self.H.prior_eps = eps
         else:
             self.set_H(H0, initialized=True)
             self._nb_prev = None
@@ -7292,17 +7164,6 @@ class InternalPES(PES):
             return image
 
         return [make(*m) for m in maps]
-
-    def _secant_prior_proj(self):
-        # Basis of range(B) at the current geometry (the feasible
-        # subspace of the redundant coordinates), for the prior metric of
-        # the update; only needed when the model carries one.
-        if getattr(self.H, 'prior_eps', None) is None:
-            return None
-        Q, _ = self._get_jacobian_qr()
-        if Q.shape[0] != self.H.dim:
-            return None
-        return Q
 
     def _update_H(self, dx, dg):
         images = self._symmetry_images()
