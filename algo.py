@@ -27,7 +27,7 @@ Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 18≤n_atoms<30 use 0.10 Ha guesses on at most two
-C–S–O angles at sulfur.
+C–S–S disulfide angles.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4308,23 +4308,26 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
-        def _cso(angle) -> bool:
-            # Sulfoxide/sulfone C–S–O.
+        def _css(angle) -> bool:
+            # Disulfide C–S–S at 2-coordinate sulfur.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
             if int(numbers[icen]) != 16:
                 return False
+            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_s) != 2:
+                return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 8}
+            return {za, zc} == {6, 16}
 
-        cso_ok = set()
+        css_ok = set()
         if soft_medium_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _cso(angle)]
+                     if _css(angle)]
             if 1 <= len(cands) <= 2:
-                cso_ok = set(cands)
+                css_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4378,8 +4381,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in cso_ok:
-                # Sulfoxide/sulfone C–S–O on 18≤n<30.
+            elif soft_medium_angle and ia in css_ok:
+                # Disulfide C–S–S on 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
