@@ -3,7 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
+also floor δ at 0.15 after 20 steps, except connected n_atoms<30 which
+use 0.18. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -6441,8 +6442,9 @@ class Sella(Optimizer):
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
-            self.delta_min = 0.15
-            self.delta = max(self.delta, 0.15)
+            floor = 0.18 if int(getattr(self, "_n_atoms", 30)) < 30 else 0.15
+            self.delta_min = floor
+            self.delta = max(self.delta, floor)
 
         # Update trust radius
         if rho is not None:
@@ -6599,6 +6601,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
+        opt._n_atoms = len(atomic_numbers)
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
