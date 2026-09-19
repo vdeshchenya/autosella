@@ -7,9 +7,7 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
-at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses
-at 2-coordinate carbon centers (nitrogen-center dummy angles stay
-on Fischer–Almlöf).
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -25,7 +23,8 @@ two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
 ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
 cyclic ethers, and on at most two carboxyl/ester
-Cα C–C–N angles. Dimers that contain a 1-coordinate
+Cα C–C–N angles, and on at most two 2-coordinate C–N–N
+angles. Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
 3-coordinate with exactly one oxygen).
@@ -4247,6 +4246,28 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 carboxyl_ccn_ok = set(cands)
 
+        def _azo_cnn(angle) -> bool:
+            # 2-coordinate C–N–N (pyrazole/azo), not 3-coordinate NH
+            # (cycle 371) and not n<12 azide (cycle 301).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {6, 7}
+
+        azo_cnn_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _azo_cnn(angle)]
+            if 1 <= len(cands) <= 2:
+                azo_cnn_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4286,16 +4307,7 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                # Cycle 374: keep dummy-angle 0.10 only at 2-coordinate
-                # carbon linear centers. Nitrogen-center dummy angles
-                # (isocyanide) stay on Fischer–Almlöf.
-                real_idx = [int(j) for j in angle.indices
-                            if int(j) not in dummy_set]
-                lin = [j for j in real_idx if int(nbonds[j]) == 2]
-                if lin and any(int(numbers[j]) != 6 for j in lin):
-                    h0[idx] = self._h0_angle(angle)
-                else:
-                    h0[idx] = 0.10 * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -4304,6 +4316,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in azo_cnn_ok:
+                # 2-coordinate pyrazole/azo C–N–N.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
