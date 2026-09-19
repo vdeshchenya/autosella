@@ -5,10 +5,10 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<30 which use 0.20 Ha. Connected tails after 20
+n_atoms<30 which use 0.20 Ha. Connected geodesic ODE
+steps recompute Binv at every RHS. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted, except dimers after
-80 steps which keep the RFO step. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
@@ -4958,6 +4958,7 @@ class InternalPES(PES):
         self._pinv_cache = _LRU2()
         self._qr_cache = _LRU2()
         self._Hc_cache = _LRU2()
+        self.exact_geodesic = False
 
     dpos = property(lambda self: self.dummies.positions.copy())
 
@@ -5465,7 +5466,10 @@ class InternalPES(PES):
         # Batch the two D_rdot @ vector products into one (D_rdot @ matrix)
         # matmul, then one Binv @ matrix matmul, halving the matmul count.
         D_rdot = self.int.hessian_rdot(dxdt)
-        Binv = self._ode_Binv
+        if getattr(self, 'exact_geodesic', False):
+            Binv = self._get_Binv()
+        else:
+            Binv = self._ode_Binv
         rhs = np.column_stack((dxdt, g))     # (ndof, 2)
         out = -Binv @ (D_rdot @ rhs)          # (ndof, 2)
         dydt[1] = out[:, 0]
@@ -6319,14 +6323,11 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected jobs keep this
-        interpolant after 20 steps. Dimers share it only before 80 steps;
-        after 80 the RFO step is left unchanged. Dummy-wd and wa stay
+        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
+        share this interpolant after 20 steps; dummy-wd and wa stay
         connected-only.
         """
         if self.nsteps < 20:
-            return s_qn, smag_qn
-        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
@@ -6603,6 +6604,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
+        if connected:
+            opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
