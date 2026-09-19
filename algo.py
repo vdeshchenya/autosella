@@ -8597,7 +8597,8 @@ def _prerelax_rotors(numbers, pos_ang):
     return pos
 
 
-# Pyramidalisation of three-coordinate P / As / Sb centres that start planar.
+# Pyramidalisation of three-coordinate inversion centres that start planar:
+# P / As / Sb, and nitrogen carrying two fluorine atoms.
 #
 # Rationale: a trivalent pnictogen centre heavier than nitrogen is pyramidal
 # at every minimum (bond angles 92-101 degrees: PH3 93.5, PF3 97.8, PMe3
@@ -8606,6 +8607,12 @@ def _prerelax_rotors(numbers, pos_ang):
 # more for the heavier elements, so the planar arrangement is the saddle of
 # the inversion mode: zero gradient by symmetry and a strongly negative
 # curvature (|k| ~ 1.4 Ha/rad^2 against a model bend curvature of ~0.3).
+# A difluoroamine nitrogen is the same case among the first-row centres:
+# two fluorine substituents raise the inversion barrier of the amine from
+# ~6 to tens of kcal/mol (NF3 ~ 50-60, HNF2 / RNF2 ~ 30-40) and the
+# minimum is strongly pyramidal (NF3 102.4 degrees; HNF2, CH3NF2, CF3NF2,
+# N2F4 102-105) whatever the third substituent, whereas an ordinary amine
+# is a low-barrier, conjugation-dependent case with no class geometry.
 # Idealised input geometries (2D-to-3D templates) place such centres planar
 # or within 0.1 A of the plane. A quasi-Newton walker with the positive model
 # curvature leaves the saddle only through the environment's torque,
@@ -8633,8 +8640,29 @@ def _prerelax_rotors(numbers, pos_ang):
 # angles are the textbook values above, the planarity threshold is the one
 # of the rotor rule.
 _PYR_ANGLE = {15: 98.0, 33: 96.0, 51: 95.0}   # degrees: X-P-X, X-As-X, X-Sb-X class angles
+_PYR_ANGLE_NF2 = 103.0                         # degrees: difluoroamine N (NF3 102.4; HNF2 / RNF2 102-105)
 _PYR_TERMINAL = (7, 8, 16, 34)                 # one-coordinate N / O / S / Se neighbour: double bond
 _PYR_CLASH_X = 0.5                             # fraction of the UFF 12-6 minimum distance: buried below
+
+
+def _pyr_class_angle(numbers, adj, c):
+    """Class bond angle (degrees) of the pyramidal centre c, or None when its
+    element / substitution has no class geometry: P, As, Sb, and N with at
+    least two fluorine neighbours."""
+    z = int(numbers[c])
+    if z in _PYR_ANGLE:
+        return _PYR_ANGLE[z]
+    if z == 7 and sum(int(numbers[j]) == 9 for j in adj[c]) >= 2:
+        return _PYR_ANGLE_NF2
+    return None
+
+
+def _pyr_rotation(axis, ang):
+    """Rotation matrix for the angle `ang` about the unit vector `axis`."""
+    K = np.array([[0.0, -axis[2], axis[1]],
+                  [axis[2], 0.0, -axis[0]],
+                  [-axis[1], axis[0], 0.0]])
+    return np.eye(3) + np.sin(ang) * K + (1.0 - np.cos(ang)) * (K @ K)
 
 
 def _pyr_subtree(adj, root, exclude):
@@ -8668,23 +8696,19 @@ def _pyr_tilt(pos, c, nb, subs, normal, tau):
         u_in /= nin
         axis = np.cross(normal, u_in)      # a positive rotation moves the bond toward -normal
         ang = np.arcsin(np.clip(u @ normal, -1.0, 1.0)) + tau   # elevation -> -tau
-        K = np.array([[0.0, -axis[2], axis[1]],
-                      [axis[2], 0.0, -axis[0]],
-                      [-axis[1], axis[0], 0.0]])
-        R = np.eye(3) + np.sin(ang) * K + (1.0 - np.cos(ang)) * (K @ K)
+        R = _pyr_rotation(axis, ang)
         trial[sub] = (pos[sub] - pos[c]) @ R.T + pos[c]
     return trial
 
 
 def _pyramidalise_centres(numbers, pos_ang):
-    """Place every planar-start three-coordinate P / As / Sb centre at its
-    pyramidal class geometry (see the note above). Centres are processed one
-    at a time on the updated geometry. Returns the (possibly unchanged)
+    """Place every planar-start three-coordinate P / As / Sb / NF2 centre at
+    its pyramidal class geometry (see the note above). Centres are processed
+    one at a time on the updated geometry. Returns the (possibly unchanged)
     positions."""
     numbers = np.asarray(numbers)
     natoms = len(numbers)
-    centres = np.flatnonzero(np.isin(numbers, list(_PYR_ANGLE)))
-    if natoms < 4 or len(centres) == 0:
+    if natoms < 4 or not np.isin(numbers, list(_PYR_ANGLE) + [7]).any():
         return pos_ang
     pos = np.array(pos_ang, dtype=float, copy=True)
     rcov = covalent_radii[numbers]
@@ -8697,6 +8721,9 @@ def _pyramidalise_centres(numbers, pos_ang):
 
     bonded = bond_matrix(pos)
     adj = [list(np.flatnonzero(bonded[i])) for i in range(natoms)]
+    centres = [c for c in range(natoms) if _pyr_class_angle(numbers, adj, c) is not None]
+    if len(centres) == 0:
+        return pos_ang
     excluded = bonded | ((bonded.astype(int) @ bonded.astype(int)) > 0)   # bonded and geminal pairs
     np.fill_diagonal(excluded, True)
     lj_x = np.array([_UFF_LJ.get(int(z), (4.0, 0.2))[0] for z in numbers])
@@ -8725,7 +8752,7 @@ def _pyramidalise_centres(numbers, pos_ang):
         normal /= nrm
         if (pos[c] - pos[nb].mean(axis=0)) @ normal < 0.0:
             normal = -normal                    # the side the centre leans to
-        theta = np.radians(_PYR_ANGLE[int(numbers[c])])
+        theta = np.radians(_pyr_class_angle(numbers, adj, c))
         tau = np.arcsin(np.sqrt((2.0 * np.cos(theta) + 1.0) / 3.0))
         moved = [k for sub in subs for k in sub]
         for side in (1.0, -1.0):
