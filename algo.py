@@ -6,10 +6,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
-geodesic ODE steps recompute Binv at every RHS. After each
-internal `set_x`, certified linear-bend dummy constraints are
-restored by a Sella 2.6 cone projection (fixed dummy bond and
-angle, preserved azimuth) before the Newton IC projector. Connected
+geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -39,7 +36,11 @@ oxygen-substituted.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
-3-coordinate with exactly one oxygen).
+3-coordinate with exactly one oxygen). Connected 30≤n<80 that
+have no phosphorus and no 1-coordinate nitrogen use 0.10 Ha
+on at most two 2-coordinate C–S–C angles whose carbons are
+both 3-coordinate, with exactly one N/Cl/Br/I among the
+non-sulfur neighbors and no O or extra S on those carbons.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4420,6 +4421,63 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 isolated_csc_ok = set(cands)
 
+        def _hetero_csc(angle) -> bool:
+            # 2-coordinate C–S–C; both carbons 3-coordinate.
+            # Exactly one carbon has exactly one N/Cl/Br/I neighbor.
+            # Skip O or extra S on those carbons (cycle 436 isolated
+            # C/H sulfide and 104073139 O/N thioether).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 16:
+                return False
+            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_s) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            het = {7, 17, 35, 53}
+            counts = []
+            for c_idx in (ia, ic):
+                real_c = [nb for nb in neighbors[c_idx]
+                          if int(nb) not in dummy_set]
+                if len(real_c) != 3:
+                    return False
+                h = 0
+                for nb in real_c:
+                    if int(nb) == icen:
+                        continue
+                    zn = int(numbers[nb])
+                    if zn in (8, 16):
+                        return False
+                    if zn in het:
+                        h += 1
+                counts.append(h)
+            return tuple(counts) in ((1, 0), (0, 1))
+
+        def _has_phosphorus() -> bool:
+            return any(int(z) == 15 and int(i) not in dummy_set
+                       for i, z in enumerate(numbers))
+
+        def _has_terminal_n() -> bool:
+            for i, z in enumerate(numbers):
+                if int(i) in dummy_set or int(z) != 7:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if len(real) == 1:
+                    return True
+            return False
+
+        hetero_csc_ok = set()
+        if (soft_pyridine_angle and not _has_phosphorus()
+                and not _has_terminal_n()):
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _hetero_csc(angle)]
+            if 1 <= len(cands) <= 2:
+                hetero_csc_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4507,6 +4565,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in isolated_csc_ok:
                 # Isolated 3-coordinate sulfide C–S–C.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in hetero_csc_ok:
+                # Hetero/halo 3-coordinate thiazole/thiophene C–S–C.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
@@ -5341,206 +5402,7 @@ class InternalPES(PES):
                 (delta_proj[dih_start:dih_end] + np.pi)
                 % (2 * np.pi) - np.pi
             )
-        filter_rows = getattr(self, '_last_projection_filter_rows', ())
-        if filter_rows:
-            delta_proj[np.asarray(filter_rows, dtype=int)] = 0.0
-            self._last_projection_filter_rows = ()
         return dx_int_final + delta_proj
-
-    def _dummy_dihedral_values(self):
-        natoms = self.int.natoms
-        vals = []
-        atoms = self.int.all_atoms
-        for coord, active in zip(self.int.internals['dihedrals'],
-                                 self.int._active['dihedrals']):
-            if active and np.any(np.asarray(coord.indices) >= natoms):
-                vals.append(float(coord.calc(atoms)))
-        return np.asarray(vals)
-
-    def _dummy_projection_gauge_filter_rows(self):
-        natoms = self.int.natoms
-        rows = []
-        row = 0
-        for name in self.int._names:
-            for coord, active in zip(self.int.internals[name],
-                                     self.int._active[name]):
-                if not active:
-                    continue
-                if (name in ('translations', 'rotations')
-                        and np.any(np.asarray(coord.indices) >= natoms)):
-                    rows.append(row)
-                row += 1
-        return tuple(sorted(set(rows)))
-
-    @staticmethod
-    def _wrapped_angle_delta(after, before):
-        return (after - before + np.pi) % (2 * np.pi) - np.pi
-
-    @staticmethod
-    def _split_real_dummy_ids(indices, natoms):
-        ids = np.asarray(indices, dtype=int)
-        return ids, ids[ids < natoms], ids[ids >= natoms]
-
-    @staticmethod
-    def _project_one_linear_dummy_on_cone(positions, cell, dummy, parent,
-                                          length, angle_coord, theta,
-                                          dummy_is_first):
-        ids = np.asarray(angle_coord.indices, dtype=int)
-        tvecs = angle_coord.kwargs['ncvecs'] @ cell
-
-        if dummy_is_first:
-            neighbor_vec = positions[ids[2]] - positions[parent] + tvecs[1]
-            dummy_shift = tvecs[0]
-            current = positions[dummy] - positions[parent] - dummy_shift
-        else:
-            neighbor_vec = positions[ids[0]] - positions[parent] - tvecs[0]
-            dummy_shift = -tvecs[1]
-            current = positions[dummy] - positions[parent] - dummy_shift
-
-        neighbor_norm = np.linalg.norm(neighbor_vec)
-        if neighbor_norm <= 1e-12:
-            return False
-        axis = neighbor_vec / neighbor_norm
-        perp = current - (current @ axis) * axis
-        perp_norm = np.linalg.norm(perp)
-        if perp_norm <= 1e-12:
-            fallback = np.zeros(3)
-            fallback[np.argmin(np.abs(axis))] = 1.0
-            perp = fallback - (fallback @ axis) * axis
-            perp_norm = np.linalg.norm(perp)
-        azimuth = perp / perp_norm
-
-        new_vec = length * (
-            np.cos(theta) * axis + np.sin(theta) * azimuth
-        )
-        positions[dummy] = positions[parent] + dummy_shift + new_vec
-        return True
-
-    def _linear_bend_dummy_parent_map(self):
-        parent_of = {
-            int(dummy): int(parent)
-            for parent, dummy in enumerate(self.int.dinds)
-            if dummy >= 0
-        }
-        if len(parent_of) != len(self.dummies):
-            return None
-        return parent_of
-
-    def _linear_bend_dummy_constraints_are_projectable(self):
-        for name in self.cons._names:
-            for active, kind in zip(self.cons._active[name],
-                                    self.cons._kind[name]):
-                if active and (kind != 'eq' or name not in ('bonds', 'angles')):
-                    return False
-        return True
-
-    def _linear_bend_dummy_projection_records(self):
-        """Return dummy projection records, or None for the general path."""
-        if self.cons.nint == 0 or len(self.dummies) == 0:
-            return None
-
-        natoms = self.int.natoms
-        parent_of = self._linear_bend_dummy_parent_map()
-        if parent_of is None:
-            return None
-
-        bond_rec = {}
-        angle_rec = {}
-        if not self._linear_bend_dummy_constraints_are_projectable():
-            return None
-
-        for coord, active, target in zip(self.cons.internals['bonds'],
-                                         self.cons._active['bonds'],
-                                         self.cons._targets['bonds']):
-            if not active:
-                continue
-            ids, reals, dummies = self._split_real_dummy_ids(
-                coord.indices, natoms
-            )
-            if len(dummies) != 1 or len(reals) != 1:
-                return None
-            dummy = int(dummies[0])
-            parent = int(reals[0])
-            if parent_of.get(dummy) != parent or dummy in bond_rec:
-                return None
-            bond_rec[dummy] = (parent, coord, float(target))
-
-        for coord, active, target in zip(self.cons.internals['angles'],
-                                         self.cons._active['angles'],
-                                         self.cons._targets['angles']):
-            if not active:
-                continue
-            ids, _, dummies = self._split_real_dummy_ids(coord.indices, natoms)
-            if len(dummies) != 1 or ids[1] >= natoms:
-                return None
-            dummy = int(dummies[0])
-            parent = int(ids[1])
-            if parent_of.get(dummy) != parent or dummy in angle_rec:
-                return None
-            other = int(ids[2] if ids[0] == dummy else ids[0])
-            if other >= natoms:
-                return None
-            angle_rec[dummy] = (coord, float(target), ids[0] == dummy)
-
-        if (set(bond_rec) != set(angle_rec)
-                or set(bond_rec) != set(parent_of)):
-            return None
-
-        return [
-            (dummy, bond_rec[dummy][0], bond_rec[dummy][1],
-             bond_rec[dummy][2],
-             angle_rec[dummy][0], angle_rec[dummy][1], angle_rec[dummy][2])
-            for dummy in sorted(bond_rec)
-        ]
-
-    def _project_linear_bend_dummies(self, target_tol=1e-7):
-        """Project linear-bend dummy constraints without a full IC basis.
-
-        A linear-bend dummy contributes exactly two active constraints: the
-        parent-dummy bond length and one parent-neighbor-dummy angle. Holding
-        real atoms fixed, those constraints are satisfied by putting the dummy
-        on a fixed cone around the parent-neighbor direction while preserving
-        the current azimuth.
-        """
-        records = self._linear_bend_dummy_projection_records()
-        if records is None:
-            return None
-
-        old_dpos = self.dummies.positions.copy()
-        dummy_dihedrals0 = self._dummy_dihedral_values()
-        all_positions = np.vstack([self.atoms.positions,
-                                   self.dummies.positions])
-        cell = np.asarray(self.atoms.cell)
-
-        for (dummy, parent, bond_coord, length, angle_coord, theta,
-             dummy_is_first) in records:
-            if length <= 0 or theta <= 1e-8 or abs(np.pi - theta) <= 1e-8:
-                self.dummies.positions[:] = old_dpos
-                return None
-
-            if not self._project_one_linear_dummy_on_cone(
-                all_positions, cell, dummy, parent, length, angle_coord,
-                theta, dummy_is_first,
-            ):
-                self.dummies.positions[:] = old_dpos
-                return None
-
-        self.dummies.positions[:] = all_positions[self.int.natoms:]
-        residual = self.cons.residual()
-        if np.linalg.norm(residual, ord=np.inf) >= target_tol:
-            self.dummies.positions[:] = old_dpos
-            return None
-        dummy_dihedrals1 = self._dummy_dihedral_values()
-        if dummy_dihedrals0.size:
-            ddih = self._wrapped_angle_delta(dummy_dihedrals1,
-                                             dummy_dihedrals0)
-            if not np.all(np.isfinite(ddih)):
-                self.dummies.positions[:] = old_dpos
-                return None
-        self._last_projection_filter_rows = (
-            self._dummy_projection_gauge_filter_rows()
-        )
-        return True
 
     def _project_to_constraints(self, target_tol=1e-7, max_iter=8,
                                 safety_limit=0.05):
@@ -5577,17 +5439,8 @@ class InternalPES(PES):
         Hessian noise. Bailing leaves the projection as a strict
         improvement: it can only help, never hurt.
         """
-        self._last_projection_filter_rows = ()
         if self.cons.residual().size == 0:
             return False
-
-        r = self.cons.residual()
-        if np.linalg.norm(r, ord=np.inf) < target_tol:
-            return False
-
-        moved = self._project_linear_bend_dummies(target_tol=target_tol)
-        if moved is not None:
-            return moved
 
         n_real = 3 * len(self.atoms)
         n_dummy = 3 * len(self.dummies)
