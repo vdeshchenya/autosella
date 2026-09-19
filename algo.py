@@ -29,7 +29,7 @@ N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
 oxygen-substituted, and on at most two 4-coordinate C–C–Cl
-angles.
+angles whose carbon terminal is not 3-coordinate.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4338,7 +4338,7 @@ class Internals(BaseInternals):
                 css_ok = set(cands)
 
         def _ccl(angle) -> bool:
-            # 4-coordinate C–C–Cl.
+            # 4-coordinate C–C–Cl; skip 3-coordinate carbon terminal.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4349,7 +4349,11 @@ class Internals(BaseInternals):
             if len(real_c) != 4:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 17}
+            if {za, zc} != {6, 17}:
+                return False
+            c_term = ia if za == 6 else ic
+            real_ct = [nb for nb in neighbors[c_term] if int(nb) not in dummy_set]
+            return len(real_ct) != 3
 
         ccl_ok = set()
         if soft_medium_angle:
@@ -4414,7 +4418,7 @@ class Internals(BaseInternals):
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in ccl_ok:
-                # 4-coordinate C–C–Cl on 12≤n<30.
+                # 4-coordinate C–C–Cl skipping 3-coord carbon terminals.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
