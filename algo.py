@@ -28,8 +28,8 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on at most three 4-coordinate
-Si–Si–Si angles.
+oxygen-substituted, and on at most nine 4-coordinate
+H–Si–H angles.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4337,8 +4337,8 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _sisi(angle) -> bool:
-            # 4-coordinate oligosilane Si–Si–Si (leftover 135095297).
+        def _hsih(angle) -> bool:
+            # 4-coordinate silane H–Si–H (leftover 135095297).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4349,14 +4349,14 @@ class Internals(BaseInternals):
             if len(real_si) != 4:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 14 and zc == 14
+            return za == 1 and zc == 1
 
-        sisi_ok = set()
+        hsih_ok = set()
         if soft_medium_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _sisi(angle)]
-            if 1 <= len(cands) <= 3:
-                sisi_ok = set(cands)
+                     if _hsih(angle)]
+            if 1 <= len(cands) <= 9:
+                hsih_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4413,8 +4413,8 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in sisi_ok:
-                # 4-coordinate oligosilane Si–Si–Si on 12≤n<30.
+            elif soft_medium_angle and ia in hsih_ok:
+                # 4-coordinate silane H–Si–H on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
