@@ -4259,7 +4259,6 @@ class Internals(BaseInternals):
         Dt: float = 0.57,
         Et: float = 4.00,
         proper: bool = True,
-        bo_max: Optional[float] = None,
     ) -> float:
         _, bbc = dihedral.split()[0].split()
         idx = np.asarray(bbc.indices, dtype=np.int32)
@@ -4267,9 +4266,6 @@ class Internals(BaseInternals):
         rbc = bbc.calc(self.all_atoms)
         L = nbonds[idx].sum() - 2
         bo = np.exp(-Ct * (rbc - rcovbc) / units.Bohr)
-        if bo_max is not None:
-            # Single-bond rotor of a heavy sigma centre (_single_bond_rotor).
-            bo = min(bo, bo_max)
         h0 = (
             At + Bt * L**Dt * bo
             / (rbc * rcovbc / units.Bohr**2)**Et
@@ -4521,40 +4517,6 @@ class Internals(BaseInternals):
                 label = 'lp'
             types.append(label)
         return types
-
-    def _single_bond_rotor(self, b: int, c: int, types: List[str]) -> bool:
-        """True when the torsional bond order of the bond b-c is capped at
-        one (a single bond): one centre without a pi orbital ('sigma' in
-        _torsion_centre_types) and a p-block atom beyond the second row on
-        the bond.
-
-        The Fischer-Almlof torsional guess reads the contraction of a bond
-        relative to the covalent-radius sum as multiplicity
-        (bo = exp(-Ct (r - r_cov))) and carries it twice for a rotation
-        (_h0_dihedral: h0 ~ bo^2, so a "double" bond is 4x stiffer).  The
-        radii are a first-row calibration: the single bonds of P, S(IV/VI),
-        Si and the hypervalent halogens to N and O are 0.10-0.15 A shorter
-        than the radius sums (P-O 1.58-1.62 against 1.73, Si-O 1.63-1.66
-        against 1.77, sulfonamide S-N 1.60-1.65 against 1.76, sulfonate S-O
-        1.55-1.60 against 1.71 A), the polar (Schomaker-Stevenson) and
-        hypervalent contraction, not pi bonding -- a centre without a pi
-        orbital forms none, and the p-pi bonds of the heavier p-block
-        elements are weak besides (the double-bond rule).  The guess so puts
-        the P-O-C rotors of phosphates and phosphonates, the Si-O rotors of
-        silyl ethers and siloxanes, sulfonamide S-N and sulfonate S-O rotors
-        at 0.03-0.04 Ha/rad^2, 3-10x their rotational curvature (barriers of
-        0.5-3 kcal/mol, 0.003-0.015 Ha/rad^2), while the first-row rotors
-        with a sigma centre sit within 10 % of bo = 1 (C(sp3)-C(aryl) 1.05-
-        1.1) and are left alone: this is the stretch row-factor argument
-        (_STIFFNESS_SCALE) applied to the rotations.  Bonds with bo <= 1
-        are unchanged by the cap; lone-pair heavy centres (thioethers,
-        disulfides, thioanisoles: S with two neighbours) keep the full
-        bond-order factor, their rotors are already at or below the
-        physical stiffness."""
-        numbers = self.atoms.numbers
-        heavy = (_STIFFNESS_SCALE[int(numbers[b])] < 1.0
-                 or _STIFFNESS_SCALE[int(numbers[c])] < 1.0)
-        return bool(heavy and 'sigma' in (types[b], types[c]))
 
     @staticmethod
     def _in_small_ring(b: int, c: int, adj: List[List[int]],
@@ -5519,24 +5481,16 @@ class Internals(BaseInternals):
                 key = frozenset(int(j) for j in dihedral.indices[1:3])
                 if key not in tfac:
                     fac = 1.0
-                    bo_max = None
                     if scale_torsions:
                         b, c = (int(j) for j in dihedral.indices[1:3])
                         rbc = np.linalg.norm(positions[c] - positions[b])
                         rcovbc = (_STIFFNESS_RADII[numbers[b]]
                                   + _STIFFNESS_RADII[numbers[c]])
                         bo = np.exp(-2.85 * (rbc - rcovbc) / units.Bohr)
-                        if self._single_bond_rotor(b, c, types):
-                            # Heavy sigma centre: single-bond rotor, the
-                            # contraction is polar, not multiplicity.
-                            bo_max = 1.0
-                            bo = min(bo, bo_max)
                         fac = self._torsion_class_factor(
                             b, c, types, adj, float(bo))
-                    tfac[key] = (fac, bo_max)
-                fac, bo_max = tfac[key]
-                h0[idx] = (fac * self._h0_dihedral(dihedral, nbonds,
-                                                   bo_max=bo_max)
+                    tfac[key] = fac
+                h0[idx] = (tfac[key] * self._h0_dihedral(dihedral, nbonds)
                            / np.sqrt(ndih[key]))
                 dih_index.setdefault(key, []).append(idx)
             idx += 1
