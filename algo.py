@@ -5858,7 +5858,7 @@ class BaseRestrictedStep:
 
         s, val, dval = self.eval(alpha)
         if val < self.delta:
-            assert val > 0.
+            assert val >= 0.
             return s, val
         err = val - self.delta
 
@@ -5877,10 +5877,14 @@ class BaseRestrictedStep:
             else:
                 lower = alpha
 
-            a1 = alpha - err / dval
-            if np.isnan(a1) or a1 <= lower or a1 >= upper or (
-                niter > 4 and not self.stepper.newton_safe
-            ):
+            with np.errstate(divide='ignore', invalid='ignore'):
+                a1 = alpha - err / dval
+            force_bisection = (
+                (niter > 4 and not self.stepper.newton_safe)
+                or (self.stepper.newton_safe and niter % 12 == 11)
+            )
+            if (not np.isfinite(a1) or a1 <= lower or a1 >= upper
+                    or force_bisection):
                 a2 = (lower + upper) / 2.
                 if np.isinf(a2):
                     alpha = alpha + max(1, 0.5 * alpha) * np.sign(a2)
