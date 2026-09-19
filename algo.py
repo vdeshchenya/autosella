@@ -6370,7 +6370,7 @@ class Sella(Optimizer):
             and n_atoms is not None
             and 30 <= int(n_atoms) < 80
         ):
-            QuasiNewton.tiny_eig_thresh = 1e-8
+            QuasiNewton.tiny_eig_thresh = 1e-5
         try:
             if self.pes.cons.has_inequalities():
                 all_valid = False
