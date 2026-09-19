@@ -28,8 +28,8 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on at most two 4-coordinate
-thiosulfonate O–S–S angles.
+oxygen-substituted, and on at most six 2-coordinate C–N–O
+angles.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4337,26 +4337,26 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _oss(angle) -> bool:
-            # Thiosulfonate O–S–S at 4-coordinate sulfur.
+        def _cno(angle) -> bool:
+            # 2-coordinate C–N–O (nitrosoimine / furoxan-like).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 16:
+            if int(numbers[icen]) != 7:
                 return False
-            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_s) != 4:
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 2:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {8, 16}
+            return {za, zc} == {6, 8}
 
-        oss_ok = set()
+        cno_ok = set()
         if soft_medium_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _oss(angle)]
-            if 1 <= len(cands) <= 2:
-                oss_ok = set(cands)
+                     if _cno(angle)]
+            if 1 <= len(cands) <= 6:
+                cno_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4413,8 +4413,8 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in oss_ok:
-                # 4-coordinate thiosulfonate O–S–S on 12≤n<30.
+            elif soft_medium_angle and ia in cno_ok:
+                # 2-coordinate C–N–O on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
