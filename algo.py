@@ -5579,14 +5579,6 @@ _SYM_STEP_FRAC = 0.5   # ... or when it is below this fraction of the rms step j
 _SYM_MAX_PERM = 48     # permutations kept per search
 _SYM_MAX_NODES = 20000  # backtracking nodes per search
 
-# Energy-corrected secant pairs (PES._energy_corrected_dg): the newest pair
-# is moved from the chord curvature of its step to the local curvature at
-# the new point (Zhang, Deng & Chen, J. Optim. Theory Appl. 102, 147 (1999):
-# s.y + 6(f0 - f1) + 3 s.(g0 + g1) = s.G(x1).s + O(|s|^4)).
-_ESEC_MIN_CURV = 2e-3   # eV, effective chord curvature energy y.s below which nothing is done
-_ESEC_MIN_CHANGE = 0.05  # relative change of the curvature along s below which nothing is done
-_ESEC_RATIO = (0.4, 3.0)  # bounds of (local / chord) curvature along s
-
 
 def _isometric_permutations(numbers, pos, tol, max_perm=_SYM_MAX_PERM,
                             max_nodes=_SYM_MAX_NODES):
@@ -5764,9 +5756,6 @@ class PES:
         self.secant_dep_tol = 0.3
         self.secant_cons_tol = 0.25
         self._secant_pairs = []
-        # Energy correction of the newest pair (see _energy_corrected_dg);
-        # InternalPES switches it on for connected systems.
-        self._energy_secant = False
 
         # Model matrix for the energy prediction of the next kick when the
         # step was computed under the path-dependent contact model (see
@@ -5960,12 +5949,9 @@ class PES:
 
         self.curr['L'] = L
 
-    def _update_H(self, dx, dg, T_now=None, tbar=None, images=None,
-                  slopes=None):
+    def _update_H(self, dx, dg, T_now=None, tbar=None, images=None):
         if self.last['x'] is None or self.last['g'] is None:
             return
-        if slopes is not None and self._energy_secant:
-            dg = self._energy_corrected_dg(dx, dg, T_now, tbar, slopes)
         if self.secant_memory <= 1 or not self.H.initialized:
             if T_now is not None and tbar is not None:
                 dg = np.asarray(dg, dtype=np.float64) + (T_now @ dx - tbar)
@@ -5975,61 +5961,6 @@ class PES:
         if S is None:
             return
         self.H.update(S, Y)
-
-    def _energy_corrected_dg(self, dx, dg, T_now, tbar, slopes):
-        """Move the new secant pair from the chord to the local curvature
-        along its step with the energy change of the step.
-
-        slopes = (phi0, phi1, dE): the directional derivatives of the
-        energy along the step at its two ends, g(x0).dx_initial and
-        g(x1).dx_final (no gradient transport: both are exact slopes of
-        the energy along the geodesic between the two force calls), and
-        the energy change E(x1) - E(x0).  The cubic Hermite interpolant
-        through the two energies and the two slopes has the residual
-        c = 12 (phi0 + ½(phi1 - phi0) - dE) (the trapezoid error is c/12)
-        and the endpoint curvature phi''(1) = (phi1 - phi0) + c/2 =
-        s.G(x1).s + O(|s|^4) (Zhang, Deng & Chen 1999), whereas the plain
-        pair carries the path average s.G_avg.s (the chord, error
-        -½ s.(G' s).s: too soft on the descending side of every well whose
-        curvature rises toward the minimum -- rotors, puckers, Morse
-        bonds from the stretched side).  The pair is rewritten as
-        y <- y + beta s with beta chosen so that the pair, as used
-        (y + (T(x1) s - T_avg s), the analytic part's own chord -> local
-        move, see _collect_secant_pairs), has phi''(1) along s; the
-        components of y orthogonal to s are untouched.
-
-        Gates (a priori): a positive effective chord curvature of at least
-        _ESEC_MIN_CURV (endgame steps are far below it and stay
-        bit-identical), a relative change of at least _ESEC_MIN_CHANGE,
-        and the ratio local / chord clipped to _ESEC_RATIO.
-        """
-        s = np.asarray(dx, dtype=np.float64)
-        y = np.asarray(dg, dtype=np.float64)
-        try:
-            phi0, phi1, dE = (float(v) for v in slopes)
-        except (TypeError, ValueError):
-            return dg
-        if not (np.isfinite(phi0) and np.isfinite(phi1) and np.isfinite(dE)):
-            return dg
-        ss = float(s @ s)
-        if not np.isfinite(ss) or ss < 1e-16 or not np.all(np.isfinite(y)):
-            return dg
-        shift = 0.0
-        if T_now is not None and tbar is not None:
-            shift = float(s @ (T_now @ s - np.asarray(tbar, dtype=np.float64)))
-            if not np.isfinite(shift):
-                return dg
-        chord = float(y @ s) + shift
-        if not np.isfinite(chord) or chord <= _ESEC_MIN_CURV:
-            return dg
-        c = 12.0 * (0.5 * (phi0 + phi1) - dE)
-        local = (phi1 - phi0) + 0.5 * c
-        ratio = local / chord
-        if not np.isfinite(ratio) or abs(ratio - 1.0) < _ESEC_MIN_CHANGE:
-            return dg
-        ratio = min(max(ratio, _ESEC_RATIO[0]), _ESEC_RATIO[1])
-        beta = (ratio - 1.0) * chord / ss
-        return y + beta * s
 
     def _collect_secant_pairs(self, dx, dg, T_now=None, tbar=None,
                               images=None):
@@ -6226,20 +6157,14 @@ class PES:
         dx_initial, dx_final, g_par = self.set_x(x0 + dx)
 
         df_pred = self.get_df_pred(dx_initial, g0, B0)
-        g1 = self.get_g()
-        dg_actual = g1 - g_par
+        dg_actual = self.get_g() - g_par
         df_actual = self.get_f() - f0
         if df_pred is None or abs(df_pred) < 1e-14:
             ratio = None
         else:
             ratio = df_actual / df_pred
 
-        # Slopes of the energy along the step at both ends and the energy
-        # change: the energy correction of the new secant pair
-        # (_energy_corrected_dg).
-        slopes = (float(g0 @ dx_initial), float(g1 @ dx_final),
-                  float(df_actual))
-        self._update_H(dx_final, dg_actual, slopes=slopes)
+        self._update_H(dx_final, dg_actual)
 
         if diag:
             if self.hessian_function is not None:
@@ -6320,9 +6245,6 @@ class InternalPES(PES):
         self._an_prev = self._analytic_model() if self._transport else None
         self._pos_prev = None
         self._shadow = None
-        # Energy-corrected secant pairs for connected systems only (the
-        # multi-fragment endgames are the energy-margin population).
-        self._energy_secant = (self.int.ntrans + self.int.nrotations) == 0
         if self._transport:
             self._pos_prev = (self.atoms.positions.copy(),
                               self.dummies.positions.copy())
@@ -7243,14 +7165,14 @@ class InternalPES(PES):
 
         return [make(*m) for m in maps]
 
-    def _update_H(self, dx, dg, slopes=None):
+    def _update_H(self, dx, dg):
         images = self._symmetry_images()
         if getattr(self, '_transport', False):
             T_now, tbar = self._track_analytic_model(dx)
-            PES._update_H(self, dx, dg, T_now, tbar, images, slopes)
+            PES._update_H(self, dx, dg, T_now, tbar, images)
             return
         self._track_nonlocal_contacts()
-        PES._update_H(self, dx, dg, images=images, slopes=slopes)
+        PES._update_H(self, dx, dg, images=images)
 
     def write_traj(self):
         if self.traj is not None:
