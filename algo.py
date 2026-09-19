@@ -6422,7 +6422,11 @@ class Sella(Optimizer):
             return s, smag
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        kw['w_index_value'] = 0.8
+        n_atoms = getattr(self, '_n_atoms', None)
+        if n_atoms is not None and 30 <= int(n_atoms) < 80:
+            kw['w_index_value'] = 0.7
+        else:
+            kw['w_index_value'] = 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
@@ -6719,8 +6723,10 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and n_atoms < 20:
-            opt.pes.exact_geodesic = True
+        if connected:
+            opt._n_atoms = n_atoms
+            if 18 <= n_atoms < 20:
+                opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
