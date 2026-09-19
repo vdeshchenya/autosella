@@ -6425,7 +6425,7 @@ class Sella(Optimizer):
         n_atoms = int(getattr(self, '_n_atoms', intern.natoms))
         # Cycle 187 global 0.7 extraed n=18 dummy-linear; n<18 keeps 0.8
         # on 135043047 and tests leftover 252089162 (n=11).
-        kw['w_index_value'] = 0.7 if n_atoms < 18 else 0.8
+        kw['w_index_value'] = 0.7 if n_atoms < 8 else 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
