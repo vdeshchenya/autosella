@@ -4389,6 +4389,103 @@ class Internals(BaseInternals):
         z = int(self.atoms.numbers[centre])
         return (k_bend_h if z == 1 else k_bend) * units.Hartree
 
+    def _h0_dummy_azimuth(
+        self,
+        dihedral: Dihedral,
+        nbonds: np.ndarray,
+        adj: List[List[int]],
+        n_share: int,
+        bo_triple: float = 4.5,
+        At: float = 0.0015,
+    ) -> float:
+        """Guess (eV/rad^2) for a dihedral with a dummy atom at an end.
+
+        find_all_dihedrals combines the dummy angle A-j-X of a near-linear
+        centre j (dummy X) with the angles j-A-S at its neighbour A into
+        the dihedrals X-j-A-S, the azimuths of the substituents S of A
+        about the linear axis measured from the dummy; two adjacent linear
+        centres j-j' give the dummy-dummy dihedral X-j-j'-X'.  Together
+        these coordinates describe the rotation of the substituent group
+        at one end of the linear unit against the other end, a torsion
+        about the axis of the unit.  Sella assigns them 0.5 Ha/rad^2, the
+        stiffness of a double-bond torsion.  Physically the rotation is
+        free when the unit contains a triple bond (the cylindrical pi
+        system of C#C, C#N, N#N: 2-butyne 25 cm^-1, tolane V2 ~ 0.6
+        kcal/mol) and when the far end of the unit is a terminal atom
+        (nitriles, azides, isocyanates, ketenes: nothing to rotate
+        against); only a cumulene with substituents at both ends twists
+        its pi system (allene 865 cm^-1, 0.09-0.14 Ha/rad^2; carbodiimides
+        and ketenimines softer).  The differences between the azimuths of
+        the substituents of one atom A are its valence angles, so a stiff
+        azimuth guess also over-stiffens those bends: with 0.5 Ha/rad^2
+        the model puts the CH3 deformation of propyne and acetonitrile at
+        2480 cm^-1 (1450 observed) and their CH3 rock at 1190 (1050).
+        Free units get the additive constant At of the Fischer-Almlof
+        torsional formula, its floor for a bond without torsional
+        stiffness; the twist of a two-ended cumulene gets the
+        Fischer-Almlof value of the cumulated double bond j-A (or j-j'),
+        shared over the n_share azimuths of that bond like the proper
+        dihedrals (allene: 0.085 Ha/rad^2 per azimuth, twist 0.085).
+        A bond counts as triple above the bond-order factor bo_triple of
+        the Fischer-Almlof formula (C#C 1.20 A 5.6, C#N 1.16 A 5.5, N#N
+        1.13 A 4.8; cumulated C=C 1.31 A 3.1, C=N/C=O 1.16-1.22 A 3.9-4.1).
+        The analysis is one of covalent linear units.  A two-bonded
+        hydrogen is the bridging proton of a short hydrogen bond D-H...A
+        (a hydrogen has a single covalent bond), whose twist is an
+        intermolecular coordinate outside this analysis; its dummy
+        dihedrals keep Sella's value.
+        """
+        natoms = self.natoms
+        numbers = np.asarray(self.atoms.numbers)
+        positions = np.asarray(self.atoms.positions, dtype=np.float64)
+
+        def bond_order(i, k):
+            r = np.linalg.norm(positions[k] - positions[i])
+            rcov = _STIFFNESS_RADII[numbers[i]] + _STIFFNESS_RADII[numbers[k]]
+            return np.exp(-2.85 * (r - rcov) / units.Bohr)
+
+        def walk(j, prev):
+            """From the linear centre j away from prev along the chain of
+            linear centres: the bonds passed and the first non-linear atom
+            (None for a chain that closes on itself)."""
+            bonds = []
+            seen = {prev}
+            while True:
+                seen.add(j)
+                nxt = [k for k in adj[j] if k != prev]
+                if len(nxt) != 1 or nxt[0] in seen:
+                    return bonds, None
+                k = nxt[0]
+                bonds.append((j, k))
+                if self.dinds[k] < 0:
+                    return bonds, k
+                prev, j = j, k
+
+        a, b, c, d = (int(j) for j in dihedral.indices)
+        if a >= natoms and d >= natoms:
+            # X-j-j'-X': the torsion about the bond of two linear centres.
+            bonds = [(b, c)]
+            more, end1 = walk(b, c)
+            bonds += more
+            more, end2 = walk(c, b)
+            bonds += more
+            ends = (end1, end2)
+        else:
+            # X-j-A-S: j the linear centre, A its substituted neighbour.
+            j, side = (b, c) if a >= natoms else (c, b)
+            bonds = [(j, side)]
+            more, end = walk(j, side)
+            bonds += more
+            ends = (side, end)
+        centres = {i for bond in bonds for i in bond if self.dinds[i] >= 0}
+        if any(numbers[i] == 1 for i in centres):
+            return 0.5 * units.Hartree
+        orders = [bond_order(i, k) for i, k in bonds]
+        terminal = any(e is not None and len(adj[e]) <= 1 for e in ends)
+        if terminal or max(orders) >= bo_triple:
+            return At * units.Hartree
+        return self._h0_dihedral(dihedral, nbonds) / np.sqrt(max(n_share, 1))
+
     def _torsion_centre_types(self, adj: List[List[int]]) -> List[str]:
         """Local hybridisation label of every real atom for the torsional
         guess, from the element and the covalent neighbour count alone:
@@ -5312,8 +5409,17 @@ class Internals(BaseInternals):
                 return (d, c)
             return None
 
+        # Number of azimuth dihedrals X-j-A-S per bond (j, A) of a linear
+        # centre j to its substituted neighbour A (the sharing count of
+        # _h0_dummy_azimuth, connected systems).
+        n_azimuth = {}
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
+                a, b, c, d = (int(j) for j in dihedral.indices)
+                if (a in dummy_set) != (d in dummy_set) and not (
+                        b in dummy_set or c in dummy_set):
+                    key = (b, c) if a in dummy_set else (c, b)
+                    n_azimuth[key] = n_azimuth.get(key, 0) + 1
                 continue
             if not is_proper(dihedral):
                 continue
@@ -5347,12 +5453,16 @@ class Internals(BaseInternals):
                 a, b, c, d = (int(j) for j in dihedral.indices)
                 if connected and (b in dummy_set or c in dummy_set):
                     # The linear-bend dihedral A-j-X-C built in
-                    # find_all_angles (dummy at an inner position; the
-                    # dihedrals with a terminal dummy are the azimuths of
-                    # the neighbouring substituents about the linear axis
-                    # relative to X and keep the original value).
+                    # find_all_angles (dummy at an inner position).
                     h0[idx] = self._h0_linear_bend(b if c in dummy_set
                                                    else c)
+                elif connected:
+                    # Dummy at an end: the azimuth of a substituent about
+                    # the linear axis, or the dummy-dummy dihedral of two
+                    # adjacent linear centres (_h0_dummy_azimuth).
+                    key = (b, c) if a in dummy_set else (c, b)
+                    h0[idx] = self._h0_dummy_azimuth(
+                        dihedral, nbonds, adj, n_azimuth.get(key, 1))
                 else:
                     h0[idx] = 0.5 * units.Hartree
             elif not is_proper(dihedral):
