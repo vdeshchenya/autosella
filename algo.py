@@ -5704,6 +5704,7 @@ class QuasiNewton(BaseStepper):
     alphamin = 0.
     alphamax = np.inf
     slope = -1
+    tiny_eig_thresh = 0.0
     synonyms = [
         'qn',
         'quasi-newton',
@@ -5731,6 +5732,16 @@ class QuasiNewton(BaseStepper):
 
         self.ones = np.ones_like(self.L)
         self.ones[:self.order] = -1
+        thresh = float(getattr(QuasiNewton, 'tiny_eig_thresh', 0.0) or 0.0)
+        if thresh > 0.0 and self.order == 0:
+            tiny = np.abs(self.L) < thresh
+            if np.any(tiny):
+                self.L = np.array(self.L, dtype=np.float64, copy=True)
+                self.Vg = np.array(self.Vg, dtype=np.float64, copy=True)
+                self.L[tiny] = 1.0
+                self.Vg[tiny] = 0.0
+                self.ones = np.array(self.ones, dtype=np.float64, copy=True)
+                self.ones[tiny] = 1.0
 
     def get_s(self, alpha: float) -> Tuple[np.ndarray, np.ndarray]:
         denom = self.L + alpha * self.ones
@@ -6351,37 +6362,37 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
+
+        prev_thresh = QuasiNewton.tiny_eig_thresh
         n_atoms = getattr(self, '_n_atoms', None)
         if (
             getattr(self, '_allow_angle_wa', False)
             and n_atoms is not None
             and 30 <= int(n_atoms) < 80
-            and self.nsteps >= 40
         ):
-            # Banerjee RFO tail on medium connected jobs (cycle 140/141
-            # extras were n≥80 paliperidone / n=50 160853090 may still
-            # move). Leftover dummy-linear n=43 sees a short RFO tail.
-            step_method = 'rfo'
-
-        if self.pes.cons.has_inequalities():
-            all_valid = False
-            while not all_valid:
+            QuasiNewton.tiny_eig_thresh = 1e-8
+        try:
+            if self.pes.cons.has_inequalities():
+                all_valid = False
+                while not all_valid:
+                    s, smag = self.rs(
+                        self.pes, self.ord, self.delta, method=step_method,
+                        **rs_kwargs
+                    ).get_s()
+                    self.pes.set_x(x0 + s)
+                    all_valid = self.pes.cons.validate_inequalities()
+                    self.pes._update_basis()
+                    self.pes.restore()
+                self.pes._update_basis()
+            else:
                 s, smag = self.rs(
                     self.pes, self.ord, self.delta, method=step_method,
                     **rs_kwargs
                 ).get_s()
-                self.pes.set_x(x0 + s)
-                all_valid = self.pes.cons.validate_inequalities()
-                self.pes._update_basis()
-                self.pes.restore()
-            self.pes._update_basis()
-        else:
-            s, smag = self.rs(
-                self.pes, self.ord, self.delta, method=step_method,
-                **rs_kwargs
-            ).get_s()
 
-        s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
+            s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
+        finally:
+            QuasiNewton.tiny_eig_thresh = prev_thresh
         return self._maybe_gdiis(s, smag)
 
     def _dummy_dihedral_s_indices(self, intern):
