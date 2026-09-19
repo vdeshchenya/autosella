@@ -6,7 +6,9 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
-geodesic ODE steps recompute Binv at every RHS. Connected tails after 20
+geodesic ODE steps recompute Binv at every RHS. Connected
+30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
+Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
@@ -4311,6 +4313,42 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
+        def _sulfonamide_csn(angle) -> bool:
+            # Tertiary (N C,C,S) or 2-coordinate (N C,S) sulfonamide;
+            # skip secondary NH (cycle 380 extras).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 16:
+                return False
+            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_s) != 4:
+                return False
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_s)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_s)
+            n_n = sum(int(numbers[nb]) == 7 for nb in real_s)
+            if n_o != 2 or n_c != 1 or n_n != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 7}:
+                return False
+            n_idx = ia if za == 7 else ic
+            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
+            zs = [int(numbers[nb]) for nb in real_n]
+            if len(real_n) == 2:
+                return sorted(zs) == [6, 16]
+            if len(real_n) == 3:
+                return zs.count(6) == 2 and zs.count(16) == 1
+            return False
+
+        sulfonamide_ok = set()
+        if soft_pyridine_angle and not azo_cnn_ok:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _sulfonamide_csn(angle)]
+            if 1 <= len(cands) <= 2:
+                sulfonamide_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4389,6 +4427,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in sulfonamide_ok:
+                # Tertiary/2-coordinate sulfonamide C–S–N.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
