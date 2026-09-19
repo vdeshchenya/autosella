@@ -4383,6 +4383,40 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 hetero_coc_ok = set(cands)
 
+        def _isolated_csc(angle) -> bool:
+            # 2-coordinate sulfide C–S–C; both carbons 3-coordinate
+            # with only C/H besides the sulfide sulfur.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 16:
+                return False
+            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_s) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            for c_idx in (ia, ic):
+                real_c = [nb for nb in neighbors[c_idx]
+                          if int(nb) not in dummy_set]
+                if len(real_c) != 3:
+                    return False
+                for nb in real_c:
+                    if int(nb) == icen:
+                        continue
+                    if int(numbers[nb]) not in (1, 6):
+                        return False
+            return True
+
+        isolated_csc_ok = set()
+        if soft_pyridine_angle and not hetero_coc_ok:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _isolated_csc(angle)]
+            if 1 <= len(cands) <= 2:
+                isolated_csc_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4467,6 +4501,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in hetero_coc_ok:
                 # 3-coordinate hetero/halo-aryl ether C–O–C.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in isolated_csc_ok:
+                # Isolated 3-coordinate sulfide C–S–C.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
@@ -5858,7 +5895,7 @@ class BaseRestrictedStep:
 
         s, val, dval = self.eval(alpha)
         if val < self.delta:
-            assert val >= 0.
+            assert val > 0.
             return s, val
         err = val - self.delta
 
@@ -5877,14 +5914,10 @@ class BaseRestrictedStep:
             else:
                 lower = alpha
 
-            with np.errstate(divide='ignore', invalid='ignore'):
-                a1 = alpha - err / dval
-            force_bisection = (
-                (niter > 4 and not self.stepper.newton_safe)
-                or (self.stepper.newton_safe and niter % 12 == 11)
-            )
-            if (not np.isfinite(a1) or a1 <= lower or a1 >= upper
-                    or force_bisection):
+            a1 = alpha - err / dval
+            if np.isnan(a1) or a1 <= lower or a1 >= upper or (
+                niter > 4 and not self.stepper.newton_safe
+            ):
                 a2 = (lower + upper) / 2.
                 if np.isinf(a2):
                     alpha = alpha + max(1, 0.5 * alpha) * np.sign(a2)
