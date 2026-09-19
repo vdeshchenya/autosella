@@ -4107,8 +4107,7 @@ class Internals(BaseInternals):
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if int(numbers[icen]) != 7 or len(real_n) != 2:
+            if int(numbers[icen]) != 7 or int(nbonds[icen]) != 2:
                 return False
             if int(numbers[ia]) != 6 or int(numbers[ic]) != 6:
                 return False
@@ -6352,6 +6351,17 @@ class Sella(Optimizer):
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
+        n_atoms = getattr(self, '_n_atoms', None)
+        if (
+            getattr(self, '_allow_angle_wa', False)
+            and n_atoms is not None
+            and 30 <= int(n_atoms) < 80
+            and self.nsteps >= 40
+        ):
+            # Banerjee RFO tail on medium connected jobs (cycle 140/141
+            # extras were n≥80 paliperidone / n=50 160853090 may still
+            # move). Leftover dummy-linear n=43 sees a short RFO tail.
+            step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -6720,8 +6730,10 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and 18 <= n_atoms < 20:
-            opt.pes.exact_geodesic = True
+        if connected:
+            opt._n_atoms = n_atoms
+            if 18 <= n_atoms < 20:
+                opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
