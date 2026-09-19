@@ -27,8 +27,9 @@ Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N, and on
 at most two sulfonamide C–S–N angles at 4-coordinate sulfur
-with carbon, nitrogen, and two oxygens except on molecules
-that already have that C–N–N class.
+with carbon, nitrogen, and two oxygens when that nitrogen is
+2-coordinate {C, S} or 3-coordinate {C, C, S}, except on
+molecules that already have that C–N–N class.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4306,6 +4307,8 @@ class Internals(BaseInternals):
                 azo_cnn_ok = set(cands)
 
         def _sulfonamide_csn(angle) -> bool:
+            # Tertiary (N C,C,S) or 2-coordinate (N C,S) sulfonamide;
+            # skip secondary NH (cycle 380 extras).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4321,7 +4324,16 @@ class Internals(BaseInternals):
             if n_o != 2 or n_c != 1 or n_n != 1:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 7}
+            if {za, zc} != {6, 7}:
+                return False
+            n_idx = ia if za == 7 else ic
+            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
+            zs = [int(numbers[nb]) for nb in real_n]
+            if len(real_n) == 2:
+                return sorted(zs) == [6, 16]
+            if len(real_n) == 3:
+                return zs.count(6) == 2 and zs.count(16) == 1
+            return False
 
         sulfonamide_ok = set()
         if soft_pyridine_angle and not azo_cnn_ok:
@@ -4383,7 +4395,7 @@ class Internals(BaseInternals):
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sulfonamide_ok:
-                # Sulfonamide C–S–N at 4-coordinate S.
+                # Tertiary/2-coordinate sulfonamide C–S–N.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
