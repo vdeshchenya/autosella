@@ -4481,6 +4481,65 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
+        def _atom_in_cn_five_ring(idx) -> bool:
+            # 5-cycle of only carbon and nitrogen through idx.
+            idx = int(idx)
+            for a in neighbors[idx]:
+                ai = int(a)
+                if ai in dummy_set:
+                    continue
+                if int(numbers[ai]) not in (6, 7):
+                    continue
+                for b in neighbors[ai]:
+                    bi = int(b)
+                    if bi in dummy_set or bi == idx:
+                        continue
+                    if int(numbers[bi]) not in (6, 7):
+                        continue
+                    for c in neighbors[bi]:
+                        ci = int(c)
+                        if ci in dummy_set or ci in (idx, ai, bi):
+                            continue
+                        if int(numbers[ci]) not in (6, 7):
+                            continue
+                        for d in neighbors[ci]:
+                            di = int(d)
+                            if di in dummy_set or di in (idx, ai, bi, ci):
+                                continue
+                            if int(numbers[di]) not in (6, 7):
+                                continue
+                            if idx in (int(nb) for nb in neighbors[di]
+                                       if int(nb) not in dummy_set):
+                                return True
+            return False
+
+        def _pyrrole_cnc(angle) -> bool:
+            # 3-coordinate pyrrole/imidazole C–N–C in a C/N 5-ring;
+            # both carbons 3-coordinate with only C/N/H.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            zs = [int(numbers[nb]) for nb in real_n]
+            if not ((zs.count(6) == 2 and zs.count(1) == 1) or zs.count(6) == 3):
+                return False
+            for c_idx in (ia, ic):
+                real_c = [nb for nb in neighbors[c_idx]
+                          if int(nb) not in dummy_set]
+                if len(real_c) != 3:
+                    return False
+                if any(int(numbers[nb]) not in (1, 6, 7) for nb in real_c):
+                    return False
+            return _atom_in_cn_five_ring(icen)
+
         def _amide_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
@@ -4507,15 +4566,16 @@ class Internals(BaseInternals):
 
             return _carbonyl_c(ia) or _carbonyl_c(ic)
 
-        amide_py_ok = set()
+        amide_het_ok = set()
         if soft_phenol_angle:
-            has_pyridine = any(_pyridine_cnc(ang)
-                               for ang in self.internals['angles'])
-            if has_pyridine:
+            has_het_n = any(
+                _pyridine_cnc(ang) or _pyrrole_cnc(ang)
+                for ang in self.internals['angles'])
+            if has_het_n:
                 cands = [ia for ia, angle in enumerate(self.internals['angles'])
                          if _amide_cnc(angle)]
                 if 1 <= len(cands) <= 2:
-                    amide_py_ok = set(cands)
+                    amide_het_ok = set(cands)
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
@@ -4547,8 +4607,9 @@ class Internals(BaseInternals):
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_phenol_angle and ia in amide_py_ok:
-                # Amide C–N–C on dimers that also have pyridine C–N–C.
+            elif soft_phenol_angle and ia in amide_het_ok:
+                # Amide C–N–C on dimers that also have pyridine or
+                # pyrrole/imidazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
