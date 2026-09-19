@@ -343,6 +343,8 @@ class MatrixSum(LinearOperator):
         return MatrixSum(*self.matrices, other)
 
 class ApproximateHessian(LinearOperator):
+    skip_neg_eig_update = False
+
     def __init__(
         self,
         dim: int,
@@ -431,8 +433,16 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        self.set_B(update_H(B, dx, dg, method=self.update_method,
-                            symm=self.symm, lams=lams, vecs=vecs))
+        Bnew = update_H(B, dx, dg, method=self.update_method,
+                        symm=self.symm, lams=lams, vecs=vecs)
+        if getattr(ApproximateHessian, 'skip_neg_eig_update', False):
+            try:
+                trial_evals = eigh(Bnew, eigvals_only=True)
+            except np.linalg.LinAlgError:
+                trial_evals = None
+            if trial_evals is not None and float(np.min(trial_evals)) < 0.0:
+                return
+        self.set_B(Bnew)
 
     def project(self, U):
         """Project B into the subspace defined by U."""
@@ -4444,30 +4454,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _oso(angle) -> bool:
-            # Thiosulfonate O–S–O at 4-coordinate S (O, O, S, C).
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 16:
-                return False
-            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_s) != 4:
-                return False
-            zs_s = [int(numbers[nb]) for nb in real_s]
-            if zs_s.count(8) != 2 or zs_s.count(16) != 1 or zs_s.count(6) != 1:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 8 and zc == 8
-
-        oso_ok = set()
-        if soft_medium_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _oso(angle)]
-            if 1 <= len(cands) <= 2:
-                oso_ok = set(cands)
-
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4531,9 +4517,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in oso_ok:
-                # Thiosulfonate O–S–O at 4-coordinate S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
