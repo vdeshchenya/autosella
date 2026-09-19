@@ -4,7 +4,7 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps, except connected n_atoms<30 with
-dummy atoms which use 0.18. Connected dummy-atom dihedral
+dummy atoms which use 0.20. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -6445,7 +6445,7 @@ class Sella(Optimizer):
             intern = getattr(self.pes, "int", None)
             n_atoms = int(getattr(intern, "natoms", 30)) if intern is not None else 30
             ndummies = int(getattr(intern, "ndummies", 0)) if intern is not None else 0
-            floor = 0.18 if n_atoms < 30 and ndummies > 0 else 0.15
+            floor = 0.20 if n_atoms < 30 and ndummies > 0 else 0.15
             self.delta_min = floor
             self.delta = max(self.delta, floor)
 
