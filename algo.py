@@ -32,8 +32,7 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on at most two 3-coordinate amide
-C–N–C angles when 18≤n_atoms<30.
+oxygen-substituted.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4445,40 +4444,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _amide_cnc(angle) -> bool:
-            # 3-coordinate amide C–N–C; one carbon is a carbonyl carbon.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 7:
-                return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 3:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-
-            def _carbonyl_c(cn) -> bool:
-                for nb in neighbors[cn]:
-                    j = int(nb)
-                    if j in dummy_set or int(numbers[j]) != 8:
-                        continue
-                    real_o = [o for o in neighbors[j] if int(o) not in dummy_set]
-                    if len(real_o) == 1:
-                        return True
-                return False
-
-            return _carbonyl_c(ia) or _carbonyl_c(ic)
-
-        amide_cnc_ok = set()
-        if soft_medium_angle and int(self.natoms) >= 18:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _amide_cnc(angle)]
-            if 1 <= len(cands) <= 2:
-                amide_cnc_ok = set(cands)
-
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4516,6 +4481,42 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
+        def _amide_cnc(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+
+            def _carbonyl_c(cn) -> bool:
+                for nb in neighbors[cn]:
+                    j = int(nb)
+                    if j in dummy_set or int(numbers[j]) != 8:
+                        continue
+                    real_o = [o for o in neighbors[j] if int(o) not in dummy_set]
+                    if len(real_o) == 1:
+                        return True
+                return False
+
+            return _carbonyl_c(ia) or _carbonyl_c(ic)
+
+        amide_py_ok = set()
+        if soft_phenol_angle:
+            has_pyridine = any(_pyridine_cnc(ang)
+                               for ang in self.internals['angles'])
+            if has_pyridine:
+                cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                         if _amide_cnc(angle)]
+                if 1 <= len(cands) <= 2:
+                    amide_py_ok = set(cands)
+
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -4543,11 +4544,11 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in amide_cnc_ok:
-                # 3-coordinate amide C–N–C on connected 18≤n<30.
-                h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_phenol_angle and ia in amide_py_ok:
+                # Amide C–N–C on dimers that also have pyridine C–N–C.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
