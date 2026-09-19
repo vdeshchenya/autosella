@@ -32,10 +32,10 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
+oxygen-substituted, and connected 18≤n_atoms<80 also use 0.10 Ha
 on at most two aldehyde O–C–C angles at 3-coordinate carbon
-bonded to O, C, and H and, when those aldehydes are present, on
-at most two phenol C–O–H angles.
+bonded to O, C, and H when n<30 and, when those aldehydes are
+present, on at most two phenol C–O–H angles (including 30≤n<80).
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4465,7 +4465,7 @@ class Internals(BaseInternals):
             return {za, zc} == {6, 8}
 
         aldehyde_ok = set()
-        if soft_medium_angle and int(self.natoms) >= 18:
+        if (soft_medium_angle and int(self.natoms) >= 18) or soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _aldehyde_occ(angle)]
             if 1 <= len(cands) <= 2:
@@ -4545,7 +4545,7 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in aldehyde_ok:
                 # Aldehyde O–C–C on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in aldehyde_phenol_ok:
+            elif ia in aldehyde_phenol_ok:
                 # Phenol C–O–H when an aldehyde carbon is present.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
