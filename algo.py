@@ -27,7 +27,8 @@ Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
-C–S–S disulfide angles.
+C–S–S disulfide angles whose carbon is 4-coordinate or
+oxygen-substituted.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4309,7 +4310,7 @@ class Internals(BaseInternals):
                 azo_cnn_ok = set(cands)
 
         def _css(angle) -> bool:
-            # Disulfide C–S–S at 2-coordinate sulfur.
+            # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4320,7 +4321,13 @@ class Internals(BaseInternals):
             if len(real_s) != 2:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 16}
+            if {za, zc} != {6, 16}:
+                return False
+            c_idx = ia if za == 6 else ic
+            real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+            if len(real_c) == 4:
+                return True
+            return any(int(numbers[nb]) == 8 for nb in real_c)
 
         css_ok = set()
         if soft_medium_angle:
@@ -4382,7 +4389,7 @@ class Internals(BaseInternals):
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
-                # Disulfide C–S–S on 12≤n<30.
+                # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
