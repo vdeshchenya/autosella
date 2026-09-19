@@ -14,7 +14,6 @@ import sys as _sys
 
 import os
 
-import itertools
 import numpy as np
 
 from scipy.linalg import eigh as _cpu_eigh
@@ -8796,20 +8795,6 @@ def _pyramidalise_centres(numbers, pos_ang):
 # _DOCK_MIN_RMSD (a shorter approach is left to the quasi-Newton steps) and
 # by no more than _DOCK_MAX_MOVE per atom (runaway guard).
 #
-# Pose multiplicity. A rigid-body relaxation from the start pose finds the
-# surrogate minimum nearest the start's orientation, which for a far or
-# loose start is one arbitrary member of several distinct contact poses
-# (single vs cyclic double hydrogen bond, which acceptor, which face); the
-# walk after docking and the basin it ends in depend on that draw. The
-# relaxation is therefore run from the start pose and from the 23 other
-# orientations of the octahedral group applied to the smallest fragment
-# about its own centroid (a fixed, evenly spread set; no random numbers),
-# and the lowest surrogate minimum among the poses passing the runaway
-# guard is taken, the unrotated pose on ties. The surrogate's best pose is
-# its strongest contact pattern, which is where the deepest xTB basin lies
-# for these complexes far more often than the pose nearest an arbitrary
-# start orientation.
-#
 # Ionic complexes. A non-polarisable point-charge model describes a bare
 # ion poorly (the 12-6 radii are neutral-atom radii: K+...O would sit at
 # 3.65 A instead of 2.7, Cl-...O at 3.7 instead of 3.1, and the ion's
@@ -8831,7 +8816,6 @@ def _pyramidalise_centres(numbers, pos_ang):
 # the quasi-Newton steps.
 _DOCK_MIN_RMSD = 0.5      # A, all-atom rmsd between the start and the docked pose
 _DOCK_MAX_MOVE = 6.0      # A, largest atomic displacement accepted (runaway guard)
-_DOCK_ENERGY_TIE = 1e-6   # kcal/mol, a rotated start must beat the unrotated pose by this
 _DOCK_CHARGE_PER_EN = 0.22  # e per unit Pauling electronegativity difference per bond
 _DOCK_BOND_ORDER_LENGTH = 0.20  # A of bond shortening per extra bond order
 _DOCK_COULOMB = 332.0637  # kcal/mol A e^-2
@@ -9095,31 +9079,11 @@ def _dock_relax(pos0, groups, terms):
     return place(res.x)[0]
 
 
-def _dock_start_rotations():
-    """The 24 proper rotations of the octahedral group (signed permutation
-    matrices of determinant +1), identity first: the fixed set of start
-    orientations of the smallest fragment for the multi-start docking."""
-    rots = [np.eye(3)]
-    for perm in itertools.permutations(range(3)):
-        for signs in itertools.product((1.0, -1.0), repeat=3):
-            R = np.zeros((3, 3))
-            for row, col in enumerate(perm):
-                R[row, col] = signs[row]
-            if np.linalg.det(R) > 0 and not np.allclose(R, np.eye(3)):
-                rots.append(R)
-    return rots
-
-
 def _dock_start(atoms):
     """Dock a multi-fragment start of neutral fragments or polyatomic cations
     (see the note above) on the surrogate alone; makes no force call. The
-    rigid-body relaxation is run from the start pose and from the 23 other
-    octahedral orientations of the smallest fragment about its own centroid;
-    the lowest surrogate minimum among the poses that pass the move guard is
-    taken (the unrotated pose on ties), so that the docked pose is the
-    surrogate's best contact pattern rather than the minimum nearest the
-    start's arbitrary orientation. The docked pose, when accepted, replaces
-    the start and becomes the optimizer's first evaluated point."""
+    docked pose, when accepted, replaces the start and becomes the
+    optimizer's first evaluated point."""
     pos0 = atoms.get_positions()
     groups = _start_fragments(atoms.numbers, pos0)
     if len(groups) < 2:
@@ -9136,28 +9100,15 @@ def _dock_start(atoms):
         ii, jj, _, _, xx = terms
         if np.min(np.linalg.norm(pos0[ii] - pos0[jj], axis=1) / xx) < 1.0:
             return
-    small = min(range(len(groups)), key=lambda k: (len(groups[k]), k))
-    g = groups[small]
-    c = pos0[g].mean(axis=0)
-    best = None
-    best_energy = np.inf
-    for R in _dock_start_rotations():
-        start = np.array(pos0, dtype=float, copy=True)
-        start[g] = (pos0[g] - c) @ R.T + c
-        pos1 = _dock_relax(start, groups, terms)
-        if not np.all(np.isfinite(pos1)):
-            continue
-        if np.max(np.linalg.norm(pos1 - pos0, axis=1)) > _DOCK_MAX_MOVE:
-            continue
-        energy = _dock_energy_gradient(pos1, terms)[0]
-        if energy < best_energy - _DOCK_ENERGY_TIE:
-            best, best_energy = pos1, energy
-    if best is None:
+    pos1 = _dock_relax(pos0, groups, terms)
+    move = pos1 - pos0
+    if not np.all(np.isfinite(pos1)):
         return
-    move = best - pos0
+    if np.max(np.linalg.norm(move, axis=1)) > _DOCK_MAX_MOVE:
+        return
     if np.sqrt(np.mean(np.sum(move ** 2, axis=1))) < _DOCK_MIN_RMSD:
         return
-    atoms.positions = best
+    atoms.positions = pos1
 
 
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
