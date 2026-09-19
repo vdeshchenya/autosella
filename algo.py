@@ -32,7 +32,9 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted.
+oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
+on at most two aldehyde O–C–C angles at 3-coordinate carbon
+bonded to O, C, and H.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -343,8 +345,6 @@ class MatrixSum(LinearOperator):
         return MatrixSum(*self.matrices, other)
 
 class ApproximateHessian(LinearOperator):
-    skip_neg_eig_update = False
-
     def __init__(
         self,
         dim: int,
@@ -433,16 +433,8 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        Bnew = update_H(B, dx, dg, method=self.update_method,
-                        symm=self.symm, lams=lams, vecs=vecs)
-        if getattr(ApproximateHessian, 'skip_neg_eig_update', False):
-            try:
-                trial_evals = eigh(Bnew, eigvals_only=True)
-            except np.linalg.LinAlgError:
-                trial_evals = None
-            if trial_evals is not None and float(np.min(trial_evals)) < 0.0:
-                return
-        self.set_B(Bnew)
+        self.set_B(update_H(B, dx, dg, method=self.update_method,
+                            symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
         """Project B into the subspace defined by U."""
@@ -4454,6 +4446,30 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
+        def _aldehyde_occ(angle) -> bool:
+            # Aldehyde O–C–C at 3-coordinate carbon {O, C, H}.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
+                return False
+            zs = [int(numbers[nb]) for nb in real_c]
+            if zs.count(8) != 1 or zs.count(6) != 1 or zs.count(1) != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {6, 8}
+
+        aldehyde_ok = set()
+        if soft_medium_angle and int(self.natoms) >= 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _aldehyde_occ(angle)]
+            if 1 <= len(cands) <= 2:
+                aldehyde_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4517,6 +4533,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_medium_angle and ia in aldehyde_ok:
+                # Aldehyde O–C–C on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
@@ -6729,11 +6748,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected:
-            if 30 <= n_atoms < 80:
-                ApproximateHessian.skip_neg_eig_update = True
-            if 18 <= n_atoms < 20:
-                opt.pes.exact_geodesic = True
+        if connected and 18 <= n_atoms < 20:
+            opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
@@ -6748,7 +6764,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_medium_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
-        ApproximateHessian.skip_neg_eig_update = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
