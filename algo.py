@@ -28,8 +28,9 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on at most eighteen 4-coordinate
-H–Si–Si angles.
+oxygen-substituted, and on at most two 4-coordinate
+C–C–S angles at carbon bonded to a 2-coordinate disulfide
+when the molecule also has a 4-coordinate nitrogen.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4337,26 +4338,41 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _hsisi(angle) -> bool:
-            # 4-coordinate silane H–Si–Si (leftover 135095297).
+        def _has_4coord_n() -> bool:
+            for i, z in enumerate(numbers):
+                if int(i) in dummy_set or int(z) != 7:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if len(real) == 4:
+                    return True
+            return False
+
+        def _thiosulfonate_ccs(angle) -> bool:
+            # 4-coordinate C–C–S whose sulfur is 2-coordinate disulfide.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 14:
+            if int(numbers[icen]) != 6:
                 return False
-            real_si = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_si) != 4:
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {1, 14}
+            if {za, zc} != {6, 16}:
+                return False
+            s_idx = ia if za == 16 else ic
+            real_s = [nb for nb in neighbors[s_idx] if int(nb) not in dummy_set]
+            if len(real_s) != 2:
+                return False
+            return any(int(numbers[nb]) == 16 for nb in real_s)
 
-        hsisi_ok = set()
-        if soft_medium_angle:
+        thiosulfonate_ccs_ok = set()
+        if soft_medium_angle and _has_4coord_n():
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _hsisi(angle)]
-            if 1 <= len(cands) <= 18:
-                hsisi_ok = set(cands)
+                     if _thiosulfonate_ccs(angle)]
+            if 1 <= len(cands) <= 2:
+                thiosulfonate_ccs_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4413,8 +4429,8 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in hsisi_ok:
-                # 4-coordinate silane H–Si–Si on 12≤n<30.
+            elif soft_medium_angle and ia in thiosulfonate_ccs_ok:
+                # Thiosulfonate C–C–S at disulfide carbon (4-coord N present).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
