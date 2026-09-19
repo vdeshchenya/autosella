@@ -8552,7 +8552,7 @@ def _prerelax_rotors(numbers, pos_ang):
     bonded = dist <= 1.25 * (rcov[:, None] + rcov[None, :])
     np.fill_diagonal(bonded, False)
     adj = [list(np.flatnonzero(bonded[i])) for i in range(natoms)]
-    ionic = bool(np.any(np.abs(_dock_formal_charges(numbers, adj, dist)) > 1e-6))
+    ionic = bool(np.any(np.abs(_dock_formal_charges(numbers, adj, dist)[0]) > 1e-6))
     for c in range(natoms):
         if len(adj[c]) != 4:
             continue
@@ -8771,7 +8771,7 @@ def _pyramidalise_centres(numbers, pos_ang):
     return pos
 
 
-# Rigid-body pre-relaxation ("docking") of neutral multi-fragment starts on a
+# Rigid-body pre-relaxation ("docking") of multi-fragment starts on a
 # classical intermolecular surrogate.
 #
 # Rationale: when the start of a non-covalent complex lies far from its
@@ -8793,11 +8793,27 @@ def _pyramidalise_centres(numbers, pos_ang):
 # docking is accepted on the
 # surrogate alone: the relaxation must move the pose by at least
 # _DOCK_MIN_RMSD (a shorter approach is left to the quasi-Newton steps) and
-# by no more than _DOCK_MAX_MOVE per atom (runaway guard). Ionic complexes
-# are not docked: a non-polarisable point-charge model is unreliable for
-# ions (charge transfer, polarisation), so a start with a fragment carrying
-# a net formal charge (valence rules on the bond graph) or an odd electron
-# count keeps the plain quasi-Newton path.
+# by no more than _DOCK_MAX_MOVE per atom (runaway guard).
+#
+# Ionic complexes. A non-polarisable point-charge model describes a bare
+# ion poorly (the 12-6 radii are neutral-atom radii: K+...O would sit at
+# 3.65 A instead of 2.7, Cl-...O at 3.7 instead of 3.1, and the ion's
+# polarisation of its partner is absent) and an anion only roughly (diffuse,
+# polarisable, partly covalent hydrogen bonds), so starts with a charged
+# single atom or an anionic fragment keep the plain quasi-Newton path, as do
+# open-shell / unrecognised ions (odd electron count). A polyatomic cation
+# (ammonium, guanidinium, imidazolium, ...) carries its charge on hard
+# N-H / C-H protons, which the surrogate places well when the charge is put
+# on those hydrogens (see _dock_surrogate_terms), but the charge is shared
+# by several equivalent donors, so the surrogate has several near-degenerate
+# contact poses and cannot choose between them: re-arranging a contact that
+# the start already has is a coin flip from which the partner's conformation
+# relaxes along a long walk, whereas forming the contact from a separated
+# start replaces the approach walk exactly as for a neutral dimer. A cation
+# complex is therefore docked only when its start is separated -- no
+# inter-fragment atom pair inside its 12-6 minimum distance (the surrogate's
+# own contact scale) -- and a cation start already in contact is left to
+# the quasi-Newton steps.
 _DOCK_MIN_RMSD = 0.5      # A, all-atom rmsd between the start and the docked pose
 _DOCK_MAX_MOVE = 6.0      # A, largest atomic displacement accepted (runaway guard)
 _DOCK_CHARGE_PER_EN = 0.22  # e per unit Pauling electronegativity difference per bond
@@ -8842,10 +8858,13 @@ def _dock_formal_charges(numbers, adj, dist):
     carboxylate, carbonate, nitrate, nitrite, sulfinate, sulfonate, sulfate,
     phosphonate, phosphate and oxo-halide anions share the group charge,
     N-oxides carry N+ O-, four-coordinate B / Al -1. Anything else is
-    neutral. Returns an array (e) that sums to the (approximate) net charge."""
+    neutral. Returns an array (e) that sums to the (approximate) net charge
+    and a dict {atom: charge} of the cationic centres (the metal ions, onium
+    atoms and amidinium-type carbons)."""
     numbers = np.asarray(numbers)
     natoms = len(numbers)
     q = np.zeros(natoms)
+    onium = {}
     deg = np.array([len(a) for a in adj])
 
     def terminal(i, z):
@@ -8855,19 +8874,19 @@ def _dock_formal_charges(numbers, adj, dist):
         z = numbers[i]
         d = deg[i]
         if z in _ALKALI:
-            q[i] += 1.0
+            onium[i] = 1.0
         elif z in _ALKALINE_EARTH:
-            q[i] += 2.0
+            onium[i] = 2.0
         elif z in _HALOGENS and d == 0:
             q[i] -= 1.0
         elif z == 7 and d == 4:
-            q[i] += 1.0
+            onium[i] = 1.0
         elif z == 8 and d == 3:
-            q[i] += 1.0
+            onium[i] = 1.0
         elif z == 16 and d == 3 and all(numbers[j] in (1, 6) for j in adj[i]):
-            q[i] += 1.0
+            onium[i] = 1.0
         elif z == 15 and d == 4 and all(numbers[j] in (1, 6) for j in adj[i]):
-            q[i] += 1.0
+            onium[i] = 1.0
         elif z in (5, 13) and d == 4:
             q[i] -= 1.0
         elif z == 6 and d == 3:
@@ -8877,7 +8896,7 @@ def _dock_formal_charges(numbers, adj, dist):
                      and not terminal(j, 8)]
             others = [j for j in adj[i] if j not in amine]
             if len(amine) == 3 or (len(amine) == 2 and numbers[others[0]] in (1, 6)):
-                q[i] += 1.0
+                onium[i] = 1.0
         elif z in (8, 16) and d == 1:
             x = adj[i][0]
             zx = numbers[x]
@@ -8920,13 +8939,17 @@ def _dock_formal_charges(numbers, adj, dist):
                     q[i] -= (k - 1.0) / k          # phosphonate, phosphate
             elif zx in _HALOGENS:
                 q[i] -= 1.0 / k                   # hypochlorite ... perchlorate
-    return q
+    for i, charge in onium.items():
+        q[i] += charge
+    return q, onium
 
 
 def _dock_surrogate_terms(numbers, pos, groups):
     """Inter-fragment pair terms of the surrogate: indices, charge products
-    and 12-6 parameters. Returns None when a fragment carries a net formal
-    charge or an odd electron count (open shell or unrecognised ion)."""
+    and 12-6 parameters, and whether a fragment is charged. Returns None
+    when a fragment carries a negative net formal charge, is a charged
+    single atom, or has an odd electron count (open shell or unrecognised
+    ion); neutral fragments and polyatomic cations are accepted."""
     numbers = np.asarray(numbers)
     natoms = len(numbers)
     rcov = covalent_radii[numbers]
@@ -8934,17 +8957,33 @@ def _dock_surrogate_terms(numbers, pos, groups):
     bonded = dist <= 1.25 * (rcov[:, None] + rcov[None, :])
     np.fill_diagonal(bonded, False)
     adj = [list(np.flatnonzero(bonded[i])) for i in range(natoms)]
-    formal = _dock_formal_charges(numbers, adj, dist)
+    formal, onium = _dock_formal_charges(numbers, adj, dist)
+    charged = False
     for group in groups:
         net = formal[group].sum()
-        if abs(net) > 1e-6 or (int(numbers[group].sum()) - int(round(net))) % 2:
+        if net < -1e-6 or (net > 1e-6 and len(group) < 2):
             return None
+        if (int(numbers[group].sum()) - int(round(net))) % 2:
+            return None
+        charged = charged or net > 1e-6
     # Partial charges: formal charge plus a bond-polarity transfer of
     # _DOCK_CHARGE_PER_EN e per unit electronegativity difference and bond
     # order (order 1 + shortening below the covalent-radius sum in units of
-    # _DOCK_BOND_ORDER_LENGTH, at most 3).
+    # _DOCK_BOND_ORDER_LENGTH, at most 3). The charge of a cationic centre
+    # resides on the hydrogens around it (ESP-fitted charges of ammonium,
+    # guanidinium and imidazolium put +0.3 to +0.45 e on every N-H and C-H
+    # of the charged ring or centre and leave the central atom neutral or
+    # negative), so it is shared equally among the hydrogens bonded to the
+    # centre or to one of its neighbours; a point charge on the central heavy
+    # atom would pull a nucleophile onto that atom (the imidazolium C2)
+    # instead of onto the N-H protons.
     chi = np.array([_PAULING_EN.get(int(z), 2.0) for z in numbers])
     q = formal.copy()
+    for i, charge in onium.items():
+        hs = sorted({j for k in [i] + adj[i] for j in adj[k] if numbers[j] == 1})
+        if hs:
+            q[i] -= charge
+            q[hs] += charge / len(hs)
     for i in range(natoms):
         for j in adj[i]:
             order = 1.0 + min(2.0, max(0.0, (rcov[i] + rcov[j] - dist[i, j]) / _DOCK_BOND_ORDER_LENGTH))
@@ -8963,8 +9002,8 @@ def _dock_surrogate_terms(numbers, pos, groups):
     keep = label[ii] != label[jj]
     ii = ii[keep]
     jj = jj[keep]
-    return (ii, jj, _DOCK_COULOMB * q[ii] * q[jj], np.sqrt(lj_d[ii] * lj_d[jj]),
-            np.sqrt(lj_x[ii] * lj_x[jj]))
+    return ((ii, jj, _DOCK_COULOMB * q[ii] * q[jj], np.sqrt(lj_d[ii] * lj_d[jj]),
+             np.sqrt(lj_x[ii] * lj_x[jj])), charged)
 
 
 def _dock_energy_gradient(pos, terms):
@@ -9041,16 +9080,26 @@ def _dock_relax(pos0, groups, terms):
 
 
 def _dock_start(atoms):
-    """Dock a neutral multi-fragment start (see the note above) on the
-    surrogate alone; makes no force call. The docked pose, when accepted,
-    replaces the start and becomes the optimizer's first evaluated point."""
+    """Dock a multi-fragment start of neutral fragments or polyatomic cations
+    (see the note above) on the surrogate alone; makes no force call. The
+    docked pose, when accepted, replaces the start and becomes the
+    optimizer's first evaluated point."""
     pos0 = atoms.get_positions()
     groups = _start_fragments(atoms.numbers, pos0)
     if len(groups) < 2:
         return
-    terms = _dock_surrogate_terms(atoms.numbers, pos0, groups)
-    if terms is None:
+    result = _dock_surrogate_terms(atoms.numbers, pos0, groups)
+    if result is None:
         return
+    terms, charged = result
+    if charged:
+        # a cation complex is docked only from a separated start: the
+        # closest inter-fragment pair must lie outside its 12-6 minimum
+        # distance (the surrogate forms the contact, it does not re-arrange
+        # one the start already has)
+        ii, jj, _, _, xx = terms
+        if np.min(np.linalg.norm(pos0[ii] - pos0[jj], axis=1) / xx) < 1.0:
+            return
     pos1 = _dock_relax(pos0, groups, terms)
     move = pos1 - pos0
     if not np.all(np.isfinite(pos1)):
@@ -9074,9 +9123,11 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = _pyramidalise_centres(atomic_numbers, pos_ang)
     pos_ang = _break_start_symmetry(atomic_numbers, pos_ang)
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
-    # Neutral multi-fragment starts are docked on the classical surrogate
-    # first (see _dock_start); connected systems and ionic complexes are
-    # untouched. No force call is made before the optimizer's first one.
+    # Multi-fragment starts of neutral fragments, and separated starts of
+    # polyatomic-cation complexes, are docked on the classical surrogate
+    # first (see _dock_start); connected systems, anionic and bare-ion
+    # complexes and cation starts already in contact are untouched. No force
+    # call is made before the optimizer's first one.
     _dock_start(atoms)
     wrapper = _WrappedCalc(calc)
     atoms.calc = wrapper
