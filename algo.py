@@ -6729,8 +6729,11 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and 18 <= n_atoms < 20:
-            opt.pes.exact_geodesic = True
+        if connected:
+            if 30 <= n_atoms < 80:
+                ApproximateHessian.skip_neg_eig_update = True
+            if 18 <= n_atoms < 20:
+                opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
@@ -6745,6 +6748,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_medium_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
+        ApproximateHessian.skip_neg_eig_update = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
