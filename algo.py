@@ -4349,6 +4349,36 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 sulfonamide_ok = set(cands)
 
+        def _bromo_coc(angle) -> bool:
+            # 2-coordinate ether C–O–C; Br on a 3-coordinate carbon
+            # (cycle 408 extra was 4-coordinate alkyl bromo-ether).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 8:
+                return False
+            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_o) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            for c_idx in (ia, ic):
+                real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+                if len(real_c) != 3:
+                    continue
+                if any(int(numbers[nb]) == 35 for nb in real_c):
+                    return True
+            return False
+
+        bromo_coc_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _bromo_coc(angle)]
+            if 1 <= len(cands) <= 2:
+                bromo_coc_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4430,6 +4460,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sulfonamide_ok:
                 # Tertiary/2-coordinate sulfonamide C–S–N.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in bromo_coc_ok:
+                # Aryl/vinyl bromo-ether C–O–C (3-coordinate Br carbon).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
