@@ -4444,6 +4444,30 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
+        def _ssc(angle) -> bool:
+            # Thiosulfonate S–S–C at 4-coordinate S (O, O, S, C).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 16:
+                return False
+            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_s) != 4:
+                return False
+            zs_s = [int(numbers[nb]) for nb in real_s]
+            if zs_s.count(8) != 2 or zs_s.count(16) != 1 or zs_s.count(6) != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {6, 16}
+
+        ssc_ok = set()
+        if soft_medium_angle and not css_ok:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _ssc(angle)]
+            if 1 <= len(cands) <= 2:
+                ssc_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4507,6 +4531,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_medium_angle and ia in ssc_ok:
+                # Thiosulfonate S–S–C at 4-coordinate S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
@@ -6422,11 +6449,7 @@ class Sella(Optimizer):
             return s, smag
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        n_atoms = getattr(self, '_n_atoms', None)
-        if n_atoms is not None and 30 <= int(n_atoms) < 80:
-            kw['w_index_value'] = 0.7
-        else:
-            kw['w_index_value'] = 0.8
+        kw['w_index_value'] = 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
@@ -6723,10 +6746,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected:
-            opt._n_atoms = n_atoms
-            if 18 <= n_atoms < 20:
-                opt.pes.exact_geodesic = True
+        if connected and 18 <= n_atoms < 20:
+            opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
