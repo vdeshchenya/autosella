@@ -22,10 +22,9 @@ guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
 ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
-cyclic ethers, on at most two carboxyl/ester
-Cα C–C–N angles, and on at most two C–S–C angles at
-2-coordinate thioether sulfur next to a 4-coordinate C(S,C,C,H)
-(0.06 Ha, GAFF c3-ss-c3). Dimers that contain a 1-coordinate
+cyclic ethers, and on at most two carboxyl/ester
+Cα C–C–N angles, and on at most two C–C–C angles at
+4-coordinate C(N,C,C,H) next to a cyclic carbamate/ester ether oxygen. Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
 3-coordinate with exactly one oxygen).
@@ -4247,35 +4246,48 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 carboxyl_ccn_ok = set(cands)
 
-        def _thioether_alkyl_carbon(cn) -> bool:
-            nbs = [nbb for nbb in neighbors[cn] if int(nbb) not in dummy_set]
-            if len(nbs) != 4:
-                return False
-            n_s = sum(int(numbers[nbb]) == 16 for nbb in nbs)
-            n_c = sum(int(numbers[nbb]) == 6 for nbb in nbs)
-            n_h = sum(int(numbers[nbb]) == 1 for nbb in nbs)
-            return n_s == 1 and n_c == 2 and n_h == 1
-
-        def _thioether_csc(angle) -> bool:
+        def _oxazolidinone_ccc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 16:
+            if int(numbers[icen]) != 6:
                 return False
-            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_s) != 2:
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
                 return False
-            if int(numbers[ia]) != 6 or int(numbers[ic]) != 6:
+            n_n = sum(int(numbers[nb]) == 7 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
+            if n_n != 1 or n_c != 2 or n_h != 1:
                 return False
-            return any(_thioether_alkyl_carbon(cn) for cn in (ia, ic))
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 6}:
+                return False
+            for cn in (ia, ic):
+                for k in neighbors[cn]:
+                    if int(k) in dummy_set or int(numbers[k]) != 8:
+                        continue
+                    real_o = [nb for nb in neighbors[k]
+                              if int(nb) not in dummy_set]
+                    if len(real_o) != 2:
+                        continue
+                    if not all(int(numbers[nb]) == 6 for nb in real_o):
+                        continue
+                    other = next(int(nb) for nb in real_o if int(nb) != cn)
+                    nbs = [nb for nb in neighbors[other]
+                           if int(nb) not in dummy_set]
+                    if (len(nbs) == 3
+                            and sum(int(numbers[nb]) == 8 for nb in nbs) >= 2):
+                        return True
+            return False
 
-        thioether_csc_ok = set()
+        oxazolidinone_ccc_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _thioether_csc(angle)]
+                     if _oxazolidinone_ccc(angle)]
             if 1 <= len(cands) <= 2:
-                thioether_csc_ok = set(cands)
+                oxazolidinone_ccc_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4326,9 +4338,9 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in thioether_csc_ok:
-                # Thioether C–S–C at 2-coordinate sulfur (GAFF c3-ss-c3).
-                h0[idx] = 0.06 * units.Hartree
+            elif soft_pyridine_angle and ia in oxazolidinone_ccc_ok:
+                # Oxazolidinone C4 C–C–C at 4-coordinate carbon.
+                h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
                 h0[idx] = 0.10 * units.Hartree
