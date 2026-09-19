@@ -21,7 +21,9 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
+dummy centers use 0.20 Ha guesses, as do dummy-involving
+dihedrals at 2-coordinate isocyanide nitrogen centers (two
+carbon terminals, one of them terminal isocyanide C). Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
@@ -36,11 +38,7 @@ oxygen-substituted.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
-3-coordinate with exactly one oxygen). Connected 30≤n<80 that
-have no phosphorus and no 1-coordinate nitrogen use 0.10 Ha
-on at most two 2-coordinate C–S–C angles whose carbons are
-both 3-coordinate, with exactly one N/Cl/Br/I among the
-non-sulfur neighbors and no O or extra S on those carbons.
+3-coordinate with exactly one oxygen).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -3750,6 +3748,25 @@ class Internals(BaseInternals):
                                 elif zpair == {7, 8}:
                                     # Isocyanate N=C=O, including near-collinear.
                                     self.windowed_dummy_atoms.add(int(self.dinds[j]))
+                        elif (
+                            int(self.atoms.numbers[j]) == 7
+                        ):
+                            term_z = []
+                            term_ids = []
+                            for bterm in jbonds:
+                                t0, t1 = int(bterm.indices[0]), int(bterm.indices[1])
+                                t = t1 if t0 == j else t0
+                                if 0 <= t < self.natoms:
+                                    term_z.append(int(self.atoms.numbers[t]))
+                                    term_ids.append(t)
+                            if (
+                                len(term_z) == 2
+                                and set(term_z) == {6, 6}
+                                and any(len(bonds[t]) == 1 for t in term_ids)
+                            ):
+                                # Isocyanide C–N–C at nitrogen; one carbon
+                                # is the terminal isocyanide carbon.
+                                self.windowed_dummy_atoms.add(int(self.dinds[j]))
                         if (
                             getattr(self, 'adj_dummy_placement', False)
                             and 0.04 < cross_norm < 0.10
@@ -4421,63 +4438,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 isolated_csc_ok = set(cands)
 
-        def _hetero_csc(angle) -> bool:
-            # 2-coordinate C–S–C; both carbons 3-coordinate.
-            # Exactly one carbon has exactly one N/Cl/Br/I neighbor.
-            # Skip O or extra S on those carbons (cycle 436 isolated
-            # C/H sulfide and 104073139 O/N thioether).
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 16:
-                return False
-            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_s) != 2:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-            het = {7, 17, 35, 53}
-            counts = []
-            for c_idx in (ia, ic):
-                real_c = [nb for nb in neighbors[c_idx]
-                          if int(nb) not in dummy_set]
-                if len(real_c) != 3:
-                    return False
-                h = 0
-                for nb in real_c:
-                    if int(nb) == icen:
-                        continue
-                    zn = int(numbers[nb])
-                    if zn in (8, 16):
-                        return False
-                    if zn in het:
-                        h += 1
-                counts.append(h)
-            return tuple(counts) in ((1, 0), (0, 1))
-
-        def _has_phosphorus() -> bool:
-            return any(int(z) == 15 and int(i) not in dummy_set
-                       for i, z in enumerate(numbers))
-
-        def _has_terminal_n() -> bool:
-            for i, z in enumerate(numbers):
-                if int(i) in dummy_set or int(z) != 7:
-                    continue
-                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if len(real) == 1:
-                    return True
-            return False
-
-        hetero_csc_ok = set()
-        if (soft_pyridine_angle and not _has_phosphorus()
-                and not _has_terminal_n()):
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _hetero_csc(angle)]
-            if 1 <= len(cands) <= 2:
-                hetero_csc_ok = set(cands)
-
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4565,9 +4525,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in isolated_csc_ok:
                 # Isolated 3-coordinate sulfide C–S–C.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in hetero_csc_ok:
-                # Hetero/halo 3-coordinate thiazole/thiophene C–S–C.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
