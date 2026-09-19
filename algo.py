@@ -7695,7 +7695,8 @@ _default_kwargs = dict(
         # -H^-1 g, the path average taken along the step itself (see
         # Sella._curved_step). The same A(x) already moves H between
         # geometries and transports the secant pairs. Connected systems
-        # only (multi-fragment approach steps are re-routed by it).
+        # and complexes of neutral fragments (Sella(curved_step_fragments));
+        # the approach steps of charged complexes are re-routed by it.
         curved_step_contact=True,
         method='qn',
         eig=False
@@ -7748,6 +7749,7 @@ class Sella(Optimizer):
         niggli: bool = False,
         refine_initial_hessian: Union[bool, int] = False,
         save_hessian: str = None,
+        curved_step_fragments: bool = False,
         **kwargs
     ):
         """Initialize Sella optimizer.
@@ -7787,6 +7789,12 @@ class Sella(Optimizer):
             - 3: Refine full internal Hessian (2 * n_internal force calls, expensive!)
         save_hessian : str, optional
             Path to save the initial Hessian as .npy file for analysis.
+        curved_step_fragments : bool, optional
+            If True, a multi-fragment minimisation also takes the
+            contact-block predictor-corrector step (Sella._curved_step) on
+            its inter-fragment contact block; meant for complexes of neutral
+            closed-shell fragments (minimize_func decides). Default is
+            False: multi-fragment systems keep the quadratic step.
         """
         if order == 0:
             default = _default_kwargs['minimum']
@@ -7868,6 +7876,7 @@ class Sella(Optimizer):
         self.sigma_dec_mol = default.get('sigma_dec_mol', self.sigma_dec)
         self.cart_ratio_mol = default.get('cart_ratio_mol', None)
         self.curved_step_contact = default.get('curved_step_contact', False)
+        self.curved_step_fragments = bool(curved_step_fragments)
         self.method = method if method is not None else default['method']
         self.eig = eig if eig is not None else default['eig']
 
@@ -8043,8 +8052,9 @@ class Sella(Optimizer):
 
     def _curved_step(self, s, smag, rs_kwargs):
         """Predictor-corrector step under the geometry-following contact
-        block of the model (minimisation, connected systems: the non-local
-        intramolecular and vicinal pairs).
+        block of the model (minimisation; connected systems: the non-local
+        intramolecular and vicinal pairs; complexes of neutral closed-shell
+        fragments: their inter-fragment contact block as well).
 
         The model Hessian moves with the geometry, H(x) = H + T(x) - T(x_k)
         (InternalPES._track_analytic_model), and the secant pairs are
@@ -8077,16 +8087,21 @@ class Sella(Optimizer):
         anharmonicity of the xTB bond and a stretch residual is removed by
         the next step anyway, while the gains sat where the contact block
         changes along the step (long runs, folding chains).  Multi-fragment
-        systems keep the quadratic step (cycle 78 applied the correction
-        to their inter-fragment block as well: the corrected rigid-body
-        approach steps, x0.7-1.9 on the contact block at the 0.25 cap,
-        re-route the approach of ionic complexes between basins 1-3
-        kcal/mol apart -- a wash in count, a loss in calls -- while the
-        connected long walks gained).
+        systems take the correction on their inter-fragment block only when
+        every fragment is a neutral closed-shell molecule
+        (curved_step_fragments, decided by minimize_func from the start
+        bond graph): cycle 78 applied it to every complex, and the
+        corrected rigid-body approach steps of the ionic complexes --
+        x0.7-1.9 on a contact block that is a Coulomb approach rather than
+        a Lindh-type contact, at the 0.25 cap -- re-routed them between
+        basins 1-3 kcal/mol apart, while the docked neutral complexes,
+        whose walk starts in contact and whose block is the contact model
+        the correction is written for, converged in fewer calls.
         """
         pes = self.pes
         if (self.ord != 0 or not self.curved_step_contact
-                or self._has_tr_internals()
+                or (self._has_tr_internals()
+                    and not self.curved_step_fragments)
                 or not getattr(pes, '_track_nb', False)
                 or getattr(pes, 'H', None) is None or pes.H.B is None
                 or not hasattr(pes, '_contact_model_ahead')):
@@ -9111,6 +9126,33 @@ def _dock_start(atoms):
     atoms.positions = pos1
 
 
+def _fragments_formally_neutral(numbers, pos_ang):
+    """True when the start has two or more fragments (Sella's bond
+    criterion, _start_fragments) and every fragment is a closed-shell
+    neutral molecule under the formal-charge rules of _dock_formal_charges
+    -- the class the surrogate docks with no charge on either fragment;
+    False for connected starts and for complexes with a charged, bare-ion
+    or odd-electron fragment (an unrecognised ion looks like an
+    odd-electron neutral)."""
+    groups = _start_fragments(numbers, pos_ang)
+    if len(groups) < 2:
+        return False
+    numbers = np.asarray(numbers)
+    natoms = len(numbers)
+    rcov = covalent_radii[numbers]
+    dist = np.linalg.norm(pos_ang[:, None, :] - pos_ang[None, :, :], axis=2)
+    bonded = dist <= 1.25 * (rcov[:, None] + rcov[None, :])
+    np.fill_diagonal(bonded, False)
+    adj = [list(np.flatnonzero(bonded[i])) for i in range(natoms)]
+    formal, _ = _dock_formal_charges(numbers, adj, dist)
+    for group in groups:
+        if abs(float(formal[group].sum())) > 1e-6:
+            return False
+        if int(numbers[group].sum()) % 2:
+            return False
+    return True
+
+
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
     # XH3 rotors that start on their three-fold saddle are placed at the
@@ -9137,9 +9179,13 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     # inter-fragment pseudo-bonds found by inflating the covalent radii. Their
     # curvature comes from the geometry-tracked inter-fragment contact term
     # (Internals._h0_nonlocal_contacts) on top of a diagonal floor
-    # (Internals._h0_fragment).
+    # (Internals._h0_fragment). Complexes of neutral closed-shell fragments
+    # take the contact-block predictor-corrector step on that term as well
+    # (see Sella._curved_step); charged complexes keep the quadratic step.
     opt = Sella(atoms, internal=True, order=0, logfile=None,
-                allow_fragments=True)
+                allow_fragments=True,
+                curved_step_fragments=_fragments_formally_neutral(
+                    atoms.numbers, atoms.get_positions()))
     # The optimizer's first evaluation is one force call; every step after it
     # costs one more, so the step budget is the call budget less that one.
     for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
