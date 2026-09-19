@@ -24,7 +24,9 @@ guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
 ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
 cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
-angles. Dimers that contain a 1-coordinate
+angles whose N–N neighbor is also 2-coordinate and whose
+N–N edge lies in a 5-membered ring of only C and N.
+Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
 3-coordinate with exactly one oxygen).
@@ -4246,9 +4248,35 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 carboxyl_ccn_ok = set(cands)
 
+        def _nn_in_cn_five_ring(n1, n2) -> bool:
+            # N–N edge in a 5-cycle of only carbon and nitrogen.
+            n1, n2 = int(n1), int(n2)
+            for a in neighbors[n2]:
+                ai = int(a)
+                if ai in dummy_set or ai == n1:
+                    continue
+                if int(numbers[ai]) not in (6, 7):
+                    continue
+                for b in neighbors[ai]:
+                    bi = int(b)
+                    if bi in dummy_set or bi in (n1, n2, ai):
+                        continue
+                    if int(numbers[bi]) not in (6, 7):
+                        continue
+                    for c in neighbors[bi]:
+                        ci = int(c)
+                        if ci in dummy_set or ci in (n1, n2, ai, bi):
+                            continue
+                        if int(numbers[ci]) not in (6, 7):
+                            continue
+                        if n1 in (int(nb) for nb in neighbors[ci]
+                                  if int(nb) not in dummy_set):
+                            return True
+            return False
+
         def _azo_cnn(angle) -> bool:
-            # 2-coordinate C–N–N (pyrazole/azo), not 3-coordinate NH
-            # (cycle 371) and not n<12 azide (cycle 301).
+            # 2-coordinate C–N–N in a C/N 5-ring; both N 2-coordinate
+            # (cycle 375 extras were 3-coord N or acyclic azo).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4259,7 +4287,13 @@ class Internals(BaseInternals):
             if len(real_n) != 2:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 7}
+            if {za, zc} != {6, 7}:
+                return False
+            nn = ia if za == 7 else ic
+            real_nn = [nb for nb in neighbors[nn] if int(nb) not in dummy_set]
+            if len(real_nn) != 2:
+                return False
+            return _nn_in_cn_five_ring(icen, nn)
 
         azo_cnn_ok = set()
         if soft_pyridine_angle:
@@ -4318,7 +4352,7 @@ class Internals(BaseInternals):
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in azo_cnn_ok:
-                # 2-coordinate pyrazole/azo C–N–N.
+                # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
