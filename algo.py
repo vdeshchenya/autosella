@@ -25,10 +25,9 @@ ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-subst
 cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
-N–N edge lies in a 5-membered ring of only C and N, and on
-at most two carboxyl O–C–O angles at a 3-coordinate carbon
-with at least two oxygens, except on molecules that already
-have that C–N–N class or a CF3 carbon.
+N–N edge lies in a 5-membered ring of only C and N, and 0.005 Ha
+guesses on carbamate C–N dihedrals when the molecule has exactly
+one 3-coordinate C {O, O, N} bonded to a 3-coordinate N.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4305,37 +4304,38 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
-        def _carboxyl_oco(angle) -> bool:
-            # Carboxyl/ester O–C–O at 3-coordinate C with ≥2 O.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
+        def _carbamate_cn_bond(j, k) -> bool:
+            # Carbamate/oxazolidinone C–N: 3-coord C {O, O, N}, 3-coord N.
+            if any(x in dummy_set for x in (j, k)):
                 return False
-            if int(numbers[icen]) != 6:
+            if int(numbers[j]) == 7 and int(numbers[k]) == 6:
+                j, k = k, j
+            if int(numbers[j]) != 6 or int(numbers[k]) != 7:
                 return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            real_c = [nb for nb in neighbors[j] if int(nb) not in dummy_set]
             if len(real_c) != 3:
                 return False
-            if sum(int(numbers[nb]) == 8 for nb in real_c) < 2:
+            if sum(int(numbers[nb]) == 8 for nb in real_c) != 2:
                 return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 8 and zc == 8
+            if sum(int(numbers[nb]) == 7 for nb in real_c) != 1:
+                return False
+            real_n = [nb for nb in neighbors[k] if int(nb) not in dummy_set]
+            return len(real_n) == 3
 
-        def _has_cf3() -> bool:
-            for i, z in enumerate(numbers):
-                if int(i) in dummy_set or int(z) != 6:
+        carbamate_cn_dih_ok = set()
+        if soft_pyridine_angle and not azo_cnn_ok:
+            bonds = set()
+            cands = []
+            for idh, dihedral in enumerate(self.internals['dihedrals']):
+                idx4 = tuple(int(x) for x in dihedral.indices)
+                if any(x in dummy_set for x in idx4):
                     continue
-                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if len(real) == 4 and sum(int(numbers[nb]) == 9 for nb in real) == 3:
-                    return True
-            return False
-
-        carboxyl_oco_ok = set()
-        if soft_pyridine_angle and not azo_cnn_ok and not _has_cf3():
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _carboxyl_oco(angle)]
-            if 1 <= len(cands) <= 2:
-                carboxyl_oco_ok = set(cands)
+                j, k = idx4[1], idx4[2]
+                if _carbamate_cn_bond(j, k):
+                    bonds.add(tuple(sorted((j, k))))
+                    cands.append(idh)
+            if len(bonds) == 1:
+                carbamate_cn_dih_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4389,9 +4389,6 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in carboxyl_oco_ok:
-                # Carboxyl/ester O–C–O.
-                h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
                 h0[idx] = 0.10 * units.Hartree
@@ -4444,7 +4441,7 @@ class Internals(BaseInternals):
             else:
                 h0[idx] = self._h0_angle(angle)
             idx += 1
-        for dihedral in self.internals['dihedrals']:
+        for idh, dihedral in enumerate(self.internals['dihedrals']):
             if any(j in dummy_set for j in dihedral.indices):
                 windowed = getattr(self, 'windowed_dummy_atoms', set())
                 if (
@@ -4457,6 +4454,9 @@ class Internals(BaseInternals):
                 else:
                     scale = 0.5
                 h0[idx] = scale * units.Hartree
+            elif soft_pyridine_angle and idh in carbamate_cn_dih_ok:
+                # Carbamate C–N torsion (~half Fischer).
+                h0[idx] = 0.005 * units.Hartree
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
             idx += 1
