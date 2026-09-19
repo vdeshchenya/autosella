@@ -6,7 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted. Connected 12≤n_atoms<30
+use a GDIIS cosine floor of 0.85 instead of 0.90. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
@@ -28,8 +29,7 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on at most two alkyl C–O–H angles
-at 4-coordinate carbon.
+oxygen-substituted.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4337,31 +4337,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _alkyl_coh(angle) -> bool:
-            # Alkyl C–O–H at 2-coordinate O with 4-coordinate carbon.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 8:
-                return False
-            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {1, 6}:
-                return False
-            c_idx = ia if za == 6 else ic
-            real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
-            return len(real_c) == 4
-
-        coh_ok = set()
-        if soft_medium_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _alkyl_coh(angle)]
-            if 1 <= len(cands) <= 2:
-                coh_ok = set(cands)
-
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4416,9 +4391,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in coh_ok:
-                # Alkyl C–O–H on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
@@ -6344,8 +6316,9 @@ class Sella(Optimizer):
 
         Cycle 117's 2–4 point milder GDIIS passed train but inflated
         seven valid jobs. Restrict to the two most recent points so the
-        interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90. Accept only when the previous step was well
+        interpolant stays on the last segment.         Keep c_i≥0, ||s_DIIS||≤||s_QN||,
+        and cosine ≥ `_gdiis_cos_min` (0.90 by default; 0.85 on
+        connected 12≤n<30). Accept only when the previous step was well
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
         connected-only.
@@ -6402,7 +6375,8 @@ class Sella(Optimizer):
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
+        cos_min = float(getattr(self, "_gdiis_cos_min", 0.90))
+        if cos < cos_min or cos < 0.0:
             return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
@@ -6627,6 +6601,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
+        n_atoms = len(atomic_numbers)
+        opt._gdiis_cos_min = 0.85 if connected and 12 <= n_atoms < 30 else 0.90
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
