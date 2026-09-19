@@ -6422,7 +6422,10 @@ class Sella(Optimizer):
             return s, smag
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        kw['w_index_value'] = 0.8
+        n_atoms = int(getattr(self, '_n_atoms', intern.natoms))
+        # Cycle 187 global 0.7 extraed n=18 dummy-linear; n<18 keeps 0.8
+        # on 135043047 and tests leftover 252089162 (n=11).
+        kw['w_index_value'] = 0.7 if n_atoms < 18 else 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
@@ -6561,9 +6564,8 @@ class Sella(Optimizer):
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
         if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
-            floor = 0.18 if int(getattr(self, "_n_atoms", 30)) < 18 else 0.15
-            self.delta_min = floor
-            self.delta = max(self.delta, floor)
+            self.delta_min = 0.15
+            self.delta = max(self.delta, 0.15)
 
         # Update trust radius
         if rho is not None:
@@ -6709,9 +6711,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     Internals.soft_phenol_angle_h0_default = not connected
-    n_atoms = len(atomic_numbers)
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
+        n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
@@ -6720,7 +6722,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        opt._n_atoms = n_atoms
+        opt._n_atoms = len(atomic_numbers)
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if not connected:
