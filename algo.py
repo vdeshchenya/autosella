@@ -4560,7 +4560,10 @@ class Internals(BaseInternals):
                     if j in dummy_set or int(numbers[j]) != 8:
                         continue
                     real_o = [o for o in neighbors[j] if int(o) not in dummy_set]
-                    if len(real_o) == 1:
+                    zs = sorted(int(numbers[o]) for o in real_o)
+                    # 1-coord carbonyl, or H-bonded carbonyl (connecting
+                    # internals add N–H···O=C on imidazolium dimers).
+                    if zs == [6] or zs == [1, 6]:
                         return True
                 return False
 
