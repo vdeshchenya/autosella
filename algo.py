@@ -3289,6 +3289,30 @@ for (_z0, _z1), _f in (((13, 18), 0.58), ((31, 36), 0.50), ((49, 54), 0.42),
     _STIFFNESS_SCALE[_z0:_z1 + 1] = _f
 del _z0, _z1, _f
 
+# Local (one-bond) curvature-length slope for the geometry tracking of the
+# stretch part of the model (Internals._h0_stretch_diagonal), per Bohr.
+# The Almlof exponential k = Ab exp(-Bb (r - r_ref)) is a fit of the
+# *equilibrium* force constants of different bonds against their
+# *equilibrium* lengths (Badger's rule, d ln k_e / d r_e = -3 / (r_e - d_ij)
+# = -3.3 ... -4.3 per A for first-row bonds, Bb = 3.7 /A); it is not the
+# curvature-length relation of one bond displaced from its own minimum.
+# That one is the Morse relation k(r) = k_e (2 exp(-2 a dr) - exp(-a dr))
+# with d ln k / d r = -3 a at the minimum (-3.6 a at +0.1 A, -2.7 a at
+# -0.1 A), a = sqrt(k_e / 2 D_e) = 1.8-2.3 /A for the first-row bonds
+# (C-H 1.9, C-C 2.0, C-O 2.1, N-H 2.2, O-H 2.3) and 1.4-2.0 /A for the
+# heavier ones (Si-H 1.6, C-Cl 1.7, C-Br 1.6, S-S 1.7, Cl-Cl 2.0): the local
+# slope is 1.5-2 times Badger's.  Bb / 2 = 0.97 /Bohr = 1.84 /A lies in the
+# middle of these Morse exponents, so the local slope is taken as
+# 3 Bb / 2 = 2.92 /Bohr = 5.5 /A without a new constant.  Used for the
+# covalent bonds (no s-block metal, no dummy atom) of connected systems:
+# the tracked stretch curvature is the start-geometry guess k(r0) moved
+# along the run with exp(-3 Bb / 2 (r - r0)) instead of exp(-Bb (r - r0)).
+# The ion-ligand "bonds" of the s-block complexes (electrostatic, k ~ r^-4,
+# d ln k / dr ~ -2 /A) and the intramolecular bonds of multi-fragment
+# systems (cycle-55 transport, paths kept as they are) keep the Almlof
+# slope.
+_STRETCH_LOCAL_SLOPE = 1.5 * 1.944
+
 class Internals(BaseInternals):
     def __init__(
         self,
@@ -3301,6 +3325,13 @@ class Internals(BaseInternals):
     ) -> None:
         BaseInternals.__init__(self, atoms, dummies, dinds)
         self.atol = atol * np.pi / 180.
+        # Atomic positions at which the stretch guesses were (or will be)
+        # evaluated: the anchor of the local curvature-length tracking of
+        # _h0_stretch_diagonal.  copy() and shadow_copy() share it, a
+        # rebuilt coordinate set (a new Internals at the current geometry,
+        # whose guess is evaluated there) starts a new one.
+        self._stretch_anchor = np.array(self.atoms.positions, dtype=np.float64,
+                                        copy=True)
         self.forbidden = {key: [] for key in self._names}
         if cons is None:
             cons = Constraints(self.atoms, self.dummies, self.dinds)
@@ -3339,6 +3370,7 @@ class Internals(BaseInternals):
             new._internals_set[name] = self._internals_set[name].copy()
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
+        new._stretch_anchor = self._stretch_anchor
         return new
 
     def shadow_copy(self) -> 'Internals':
@@ -3374,6 +3406,7 @@ class Internals(BaseInternals):
         new.internals['rotations'] = rotations
         new.sync_rotation_state(self)
         new.fragment_atom_groups = self.fragment_atom_groups
+        new._stretch_anchor = self._stretch_anchor
         return new
 
     def sync_rotation_state(self, src: 'Internals') -> None:
@@ -4185,11 +4218,13 @@ class Internals(BaseInternals):
         bond: Bond,
         Ab: float = 0.3601,
         Bb: float = 1.944,
+        rij: Optional[float] = None,
     ) -> float:
         idx = np.asarray(bond.indices, dtype=np.int32)
         numbers = self.all_atoms.numbers[idx]
         rcov = _STIFFNESS_RADII[numbers].sum()
-        rij = bond.calc(self.all_atoms)
+        if rij is None:
+            rij = bond.calc(self.all_atoms)
         h0 = Ab * np.exp(-Bb * (rij - rcov) / units.Bohr)
         if (self.ntrans + self.nrotations) == 0 and numbers.min() > 0:
             # Connected system, bond between real atoms: the row factors of
@@ -4201,21 +4236,46 @@ class Internals(BaseInternals):
         """The Almlof stretch guesses of the bonds at the current geometry
         as a vector over the internal coordinates (zero elsewhere).
 
-        The exponential of _h0_bond is the local curvature-length relation
-        of a bond (Badger's rule: d ln k / dr = -3 / (r - d_ij), i.e.
-        -3.3 to -4.3 per Angstrom for first-row bonds, against Bb = 3.7),
-        so a bond that relaxes by 0.1 A during the run is 30-45 % stiffer
-        or softer at the end than the start-geometry guess says.  InternalPES
-        moves this part of the model with the geometry and transports the
-        secant pairs with it (see InternalPES._track_analytic_model).
+        A bond that relaxes by 0.1 A during the run is 40-75 % stiffer or
+        softer at the end than the start-geometry guess says (Morse: 0.51
+        k_e at +0.1 A, 1.76 k_e at -0.1 A).  InternalPES moves this part of
+        the model with the geometry and transports the secant pairs with it
+        (see InternalPES._track_analytic_model).  For the covalent bonds of
+        a connected system the tracked value is the start-geometry guess
+        k(r0) moved with the local one-bond slope, k(r0) exp(-3 Bb / 2
+        (r - r0)) (see _STRETCH_LOCAL_SLOPE: the Almlof exponential itself
+        is Badger's rule across bonds, 1.5-2 times shallower than the
+        Morse relation of one bond); r0 is the length at the anchor
+        geometry (_stretch_anchor, the positions at which the guess was
+        evaluated), so the tracked model equals the guess there.  Bonds to
+        dummy atoms, ion-ligand bonds of the s-block metals and all bonds
+        of multi-fragment systems keep the Almlof exponential of _h0_bond.
         """
         h = np.zeros(self.nint, dtype=np.float64)
         idx = len(self.internals['translations'])
         bonds = self.internals['bonds']
         if idx + len(bonds) > self.nint:
             return None
+        anchor = None
+        if (self.ntrans + self.nrotations) == 0:
+            anchor = getattr(self, '_stretch_anchor', None)
+            if (anchor is None or anchor.ndim != 2
+                    or anchor.shape[0] != self.natoms):
+                anchor = None
+        numbers_all = self.all_atoms.numbers
         for bond in bonds:
             h[idx] = self._h0_bond(bond)
+            if anchor is not None:
+                i, j = bond.indices
+                if (i < self.natoms and j < self.natoms
+                        and numbers_all[i] > 0 and numbers_all[j] > 0
+                        and _ION_CHARGE[numbers_all[i]] == 0
+                        and _ION_CHARGE[numbers_all[j]] == 0):
+                    r0 = float(np.linalg.norm(anchor[i] - anchor[j]))
+                    r = bond.calc(self.all_atoms)
+                    if np.isfinite(r0) and r0 > 0.:
+                        h[idx] = self._h0_bond(bond, rij=r0) * np.exp(
+                            -_STRETCH_LOCAL_SLOPE * (r - r0) / units.Bohr)
             idx += 1
         return h
 
@@ -7030,9 +7090,12 @@ class InternalPES(PES):
         contribution averaged over the step just taken).
 
         _track_nonlocal_contacts does this for the contact block alone.
-        Here the stretch diagonal moves too: the Almlof exponential is the
-        local curvature-length relation of a bond (Badger's rule), so after
-        a bond has relaxed by 0.1 A the start-geometry constant is 30-45 %
+        Here the stretch diagonal moves too: the curvature of a bond falls
+        or rises with its length (the Morse relation, local slope 3 a =
+        5-6 /A; _h0_stretch_diagonal moves the covalent bonds of connected
+        systems with 3 Bb / 2 = 5.5 /A from the anchor geometry and the
+        other bonds with the Almlof exponential, Bb = 3.7 /A), so after
+        a bond has relaxed by 0.1 A the start-geometry constant is 40-75 %
         off; the secant pairs, being path averages, lag behind the local
         curvature by half the change per step.  Shifting the model alone
         would not help along the sampled directions, because the update
