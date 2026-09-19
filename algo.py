@@ -4571,10 +4571,13 @@ class Internals(BaseInternals):
 
         amide_het_ok = set()
         if soft_phenol_angle:
-            has_het_n = any(
-                _pyridine_cnc(ang) or _pyrrole_cnc(ang)
-                for ang in self.internals['angles'])
-            if has_het_n:
+            has_pyridine = any(_pyridine_cnc(ang)
+                               for ang in self.internals['angles'])
+            has_pyrrole = any(_pyrrole_cnc(ang)
+                              for ang in self.internals['angles'])
+            # Mixed pyridine+pyrrole dimers extraed valid amides–pyrrole
+            # (cycle 445); train saves have exactly one partner class.
+            if has_pyridine ^ has_pyrrole:
                 cands = [ia for ia, angle in enumerate(self.internals['angles'])
                          if _amide_cnc(angle)]
                 if 1 <= len(cands) <= 2:
