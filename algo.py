@@ -4107,7 +4107,8 @@ class Internals(BaseInternals):
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
-            if int(numbers[icen]) != 7 or int(nbonds[icen]) != 2:
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if int(numbers[icen]) != 7 or len(real_n) != 2:
                 return False
             if int(numbers[ia]) != 6 or int(numbers[ic]) != 6:
                 return False
@@ -6422,10 +6423,7 @@ class Sella(Optimizer):
             return s, smag
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        n_atoms = int(getattr(self, '_n_atoms', intern.natoms))
-        # Cycle 187 global 0.7 extraed n=18 dummy-linear; n<18 keeps 0.8
-        # on 135043047 and tests leftover 252089162 (n=11).
-        kw['w_index_value'] = 0.7 if n_atoms < 8 else 0.8
+        kw['w_index_value'] = 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
@@ -6722,7 +6720,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        opt._n_atoms = len(atomic_numbers)
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if not connected:
