@@ -20,10 +20,11 @@ dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
+guanidinium (≥3 N neighbors), on at most two 4-coordinate O–C–C
 ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
-cyclic ethers, and on at most two carboxyl/ester
-Cα C–C–N angles. Dimers that contain a 1-coordinate
+cyclic ethers, on at most two carboxyl/ester
+Cα C–C–N angles, and on at most two 4-coordinate thioether
+S–C–C angles (2-coordinate S bonded to two carbons). Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
 3-coordinate with exactly one oxygen).
@@ -4245,6 +4246,36 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 carboxyl_ccn_ok = set(cands)
 
+        def _thioether_scc(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            n_s = sum(int(numbers[nb]) == 16 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
+            if n_s != 1 or n_c != 2 or n_h != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 16}:
+                return False
+            s_idx = ia if za == 16 else ic
+            real_s = [nb for nb in neighbors[s_idx] if int(nb) not in dummy_set]
+            return (len(real_s) == 2
+                    and all(int(numbers[nb]) == 6 for nb in real_s))
+
+        thioether_scc_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _thioether_scc(angle)]
+            if 1 <= len(cands) <= 2:
+                thioether_scc_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4293,6 +4324,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in thioether_scc_ok:
+                # Thioether S–C–C at 4-coordinate carbon.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
