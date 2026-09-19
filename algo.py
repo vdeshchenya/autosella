@@ -4,7 +4,7 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps, except connected n_atoms<30 with
-dummy atoms which use 0.20. Connected dummy-atom dihedral
+dummy atoms which use 0.18. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -27,7 +27,9 @@ ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-subst
 cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
-N–N edge lies in a 5-membered ring of only C and N.
+N–N edge lies in a 5-membered ring of only C and N,
+and on at most two 2-coordinate C–O–C ethers whose carbon
+neighbor is 3-coordinate and bromine-substituted.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
 oxygen-substituted.
@@ -4311,6 +4313,36 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
+        def _bromo_coc(angle) -> bool:
+            # 2-coordinate ether C–O–C; Br on a 3-coordinate carbon
+            # (cycle 408 extra was 4-coordinate alkyl bromo-ether).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 8:
+                return False
+            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_o) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            for c_idx in (ia, ic):
+                real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+                if len(real_c) != 3:
+                    continue
+                if any(int(numbers[nb]) == 35 for nb in real_c):
+                    return True
+            return False
+
+        bromo_coc_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _bromo_coc(angle)]
+            if 1 <= len(cands) <= 2:
+                bromo_coc_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4389,6 +4421,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in bromo_coc_ok:
+                # Aryl/vinyl bromo-ether C–O–C (3-coordinate Br carbon).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
@@ -6445,7 +6480,7 @@ class Sella(Optimizer):
             intern = getattr(self.pes, "int", None)
             n_atoms = int(getattr(intern, "natoms", 30)) if intern is not None else 30
             ndummies = int(getattr(intern, "ndummies", 0)) if intern is not None else 0
-            floor = 0.20 if n_atoms < 30 and ndummies > 0 else 0.15
+            floor = 0.18 if n_atoms < 30 and ndummies > 0 else 0.15
             self.delta_min = floor
             self.delta = max(self.delta, floor)
 
