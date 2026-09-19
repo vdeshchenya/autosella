@@ -4410,12 +4410,43 @@ class Internals(BaseInternals):
                         return False
             return True
 
+        def _isolated_csc_mixed(angle) -> bool:
+            # Isolated alkyl–aryl sulfide: one 3-coord and one 4-coord carbon,
+            # C/H only besides the sulfide sulfur.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 16:
+                return False
+            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_s) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            degs = []
+            for c_idx in (ia, ic):
+                real_c = [nb for nb in neighbors[c_idx]
+                          if int(nb) not in dummy_set]
+                degs.append(len(real_c))
+                for nb in real_c:
+                    if int(nb) == icen:
+                        continue
+                    if int(numbers[nb]) not in (1, 6):
+                        return False
+            return sorted(degs) == [3, 4]
+
         isolated_csc_ok = set()
         if soft_pyridine_angle and not hetero_coc_ok:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+            both3 = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _isolated_csc(angle)]
-            if 1 <= len(cands) <= 2:
-                isolated_csc_ok = set(cands)
+            if 1 <= len(both3) <= 2:
+                mixed = [ia for ia, angle in enumerate(self.internals['angles'])
+                         if _isolated_csc_mixed(angle)]
+                cands = both3 + mixed
+                if 1 <= len(cands) <= 2:
+                    isolated_csc_ok = set(cands)
 
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
