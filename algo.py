@@ -5579,6 +5579,17 @@ _SYM_STEP_FRAC = 0.5   # ... or when it is below this fraction of the rms step j
 _SYM_MAX_PERM = 48     # permutations kept per search
 _SYM_MAX_NODES = 20000  # backtracking nodes per search
 
+# Self-calibrated stretch transport of the secant pairs of connected systems
+# (PES._collect_secant_pairs, PES._stretch_calibration): the stretch part of
+# the analytic transport of a pair is scaled by the pair's own ratio of the
+# measured to the modelled curvature energy on its bond block, clipped to
+# this range.  The Almlof exponential is the shape of a bond's
+# curvature-length relation; its magnitude is a first-row calibration that
+# is 1.2-2x off on bonds to the heavier p-block elements even after the row
+# factors (cycles 57 / 64 / 66 / 106), and the additive transport moves a
+# pair by the model's magnitude, not the bond's.
+_STRETCH_CALIB = (0.5, 2.0)
+
 
 def _isometric_permutations(numbers, pos, tol, max_perm=_SYM_MAX_PERM,
                             max_nodes=_SYM_MAX_NODES):
@@ -5949,21 +5960,50 @@ class PES:
 
         self.curr['L'] = L
 
-    def _update_H(self, dx, dg, T_now=None, tbar=None, images=None):
+    def _update_H(self, dx, dg, T_now=None, tbar=None, images=None,
+                  Ts_now=None, tsbar=None, calib=None):
         if self.last['x'] is None or self.last['g'] is None:
             return
         if self.secant_memory <= 1 or not self.H.initialized:
             if T_now is not None and tbar is not None:
+                c = self._stretch_calibration(dx, dg, tsbar, calib)
                 dg = np.asarray(dg, dtype=np.float64) + (T_now @ dx - tbar)
+                if c != 1.0 and Ts_now is not None and tsbar is not None:
+                    dg = dg + (c - 1.0) * (Ts_now @ dx - tsbar)
             self.H.update(dx, dg)
             return
-        S, Y = self._collect_secant_pairs(dx, dg, T_now, tbar, images)
+        S, Y = self._collect_secant_pairs(dx, dg, T_now, tbar, images,
+                                          Ts_now, tsbar, calib)
         if S is None:
             return
         self.H.update(S, Y)
 
+    @staticmethod
+    def _stretch_calibration(dx, dg, tsbar, calib) -> float:
+        """Calibration factor of the stretch transport of a secant pair
+        (dx, dg): the measured curvature energy of the step on its bond
+        block, dg[calib].dx[calib], over the modelled one, (T_s,avg dx)
+        [calib].dx[calib] with T_s,avg the path average of the stretch
+        part of the analytic model (tsbar), clipped to _STRETCH_CALIB.
+        Returns 1 (the plain additive transport) when the calibration is
+        off (calib None), the stretch part is unavailable, or the modelled
+        bond-block energy is not positive.
+        """
+        if calib is None or tsbar is None:
+            return 1.0
+        sb = np.asarray(dx, dtype=np.float64)[calib]
+        e_mod = float(sb @ np.asarray(tsbar, dtype=np.float64)[calib])
+        if not np.isfinite(e_mod) or e_mod <= 0.0:
+            return 1.0
+        e_meas = float(sb @ np.asarray(dg, dtype=np.float64)[calib])
+        if not np.isfinite(e_meas):
+            return 1.0
+        return float(min(max(e_meas / e_mod, _STRETCH_CALIB[0]),
+                         _STRETCH_CALIB[1]))
+
     def _collect_secant_pairs(self, dx, dg, T_now=None, tbar=None,
-                              images=None):
+                              images=None, Ts_now=None, tsbar=None,
+                              calib=None):
         """Return (S, Y) column matrices of the recent secant pairs.
 
         The newest pair is column 0 (symmetrize_Y2 keeps column 0 exact and
@@ -5996,32 +6036,60 @@ class PES:
         segment (which the update would otherwise re-impose along the
         sampled directions, undoing the shift of the model there).  tbar is
         T_avg s for the new pair; T_now is T(x); both None disables it.
+
+        Self-calibrated stretch transport (connected systems, calib = the
+        bond slice of the coordinate vector; None disables it): the
+        transport above moves a pair by the model's magnitude, so where
+        the Almlof stretch constant of a bond is off by the factor 1/c
+        (1.2-2x on bonds outside the first row, cycles 57 / 64 / 66 / 106)
+        the transported pair is off by (1 - c)(T_s(x) - T_s,avg,j) s_j --
+        for a bond 2x too stiff in the model that lengthens by 0.15 A in
+        a step, a third too soft after that step and of the wrong sign
+        once the bond has relaxed by a further 0.2 A -- while the shape
+        of the exponential is generic.  The pair itself measures the
+        magnitude along its own step: c_j = (y_j.s_j)_bonds /
+        (T_s,avg,j s_j . s_j)_bonds (PES._stretch_calibration, clipped to
+        _STRETCH_CALIB), and its stretch transport is scaled with it,
+        y_j -> y_j + (T(x) - T_avg,j) s_j + (c_j - 1)(T_s(x) - T_s,avg,j)
+        s_j (T_s the projected stretch diagonal, the contact block is
+        left additive), which is exact for a bond whose curvature is
+        c_j times the model's along the whole path.  c_j is a property
+        of the pair (stored with it, invariant under the symmetry images).
         """
         dx = np.asarray(dx, dtype=np.float64)
         dg = np.asarray(dg, dtype=np.float64)
         nrm = np.linalg.norm(dx)
         if not np.isfinite(nrm) or nrm < 1e-8 or not np.all(np.isfinite(dg)):
             return None, None
+        c = self._stretch_calibration(dx, dg, tsbar, calib)
         if tbar is not None:
             tbar = np.asarray(tbar, dtype=np.float64) / nrm
             if not np.all(np.isfinite(tbar)):
                 tbar = None
-        self._secant_pairs.insert(0, (dx / nrm, dg / nrm, tbar))
+        if tsbar is not None:
+            tsbar = np.asarray(tsbar, dtype=np.float64) / nrm
+            if not np.all(np.isfinite(tsbar)):
+                tsbar = None
+        if tbar is None or tsbar is None:
+            c = 1.0
+        self._secant_pairs.insert(0, (dx / nrm, dg / nrm, tbar, tsbar, c))
         del self._secant_pairs[self.secant_memory:]
         n = len(dx)
         candidates = []
-        for s, y, tb in self._secant_pairs:
-            candidates.append((s, y, tb))
+        for s, y, tb, tbs, c in self._secant_pairs:
+            candidates.append((s, y, tb, tbs, c))
             if not images or len(s) != n:
                 continue
             for image in images:
-                candidates.append(image(s, y, tb))
+                candidates.append(image(s, y, tb, tbs, c))
         basis = []
         S_cols = []
         Y_cols = []
-        for s, y, tb in candidates:
+        for s, y, tb, tbs, c in candidates:
             if tb is not None and T_now is not None:
                 y = y + (T_now @ s - tb)
+                if c != 1.0 and tbs is not None and Ts_now is not None:
+                    y = y + (c - 1.0) * (Ts_now @ s - tbs)
             r = s.copy()
             for q in basis:
                 r -= (q @ r) * q
@@ -6817,10 +6885,12 @@ class InternalPES(PES):
         self._nb_prev = Hnb
 
     @staticmethod
-    def _analytic_model_from(int_obj, Q, Binv) -> Optional[np.ndarray]:
-        """T(x) of the Internals object int_obj at its current positions,
-        given the orthonormal range basis Q and the pseudo-inverse Binv of
-        its Jacobian (see _analytic_model)."""
+    def _analytic_model_from(int_obj, Q, Binv):
+        """(T(x), T_s(x)) of the Internals object int_obj at its current
+        positions, given the orthonormal range basis Q and the
+        pseudo-inverse Binv of its Jacobian (see _analytic_model); T_s is
+        the projected stretch diagonal alone (T without the contact
+        block).  None when either part cannot be evaluated."""
         if Q is None or Binv is None:
             return None
         try:
@@ -6830,19 +6900,21 @@ class InternalPES(PES):
         d = int_obj._h0_stretch_diagonal()
         if d is None or Q.ndim != 2 or Q.shape[0] != d.shape[0]:
             return None
-        T = Q @ ((Q.T * d) @ Q) @ Q.T
+        Ts = Q @ ((Q.T * d) @ Q) @ Q.T
+        T = Ts
         if Hnb is not None and Hnb.shape == T.shape:
             T = T + Hnb
         if not np.all(np.isfinite(T)):
             return None
-        return T
+        return T, Ts
 
-    def _analytic_model(self) -> Optional[np.ndarray]:
+    def _analytic_model(self):
         """The geometry-dependent analytic part T(x) of the model Hessian
         at the current geometry (nint x nint): the Almlof stretch diagonal
         of the bonds, projected like the guess (P diag(d) P with P = Q Q^T
         the projector onto the range of the Jacobian), plus the non-local
-        contact block of _h0_nonlocal_contacts.
+        contact block of _h0_nonlocal_contacts.  Returned as the pair
+        (T, T_s) with T_s the stretch part alone (_analytic_model_from).
         """
         try:
             Binv = self._get_Binv()
@@ -6873,11 +6945,11 @@ class InternalPES(PES):
             Binv = np.linalg.pinv(B, rcond=1e-6)
         return Q, Binv
 
-    def _analytic_model_at(self, pos_prev, dpos_prev, frac) -> Optional[np.ndarray]:
-        """T on the Cartesian straight line from the previous geometry
-        (pos_prev, dpos_prev: atoms and dummies) to the current one, at the
-        fraction frac of the step, evaluated with a shadow copy of the
-        internal coordinates."""
+    def _analytic_model_at(self, pos_prev, dpos_prev, frac):
+        """(T, T_s) on the Cartesian straight line from the previous
+        geometry (pos_prev, dpos_prev: atoms and dummies) to the current
+        one, at the fraction frac of the step, evaluated with a shadow copy
+        of the internal coordinates."""
         pos_now = self.atoms.positions
         dpos_now = self.dummies.positions
         if pos_prev.shape != pos_now.shape or dpos_prev.shape != dpos_now.shape:
@@ -7001,33 +7073,41 @@ class InternalPES(PES):
             return None
         return dA_g, dA_e
 
-    def _analytic_model_average(self, T_prev, T_now, pos_prev, dpos_prev):
-        """Path average of T over the step just taken: composite Simpson
-        on the Cartesian straight line, with enough panels (at most four)
-        that no panel spans more than 0.4 A of atomic displacement, i.e.
-        at most 0.8 A of any distance -- b dr <= 3 for the exponent
-        b = 3.7/A of the stretch and contact terms, where Simpson's error
-        is below 1 % of the larger end value.  Falls back to the endpoint
-        average when an interior point is unavailable.
+    def _analytic_model_average(self, M_prev, M_now, pos_prev, dpos_prev):
+        """Path average of T (and of its stretch part T_s, M = (T, T_s))
+        over the step just taken: composite Simpson on the Cartesian
+        straight line, with enough panels (at most four) that no panel
+        spans more than 0.4 A of atomic displacement, i.e. at most 0.8 A
+        of any distance -- b dr <= 3 for the exponent b = 3.7/A of the
+        stretch and contact terms, where Simpson's error is below 1 % of
+        the larger end value.  Falls back to the endpoint average when an
+        interior point is unavailable.
         """
+        T_prev, Ts_prev = M_prev
+        T_now, Ts_now = M_now
         pos_now = self.atoms.positions
         if pos_prev.shape != pos_now.shape:
-            return 0.5 * (T_prev + T_now)
+            return 0.5 * (T_prev + T_now), 0.5 * (Ts_prev + Ts_now)
         dmax = float(np.max(np.linalg.norm(pos_now - pos_prev, axis=1))) if len(pos_now) else 0.
         npanel = int(min(4, max(1, np.ceil(dmax / 0.4))))
         acc = T_prev + T_now
+        acc_s = Ts_prev + Ts_now
         for i in range(1, 2 * npanel):
-            T_i = self._analytic_model_at(pos_prev, dpos_prev, i / (2. * npanel))
-            if T_i is None or T_i.shape != T_now.shape:
-                return 0.5 * (T_prev + T_now)
-            acc = acc + (4.0 if i % 2 else 2.0) * T_i
-        return acc / (6.0 * npanel)
+            M_i = self._analytic_model_at(pos_prev, dpos_prev, i / (2. * npanel))
+            if M_i is None or M_i[0].shape != T_now.shape:
+                return 0.5 * (T_prev + T_now), 0.5 * (Ts_prev + Ts_now)
+            w = 4.0 if i % 2 else 2.0
+            acc = acc + w * M_i[0]
+            acc_s = acc_s + w * M_i[1]
+        return acc / (6.0 * npanel), acc_s / (6.0 * npanel)
 
     def _track_analytic_model(self, dx):
         """Move the analytic part T(x) of the model Hessian to the current
-        geometry, H <- H + T(x) - T(x_prev), and return (T(x), tbar) for
-        the transport of the secant pairs (tbar = T_avg dx, the analytic
-        contribution averaged over the step just taken).
+        geometry, H <- H + T(x) - T(x_prev), and return (T(x), tbar,
+        T_s(x), tsbar) for the transport of the secant pairs (tbar =
+        T_avg dx, the analytic contribution averaged over the step just
+        taken; T_s and tsbar the same for the stretch part alone, used by
+        the self-calibrated transport of PES._collect_secant_pairs).
 
         _track_nonlocal_contacts does this for the contact block alone.
         Here the stretch diagonal moves too: the Almlof exponential is the
@@ -7065,30 +7145,35 @@ class InternalPES(PES):
         correct; the transport gives the endgame the contact curvature of
         the current geometry instead of the approach-phase average.
         """
+        none = (None, None, None, None)
         if self.H.B is None:
-            return None, None
-        T_now = self._analytic_model()
+            return none
+        M_now = self._analytic_model()
         shape = self.H.B.shape
-        if T_now is None or T_now.shape != shape:
-            return None, None
-        T_prev = self._an_prev
+        if M_now is None or M_now[0].shape != shape:
+            return none
+        T_now, Ts_now = M_now
+        M_prev = self._an_prev
         pos_prev = self._pos_prev
-        self._an_prev = T_now
+        self._an_prev = M_now
         self._pos_prev = (self.atoms.positions.copy(),
                           self.dummies.positions.copy())
-        if T_prev is None or T_prev.shape != shape:
-            return None, None
+        if M_prev is None or M_prev[0].shape != shape:
+            return none
+        T_prev, Ts_prev = M_prev
         dA = T_now - T_prev
         if not np.all(np.isfinite(dA)):
-            return None, None
+            return none
         self.H.set_B(self.H.B + dA)
         dx = np.asarray(dx, dtype=np.float64)
         if pos_prev is not None:
-            T_avg = self._analytic_model_average(T_prev, T_now, *pos_prev)
+            T_avg, Ts_avg = self._analytic_model_average(M_prev, M_now, *pos_prev)
         else:
             T_avg = 0.5 * (T_prev + T_now)
+            Ts_avg = 0.5 * (Ts_prev + Ts_now)
         tbar = T_avg @ dx
-        return T_now, tbar
+        tsbar = Ts_avg @ dx
+        return T_now, tbar, Ts_now, tsbar
 
     def _symmetry_images(self):
         """Image maps of the secant pairs under the point-group operations
@@ -7158,8 +7243,12 @@ class InternalPES(PES):
                 wa = (w @ Ba).reshape((-1, 3))
                 return (wa[perm] @ Rt).ravel() @ Binva
 
-            def image(s, y, tb):
-                return disp(s), cov(y), (None if tb is None else cov(tb))
+            def image(s, y, tb, tbs, c):
+                # The transport terms map like the gradient change; the
+                # calibration factor of the stretch transport is a scalar
+                # of the pair and invariant under the operation.
+                return (disp(s), cov(y), (None if tb is None else cov(tb)),
+                        (None if tbs is None else cov(tbs)), c)
 
             return image
 
@@ -7168,8 +7257,18 @@ class InternalPES(PES):
     def _update_H(self, dx, dg):
         images = self._symmetry_images()
         if getattr(self, '_transport', False):
-            T_now, tbar = self._track_analytic_model(dx)
-            PES._update_H(self, dx, dg, T_now, tbar, images)
+            T_now, tbar, Ts_now, tsbar = self._track_analytic_model(dx)
+            # Self-calibrated stretch transport for connected systems
+            # (PES._collect_secant_pairs): the bond slice of the coordinate
+            # vector (order translations, bonds, angles, dihedrals, other,
+            # rotations).  The fragments of multi-fragment systems keep the
+            # plain additive transport of cycle 55.
+            calib = None
+            if (self.int.ntrans + self.int.nrotations) == 0:
+                calib = slice(self.int.ntrans,
+                              self.int.ntrans + self.int.nbonds)
+            PES._update_H(self, dx, dg, T_now, tbar, images,
+                          Ts_now=Ts_now, tsbar=tsbar, calib=calib)
             return
         self._track_nonlocal_contacts()
         PES._update_H(self, dx, dg, images=images)
