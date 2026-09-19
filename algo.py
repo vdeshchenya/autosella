@@ -28,8 +28,10 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on at most two 4-coordinate alcohol
-O–C–C angles whose carbon terminal is 3-coordinate.
+oxygen-substituted, and on at most two pyridine/imidazole
+N-oxide O–N–C angles (3-coordinate N bonded to two carbons
+and one terminal oxygen). Connected 30≤n_atoms<80 use the
+same N-oxide O–N–C 0.10 Ha class.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4337,37 +4339,35 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _alcohol_occ(angle) -> bool:
-            # 4-coordinate alcohol O–C–C with a 3-coordinate carbon terminal.
+        def _noxide_onc(angle) -> bool:
+            # Pyridine/imidazole N-oxide O–N–C: 3-coord N {C, C, O},
+            # terminal oxygen (GAFF c3-n4-o).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 6:
+            if int(numbers[icen]) != 7:
                 return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
+                return False
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_n)
+            if n_c != 2 or n_o != 1:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
             if {za, zc} != {6, 8}:
                 return False
             o_idx = ia if za == 8 else ic
-            c_term = ic if za == 8 else ia
             real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
-                return False
-            if not any(int(numbers[nb]) == 1 for nb in real_o):
-                return False
-            real_term = [nb for nb in neighbors[c_term]
-                         if int(nb) not in dummy_set]
-            return len(real_term) == 3
+            return len(real_o) == 1
 
-        alcohol_occ_ok = set()
-        if soft_medium_angle:
+        noxide_ok = set()
+        if soft_pyridine_angle or soft_medium_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _alcohol_occ(angle)]
+                     if _noxide_onc(angle)]
             if 1 <= len(cands) <= 2:
-                alcohol_occ_ok = set(cands)
+                noxide_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4424,8 +4424,8 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in alcohol_occ_ok:
-                # Allylic/vinyl alcohol O–C–C on 12≤n<30.
+            elif (soft_pyridine_angle or soft_medium_angle) and ia in noxide_ok:
+                # Pyridine/imidazole N-oxide O–N–C on 12≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
