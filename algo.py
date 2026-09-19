@@ -4573,11 +4573,11 @@ class Internals(BaseInternals):
         if soft_phenol_angle:
             has_pyridine = any(_pyridine_cnc(ang)
                                for ang in self.internals['angles'])
-            has_pyrrole = any(_pyrrole_cnc(ang)
-                              for ang in self.internals['angles'])
-            # Mixed pyridine+pyrrole dimers extraed valid amides–pyrrole
-            # (cycle 445); train saves have exactly one partner class.
-            if has_pyridine ^ has_pyrrole:
+            n_pyrrole = sum(1 for ang in self.internals['angles']
+                            if _pyrrole_cnc(ang))
+            # Imidazolium has two 3-coord ring C–N–C; a single pyrrole has
+            # one (cycle 445/446 valid extra).
+            if has_pyridine or n_pyrrole == 2:
                 cands = [ia for ia, angle in enumerate(self.internals['angles'])
                          if _amide_cnc(angle)]
                 if 1 <= len(cands) <= 2:
