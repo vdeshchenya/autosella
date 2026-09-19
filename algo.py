@@ -4462,7 +4462,7 @@ class Internals(BaseInternals):
             return {za, zc} == {6, 16}
 
         ssc_ok = set()
-        if soft_medium_angle and not css_ok:
+        if soft_medium_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _ssc(angle)]
             if 1 <= len(cands) <= 2:
