@@ -4444,6 +4444,33 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
+        def _alcohol_occ(angle) -> bool:
+            # 4-coordinate alcohol O–C–C (GAFF c3-c3-oh).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 8}:
+                return False
+            o_idx = ia if za == 8 else ic
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            if len(real_o) != 2:
+                return False
+            return any(int(numbers[nb]) == 1 for nb in real_o)
+
+        alcohol_occ_ok = set()
+        if soft_dummy_angle and int(self.natoms) < 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _alcohol_occ(angle)]
+            if 1 <= len(cands) <= 2:
+                alcohol_occ_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4507,6 +4534,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_dummy_angle and ia in alcohol_occ_ok:
+                # 4-coordinate alcohol O–C–C on connected n<18.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
@@ -5704,7 +5734,6 @@ class QuasiNewton(BaseStepper):
     alphamin = 0.
     alphamax = np.inf
     slope = -1
-    eig_shift_eps = 0.0
     synonyms = [
         'qn',
         'quasi-newton',
@@ -5732,12 +5761,6 @@ class QuasiNewton(BaseStepper):
 
         self.ones = np.ones_like(self.L)
         self.ones[:self.order] = -1
-        eps = float(getattr(QuasiNewton, 'eig_shift_eps', 0.0) or 0.0)
-        if eps > 0.0 and self.order == 0:
-            lmin = float(np.min(np.abs(self.L)))
-            if lmin < eps:
-                self.L = np.array(self.L, dtype=np.float64, copy=True)
-                self.L += (eps - lmin)
 
     def get_s(self, alpha: float) -> Tuple[np.ndarray, np.ndarray]:
         denom = self.L + alpha * self.ones
@@ -6359,36 +6382,25 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             step_method = 'rfo'
 
-        prev_eps = QuasiNewton.eig_shift_eps
-        n_atoms = getattr(self, '_n_atoms', None)
-        if (
-            getattr(self, '_allow_angle_wa', False)
-            and n_atoms is not None
-            and 30 <= int(n_atoms) < 80
-        ):
-            QuasiNewton.eig_shift_eps = 0.001
-        try:
-            if self.pes.cons.has_inequalities():
-                all_valid = False
-                while not all_valid:
-                    s, smag = self.rs(
-                        self.pes, self.ord, self.delta, method=step_method,
-                        **rs_kwargs
-                    ).get_s()
-                    self.pes.set_x(x0 + s)
-                    all_valid = self.pes.cons.validate_inequalities()
-                    self.pes._update_basis()
-                    self.pes.restore()
-                self.pes._update_basis()
-            else:
+        if self.pes.cons.has_inequalities():
+            all_valid = False
+            while not all_valid:
                 s, smag = self.rs(
                     self.pes, self.ord, self.delta, method=step_method,
                     **rs_kwargs
                 ).get_s()
+                self.pes.set_x(x0 + s)
+                all_valid = self.pes.cons.validate_inequalities()
+                self.pes._update_basis()
+                self.pes.restore()
+            self.pes._update_basis()
+        else:
+            s, smag = self.rs(
+                self.pes, self.ord, self.delta, method=step_method,
+                **rs_kwargs
+            ).get_s()
 
-            s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
-        finally:
-            QuasiNewton.eig_shift_eps = prev_eps
+        s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
         return self._maybe_gdiis(s, smag)
 
     def _dummy_dihedral_s_indices(self, intern):
@@ -6737,10 +6749,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected:
-            opt._n_atoms = n_atoms
-            if 18 <= n_atoms < 20:
-                opt.pes.exact_geodesic = True
+        if connected and 18 <= n_atoms < 20:
+            opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
