@@ -6,7 +6,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with at most 18 atoms or
+when the previous ratio ρ was well predicted, except connected
+n_atoms==18 jobs which keep the QN step. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
@@ -6226,6 +6227,13 @@ class Sella(Optimizer):
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
+        # Cycle 370: skip GDIIS on connected n_atoms==18. Dummy-angle 0.10
+        # extras hexanitrosobenzene (135043047, 43 vs 40); the interpolant
+        # after step 20 may be the leftover cost rather than unused
+        # valence-angle H0. n=18 is the dummy-angle hole that size cuts
+        # must not fill (237, 277, 369).
+        if getattr(self, "_allow_angle_wa", False) and getattr(self, "_n_atoms", 0) == 18:
+            return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
@@ -6489,17 +6497,18 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe = Internals(atoms.copy(), allow_fragments=True)
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
+    n_atoms = len(atomic_numbers)
     Internals.soft_phenol_angle_h0_default = not connected
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
-        n_atoms = len(atomic_numbers)
-        Internals.soft_dummy_angle_h0_default = n_atoms <= 18 or n_atoms >= 30
+        Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
+        opt._n_atoms = n_atoms
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
