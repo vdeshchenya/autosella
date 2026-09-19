@@ -33,8 +33,8 @@ N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
 oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
-on at most two aldehyde O–C–C angles at 3-coordinate carbon
-bonded to O, C, and H.
+on at most two aldehyde O–C–C / O–C–H angles at 3-coordinate
+carbon bonded to O, C, and H.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4446,8 +4446,8 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _aldehyde_occ(angle) -> bool:
-            # Aldehyde O–C–C at 3-coordinate carbon {O, C, H}.
+        def _aldehyde_angle(angle) -> bool:
+            # Aldehyde O–C–C or O–C–H at 3-coordinate carbon {O, C, H}.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4461,12 +4461,12 @@ class Internals(BaseInternals):
             if zs.count(8) != 1 or zs.count(6) != 1 or zs.count(1) != 1:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 8}
+            return {za, zc} in ({6, 8}, {1, 8})
 
         aldehyde_ok = set()
         if soft_medium_angle and int(self.natoms) >= 18:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _aldehyde_occ(angle)]
+                     if _aldehyde_angle(angle)]
             if 1 <= len(cands) <= 2:
                 aldehyde_ok = set(cands)
 
@@ -4535,7 +4535,7 @@ class Internals(BaseInternals):
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in aldehyde_ok:
-                # Aldehyde O–C–C on connected 18≤n<30.
+                # Aldehyde O–C–C / O–C–H on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
