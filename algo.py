@@ -6,7 +6,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted. Connected molecules with at most 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
@@ -21,8 +21,8 @@ dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
-ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si, N-substituted fused-aryl 4-/5-membered
-cyclic ethers, and methoxy O–CH3, and on at most two carboxyl/ester
+ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
+cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles. Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4196,17 +4196,6 @@ class Internals(BaseInternals):
                         return True
             return False
 
-        def _methoxy_ether(angle) -> bool:
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            o_idx = ia if int(numbers[ia]) == 8 else ic
-            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            other = next(int(nb) for nb in real_o if int(nb) != icen)
-            real_other = [nb for nb in neighbors[other]
-                          if int(nb) not in dummy_set]
-            return (int(numbers[other]) == 6 and len(real_other) == 4
-                    and sum(int(numbers[nb]) == 1 for nb in real_other) == 3)
-
         oxazolidinone_occ_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
@@ -4218,7 +4207,6 @@ class Internals(BaseInternals):
                     and not _siloxane_oxygen(self.internals['angles'][ia])
                     and not _fused_small_cyclic_ether(
                         self.internals['angles'][ia])
-                    and not _methoxy_ether(self.internals['angles'][ia])
                 }
 
         def _carboxyl_carbon(cn) -> bool:
@@ -6505,7 +6493,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
-        Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
+        Internals.soft_dummy_angle_h0_default = n_atoms <= 18 or n_atoms >= 30
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.adj_dummy_placement_default = n_atoms >= 30
