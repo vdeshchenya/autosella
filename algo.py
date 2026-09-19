@@ -6,9 +6,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
-geodesic ODE steps recompute Binv at every RHS. Rank-deficient
-Jacobian SVD fallbacks count singular values relative to the
-largest (Sella 2.6 `_svd_rank`). Connected
+geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -34,7 +32,8 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted.
+oxygen-substituted, and on at most two 3-coordinate amide
+C–N–C angles when 18≤n_atoms<30.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4446,6 +4445,40 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
+        def _amide_cnc(angle) -> bool:
+            # 3-coordinate amide C–N–C; one carbon is a carbonyl carbon.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+
+            def _carbonyl_c(cn) -> bool:
+                for nb in neighbors[cn]:
+                    j = int(nb)
+                    if j in dummy_set or int(numbers[j]) != 8:
+                        continue
+                    real_o = [o for o in neighbors[j] if int(o) not in dummy_set]
+                    if len(real_o) == 1:
+                        return True
+                return False
+
+            return _carbonyl_c(ia) or _carbonyl_c(ic)
+
+        amide_cnc_ok = set()
+        if soft_medium_angle and int(self.natoms) >= 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _amide_cnc(angle)]
+            if 1 <= len(cands) <= 2:
+                amide_cnc_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4509,6 +4542,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_medium_angle and ia in amide_cnc_ok:
+                # 3-coordinate amide C–N–C on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
@@ -4610,17 +4646,6 @@ class _LRU2:
                 return
         self._entries[self._next] = (key, value)
         self._next = 1 - self._next
-
-def _svd_rank(s, rtol=1e-6):
-    """Numerical rank from a singular-value spectrum, relative to the largest.
-
-    Counts singular values above ``rtol * s[0]``. Using a relative
-    cutoff keeps the rank scale-invariant for poorly scaled dummy-linear
-    Jacobians (Sella 2.6.0).
-    """
-    if len(s) == 0:
-        return 0
-    return int(np.sum(s > rtol * s[0]))
 
 def _split_cons_subspace(drdxnred, tol_factor=1e-6):
     """Split (n_int) into Ucons (rowspace of drdxnred) and Ufree (its complement).
@@ -5123,7 +5148,7 @@ class InternalPES(PES):
         if len(rdiag) > 0 and rdiag.min() < 1e-6 * rdiag.max():
             # Rank-deficient: fall back to SVD for safe truncation
             Ui, Si, VTi = np.linalg.svd(B, full_matrices=False)
-            nnred = _svd_rank(Si)
+            nnred = np.sum(Si > 1e-6)
             Q = Ui[:, :nnred]
             R = np.diag(Si[:nnred]) @ VTi[:nnred]
 
@@ -5518,7 +5543,7 @@ class InternalPES(PES):
                 cons = self.cons
             B = internal.jacobian()
             Ui, Si, VTi = np.linalg.svd(B, full_matrices=False)
-            nnred = _svd_rank(Si)
+            nnred = np.sum(Si > 1e-6)
             Unred = Ui[:, :nnred]
             Vnred = VTi[:nnred].T
             Siinv = np.diag(1 / Si[:nnred])
@@ -5637,7 +5662,7 @@ class InternalPES(PES):
         # Get Jacobian and calculate redundant and non-redundant spaces
         B = self.int.jacobian()[:, :ncart]
         Ui, Si, VTi = np.linalg.svd(B, full_matrices=True)
-        nnred = _svd_rank(Si)
+        nnred = np.sum(Si > 1e-6)
         Unred = Ui[:, :nnred]
         Ured = Ui[:, nnred:]
 
