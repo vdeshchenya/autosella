@@ -5,8 +5,8 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<18 which use 0.18 Ha and 18≤n_atoms<30 which
-use 0.20 Ha. Connected tails after 20
+n_atoms<30 which use 0.20 Ha. The guess Hessian is projected
+onto range(B) with rank-truncated pivoting QR. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
@@ -4454,11 +4454,7 @@ class Internals(BaseInternals):
                 ):
                     scale = 0.20
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
-                    scale = (
-                        0.18
-                        if int(self.natoms) < 18
-                        else (0.20 if int(self.natoms) < 30 else 0.25)
-                    )
+                    scale = 0.20 if int(self.natoms) < 30 else 0.25
                 else:
                     scale = 0.5
                 h0[idx] = scale * units.Hartree
@@ -4517,6 +4513,28 @@ def _split_cons_subspace(drdxnred, tol_factor=1e-6):
     else:
         ncons = 0
     return Q[:, :ncons], Q[:, ncons:]
+
+
+def _range_space_projector(B):
+    """Orthogonal projector onto range(B) with rank truncation via pivoting QR.
+
+    Non-pivoting economic QR keeps near-null dummy-linear / rigid-body
+    directions (singular values at machine epsilon) and leaks them into
+    the projected guess Hessian. Sella 2.6.0 uses this pivoting form.
+    """
+    if B.size == 0:
+        m = B.shape[0]
+        return np.zeros((m, m), dtype=B.dtype)
+    Q, R, _ = qr(B, mode='full', pivoting=True, check_finite=False)
+    rdiag = np.abs(np.diag(R))
+    rcond = max(B.shape) * np.finfo(B.dtype).eps
+    if rdiag.size and rdiag[0] > 0:
+        nkeep = int(np.sum(rdiag > rcond * rdiag[0]))
+    else:
+        nkeep = 0
+    Q_r = Q[:, :nkeep]
+    return Q_r @ Q_r.T
+
 
 class PES:
     n_cell_dof = 0
@@ -4948,8 +4966,7 @@ class InternalPES(PES):
             # Construct guess hessian and zero out components in
             # infeasible subspace
             B = self.int.jacobian()
-            Q, _ = qr(B, mode='economic')
-            P = Q @ Q.T
+            P = _range_space_projector(B)
             H0 = P @ self.int.guess_hessian() @ P
             self.set_H(H0, initialized=False)
         else:
