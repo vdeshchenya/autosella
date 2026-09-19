@@ -25,7 +25,9 @@ ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-subst
 cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
 angles whose N–N neighbor is also 2-coordinate and whose
-N–N edge lies in a 5-membered ring of only C and N.
+N–N edge lies in a 5-membered ring of only C and N, and on
+at most two nitro O–N–O angles except on molecules that
+already have that C–N–N class or a CF3 carbon.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4302,6 +4304,39 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 azo_cnn_ok = set(cands)
 
+        def _has_cf3() -> bool:
+            for i, z in enumerate(numbers):
+                if int(i) in dummy_set or int(z) != 6:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if (len(real) == 4
+                        and sum(int(numbers[nb]) == 9 for nb in real) == 3):
+                    return True
+            return False
+
+        def _nitro_ono(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
+                return False
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_n)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
+            if n_o != 2 or n_c != 1:
+                return False
+            return int(numbers[ia]) == 8 and int(numbers[ic]) == 8
+
+        nitro_ok = set()
+        if soft_pyridine_angle and not azo_cnn_ok and not _has_cf3():
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _nitro_ono(angle)]
+            if 1 <= len(cands) <= 2:
+                nitro_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4353,6 +4388,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in azo_cnn_ok:
                 # 2-coordinate pyrazole/triazole/tetrazole C–N–N.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in nitro_ok:
+                # Nitro O–N–O (GAFF o-no-o ~0.12 Ha).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
