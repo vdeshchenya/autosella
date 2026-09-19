@@ -5,10 +5,10 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<30 which use 0.20 Ha. The guess Hessian is projected
-onto range(B) with rank-truncated pivoting QR. Connected tails after 20
+n_atoms<30 which use 0.20 Ha. Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted, except dimers after
+80 steps which keep the RFO step. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
@@ -4514,28 +4514,6 @@ def _split_cons_subspace(drdxnred, tol_factor=1e-6):
         ncons = 0
     return Q[:, :ncons], Q[:, ncons:]
 
-
-def _range_space_projector(B):
-    """Orthogonal projector onto range(B) with rank truncation via pivoting QR.
-
-    Non-pivoting economic QR keeps near-null dummy-linear / rigid-body
-    directions (singular values at machine epsilon) and leaks them into
-    the projected guess Hessian. Sella 2.6.0 uses this pivoting form.
-    """
-    if B.size == 0:
-        m = B.shape[0]
-        return np.zeros((m, m), dtype=B.dtype)
-    Q, R, _ = qr(B, mode='full', pivoting=True, check_finite=False)
-    rdiag = np.abs(np.diag(R))
-    rcond = max(B.shape) * np.finfo(B.dtype).eps
-    if rdiag.size and rdiag[0] > 0:
-        nkeep = int(np.sum(rdiag > rcond * rdiag[0]))
-    else:
-        nkeep = 0
-    Q_r = Q[:, :nkeep]
-    return Q_r @ Q_r.T
-
-
 class PES:
     n_cell_dof = 0
 
@@ -4966,7 +4944,8 @@ class InternalPES(PES):
             # Construct guess hessian and zero out components in
             # infeasible subspace
             B = self.int.jacobian()
-            P = _range_space_projector(B)
+            Q, _ = qr(B, mode='economic')
+            P = Q @ Q.T
             H0 = P @ self.int.guess_hessian() @ P
             self.set_H(H0, initialized=False)
         else:
@@ -6340,11 +6319,14 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
-        share this interpolant after 20 steps; dummy-wd and wa stay
+        predicted (1/rho_inc < rho < rho_inc). Connected jobs keep this
+        interpolant after 20 steps. Dimers share it only before 80 steps;
+        after 80 the RFO step is left unchanged. Dummy-wd and wa stay
         connected-only.
         """
         if self.nsteps < 20:
+            return s_qn, smag_qn
+        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
