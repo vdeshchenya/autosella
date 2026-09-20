@@ -4546,38 +4546,33 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 alkyl_aryl_csc_ok = set(cands)
 
-        def _enyne_ccl(bond) -> bool:
-            # C–Cl at 4-coordinate carbon that also has a 2-coordinate
-            # carbon neighbor (enyne/allene chloride).
+        def _enyne_cc(bond) -> bool:
+            # C–C between 4-coordinate CH2Cl and a 2-coordinate carbon.
             ia, ib = int(bond.indices[0]), int(bond.indices[1])
             if ia in dummy_set or ib in dummy_set:
                 return False
-            za, zb = int(numbers[ia]), int(numbers[ib])
-            if {za, zb} != {6, 17}:
+            if int(numbers[ia]) != 6 or int(numbers[ib]) != 6:
                 return False
-            c_idx = ia if za == 6 else ib
-            real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
+            real_a = [nb for nb in neighbors[ia] if int(nb) not in dummy_set]
+            real_b = [nb for nb in neighbors[ib] if int(nb) not in dummy_set]
+            if sorted((len(real_a), len(real_b))) != [2, 4]:
                 return False
-            if sum(int(numbers[nb]) == 17 for nb in real_c) != 1:
+            c4, c2 = (ia, ib) if len(real_a) == 4 else (ib, ia)
+            real_c4 = [nb for nb in neighbors[c4] if int(nb) not in dummy_set]
+            if sum(int(numbers[nb]) == 17 for nb in real_c4) != 1:
                 return False
-            for nb in real_c:
-                if int(numbers[nb]) != 6:
-                    continue
-                real_nb = [x for x in neighbors[int(nb)]
-                           if int(x) not in dummy_set]
-                if len(real_nb) == 2:
-                    return True
-            return False
+            real_c2 = [nb for nb in neighbors[c2] if int(nb) not in dummy_set]
+            return len(real_c2) == 2 and all(int(numbers[nb]) == 6
+                                            for nb in real_c2)
 
-        ccl_bond_ok = set()
+        enyne_cc_ok = set()
         if soft_dummy_angle and self.natoms < 18:
             cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _enyne_ccl(bond)]
+                     if _enyne_cc(bond)]
             if len(cands) == 1:
-                ccl_bond_ok = set(cands)
+                enyne_cc_ok = set(cands)
             ntrans = len(self.internals['translations'])
-            for ib in ccl_bond_ok:
+            for ib in enyne_cc_ok:
                 h0[ntrans + ib] = 0.10 * units.Hartree / units.Bohr**2
 
         def _sios(angle) -> bool:
