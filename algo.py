@@ -10,8 +10,6 @@ an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons, and connected n_atoms<18 Si/H-only
 oligosilanes with at least four Si, and connected n_atoms<18
 allenes (2-coordinate carbon with two 3-coordinate carbon neighbors).
-Connected 12≤n_atoms<30 thiosulfonates (4-coordinate S {O, O, S, C})
-use MaxInternalStep `wb=0.70`.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -57,7 +55,8 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
+oxygen-substituted, and 0.25 Ha/Bohr² on 2–3 methyl C–N at
+4-coordinate nitrogen {C, C, C, C}, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
@@ -4192,6 +4191,36 @@ class Internals(BaseInternals):
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
 
+        def _ammonium_methyl_cn(ia, ic) -> bool:
+            for a, b in ((ia, ic), (ic, ia)):
+                if int(a) in dummy_set or int(b) in dummy_set:
+                    continue
+                if int(numbers[a]) != 6 or int(numbers[b]) != 7:
+                    continue
+                real_n = [nb for nb in neighbors[b] if int(nb) not in dummy_set]
+                if len(real_n) != 4:
+                    continue
+                if any(int(numbers[nb]) != 6 for nb in real_n):
+                    continue
+                real_c = [nb for nb in neighbors[a] if int(nb) not in dummy_set]
+                if len(real_c) != 4:
+                    continue
+                if sum(int(numbers[nb]) == 1 for nb in real_c) >= 3:
+                    return True
+            return False
+
+        if soft_medium_angle:
+            cands = [
+                ib for ib, bond in enumerate(self.internals['bonds'])
+                if _ammonium_methyl_cn(
+                    int(bond.indices[0]), int(bond.indices[1])
+                )
+            ]
+            if 2 <= len(cands) <= 3:
+                ntrans = len(self.internals['translations'])
+                for ib in cands:
+                    h0[ntrans + ib] = 0.25 * units.Hartree / units.Bohr**2
+
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
@@ -6984,8 +7013,6 @@ class Sella(Optimizer):
                     self, "_has_allene", False
                 ):
                     rs_kwargs['wd'] = 0.70
-                if getattr(self, "_has_thiosulfonate", False):
-                    rs_kwargs['wb'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7369,7 +7396,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_pyrrolidine_noxide = False
         opt._has_oligosilane = False
         opt._has_allene = False
-        opt._has_thiosulfonate = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
             n_si = sum(int(z) == 14 for z in numbers)
@@ -7393,27 +7419,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     for nb in real
                 ):
                     opt._has_allene = True
-                    break
-        if connected and 12 <= n_atoms < 30:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 4:
-                    continue
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                n_s = sum(int(numbers[nb]) == 16 for nb in real)
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                if n_o == 2 and n_s == 1 and n_c == 1:
-                    opt._has_thiosulfonate = True
                     break
         if connected and n_atoms < 12:
             numbers = atoms.numbers
