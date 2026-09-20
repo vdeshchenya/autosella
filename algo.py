@@ -8,8 +8,7 @@ steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
-geodesic ODE steps recompute Binv at every RHS, as do connected
-isocyanides. Connected
+geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -28,7 +27,7 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.20 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
+dummy centers use 0.15 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
@@ -5039,7 +5038,7 @@ class Internals(BaseInternals):
                     getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in windowed for j in dihedral.indices)
                 ):
-                    scale = 0.20
+                    scale = 0.15
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
                     scale = 0.20 if int(self.natoms) < 30 else 0.25
                 else:
@@ -7184,21 +7183,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     Internals.soft_phenol_angle_h0_default = not connected
-    has_isocyanide = False
-    dummy_n = set(range(probe.natoms, probe.natoms + probe.ndummies))
-    pnumbers = probe.all_atoms.numbers
-    pneigh = [[] for _ in range(len(pnumbers))]
-    for bond in probe.internals['bonds']:
-        i, j = int(bond.indices[0]), int(bond.indices[1])
-        pneigh[i].append(j)
-        pneigh[j].append(i)
-    for i, z in enumerate(pnumbers):
-        if int(i) in dummy_n or int(z) != 6:
-            continue
-        real = [nb for nb in pneigh[i] if int(nb) not in dummy_n]
-        if len(real) == 1 and int(pnumbers[real[0]]) == 7:
-            has_isocyanide = True
-            break
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
@@ -7210,7 +7194,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and (18 <= n_atoms < 20 or has_isocyanide):
+        if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         opt._hydrocarbon = False
         if not connected:
