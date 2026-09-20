@@ -2,15 +2,15 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
-without a P–F bond and connected 30≤n_atoms<80 with at least two
-N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
+without a P–F bond use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
-geodesic ODE steps recompute Binv at every RHS. Connected
+geodesic ODE steps recompute Binv at every RHS, as do connected
+30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O}. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -6948,13 +6948,6 @@ class Sella(Optimizer):
                         self._has_pf_bond = has_pf
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
-                elif intern is not None and 30 <= int(intern.natoms) < 80:
-                    has_bis = getattr(self, "_has_bis_noxide", None)
-                    if has_bis is None:
-                        has_bis = self._count_noxide_nitrogens(intern) >= 2
-                        self._has_bis_noxide = has_bis
-                    if has_bis:
-                        rs_kwargs['wa'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7041,40 +7034,6 @@ class Sella(Optimizer):
         except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
             return s, smag
         return s2, smag2
-
-    def _count_noxide_nitrogens(self, intern) -> int:
-        ndummies = int(getattr(intern, 'ndummies', 0))
-        dummy_set = set(range(int(intern.natoms), int(intern.natoms) + ndummies))
-        numbers = intern.all_atoms.numbers
-        nall = len(numbers)
-        neighbors = [[] for _ in range(nall)]
-        for bond in intern.internals.get('bonds', []):
-            i, j = int(bond.indices[0]), int(bond.indices[1])
-            if i >= nall or j >= nall:
-                continue
-            neighbors[i].append(j)
-            neighbors[j].append(i)
-        n_noxide = 0
-        for i in range(int(intern.natoms)):
-            if int(numbers[i]) != 7:
-                continue
-            real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-            if len(real) != 3:
-                continue
-            n_o = 0
-            n_c = 0
-            for nb in real:
-                z = int(numbers[nb])
-                if z == 6:
-                    n_c += 1
-                elif z == 8:
-                    real_o = [nbb for nbb in neighbors[nb]
-                              if int(nbb) not in dummy_set]
-                    if len(real_o) == 1:
-                        n_o += 1
-            if n_o == 1 and n_c == 2:
-                n_noxide += 1
-        return n_noxide
 
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
@@ -7369,6 +7328,34 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._allow_angle_wa = connected
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
+        if connected and 30 <= n_atoms < 80:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            n_noxide = 0
+            for i in range(n_atoms):
+                if int(numbers[i]) != 7:
+                    continue
+                real = neighbors[i]
+                if len(real) != 3:
+                    continue
+                n_o = 0
+                n_c = 0
+                for nb in real:
+                    z = int(numbers[nb])
+                    if z == 6:
+                        n_c += 1
+                    elif z == 8 and len(neighbors[nb]) == 1:
+                        n_o += 1
+                if n_o == 1 and n_c == 2:
+                    n_noxide += 1
+            if n_noxide >= 2:
+                opt.pes.exact_geodesic = True
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
