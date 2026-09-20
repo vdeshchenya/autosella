@@ -28,9 +28,10 @@ P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
 {S, S, S}, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
-Connected 12≤n_atoms<30 use 0.25 Ha/Bohr² on 1–2 sulfonyl
-methyl C–S stretches at 4-coordinate S {O, O, S, C} bonded to
-methyl C {S, H, H, H}.
+Connected 12≤n_atoms<30 use 0.25 Ha/Bohr² on 1–2 choline
+disulfide linker C–C stretches at 4-coordinate C {N, C, H, H}
+bonded to 4-coordinate C {C, S, H, H} whose nitrogen is
+4-coordinate trimethylammonium.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4170,43 +4171,62 @@ class Internals(BaseInternals):
             neighbors_pre[i].append(j)
             neighbors_pre[j].append(i)
 
-        def _sulfonyl_methyl_cs(ia, ic) -> bool:
-            for a, b in ((ia, ic), (ic, ia)):
-                if int(a) in dummy_pre or int(b) in dummy_pre:
-                    continue
-                if int(numbers_pre[a]) != 16 or int(numbers_pre[b]) != 6:
-                    continue
-                real_s = [nb for nb in neighbors_pre[a] if int(nb) not in dummy_pre]
-                if len(real_s) != 4:
-                    continue
-                n_o = sum(int(numbers_pre[nb]) == 8 for nb in real_s)
-                n_s = sum(int(numbers_pre[nb]) == 16 for nb in real_s)
-                n_c = sum(int(numbers_pre[nb]) == 6 for nb in real_s)
-                if not (n_o == 2 and n_s == 1 and n_c == 1):
-                    continue
-                real_c = [nb for nb in neighbors_pre[b] if int(nb) not in dummy_pre]
-                if len(real_c) != 4:
-                    continue
-                n_h = sum(int(numbers_pre[nb]) == 1 for nb in real_c)
-                n_s_c = sum(int(numbers_pre[nb]) == 16 for nb in real_c)
-                if n_h == 3 and n_s_c == 1:
-                    return True
+        def _is_methyl_carbon(idx) -> bool:
+            real = [nb for nb in neighbors_pre[idx] if int(nb) not in dummy_pre]
+            return sum(int(numbers_pre[nb]) == 1 for nb in real) >= 3
+
+        def _is_trimethylammonium(n_idx) -> bool:
+            real_n = [nb for nb in neighbors_pre[n_idx] if int(nb) not in dummy_pre]
+            if len(real_n) != 4:
+                return False
+            if any(int(numbers_pre[nb]) != 6 for nb in real_n):
+                return False
+            return sum(_is_methyl_carbon(nb) for nb in real_n) >= 3
+
+        def _choline_ss_cc(ia, ic) -> bool:
+            if int(ia) in dummy_pre or int(ic) in dummy_pre:
+                return False
+            if int(numbers_pre[ia]) != 6 or int(numbers_pre[ic]) != 6:
+                return False
+            real_a = [nb for nb in neighbors_pre[ia] if int(nb) not in dummy_pre]
+            real_c = [nb for nb in neighbors_pre[ic] if int(nb) not in dummy_pre]
+            if len(real_a) != 4 or len(real_c) != 4:
+                return False
+
+            def _nchh(real):
+                n_n = sum(int(numbers_pre[nb]) == 7 for nb in real)
+                n_c = sum(int(numbers_pre[nb]) == 6 for nb in real)
+                n_h = sum(int(numbers_pre[nb]) == 1 for nb in real)
+                return n_n == 1 and n_c == 1 and n_h == 2
+
+            def _cshh(real):
+                n_c = sum(int(numbers_pre[nb]) == 6 for nb in real)
+                n_s = sum(int(numbers_pre[nb]) == 16 for nb in real)
+                n_h = sum(int(numbers_pre[nb]) == 1 for nb in real)
+                return n_c == 1 and n_s == 1 and n_h == 2
+
+            if _nchh(real_a) and _cshh(real_c):
+                n_idx = next(nb for nb in real_a if int(numbers_pre[nb]) == 7)
+                return _is_trimethylammonium(n_idx)
+            if _nchh(real_c) and _cshh(real_a):
+                n_idx = next(nb for nb in real_c if int(numbers_pre[nb]) == 7)
+                return _is_trimethylammonium(n_idx)
             return False
 
-        sulfonyl_cs_ok = set()
+        choline_cc_ok = set()
         if getattr(self, 'soft_medium_angle_h0', False):
             cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _sulfonyl_methyl_cs(int(bond.indices[0]), int(bond.indices[1]))]
+                     if _choline_ss_cc(int(bond.indices[0]), int(bond.indices[1]))]
             if 1 <= len(cands) <= 2:
-                sulfonyl_cs_ok = set(cands)
+                choline_cc_ok = set(cands)
 
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for ib, bond in enumerate(self.internals['bonds']):
-            if ib in sulfonyl_cs_ok:
-                # Sulfonyl methyl C–S at 4-coord S {O,O,S,C}.
+            if ib in choline_cc_ok:
+                # Choline disulfide linker C–C (N–CH2–CH2–S).
                 h0[idx] = 0.25 * units.Hartree / units.Bohr**2
             else:
                 h0[idx] = self._h0_bond(bond)
