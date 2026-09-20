@@ -55,8 +55,8 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and 0.25 Ha/Bohr² on 2–3 methyl C–N at
-4-coordinate nitrogen {C, C, C, C}, and connected 18≤n_atoms<30 also use 0.10 Ha
+oxygen-substituted, and 0.25 Ha/Bohr² on 1–2 choline N–CH2
+C–N at 4-coordinate nitrogen {C, C, C, C}, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
@@ -4191,7 +4191,7 @@ class Internals(BaseInternals):
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
 
-        def _ammonium_methyl_cn(ia, ic) -> bool:
+        def _choline_nch2_cn(ia, ic) -> bool:
             for a, b in ((ia, ic), (ic, ia)):
                 if int(a) in dummy_set or int(b) in dummy_set:
                     continue
@@ -4205,18 +4205,21 @@ class Internals(BaseInternals):
                 real_c = [nb for nb in neighbors[a] if int(nb) not in dummy_set]
                 if len(real_c) != 4:
                     continue
-                if sum(int(numbers[nb]) == 1 for nb in real_c) >= 3:
+                n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
+                n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+                n_n = sum(int(numbers[nb]) == 7 for nb in real_c)
+                if n_h >= 2 and n_c == 1 and n_n == 1:
                     return True
             return False
 
         if soft_medium_angle:
             cands = [
                 ib for ib, bond in enumerate(self.internals['bonds'])
-                if _ammonium_methyl_cn(
+                if _choline_nch2_cn(
                     int(bond.indices[0]), int(bond.indices[1])
                 )
             ]
-            if 2 <= len(cands) <= 3:
+            if 1 <= len(cands) <= 2:
                 ntrans = len(self.internals['translations'])
                 for ib in cands:
                     h0[ntrans + ib] = 0.25 * units.Hartree / units.Bohr**2
