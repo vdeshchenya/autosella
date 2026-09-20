@@ -6,8 +6,6 @@ without a P–F bond and connected 30≤n_atoms<80 with at least two
 N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
-steps. Dimers with a 3-coordinate carboxylate carbon {O, O, C}
-downweight only the limiter connecting stretch to 0.8 after 20
 steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -72,7 +70,10 @@ and one carbon terminal.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
-3-coordinate with exactly one oxygen).
+3-coordinate with exactly one oxygen). Dimers that also have a
+2-coordinate pyridine C–N–C use 0.10 Ha on 1–2 3-coordinate
+amide C–N–C (nitrogen bonded to two carbons, one of which has
+a terminal carbonyl oxygen).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5020,6 +5021,42 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
+        def _amide_cnc(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+
+            def _carbonyl_c(cn) -> bool:
+                for nb in neighbors[cn]:
+                    j = int(nb)
+                    if j in dummy_set or int(numbers[j]) != 8:
+                        continue
+                    real_o = [o for o in neighbors[j] if int(o) not in dummy_set]
+                    if len(real_o) == 1:
+                        return True
+                return False
+
+            return _carbonyl_c(ia) or _carbonyl_c(ic)
+
+        amide_py_ok = set()
+        if soft_phenol_angle:
+            has_pyridine = any(_pyridine_cnc(ang)
+                               for ang in self.internals['angles'])
+            if has_pyridine:
+                cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                         if _amide_cnc(angle)]
+                if 1 <= len(cands) <= 2:
+                    amide_py_ok = set(cands)
+
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -5088,6 +5125,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_phenol_angle and ia in amide_py_ok:
+                # Amide C–N–C on dimers that also have pyridine C–N–C.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
@@ -6982,7 +7022,6 @@ class Sella(Optimizer):
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
-        s, smag = self._maybe_connecting_limiter_wb(s, smag, rs_kwargs, step_method)
         return self._maybe_gdiis(s, smag)
 
     def _dummy_dihedral_s_indices(self, intern):
@@ -7038,90 +7077,6 @@ class Sella(Optimizer):
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
-            ).get_s()
-        except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
-            return s, smag
-        return s2, smag2
-
-    def _connecting_bond_s_indices(self, intern):
-        """Active bond indices that join distinct 1.25-covalent fragments."""
-        n = intern.natoms
-        atoms = intern.atoms
-        numbers = atoms.numbers
-        pos = atoms.positions
-        parent = np.arange(n, dtype=np.int32)
-
-        def find(a):
-            while parent[a] != a:
-                parent[a] = parent[parent[a]]
-                a = parent[a]
-            return int(a)
-
-        def union(a, b):
-            ra, rb = find(a), find(b)
-            if ra != rb:
-                parent[rb] = ra
-
-        bonds = intern.internals['bonds']
-        active = intern._active['bonds']
-        lengths = []
-        for bond, is_act in zip(bonds, active):
-            i, j = (int(x) for x in bond.indices)
-            rij = np.inf
-            if is_act and 0 <= i < n and 0 <= j < n:
-                rij = float(np.linalg.norm(pos[j] - pos[i]))
-                rcov = float(covalent_radii[numbers[i]] + covalent_radii[numbers[j]])
-                if rij <= 1.25 * rcov:
-                    union(i, j)
-            lengths.append((is_act, i, j, rij))
-        out = set()
-        idx = intern.ntrans
-        for is_act, i, j, rij in lengths:
-            if not is_act:
-                continue
-            if 0 <= i < n and 0 <= j < n and find(i) != find(j):
-                out.add(idx)
-            idx += 1
-        return out
-
-    def _maybe_connecting_limiter_wb(self, s, smag, rs_kwargs, step_method):
-        """Downweight only the limiter connecting stretch to 0.8 on carboxylate dimers."""
-        if getattr(self, "_allow_angle_wa", False) or self.nsteps < 20:
-            return s, smag
-        if not getattr(self, "_has_carboxylate", False):
-            return s, smag
-        if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
-            return s, smag
-        intern = getattr(self.pes, "int", None)
-        if intern is None or intern.nbonds == 0:
-            return s, smag
-        s = np.asarray(s, dtype=np.float64)
-        try:
-            wprobe = MaxInternalStep.__new__(MaxInternalStep)
-            wprobe.pes = self.pes
-            wprobe.wx = 1.0
-            wprobe.wb = 1.0
-            wprobe.wa = float(rs_kwargs.get('wa', 1.0))
-            wprobe.wd = 1.0
-            wprobe.wo = 1.0
-            wprobe.wc = float(rs_kwargs.get('wc', 1.0))
-            wprobe.w_index = None
-            wprobe.w_index_value = None
-            wprobe._weights_cache = None
-            w = MaxInternalStep._get_weights(wprobe)
-        except (RuntimeError, ValueError, AssertionError, AttributeError):
-            return s, smag
-        if len(w) != len(s):
-            return s, smag
-        idx = int(np.argmax(np.abs(s * w)))
-        if idx not in self._connecting_bond_s_indices(intern):
-            return s, smag
-        kw = dict(rs_kwargs)
-        kw['w_index'] = idx
-        kw['w_index_value'] = 0.8
-        try:
-            s2, smag2 = MaxInternalStep(
-                self.pes, self.ord, self.delta, method=step_method, **kw
             ).get_s()
         except (RuntimeError, np.linalg.LinAlgError, ValueError, AssertionError):
             return s, smag
@@ -7419,7 +7374,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
-        opt._has_carboxylate = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
@@ -7471,26 +7425,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             opt.delta_min = 0.02
             zset = {int(z) for z in atomic_numbers}
             opt._hydrocarbon = zset <= {1, 6} and 6 in zset
-            n_atoms = len(atomic_numbers)
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 6:
-                    continue
-                real = neighbors[i]
-                if len(real) != 3:
-                    continue
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                if n_o == 2 and n_c == 1:
-                    opt._has_carboxylate = True
-                    break
         for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
             if converged():
                 break
