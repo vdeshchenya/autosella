@@ -13,12 +13,12 @@ steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
-when 1–3 such angles are present.
+when 1–3 such angles are present, and 1–3 C–N–C at
+3-coordinate NH {C, C, H}.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, and F–B–F angles at silicon or boron centers, and on
-at most two Br–C–S at 4-coordinate CBr3 carbon bonded to sulfur.
+Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4595,30 +4595,30 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _tribromo_brcs(angle) -> bool:
-            # Br–C–S at 4-coordinate CBr3 carbon bonded to S.
+        def _imidazole_cnc(angle) -> bool:
+            # C–N–C at 3-coordinate NH {C, C, H}, not N-oxide.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 6:
+            if int(numbers[icen]) != 7:
                 return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
                 return False
-            n_br = sum(int(numbers[nb]) == 35 for nb in real_c)
-            n_s = sum(int(numbers[nb]) == 16 for nb in real_c)
-            if n_br != 3 or n_s != 1:
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
+            n_h = sum(int(numbers[nb]) == 1 for nb in real_n)
+            if n_c != 2 or n_h != 1:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {35, 16}
+            return za == 6 and zc == 6
 
-        tribromo_brcs_ok = set()
-        if soft_oxo_angle:
+        imidazole_cnc_ok = set()
+        if soft_dummy_angle and self.natoms < 18:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _tribromo_brcs(angle)]
-            if len(cands) >= 1:
-                tribromo_brcs_ok = set(cands[:2])
+                     if _imidazole_cnc(angle)]
+            if 1 <= len(cands) <= 3:
+                imidazole_cnc_ok = set(cands)
 
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
@@ -4756,11 +4756,11 @@ class Internals(BaseInternals):
             elif ia in sns_ok:
                 # 2-coordinate S–N–S on connected n<18 (1–3 cap).
                 h0[idx] = 0.10 * units.Hartree
+            elif ia in imidazole_cnc_ok:
+                # 3-coordinate NH C–N–C on connected n<18 (1–3 cap).
+                h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_oxo_angle and ia in tribromo_brcs_ok:
-                # CBr3 Br–C–S on connected n<12 (two of six).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in aryl_phenol_ok:
                 # Isolated aryl phenol C–O–H on connected 18≤n<30.
