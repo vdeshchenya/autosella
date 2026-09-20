@@ -12,9 +12,6 @@ guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O}. Connected
-12≤n_atoms<30 thiosulfonates (4-coordinate S {O, O, S, C})
-realize internal steps with iterative Cartesian B⁺ instead of
-the geodesic ODE. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -49,7 +46,8 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
+oxygen-substituted, and 0.25 Ha/Bohr² on exactly one S–S stretch
+at 4-coordinate thiosulfonate sulfur {O, O, S, C}, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
@@ -4184,6 +4182,33 @@ class Internals(BaseInternals):
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
 
+        if soft_medium_angle:
+            n_trans = len(self.internals['translations'])
+
+            def _thio_ss(ia, ic) -> bool:
+                if ia in dummy_set or ic in dummy_set:
+                    return False
+                if int(numbers[ia]) != 16 or int(numbers[ic]) != 16:
+                    return False
+                for s_idx in (ia, ic):
+                    real = [nb for nb in neighbors[s_idx]
+                            if int(nb) not in dummy_set]
+                    if len(real) != 4:
+                        continue
+                    n_o = sum(int(numbers[nb]) == 8 for nb in real)
+                    n_s = sum(int(numbers[nb]) == 16 for nb in real)
+                    n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                    if n_o == 2 and n_s == 1 and n_c == 1:
+                        return True
+                return False
+
+            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
+                     if _thio_ss(int(bond.indices[0]), int(bond.indices[1]))]
+            if len(cands) == 1:
+                h0[n_trans + cands[0]] = (
+                    0.25 * units.Hartree / units.Bohr**2
+                )
+
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
@@ -7364,27 +7389,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if n_noxide >= 2:
                 opt._has_bis_noxide = True
                 opt.pes.exact_geodesic = True
-        if connected and 12 <= n_atoms < 30:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 4:
-                    continue
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                n_s = sum(int(numbers[nb]) == 16 for nb in real)
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                if n_o == 2 and n_s == 1 and n_c == 1:
-                    opt.pes.iterative_stepper = 1
-                    break
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
