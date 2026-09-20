@@ -8,6 +8,8 @@ Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons.
+Connected 30≤n_atoms<80 use 0.25 Ha/Bohr² on 1–2 isocyanide
+C–N stretches at 1-coordinate carbon bonded to nitrogen.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -4163,12 +4165,42 @@ class Internals(BaseInternals):
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
+        dummy_pre = set(range(self.natoms, self.natoms + self.ndummies))
+        numbers_pre = np.asarray(self.all_atoms.numbers)
+        neighbors_pre = [[] for _ in range(len(self.all_atoms))]
+        for bond in self.internals['bonds']:
+            i, j = int(bond.indices[0]), int(bond.indices[1])
+            neighbors_pre[i].append(j)
+            neighbors_pre[j].append(i)
+
+        def _isocyanide_cn(ia, ic) -> bool:
+            for a, b in ((ia, ic), (ic, ia)):
+                if int(a) in dummy_pre or int(b) in dummy_pre:
+                    continue
+                if int(numbers_pre[a]) != 6 or int(numbers_pre[b]) != 7:
+                    continue
+                real_c = [nb for nb in neighbors_pre[a] if int(nb) not in dummy_pre]
+                if len(real_c) == 1 and int(real_c[0]) == int(b):
+                    return True
+            return False
+
+        isocyanide_cn_ok = set()
+        if getattr(self, 'soft_pyridine_angle_h0', False):
+            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
+                     if _isocyanide_cn(int(bond.indices[0]), int(bond.indices[1]))]
+            if 1 <= len(cands) <= 2:
+                isocyanide_cn_ok = set(cands)
+
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
-        for bond in self.internals['bonds']:
-            h0[idx] = self._h0_bond(bond)
+        for ib, bond in enumerate(self.internals['bonds']):
+            if ib in isocyanide_cn_ok:
+                # Isocyanide C–N at 1-coordinate carbon.
+                h0[idx] = 0.25 * units.Hartree / units.Bohr**2
+            else:
+                h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
