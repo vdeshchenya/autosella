@@ -29,9 +29,11 @@ otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses, except windowed C–C–C alkynes
 without silicon or 4-coordinate oxygenated alkyne carbons, which
-use 0.12 Ha when at most two such dummies are present. Connected
+use 0.15 Ha when at most two such dummies are present. Connected
 n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
 carbon neighbors) also use 0.12 Ha on dummy-involving dihedrals.
+Connected n≥30 `alkyne_soft` dummy-dihedral MIS limiters use
+weight 0.7 instead of 0.8.
 Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
@@ -5145,7 +5147,7 @@ class Internals(BaseInternals):
                     getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in alkyne_soft for j in dihedral.indices)
                 ):
-                    scale = 0.12
+                    scale = 0.12 if int(self.natoms) < 18 else 0.15
                 elif (
                     getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in windowed for j in dihedral.indices)
@@ -6970,11 +6972,12 @@ class Sella(Optimizer):
         return out
 
     def _maybe_dummy_limiter_wd(self, s, smag, rs_kwargs):
-        """Downweight only the limiter dummy dihedral to 0.8.
+        """Downweight only the limiter dummy dihedral.
 
         Cycle 167 re-solved with global wd_dummy=0.8 whenever any dummy
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
+        Connected n≥30 alkyne_soft dummy limiters use 0.7.
         """
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
@@ -7004,9 +7007,24 @@ class Sella(Optimizer):
         idx = int(np.argmax(np.abs(s * w)))
         if idx not in self._dummy_dihedral_s_indices(intern):
             return s, smag
+        wd_lim = 0.8
+        alkyne_soft = getattr(intern, 'alkyne_soft_dummy_atoms', set())
+        if int(intern.natoms) >= 30 and alkyne_soft:
+            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
+            d_idx = intern.ntrans + intern.nbonds + intern.nangles
+            for dih, active in zip(intern.internals['dihedrals'],
+                                   intern._active['dihedrals']):
+                if not active:
+                    continue
+                if (d_idx == idx
+                        and any(j in dummy_set for j in dih.indices)
+                        and any(int(j) in alkyne_soft for j in dih.indices)):
+                    wd_lim = 0.7
+                    break
+                d_idx += 1
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        kw['w_index_value'] = 0.8
+        kw['w_index_value'] = wd_lim
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
