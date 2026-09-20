@@ -41,7 +41,8 @@ angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
 also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
 and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
 a CF3 neighbor, and an unfluorinated other carbon, and on
-1–2 amidine N–C–N at 3-coordinate carbon {N, N, C}.
+and on 1–2 amidine N–C–N at 3-coordinate carbon {N, N, C}
+that is not in a 5- or 6-membered C/N ring.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4493,7 +4494,7 @@ class Internals(BaseInternals):
 
         def _amidine_ncn(angle) -> bool:
             # N–C–N at 3-coordinate carbon {N, N, C}; one N 2-coord,
-            # the other has H. Distinct from urea {O, N, N} / guanidine.
+            # the other has H. Skip 5-/6-C/N rings (cycle 493 extras).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4514,9 +4515,27 @@ class Internals(BaseInternals):
             if sorted((deg_a, deg_c)) != [2, 3]:
                 return False
             amino = ia if deg_a == 3 else ic
-            return any(int(numbers[nb]) == 1
+            if not any(int(numbers[nb]) == 1
                        for nb in neighbors[amino]
-                       if int(nb) not in dummy_set)
+                       if int(nb) not in dummy_set):
+                return False
+            for size in (5, 6):
+                stack = [(icen, (icen,))]
+                while stack:
+                    curr, path = stack.pop()
+                    if len(path) == size:
+                        if icen in (int(nb) for nb in neighbors[curr]
+                                    if int(nb) not in dummy_set):
+                            return False
+                        continue
+                    for nb in neighbors[curr]:
+                        j = int(nb)
+                        if j in dummy_set or j in path:
+                            continue
+                        if int(numbers[j]) not in (6, 7):
+                            continue
+                        stack.append((j, path + (j,)))
+            return True
 
         amidine_ok = set()
         if soft_pyridine_angle:
