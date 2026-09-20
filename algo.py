@@ -17,7 +17,8 @@ at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
-3-coordinate N-oxide nitrogen {C, C, O}.
+3-coordinate N-oxide nitrogen {C, C, O}, and 1–2 C–C–C at
+2-coordinate allene carbon whose terminals are both 3-coordinate.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4724,6 +4725,33 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 noxide_ok = set(cands)
 
+        def _allene_ccc(angle) -> bool:
+            # C–C–C at 2-coordinate allene carbon; both terminals 3-coord C.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            for t in (ia, ic):
+                real_t = [nb for nb in neighbors[t] if int(nb) not in dummy_set]
+                if len(real_t) != 3:
+                    return False
+            return True
+
+        allene_ok = set()
+        if soft_dummy_angle and self.natoms < 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _allene_ccc(angle)]
+            if 1 <= len(cands) <= 2:
+                allene_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4997,6 +5025,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif ia in noxide_ok:
                 # N-oxide O–N–C on connected n<18 (1–2 cap).
+                h0[idx] = 0.10 * units.Hartree
+            elif ia in allene_ok:
+                # Allene C–C–C on connected n<18 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in dithiole_ok:
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
