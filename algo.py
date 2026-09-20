@@ -51,8 +51,9 @@ also use 0.10 Ha on at most two 4-coordinate C–C–Cl
 angles whose carbon terminal is not 3-coordinate, and connected
 30≤n<80 use 0.10 Ha on at most two S–C–S angles at
 3-coordinate carbon with two 2-coordinate sulfur terminals
-and one carbon terminal, and on at most three C–S–C angles
-at 3-coordinate sulfonium sulfur {C, C, C}.
+and one carbon terminal, and on at most two H–N–C angles
+at 3-coordinate nitrogen {C, C, H} whose carbons are both
+4-coordinate CH2.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4772,28 +4773,42 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 dithiole_ok = set(cands)
 
-        def _sulfonium_csc(angle) -> bool:
-            # C–S–C at 3-coordinate sulfonium sulfur {C, C, C}.
+        def _alkyl_hnc(angle) -> bool:
+            # H–N–C at 3-coordinate N {C, C, H} whose carbons are both
+            # 4-coordinate CH2 (acyclic alkyl secondary amine).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 16:
+            if int(numbers[icen]) != 7:
                 return False
-            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_s) != 3:
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
                 return False
-            if any(int(numbers[nb]) != 6 for nb in real_s):
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
+            n_h = sum(int(numbers[nb]) == 1 for nb in real_n)
+            if n_c != 2 or n_h != 1:
                 return False
+            for nb in real_n:
+                if int(numbers[nb]) != 6:
+                    continue
+                real_c = [x for x in neighbors[nb] if int(x) not in dummy_set]
+                if len(real_c) != 4:
+                    return False
+                n_hc = sum(int(numbers[x]) == 1 for x in real_c)
+                n_cc = sum(int(numbers[x]) == 6 for x in real_c)
+                n_nc = sum(int(numbers[x]) == 7 for x in real_c)
+                if n_hc != 2 or n_cc != 1 or n_nc != 1:
+                    return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 6 and zc == 6
+            return {za, zc} == {1, 6}
 
-        sulfonium_ok = set()
+        alkyl_hnc_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _sulfonium_csc(angle)]
-            if 1 <= len(cands) <= 3:
-                sulfonium_ok = set(cands)
+                     if _alkyl_hnc(angle)]
+            if 1 <= len(cands) <= 2:
+                alkyl_hnc_ok = set(cands)
 
         def _fused_ch2_ccc(angle) -> bool:
             # C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon.
@@ -4989,8 +5004,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in dithiole_ok:
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in sulfonium_ok:
-                # Sulfonium C–S–C on connected 30≤n<80 (1–3 cap).
+            elif soft_pyridine_angle and ia in alkyl_hnc_ok:
+                # Alkyl secondary-amine H–N–C on connected 30≤n<80 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
