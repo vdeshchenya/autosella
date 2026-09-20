@@ -11,10 +11,9 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
-30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O},
+30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
-3-coordinate carbon), or with a 1-coordinate carbon bonded to
-nitrogen. Connected
+3-coordinate carbon). Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -27,7 +26,8 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
-{S, S, S}, and on
+{S, S, S}, 0.25 Ha/Bohr² on 1–6 C–Br at 4-coordinate C
+{Br, Br, Br, S}, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
@@ -4160,12 +4160,46 @@ class Internals(BaseInternals):
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
+        dummy_pre = set(range(self.natoms, self.natoms + self.ndummies))
+        numbers_pre = np.asarray(self.all_atoms.numbers)
+        neighbors_pre = [[] for _ in range(len(self.all_atoms))]
+        for bond in self.internals['bonds']:
+            i, j = int(bond.indices[0]), int(bond.indices[1])
+            neighbors_pre[i].append(j)
+            neighbors_pre[j].append(i)
+
+        def _cbr3s_cbr(ia, ic) -> bool:
+            for a, b in ((ia, ic), (ic, ia)):
+                if int(a) in dummy_pre or int(b) in dummy_pre:
+                    continue
+                if int(numbers_pre[a]) != 6 or int(numbers_pre[b]) != 35:
+                    continue
+                real = [nb for nb in neighbors_pre[a] if int(nb) not in dummy_pre]
+                if len(real) != 4:
+                    continue
+                n_br = sum(int(numbers_pre[nb]) == 35 for nb in real)
+                n_s = sum(int(numbers_pre[nb]) == 16 for nb in real)
+                if n_br == 3 and n_s == 1:
+                    return True
+            return False
+
+        cbr_ok = set()
+        if getattr(self, 'soft_oxo_angle_h0', False):
+            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
+                     if _cbr3s_cbr(int(bond.indices[0]), int(bond.indices[1]))]
+            if 1 <= len(cands) <= 6:
+                cbr_ok = set(cands)
+
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
-        for bond in self.internals['bonds']:
-            h0[idx] = self._h0_bond(bond)
+        for ib, bond in enumerate(self.internals['bonds']):
+            if ib in cbr_ok:
+                # C–Br at 4-coord C {Br,Br,Br,S} on connected n<12.
+                h0[idx] = 0.25 * units.Hartree / units.Bohr**2
+            else:
+                h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -7393,15 +7427,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     continue
                 attach = next(nb for nb in real if int(numbers[nb]) == 6)
                 if len(neighbors[attach]) == 3:
-                    opt.pes.exact_geodesic = True
-                    break
-            for i in range(n_atoms):
-                if int(numbers[i]) != 6:
-                    continue
-                real = neighbors[i]
-                if len(real) != 1:
-                    continue
-                if int(numbers[real[0]]) == 7:
                     opt.pes.exact_geodesic = True
                     break
         opt._hydrocarbon = False
