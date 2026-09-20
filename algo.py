@@ -12,7 +12,8 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted, except connected
+isocyanides. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
@@ -48,8 +49,7 @@ a CF3 neighbor, and an unfluorinated other carbon, and on
 1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I), and on
 1–2 isolated alkyl–aryl mixed C–S–C, and on
 1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon,
-excluding sulfur-containing molecules, and on 1–2 C–C–C at
-4-coordinate CF2 whose CH2 carbon terminals share a carbon neighbor. Connected 12≤n_atoms<30
+excluding sulfur-containing molecules. Connected 12≤n_atoms<30
 also use 0.10 Ha on at most two 4-coordinate C–C–Cl
 angles whose carbon terminal is not 3-coordinate, and connected
 30≤n<80 use 0.10 Ha on at most two S–C–S angles at
@@ -4817,51 +4817,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 fused_ch2_ok = set(cands)
 
-        def _cf2_ccc(angle) -> bool:
-            # C–C–C at 4-coordinate CF2 whose carbon terminals are CH2
-            # that share a carbon neighbor (1,1-difluorocyclobutane).
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
-                return False
-            n_f = sum(int(numbers[nb]) == 9 for nb in real_c)
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
-            if n_f != 2 or n_c != 2:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-            shared = None
-            for t in (ia, ic):
-                real_t = [nb for nb in neighbors[t] if int(nb) not in dummy_set]
-                if len(real_t) != 4:
-                    return False
-                n_h = sum(int(numbers[nb]) == 1 for nb in real_t)
-                n_ct = sum(int(numbers[nb]) == 6 for nb in real_t)
-                if n_h != 2 or n_ct != 2:
-                    return False
-                others = [nb for nb in real_t
-                          if int(nb) != icen and int(numbers[nb]) == 6]
-                if len(others) != 1:
-                    return False
-                if shared is None:
-                    shared = int(others[0])
-                elif int(others[0]) != shared:
-                    return False
-            return shared is not None and shared != icen
-
-        cf2_ccc_ok = set()
-        if soft_pyridine_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _cf2_ccc(angle)]
-            if 1 <= len(cands) <= 2:
-                cf2_ccc_ok = set(cands)
-
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
             # whose other two neighbors are 3-coordinate carbons.
@@ -4994,9 +4949,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in fused_ch2_ok:
                 # Fused CH2 C–C–C at a 3-coordinate ring carbon on 30≤n<80.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in cf2_ccc_ok:
-                # CF2 C–C–C in a 1,1-difluorocyclobutane on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
@@ -6966,6 +6918,9 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
+        if (getattr(self, "_allow_angle_wa", False)
+                and getattr(self, "_isocyanide", False)):
+            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7232,6 +7187,21 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     Internals.soft_phenol_angle_h0_default = not connected
+    has_isocyanide = False
+    dummy_n = set(range(probe.natoms, probe.natoms + probe.ndummies))
+    pnumbers = probe.all_atoms.numbers
+    pneigh = [[] for _ in range(len(pnumbers))]
+    for bond in probe.internals['bonds']:
+        i, j = int(bond.indices[0]), int(bond.indices[1])
+        pneigh[i].append(j)
+        pneigh[j].append(i)
+    for i, z in enumerate(pnumbers):
+        if int(i) in dummy_n or int(z) != 6:
+            continue
+        real = [nb for nb in pneigh[i] if int(nb) not in dummy_n]
+        if len(real) == 1 and int(pnumbers[real[0]]) == 7:
+            has_isocyanide = True
+            break
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
@@ -7246,6 +7216,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         opt._hydrocarbon = False
+        opt._isocyanide = bool(connected and has_isocyanide)
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
