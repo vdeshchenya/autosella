@@ -1,9 +1,10 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules, except connected n_atoms<18
-without a P–F bond and connected 30≤n_atoms<80 with at least two
-N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
+`wa=0.75` on connected molecules, except connected n_atoms<12
+without a P–F bond, connected 30≤n_atoms<80 with at least two
+N-oxide nitrogens {C, C, O}, and connected 30≤n_atoms<80
+isocyanides (1-coordinate C bonded to N) use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -6932,7 +6933,7 @@ class Sella(Optimizer):
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
                 intern = getattr(self.pes, "int", None)
-                if intern is not None and int(intern.natoms) < 18:
+                if intern is not None and int(intern.natoms) < 12:
                     has_pf = getattr(self, "_has_pf_bond", None)
                     if has_pf is None:
                         has_pf = False
@@ -6950,6 +6951,8 @@ class Sella(Optimizer):
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
                 elif getattr(self, "_has_bis_noxide", False):
+                    rs_kwargs['wa'] = 0.70
+                elif getattr(self, "_has_isocyanide", False):
                     rs_kwargs['wa'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7330,6 +7333,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
+        opt._has_isocyanide = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
@@ -7361,6 +7365,18 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if n_noxide >= 2:
                 opt._has_bis_noxide = True
                 opt.pes.exact_geodesic = True
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                nb = neighbors[i]
+                if len(nb) != 1:
+                    continue
+                j = nb[0]
+                if int(numbers[j]) != 7:
+                    continue
+                if len(neighbors[j]) == 2:
+                    opt._has_isocyanide = True
+                    break
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
