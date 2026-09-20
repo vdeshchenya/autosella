@@ -5,7 +5,9 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 without a P–F bond and connected 30≤n_atoms<80 with at least two
 N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
-use MaxInternalStep `wd=0.70`.
+use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
+an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
+to two CH2 carbons.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -6972,7 +6974,9 @@ class Sella(Optimizer):
                         rs_kwargs['wa'] = 0.70
                 elif getattr(self, "_has_bis_noxide", False):
                     rs_kwargs['wa'] = 0.70
-                if getattr(self, "_has_sulfoxide", False):
+                if getattr(self, "_has_sulfoxide", False) or getattr(
+                    self, "_has_pyrrolidine_noxide", False
+                ):
                     rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7354,6 +7358,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
         opt._has_sulfoxide = False
+        opt._has_pyrrolidine_noxide = False
         if connected and n_atoms < 12:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
@@ -7405,6 +7410,27 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if n_noxide >= 2:
                 opt._has_bis_noxide = True
                 opt.pes.exact_geodesic = True
+            has_pyrrolidine_n = False
+            for i in range(n_atoms):
+                if int(numbers[i]) != 7:
+                    continue
+                real = neighbors[i]
+                if len(real) != 3:
+                    continue
+                if any(int(numbers[nb]) != 6 for nb in real):
+                    continue
+                n_ch2 = 0
+                for nb in real:
+                    real_c = neighbors[nb]
+                    if len(real_c) != 4:
+                        continue
+                    if sum(int(numbers[x]) == 1 for x in real_c) >= 2:
+                        n_ch2 += 1
+                if n_ch2 >= 2:
+                    has_pyrrolidine_n = True
+                    break
+            if n_noxide >= 1 and has_pyrrolidine_n:
+                opt._has_pyrrolidine_noxide = True
             for i in range(n_atoms):
                 if int(numbers[i]) != 6:
                     continue
