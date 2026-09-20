@@ -2,16 +2,16 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
-without a P–F bond, connected 12≤n_atoms<30 with a
-4-coordinate thiosulfonate sulfur {O, O, S, C}, and connected
-30≤n_atoms<80 with at least two
+without a P–F bond and connected 30≤n_atoms<80 with at least two
 N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
+n_atoms<30 which use 0.20 Ha, except connected 12≤n_atoms<30
+with a 4-coordinate thiosulfonate sulfur {O, O, S, C} which use
+0.15 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
@@ -3308,6 +3308,7 @@ class Internals(BaseInternals):
     soft_medium_angle_h0_default = False
     soft_phenol_angle_h0_default = False
     adj_dummy_placement_default = False
+    medium_thiosulfonate_dd_default = False
 
     def __init__(
         self,
@@ -3350,6 +3351,7 @@ class Internals(BaseInternals):
         self.soft_medium_angle_h0 = Internals.soft_medium_angle_h0_default
         self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
+        self.medium_thiosulfonate_dd = Internals.medium_thiosulfonate_dd_default
         self.windowed_dummy_atoms = set()
         self.alkyne_soft_dummy_atoms = set()
 
@@ -3374,6 +3376,7 @@ class Internals(BaseInternals):
         new.soft_medium_angle_h0 = getattr(self, 'soft_medium_angle_h0', False)
         new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
+        new.medium_thiosulfonate_dd = getattr(self, 'medium_thiosulfonate_dd', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         new.alkyne_soft_dummy_atoms = set(getattr(self, 'alkyne_soft_dummy_atoms', set()))
         return new
@@ -5175,6 +5178,11 @@ class Internals(BaseInternals):
                     and any(int(j) in windowed for j in dihedral.indices)
                 ):
                     scale = 0.20
+                elif (
+                    getattr(self, 'medium_thiosulfonate_dd', False)
+                    and 12 <= int(self.natoms) < 30
+                ):
+                    scale = 0.15
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
                     scale = 0.20 if int(self.natoms) < 30 else 0.25
                 else:
@@ -6970,7 +6978,7 @@ class Sella(Optimizer):
                         self._has_pf_bond = has_pf
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
-                elif getattr(self, "_has_bis_noxide", False) or getattr(self, "_has_thiosulfonate", False):
+                elif getattr(self, "_has_bis_noxide", False):
                     rs_kwargs['wa'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7347,12 +7355,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
-    try:
-        opt = Sella(atoms, internal=True, order=0, logfile=None)
-        opt._allow_angle_wa = connected
-        opt._has_bis_noxide = False
-        opt._has_thiosulfonate = False
-        if connected and 12 <= n_atoms < 30:
+        Internals.medium_thiosulfonate_dd_default = False
+        if 12 <= n_atoms < 30:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
             for bond in probe.internals.get('bonds', []):
@@ -7371,8 +7375,12 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 n_s = sum(int(numbers[nb]) == 16 for nb in real)
                 n_c = sum(int(numbers[nb]) == 6 for nb in real)
                 if n_o == 2 and n_s == 1 and n_c == 1:
-                    opt._has_thiosulfonate = True
+                    Internals.medium_thiosulfonate_dd_default = True
                     break
+    try:
+        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt._allow_angle_wa = connected
+        opt._has_bis_noxide = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
@@ -7435,6 +7443,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_medium_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
+        Internals.medium_thiosulfonate_dd_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
