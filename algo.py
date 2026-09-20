@@ -12,7 +12,8 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted, except connected
+30≤n_atoms<80 which may start that interpolant after 15 steps. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
@@ -55,7 +56,7 @@ a CF3 neighbor, and an unfluorinated other carbon, and on
 1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon,
 excluding sulfur-containing molecules, and on 1–2 carbamate N–C–O
 at 3-coordinate carbon {N, O, O} with a 2-coordinate ether oxygen,
-skipping N-sulfonyl nitrogen, using 0.08 Ha.
+skipping N-sulfonyl nitrogen.
 Connected 12≤n_atoms<30
 also use 0.10 Ha on at most two 4-coordinate C–C–Cl
 angles whose carbon terminal is not 3-coordinate, and connected
@@ -5024,7 +5025,7 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in oxazolidinone_nco_ok:
                 # Oxazolidinone carbamate N–C–O at 3-coordinate carbon.
-                h0[idx] = 0.08 * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
                 h0[idx] = 0.10 * units.Hartree
@@ -7023,13 +7024,20 @@ class Sella(Optimizer):
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
-        share this interpolant after 20 steps; dummy-wd and wa stay
+        share this interpolant after 20 steps, except connected 30≤n<80
+        which may start at 15; dummy-wd and wa stay
         connected-only.
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if self.nsteps < 20:
+        gdiis_start = 20
+        intern = getattr(self.pes, "int", None)
+        if (intern is not None
+                and getattr(self, "_allow_angle_wa", False)
+                and 30 <= int(intern.natoms) < 80):
+            gdiis_start = 15
+        if self.nsteps < gdiis_start:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
