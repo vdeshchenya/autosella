@@ -18,10 +18,10 @@ Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
 3-coordinate N-oxide nitrogen {C, C, O}.
+Connected n_atoms≥100 dummy-involving angles use 0.08 Ha.
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles, 0.10 Ha on P–O–H and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
-Connected n_atoms≥100 dummy-involving dihedrals use 0.15 Ha.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4967,7 +4967,10 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                h0[idx] = 0.10 * units.Hartree
+                if self.natoms >= 100:
+                    h0[idx] = 0.08 * units.Hartree
+                else:
+                    h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -5093,11 +5096,6 @@ class Internals(BaseInternals):
                 if (
                     getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in alkyne_soft for j in dihedral.indices)
-                ):
-                    scale = 0.15
-                elif (
-                    getattr(self, 'soft_dummy_dihedral_h0', False)
-                    and int(self.natoms) >= 100
                 ):
                     scale = 0.15
                 elif (
