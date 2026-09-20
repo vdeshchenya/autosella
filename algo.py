@@ -35,7 +35,8 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
+oxygen-substituted, and on at most two 4-coordinate C–C–Cl
+angles whose carbon terminal is not 3-coordinate, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
@@ -45,9 +46,7 @@ a CF3 neighbor, and an unfluorinated other carbon, and on
 1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I), and on
 1–2 isolated alkyl–aryl mixed C–S–C, and on
 1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon,
-excluding sulfur-containing molecules, and on 1–2 F–C–C at
-3-coordinate carbon with one F and two 3-coordinate carbons,
-skipping Cl/Br/I and CF3.
+excluding sulfur-containing molecules.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4681,6 +4680,31 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
+        def _ccl(angle) -> bool:
+            # 4-coordinate C–C–Cl; skip 3-coordinate carbon terminal.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 17}:
+                return False
+            c_term = ia if za == 6 else ic
+            real_ct = [nb for nb in neighbors[c_term] if int(nb) not in dummy_set]
+            return len(real_ct) != 3
+
+        ccl_ok = set()
+        if soft_medium_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _ccl(angle)]
+            if 1 <= len(cands) <= 2:
+                ccl_ok = set(cands)
+
         def _fused_ch2_ccc(angle) -> bool:
             # C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4723,49 +4747,6 @@ class Internals(BaseInternals):
                      if _fused_ch2_ccc(angle)]
             if 1 <= len(cands) <= 2:
                 fused_ch2_ok = set(cands)
-
-        def _has_cf3() -> bool:
-            nat = int(self.natoms)
-            for i in range(nat):
-                if int(numbers[i]) != 6:
-                    continue
-                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if len(real) == 4 and sum(int(numbers[nb]) == 9 for nb in real) == 3:
-                    return True
-            return False
-
-        def _aryl_f_fcc(angle) -> bool:
-            # Aryl F–C–C: 3-coordinate C with one F and two 3-coordinate C.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 3:
-                return False
-            n_f = sum(int(numbers[nb]) == 9 for nb in real_c)
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
-            if n_f != 1 or n_c != 2:
-                return False
-            carbons = [nb for nb in real_c if int(numbers[nb]) == 6]
-            for c_idx in carbons:
-                real_nb = [x for x in neighbors[c_idx] if int(x) not in dummy_set]
-                if len(real_nb) != 3:
-                    return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {6, 9}
-
-        aryl_f_ok = set()
-        if (soft_pyridine_angle
-                and not any(int(z) in (17, 35, 53)
-                            for z in numbers[:int(self.natoms)])
-                and not _has_cf3()):
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _aryl_f_fcc(angle)]
-            if 1 <= len(cands) <= 2:
-                aryl_f_ok = set(cands)
 
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
@@ -4900,9 +4881,6 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in fused_ch2_ok:
                 # Fused CH2 C–C–C at a 3-coordinate ring carbon on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in aryl_f_ok:
-                # Aryl F–C–C on connected 30≤n<80, skipping Cl/Br/I and CF3.
-                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
@@ -4917,6 +4895,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_medium_angle and ia in ccl_ok:
+                # 4-coordinate C–C–Cl on 12≤n<30; skip 3-coord C terminal.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in aryl_phenol_ok:
                 # Isolated aryl phenol C–O–H on connected 18≤n<30.
