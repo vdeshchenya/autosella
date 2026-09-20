@@ -8,9 +8,9 @@ Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons.
-Connected 30≤n_atoms<80 use 0.25 Ha/Bohr² on 1–2 alkyne
-C–C stretches at 2-coordinate carbons where one end is attached
-to a 4-coordinate carbon with exactly two fluorine neighbors.
+Connected 30≤n_atoms<80 that also have a 4-coordinate gem-CF2
+carbon {F, F, C, C} use 0.25 Ha/Bohr² on 1–2 2-coordinate
+alkyne C–C stretches.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -4174,33 +4174,31 @@ class Internals(BaseInternals):
             neighbors_pre[i].append(j)
             neighbors_pre[j].append(i)
 
-        def _gemcf2_alkyne_cc(ia, ic) -> bool:
+        def _is_gemcf2(idx) -> bool:
+            if int(idx) in dummy_pre or int(numbers_pre[idx]) != 6:
+                return False
+            real = [nb for nb in neighbors_pre[idx] if int(nb) not in dummy_pre]
+            if len(real) != 4:
+                return False
+            n_f = sum(int(numbers_pre[nb]) == 9 for nb in real)
+            n_c = sum(int(numbers_pre[nb]) == 6 for nb in real)
+            return n_f == 2 and n_c == 2
+
+        has_gemcf2 = any(_is_gemcf2(i) for i in range(int(self.natoms)))
+
+        def _alkyne_cc(ia, ic) -> bool:
             if int(ia) in dummy_pre or int(ic) in dummy_pre:
                 return False
             if int(numbers_pre[ia]) != 6 or int(numbers_pre[ic]) != 6:
                 return False
             real_a = [nb for nb in neighbors_pre[ia] if int(nb) not in dummy_pre]
             real_c = [nb for nb in neighbors_pre[ic] if int(nb) not in dummy_pre]
-            if len(real_a) != 2 or len(real_c) != 2:
-                return False
-
-            def _gemcf2_attach(center, other):
-                attach = next((nb for nb in (
-                    [x for x in neighbors_pre[center] if int(x) not in dummy_pre]
-                ) if int(nb) != int(other)), None)
-                if attach is None or int(numbers_pre[attach]) != 6:
-                    return False
-                real_att = [nb for nb in neighbors_pre[attach] if int(nb) not in dummy_pre]
-                if len(real_att) != 4:
-                    return False
-                return sum(int(numbers_pre[nb]) == 9 for nb in real_att) == 2
-
-            return _gemcf2_attach(ia, ic) or _gemcf2_attach(ic, ia)
+            return len(real_a) == 2 and len(real_c) == 2
 
         alkyne_cc_ok = set()
-        if getattr(self, 'soft_pyridine_angle_h0', False):
+        if getattr(self, 'soft_pyridine_angle_h0', False) and has_gemcf2:
             cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _gemcf2_alkyne_cc(int(bond.indices[0]), int(bond.indices[1]))]
+                     if _alkyne_cc(int(bond.indices[0]), int(bond.indices[1]))]
             if 1 <= len(cands) <= 2:
                 alkyne_cc_ok = set(cands)
 
@@ -4210,7 +4208,7 @@ class Internals(BaseInternals):
             idx += 1
         for ib, bond in enumerate(self.internals['bonds']):
             if ib in alkyne_cc_ok:
-                # Gem-difluoro-attached alkyne C–C.
+                # Alkyne C–C on a gem-CF2 molecule.
                 h0[idx] = 0.25 * units.Hartree / units.Bohr**2
             else:
                 h0[idx] = self._h0_bond(bond)
