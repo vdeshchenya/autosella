@@ -41,7 +41,8 @@ angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
 also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
 and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
 a CF3 neighbor, and an unfluorinated other carbon, and on
-1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I).
+1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I),
+and on 1–2 isoxazole C–C–O at 3-coordinate carbon {C, C, O}.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4481,6 +4482,66 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 hetero_csc_ok = set(cands)
 
+        def _on_in_cno_five_ring(o_idx, n_idx) -> bool:
+            o_idx, n_idx = int(o_idx), int(n_idx)
+            for a in neighbors[n_idx]:
+                ai = int(a)
+                if ai in dummy_set or ai == o_idx:
+                    continue
+                if int(numbers[ai]) not in (6, 7, 8):
+                    continue
+                for b in neighbors[ai]:
+                    bi = int(b)
+                    if bi in dummy_set or bi in (o_idx, n_idx, ai):
+                        continue
+                    if int(numbers[bi]) not in (6, 7, 8):
+                        continue
+                    for c in neighbors[bi]:
+                        ci = int(c)
+                        if ci in dummy_set or ci in (o_idx, n_idx, ai, bi):
+                            continue
+                        if int(numbers[ci]) not in (6, 7, 8):
+                            continue
+                        if o_idx in (int(nb) for nb in neighbors[ci]
+                                     if int(nb) not in dummy_set):
+                            return True
+            return False
+
+        def _isox_cco(angle) -> bool:
+            # C–C–O at 3-coordinate C {C, C, O}; O 2-coord with N
+            # in a C/N/O 5-ring (isoxazole). Skips oxadiazole {C, N, O}.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
+                return False
+            zs = [int(numbers[nb]) for nb in real_c]
+            if zs.count(6) != 2 or zs.count(8) != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 8}:
+                return False
+            o_idx = ia if za == 8 else ic
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            if len(real_o) != 2:
+                return False
+            n_idx = next((int(nb) for nb in real_o if int(numbers[nb]) == 7),
+                         None)
+            if n_idx is None:
+                return False
+            return _on_in_cno_five_ring(o_idx, n_idx)
+
+        isox_cco_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _isox_cco(angle)]
+            if 1 <= len(cands) <= 2:
+                isox_cco_ok = set(cands)
+
         def _sios(angle) -> bool:
             # Silyl sulfonate/sulfamate Si–O–S at 2-coordinate O.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4720,6 +4781,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in hetero_csc_ok:
                 # Hetero/halo 3-coordinate C–S–C (thiazole/chlorothiophene).
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in isox_cco_ok:
+                # Isoxazole C–C–O on connected 30≤n<80 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
