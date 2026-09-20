@@ -6,10 +6,11 @@ without a P–F bond and connected 30≤n_atoms<80 with at least two
 N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
-steps, as do dimers with a 3-coordinate carboxylate carbon {O, O, C}. Connected molecules
+steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
+n_atoms<30 which use 0.20 Ha, except connected n_atoms<12
+with a 3-coordinate sulfoxide sulfur {C, C, O} which use 0.15 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
@@ -3305,6 +3306,7 @@ class Internals(BaseInternals):
     soft_medium_angle_h0_default = False
     soft_phenol_angle_h0_default = False
     adj_dummy_placement_default = False
+    n12_sulfoxide_dd_default = False
 
     def __init__(
         self,
@@ -3347,6 +3349,7 @@ class Internals(BaseInternals):
         self.soft_medium_angle_h0 = Internals.soft_medium_angle_h0_default
         self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
+        self.n12_sulfoxide_dd = Internals.n12_sulfoxide_dd_default
         self.windowed_dummy_atoms = set()
         self.alkyne_soft_dummy_atoms = set()
 
@@ -3371,6 +3374,7 @@ class Internals(BaseInternals):
         new.soft_medium_angle_h0 = getattr(self, 'soft_medium_angle_h0', False)
         new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
+        new.n12_sulfoxide_dd = getattr(self, 'n12_sulfoxide_dd', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         new.alkyne_soft_dummy_atoms = set(getattr(self, 'alkyne_soft_dummy_atoms', set()))
         return new
@@ -5156,6 +5160,11 @@ class Internals(BaseInternals):
                     and any(int(j) in windowed for j in dihedral.indices)
                 ):
                     scale = 0.20
+                elif (
+                    getattr(self, 'n12_sulfoxide_dd', False)
+                    and int(self.natoms) < 12
+                ):
+                    scale = 0.15
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
                     scale = 0.20 if int(self.natoms) < 30 else 0.25
                 else:
@@ -7054,8 +7063,6 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if getattr(self, "_skip_gdiis", False):
-            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7330,11 +7337,31 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
+        Internals.n12_sulfoxide_dd_default = False
+        if n_atoms < 12:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 3:
+                    continue
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                n_o = sum(int(numbers[nb]) == 8 for nb in real)
+                if n_c == 2 and n_o == 1:
+                    Internals.n12_sulfoxide_dd_default = True
+                    break
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
-        opt._skip_gdiis = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
@@ -7386,26 +7413,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             opt.delta_min = 0.02
             zset = {int(z) for z in atomic_numbers}
             opt._hydrocarbon = zset <= {1, 6} and 6 in zset
-            n_atoms = len(atomic_numbers)
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 6:
-                    continue
-                real = neighbors[i]
-                if len(real) != 3:
-                    continue
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                if n_o == 2 and n_c == 1:
-                    opt._skip_gdiis = True
-                    break
         for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
             if converged():
                 break
@@ -7417,6 +7424,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_medium_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
+        Internals.n12_sulfoxide_dd_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
