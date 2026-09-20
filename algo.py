@@ -5,16 +5,15 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
-geodesic ODE steps recompute Binv at every RHS. Connected
+n_atoms<30 which use 0.20 Ha. Connected n_atoms==16 or
+18≤n_atoms<20 geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
-when 1–3 such angles are present. Connected n<18 with
-exactly three 2-coordinate C–C–C uses 0.10 Ha.
+when 1–3 such angles are present.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4466,27 +4465,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 3:
                 sns_ok = set(cands)
 
-        def _ccc2(angle) -> bool:
-            # 2-coordinate C–C–C (alkyne/enyne chain).
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 2:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 6 and zc == 6
-
-        ccc2_ok = set()
-        if soft_dummy_angle and self.natoms < 18:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _ccc2(angle)]
-            if len(cands) == 3:
-                ccc2_ok = set(cands)
-
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4643,9 +4621,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif ia in sns_ok:
                 # 2-coordinate S–N–S on connected n<18 (1–3 cap).
-                h0[idx] = 0.10 * units.Hartree
-            elif ia in ccc2_ok:
-                # Exactly three 2-coordinate C–C–C on connected n<18.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
@@ -6867,7 +6842,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and 18 <= n_atoms < 20:
+        if connected and (n_atoms == 16 or 18 <= n_atoms < 20):
             opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
