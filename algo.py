@@ -15,7 +15,8 @@ at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
-3-coordinate N-oxide nitrogen {C, C, O}.
+3-coordinate N-oxide nitrogen {C, C, O}, and 1–2 H–C–O at
+4-coordinate primary-alcohol carbon {O, C, H, H}.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -51,9 +52,7 @@ also use 0.10 Ha on at most two 4-coordinate C–C–Cl
 angles whose carbon terminal is not 3-coordinate, and connected
 30≤n<80 use 0.10 Ha on at most two S–C–S angles at
 3-coordinate carbon with two 2-coordinate sulfur terminals
-and one carbon terminal, and on at most two CH2–N–CH2 angles
-in a saturated C5 ring at 3-coordinate nitrogen {C, C, C},
-skipping molecules with a 1-coordinate nitrogen.
+and one carbon terminal.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4690,6 +4689,35 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 noxide_ok = set(cands)
 
+        def _alcohol_hco(angle) -> bool:
+            # H–C–O at 4-coordinate primary-alcohol carbon {O, C, H, H}.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            zs = [int(numbers[nb]) for nb in real_c]
+            if zs.count(8) != 1 or zs.count(6) != 1 or zs.count(1) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {1, 8}:
+                return False
+            o_idx = ia if za == 8 else ic
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            return (len(real_o) == 2
+                    and any(int(numbers[nb]) == 1 for nb in real_o))
+
+        alcohol_hco_ok = set()
+        if soft_dummy_angle and self.natoms < 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _alcohol_hco(angle)]
+            if 1 <= len(cands) <= 2:
+                alcohol_hco_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4772,47 +4800,6 @@ class Internals(BaseInternals):
                      if _dithiole_scs(angle)]
             if 1 <= len(cands) <= 2:
                 dithiole_ok = set(cands)
-
-        def _pyrrolidine_cnc(angle) -> bool:
-            # CH2–N–CH2 in a saturated C5 ring at 3-coordinate N {C, C, C}.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 7:
-                return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 3:
-                return False
-            if any(int(numbers[nb]) != 6 for nb in real_n):
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-            for t in (ia, ic):
-                real_t = [nb for nb in neighbors[t] if int(nb) not in dummy_set]
-                if len(real_t) != 4:
-                    return False
-            for c1 in neighbors[ia]:
-                if int(c1) in dummy_set or int(c1) == icen:
-                    continue
-                if int(numbers[c1]) != 6:
-                    continue
-                for c2 in neighbors[c1]:
-                    if int(c2) in dummy_set or int(c2) in (icen, ia, ic):
-                        continue
-                    if int(numbers[c2]) != 6:
-                        continue
-                    if ic in neighbors[c2]:
-                        return True
-            return False
-
-        pyrrolidine_ok = set()
-        if soft_pyridine_angle and not _has_terminal_n():
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _pyrrolidine_cnc(angle)]
-            if 1 <= len(cands) <= 2:
-                pyrrolidine_ok = set(cands)
 
         def _fused_ch2_ccc(angle) -> bool:
             # C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon.
@@ -5005,11 +4992,11 @@ class Internals(BaseInternals):
             elif ia in noxide_ok:
                 # N-oxide O–N–C on connected n<18 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
+            elif ia in alcohol_hco_ok:
+                # Primary-alcohol H–C–O on connected n<18 (1–2 cap).
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in dithiole_ok:
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in pyrrolidine_ok:
-                # Pyrrolidine CH2–N–CH2 on connected 30≤n<80 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
