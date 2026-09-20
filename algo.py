@@ -43,7 +43,9 @@ and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
 a CF3 neighbor, and an unfluorinated other carbon, and on
 1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I), and on
 1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon,
-excluding sulfur-containing molecules.
+excluding sulfur-containing molecules, and on 1–3 C–N–C at
+3-coordinate N-aryl with two CH2 on aryl-fluoride molecules
+without Cl/Br/I.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4639,6 +4641,63 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 fused_ch2_ok = set(cands)
 
+        def _fluoro_aniline_cnc(angle) -> bool:
+            # C–N–C at 3-coordinate N bonded to one 3-coordinate C
+            # and two 4-coordinate CH2 (N-aryl pyrrolidine/piperidine).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
+                return False
+            if any(int(numbers[nb]) != 6 for nb in real_n):
+                return False
+            n_ch2 = 0
+            n_aryl = 0
+            coords = []
+            for nb in real_n:
+                real_nb = [x for x in neighbors[nb] if int(x) not in dummy_set]
+                coords.append(len(real_nb))
+                if len(real_nb) == 4:
+                    n_h = sum(int(numbers[x]) == 1 for x in real_nb)
+                    if n_h == 2:
+                        n_ch2 += 1
+                elif len(real_nb) == 3:
+                    n_aryl += 1
+            if sorted(coords) != [3, 4, 4]:
+                return False
+            if n_ch2 != 2 or n_aryl != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return za == 6 and zc == 6
+
+        def _has_aryl_f() -> bool:
+            for i, z in enumerate(numbers):
+                if int(i) in dummy_set or int(z) != 6:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if len(real) != 3:
+                    continue
+                n_f = sum(int(numbers[nb]) == 9 for nb in real)
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                if n_f == 1 and n_c == 2:
+                    return True
+            return False
+
+        def _has_other_halogen() -> bool:
+            return any(int(z) in (17, 35, 53) for z in numbers[:int(self.natoms)])
+
+        fluoro_aniline_ok = set()
+        if (soft_pyridine_angle and _has_aryl_f()
+                and not _has_other_halogen()):
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _fluoro_aniline_cnc(angle)]
+            if 1 <= len(cands) <= 3:
+                fluoro_aniline_ok = set(cands)
+
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
             # whose other two neighbors are 3-coordinate carbons.
@@ -4768,6 +4827,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in fused_ch2_ok:
                 # Fused CH2 C–C–C at a 3-coordinate ring carbon on 30≤n<80.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in fluoro_aniline_ok:
+                # Fluoroaniline N-aryl C–N–C (two CH2) on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
