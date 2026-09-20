@@ -26,7 +26,8 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
-{S, S, S}, and on
+{S, S, S}, 0.25 Ha on 1–2 O–S–C at 3-coordinate sulfoxide
+S {C, C, O}, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
@@ -5019,6 +5020,30 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
+        def _sulfoxide_osc(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 16:
+                return False
+            real = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real) != 3:
+                return False
+            n_c = sum(int(numbers[nb]) == 6 for nb in real)
+            n_o = sum(int(numbers[nb]) == 8 for nb in real)
+            if n_c != 2 or n_o != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {8, 6}
+
+        sulfoxide_osc_ok = set()
+        if soft_oxo_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _sulfoxide_osc(angle)]
+            if 1 <= len(cands) <= 2:
+                sulfoxide_osc_ok = set(cands)
+
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -5128,6 +5153,9 @@ class Internals(BaseInternals):
                     h0[idx] = 0.10 * units.Hartree
                 else:
                     h0[idx] = self._h0_angle(angle)
+            elif soft_oxo_angle and ia in sulfoxide_osc_ok:
+                # Stiffer O–S–C at 3-coord sulfoxide S {C,C,O}; cycle 302 extras.
+                h0[idx] = 0.25 * units.Hartree
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 14
