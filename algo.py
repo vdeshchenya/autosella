@@ -13,10 +13,10 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
-at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses,
-except connected 30≤n_atoms<80 with at least two N-oxide
-nitrogens {C, C, O} which use 0.25 Ha.
+when the previous ratio ρ was well predicted, except connected
+30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O}
+which start GDIIS at 15 steps. Connected molecules with fewer than 18 atoms or
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
@@ -4181,30 +4181,6 @@ class Internals(BaseInternals):
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
 
-        n_noxide = 0
-        for i in range(int(self.natoms)):
-            if int(numbers[i]) != 7:
-                continue
-            real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-            if len(real) != 3:
-                continue
-            n_o = 0
-            n_c = 0
-            for nb in real:
-                z = int(numbers[nb])
-                if z == 6:
-                    n_c += 1
-                elif z == 8:
-                    real_o = [nbb for nbb in neighbors[nb]
-                              if int(nbb) not in dummy_set]
-                    if len(real_o) == 1:
-                        n_o += 1
-            if n_o == 1 and n_c == 2:
-                n_noxide += 1
-        stiff_bis_noxide_dummy_angle = (
-            30 <= int(self.natoms) < 80 and n_noxide >= 2
-        )
-
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
@@ -5042,10 +5018,7 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                if stiff_bis_noxide_dummy_angle:
-                    h0[idx] = 0.25 * units.Hartree
-                else:
-                    h0[idx] = 0.10 * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -7063,6 +7036,37 @@ class Sella(Optimizer):
             return s, smag
         return s2, smag2
 
+    def _count_noxide_nitrogens(self, intern) -> int:
+        dummy_set = set(range(int(intern.natoms),
+                              int(intern.natoms) + int(intern.ndummies)))
+        numbers = intern.atoms.numbers
+        neighbors = [[] for _ in range(len(numbers))]
+        for bond in intern.internals.get('bonds', []):
+            i, j = int(bond.indices[0]), int(bond.indices[1])
+            neighbors[i].append(j)
+            neighbors[j].append(i)
+        n_noxide = 0
+        for i in range(int(intern.natoms)):
+            if int(numbers[i]) != 7:
+                continue
+            real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+            if len(real) != 3:
+                continue
+            n_o = 0
+            n_c = 0
+            for nb in real:
+                z = int(numbers[nb])
+                if z == 6:
+                    n_c += 1
+                elif z == 8:
+                    real_o = [nbb for nbb in neighbors[nb]
+                              if int(nbb) not in dummy_set]
+                    if len(real_o) == 1:
+                        n_o += 1
+            if n_o == 1 and n_c == 2:
+                n_noxide += 1
+        return n_noxide
+
     def _maybe_gdiis(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
 
@@ -7077,7 +7081,16 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if self.nsteps < 20:
+        gdiis_start = 20
+        intern = getattr(self.pes, "int", None)
+        if intern is not None and 30 <= int(intern.natoms) < 80:
+            has_bis = getattr(self, "_has_bis_noxide", None)
+            if has_bis is None:
+                has_bis = self._count_noxide_nitrogens(intern) >= 2
+                self._has_bis_noxide = has_bis
+            if has_bis:
+                gdiis_start = 15
+        if self.nsteps < gdiis_start:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
