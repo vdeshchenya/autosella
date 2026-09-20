@@ -2,7 +2,8 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
+Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
+dimers skip two-point GDIIS. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -15,9 +16,7 @@ at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
-3-coordinate N-oxide nitrogen {C, C, O}, and exactly one
-primary-alcohol C–O stretch at CH2OH bonded to a 3-coordinate
-vinyl/allene carbon.
+3-coordinate N-oxide nitrogen {C, C, O}.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4690,45 +4689,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 noxide_ok = set(cands)
 
-        def _vinyl_ch2oh_co(bond) -> bool:
-            # Primary-alcohol C–O at CH2OH whose unique carbon neighbor
-            # is 3-coordinate (vinyl/allene terminal). Skips ethanol
-            # (4-coord methyl) and central allene (2-coord).
-            ia, ib = (int(bond.indices[0]), int(bond.indices[1]))
-            if any(j in dummy_set for j in (ia, ib)):
-                return False
-            za, zb = int(numbers[ia]), int(numbers[ib])
-            if {za, zb} != {6, 8}:
-                return False
-            o_idx = ia if za == 8 else ib
-            c_idx = ia if za == 6 else ib
-            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
-                return False
-            if sorted(int(numbers[nb]) for nb in real_o) != [1, 6]:
-                return False
-            real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
-                return False
-            n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
-            n_o = sum(int(numbers[nb]) == 8 for nb in real_c)
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
-            if n_h != 2 or n_o != 1 or n_c != 1:
-                return False
-            c_nb = next(int(nb) for nb in real_c if int(numbers[nb]) == 6)
-            real_cn = [nb for nb in neighbors[c_nb] if int(nb) not in dummy_set]
-            return len(real_cn) == 3
-
-        ch2oh_co_ok = set()
-        if soft_dummy_angle and self.natoms < 18:
-            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _vinyl_ch2oh_co(bond)]
-            if len(cands) == 1:
-                ch2oh_co_ok = set(cands)
-            ntrans = len(self.internals['translations'])
-            for ib in ch2oh_co_ok:
-                h0[ntrans + ib] = 0.10 * units.Hartree / units.Bohr**2
-
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -6952,6 +6912,9 @@ class Sella(Optimizer):
         share this interpolant after 20 steps; dummy-wd and wa stay
         connected-only.
         """
+        if (not getattr(self, "_allow_angle_wa", False)
+                and getattr(self, "_hydrocarbon", False)):
+            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7231,9 +7194,12 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._allow_angle_wa = connected
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
+        opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
+            zset = {int(z) for z in atomic_numbers}
+            opt._hydrocarbon = zset <= {1, 6} and 6 in zset
         for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
             if converged():
                 break
