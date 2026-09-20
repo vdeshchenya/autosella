@@ -34,7 +34,8 @@ Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
 oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
-3-coordinate carbon neighbors).
+3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
+angles at 3-coordinate carbon {O, C, H}.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4485,6 +4486,30 @@ class Internals(BaseInternals):
             if len(cands) == 1:
                 aryl_phenol_ok = set(cands)
 
+        def _aldehyde_occ(angle) -> bool:
+            # Aldehyde O–C–C at 3-coordinate carbon {O, C, H}.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
+                return False
+            zs = [int(numbers[nb]) for nb in real_c]
+            if zs.count(8) != 1 or zs.count(6) != 1 or zs.count(1) != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {6, 8}
+
+        aldehyde_ok = set()
+        if soft_medium_angle and int(self.natoms) >= 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _aldehyde_occ(angle)]
+            if 1 <= len(cands) <= 2:
+                aldehyde_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4551,6 +4576,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in aryl_phenol_ok:
                 # Isolated aryl phenol C–O–H on connected 18≤n<30.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_medium_angle and ia in aldehyde_ok:
+                # Aldehyde O–C–C on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
