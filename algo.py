@@ -3,7 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
 without a P–F bond and connected 30≤n_atoms<80 with at least two
-N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
+N-oxide nitrogens {C, C, O} or with a 1-coordinate carbon bonded
+to nitrogen use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -26,8 +27,7 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
-{S, S, S}, 0.25 Ha on 1–2 O–S–C at 3-coordinate sulfoxide
-S {C, C, O}, and on
+{S, S, S}, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
@@ -5020,30 +5020,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
-        def _sulfoxide_osc(angle) -> bool:
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 16:
-                return False
-            real = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real) != 3:
-                return False
-            n_c = sum(int(numbers[nb]) == 6 for nb in real)
-            n_o = sum(int(numbers[nb]) == 8 for nb in real)
-            if n_c != 2 or n_o != 1:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {8, 6}
-
-        sulfoxide_osc_ok = set()
-        if soft_oxo_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _sulfoxide_osc(angle)]
-            if 1 <= len(cands) <= 2:
-                sulfoxide_osc_ok = set(cands)
-
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -5153,9 +5129,6 @@ class Internals(BaseInternals):
                     h0[idx] = 0.10 * units.Hartree
                 else:
                     h0[idx] = self._h0_angle(angle)
-            elif soft_oxo_angle and ia in sulfoxide_osc_ok:
-                # Stiffer O–S–C at 3-coord sulfoxide S {C,C,O}; cycle 302 extras.
-                h0[idx] = 0.25 * units.Hartree
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 14
@@ -6996,7 +6969,7 @@ class Sella(Optimizer):
                         self._has_pf_bond = has_pf
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
-                elif getattr(self, "_has_bis_noxide", False):
+                elif getattr(self, "_has_bis_noxide", False) or getattr(self, "_has_isocyanide", False):
                     rs_kwargs['wa'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7377,6 +7350,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
+        opt._has_isocyanide = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
@@ -7421,6 +7395,15 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 attach = next(nb for nb in real if int(numbers[nb]) == 6)
                 if len(neighbors[attach]) == 3:
                     opt.pes.exact_geodesic = True
+                    break
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 1:
+                    continue
+                if int(numbers[real[0]]) == 7:
+                    opt._has_isocyanide = True
                     break
         opt._hydrocarbon = False
         if not connected:
