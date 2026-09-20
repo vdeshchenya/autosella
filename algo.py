@@ -7037,12 +7037,15 @@ class Sella(Optimizer):
         return s2, smag2
 
     def _count_noxide_nitrogens(self, intern) -> int:
-        dummy_set = set(range(int(intern.natoms),
-                              int(intern.natoms) + int(intern.ndummies)))
-        numbers = intern.atoms.numbers
-        neighbors = [[] for _ in range(len(numbers))]
+        ndummies = int(getattr(intern, 'ndummies', 0))
+        dummy_set = set(range(int(intern.natoms), int(intern.natoms) + ndummies))
+        numbers = intern.all_atoms.numbers
+        nall = len(numbers)
+        neighbors = [[] for _ in range(nall)]
         for bond in intern.internals.get('bonds', []):
             i, j = int(bond.indices[0]), int(bond.indices[1])
+            if i >= nall or j >= nall:
+                continue
             neighbors[i].append(j)
             neighbors[j].append(i)
         n_noxide = 0
