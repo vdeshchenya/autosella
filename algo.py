@@ -11,10 +11,8 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
-30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O}. Connected
-30≤n<80 with a 1-coordinate carbon bonded to nitrogen realize
-internal steps with iterative Cartesian B⁺ (Newton map) instead of
-the geodesic ODE. Connected
+30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} and
+connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -7335,6 +7333,26 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_bis_noxide = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
+        if connected and n_atoms < 12:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 3:
+                    continue
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                n_o = sum(int(numbers[nb]) == 8 for nb in real)
+                if n_c == 2 and n_o == 1:
+                    opt.pes.exact_geodesic = True
+                    break
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
@@ -7364,18 +7382,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if n_noxide >= 2:
                 opt._has_bis_noxide = True
                 opt.pes.exact_geodesic = True
-            has_isocyanide = False
-            for i in range(n_atoms):
-                if int(numbers[i]) != 6:
-                    continue
-                real = neighbors[i]
-                if len(real) != 1:
-                    continue
-                if int(numbers[real[0]]) == 7:
-                    has_isocyanide = True
-                    break
-            if has_isocyanide:
-                opt.pes.iterative_stepper = 1
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
