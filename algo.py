@@ -35,10 +35,8 @@ C–S–S disulfide angles whose carbon is 4-coordinate or
 oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
-angles at 3-coordinate carbon {O, C, H}. Connected n_atoms<18
-that contain a 2-coordinate carbon bonded to two carbons use
-0.10 Ha on exactly one alkyl C–O–H (2-coordinate O, 4-coordinate
-C with one oxygen).
+angles at 3-coordinate carbon {O, C, H}, and on exactly one
+O–H–O angle at a 2-coordinate hydrogen.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4513,44 +4511,27 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 aldehyde_ok = set(cands)
 
-        def _has_alkyne_c() -> bool:
-            # 2-coordinate carbon bonded to two carbons (alkyne/allene).
-            for i, z in enumerate(numbers):
-                if int(i) in dummy_set or int(z) != 6:
-                    continue
-                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if len(real) == 2 and all(int(numbers[nb]) == 6 for nb in real):
-                    return True
-            return False
-
-        def _alkyl_coh(angle) -> bool:
-            # Alkyl alcohol C–O–H: 2-coord O bonded to H and a 4-coord C
-            # with exactly one oxygen.
+        def _oho(angle) -> bool:
+            # Probe hydrogen bond O–H–O at 2-coordinate H.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 8:
+            if int(numbers[icen]) != 1:
                 return False
-            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
+            real_h = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_h) != 2:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {1, 6}:
-                return False
-            c_idx = ia if za == 6 else ic
-            real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
-                return False
-            return sum(int(numbers[nb]) == 8 for nb in real_c) == 1
+            return za == 8 and zc == 8
 
-        alkyl_coh_ok = set()
-        if (soft_dummy_angle and int(self.natoms) < 18
-                and _has_alkyne_c()):
+        oho_ok = set()
+        if soft_medium_angle and int(self.natoms) >= 18:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _alkyl_coh(angle)]
+                     if _oho(angle)]
+            # Exactly one: spare intramolecular double H-bond frames.
             if len(cands) == 1:
-                alkyl_coh_ok = set(cands)
+                oho_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4622,8 +4603,8 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in aldehyde_ok:
                 # Aldehyde O–C–C on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_dummy_angle and ia in alkyl_coh_ok:
-                # Isolated alkyl C–O–H on connected alkynol n<18.
+            elif soft_medium_angle and ia in oho_ok:
+                # Isolated probe O–H–O on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
