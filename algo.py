@@ -52,8 +52,7 @@ angles whose carbon terminal is not 3-coordinate, and connected
 30≤n<80 use 0.10 Ha on at most two S–C–S angles at
 3-coordinate carbon with two 2-coordinate sulfur terminals
 and one carbon terminal, and on at most two H–N–C angles
-at 3-coordinate nitrogen {C, C, H} whose carbons are both
-4-coordinate CH2.
+at 3-coordinate nitrogen {C, C, H} with one methyl and one CH2.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4774,8 +4773,7 @@ class Internals(BaseInternals):
                 dithiole_ok = set(cands)
 
         def _alkyl_hnc(angle) -> bool:
-            # H–N–C at 3-coordinate N {C, C, H} whose carbons are both
-            # 4-coordinate CH2 (acyclic alkyl secondary amine).
+            # H–N–C at 3-coordinate N {C, C, H} with one methyl and one CH2.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4789,6 +4787,7 @@ class Internals(BaseInternals):
             n_h = sum(int(numbers[nb]) == 1 for nb in real_n)
             if n_c != 2 or n_h != 1:
                 return False
+            kinds = []
             for nb in real_n:
                 if int(numbers[nb]) != 6:
                     continue
@@ -4798,10 +4797,14 @@ class Internals(BaseInternals):
                 n_hc = sum(int(numbers[x]) == 1 for x in real_c)
                 n_cc = sum(int(numbers[x]) == 6 for x in real_c)
                 n_nc = sum(int(numbers[x]) == 7 for x in real_c)
-                if n_hc != 2 or n_cc != 1 or n_nc != 1:
+                if n_hc == 3 and n_cc == 0 and n_nc == 1:
+                    kinds.append('me')
+                elif n_hc == 2 and n_cc == 1 and n_nc == 1:
+                    kinds.append('ch2')
+                else:
                     return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {1, 6}
+            return sorted(kinds) == ['ch2', 'me'] and {za, zc} == {1, 6}
 
         alkyl_hnc_ok = set()
         if soft_pyridine_angle:
@@ -5005,7 +5008,7 @@ class Internals(BaseInternals):
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in alkyl_hnc_ok:
-                # Alkyl secondary-amine H–N–C on connected 30≤n<80 (1–2 cap).
+                # N-methyl secondary-amine H–N–C on connected 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
