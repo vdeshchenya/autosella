@@ -27,7 +27,9 @@ plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
 otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
-dummy centers use 0.15 Ha guesses. Connected 30≤n_atoms<80 use 0.10 Ha
+dummy centers use 0.20 Ha guesses, except windowed C–C–C alkynes
+without silicon or 4-coordinate oxygenated alkyne carbons, which
+use 0.15 Ha when at most two such dummies are present. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
@@ -3335,6 +3337,7 @@ class Internals(BaseInternals):
         self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
         self.windowed_dummy_atoms = set()
+        self.alkyne_soft_dummy_atoms = set()
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3358,6 +3361,7 @@ class Internals(BaseInternals):
         new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
+        new.alkyne_soft_dummy_atoms = set(getattr(self, 'alkyne_soft_dummy_atoms', set()))
         return new
 
     def add_rotation(
@@ -3716,6 +3720,14 @@ class Internals(BaseInternals):
             if j < self.natoms:
                 bonds[j].append(bond.reverse())
 
+        has_si = any(int(z) == 14 for z in self.atoms.numbers[:self.natoms])
+        real_nb = [[] for _ in range(self.natoms)]
+        for bond in self.internals['bonds']:
+            a, c = int(bond.indices[0]), int(bond.indices[1])
+            if 0 <= a < self.natoms and 0 <= c < self.natoms:
+                real_nb[a].append(c)
+                real_nb[c].append(a)
+
         for j, jbonds in enumerate(bonds):
             linear = []
             for b1, b2 in combinations(jbonds, 2):
@@ -3763,7 +3775,26 @@ class Internals(BaseInternals):
                                     and 0.04 < cross_norm < 0.10
                                 ):
                                     # Cycle 286: windowed C–C–C alkyne, n≥30.
-                                    self.windowed_dummy_atoms.add(int(self.dinds[j]))
+                                    d_idx = int(self.dinds[j])
+                                    self.windowed_dummy_atoms.add(d_idx)
+                                    if not has_si:
+                                        propargyl = False
+                                        for bterm in jbonds:
+                                            t0, t1 = (int(bterm.indices[0]),
+                                                      int(bterm.indices[1]))
+                                            t = t1 if t0 == j else t0
+                                            if not (0 <= t < self.natoms):
+                                                continue
+                                            if int(self.atoms.numbers[t]) != 6:
+                                                continue
+                                            nbs = real_nb[t]
+                                            if (len(nbs) == 4
+                                                    and any(int(self.atoms.numbers[nb]) == 8
+                                                            for nb in nbs)):
+                                                propargyl = True
+                                                break
+                                        if not propargyl:
+                                            self.alkyne_soft_dummy_atoms.add(d_idx)
                                 elif zpair == {7, 8}:
                                     # Isocyanate N=C=O, including near-collinear.
                                     self.windowed_dummy_atoms.add(int(self.dinds[j]))
@@ -3879,6 +3910,9 @@ class Internals(BaseInternals):
                                 "Unable to find improper dihedral to replace "
                                 "linear angle!"
                             )
+
+        if len(getattr(self, 'alkyne_soft_dummy_atoms', set())) > 2:
+            self.alkyne_soft_dummy_atoms = set()
 
     def find_all_dihedrals(self) -> None:
         # First, find proper dihedrals from angle combinations.
@@ -5034,11 +5068,17 @@ class Internals(BaseInternals):
         for dihedral in self.internals['dihedrals']:
             if any(j in dummy_set for j in dihedral.indices):
                 windowed = getattr(self, 'windowed_dummy_atoms', set())
+                alkyne_soft = getattr(self, 'alkyne_soft_dummy_atoms', set())
                 if (
+                    getattr(self, 'soft_dummy_dihedral_h0', False)
+                    and any(int(j) in alkyne_soft for j in dihedral.indices)
+                ):
+                    scale = 0.15
+                elif (
                     getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in windowed for j in dihedral.indices)
                 ):
-                    scale = 0.15
+                    scale = 0.20
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
                     scale = 0.20 if int(self.natoms) < 30 else 0.25
                 else:
