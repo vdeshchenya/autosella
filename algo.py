@@ -19,7 +19,7 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
 3-coordinate N-oxide nitrogen {C, C, O}.
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
-P–O–P and tetrahedral O–P–O angles, 0.10 Ha on P–O–H and on
+P–O–P / P–O–H and tetrahedral O–P–O angles, and 0.10 Ha on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
@@ -5039,13 +5039,8 @@ class Internals(BaseInternals):
                     or int(numbers[int(angle.indices[2])]) == 15
                 )
             ):
-                za = int(numbers[int(angle.indices[0])])
-                zc = int(numbers[int(angle.indices[2])])
-                if za == 15 and zc == 15:
-                    # Bridging P–O–P on connected n<12.
-                    h0[idx] = 0.08 * units.Hartree
-                else:
-                    h0[idx] = 0.10 * units.Hartree
+                # Bridging P–O–P and terminal P–O–H on connected n<12.
+                h0[idx] = 0.08 * units.Hartree
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 15
