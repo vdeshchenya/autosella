@@ -42,7 +42,7 @@ also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
 and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
 a CF3 neighbor, and an unfluorinated other carbon, and on
 1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I), and on
-1–2 C–C–C at 4-coordinate CH2 with a 3-coordinate carbon neighbor.
+1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4596,7 +4596,7 @@ class Internals(BaseInternals):
                 css_ok = set(cands)
 
         def _fused_ch2_ccc(angle) -> bool:
-            # C–C–C at 4-coordinate CH2 with a 3-coordinate carbon neighbor.
+            # C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4615,8 +4615,18 @@ class Internals(BaseInternals):
                 return False
             for t in (ia, ic):
                 real_t = [nb for nb in neighbors[t] if int(nb) not in dummy_set]
-                if (len(real_t) == 3
-                        and all(int(numbers[nb]) in (1, 6) for nb in real_t)):
+                if len(real_t) != 3:
+                    continue
+                if any(int(numbers[nb]) not in (1, 6) for nb in real_t):
+                    continue
+                n3 = 0
+                for nb in real_t:
+                    if int(numbers[nb]) != 6:
+                        continue
+                    real_nb = [x for x in neighbors[nb] if int(x) not in dummy_set]
+                    if len(real_nb) == 3:
+                        n3 += 1
+                if n3 >= 2:
                     return True
             return False
 
@@ -4755,7 +4765,7 @@ class Internals(BaseInternals):
                 # Hetero/halo 3-coordinate C–S–C (thiazole/chlorothiophene).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in fused_ch2_ok:
-                # Fused CH2 C–C–C with a 3-coordinate carbon on 30≤n<80.
+                # Fused CH2 C–C–C at a 3-coordinate ring carbon on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
