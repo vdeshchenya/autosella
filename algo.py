@@ -4546,33 +4546,45 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 alkyl_aryl_csc_ok = set(cands)
 
-        def _enyne_cc(bond) -> bool:
-            # C–C between 4-coordinate CH2Cl and a 2-coordinate carbon.
+        def _fluoro_noxide_no(bond) -> bool:
+            # N–O of pyridine/imidazole N-oxide: 3-coord N {C, C, O},
+            # terminal oxygen. Molecule also has aryl F (3-coord C–F).
             ia, ib = int(bond.indices[0]), int(bond.indices[1])
             if ia in dummy_set or ib in dummy_set:
                 return False
-            if int(numbers[ia]) != 6 or int(numbers[ib]) != 6:
+            za, zb = int(numbers[ia]), int(numbers[ib])
+            if {za, zb} != {7, 8}:
                 return False
-            real_a = [nb for nb in neighbors[ia] if int(nb) not in dummy_set]
-            real_b = [nb for nb in neighbors[ib] if int(nb) not in dummy_set]
-            if sorted((len(real_a), len(real_b))) != [2, 4]:
+            n_idx = ia if za == 7 else ib
+            o_idx = ib if za == 7 else ia
+            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
                 return False
-            c4, c2 = (ia, ib) if len(real_a) == 4 else (ib, ia)
-            real_c4 = [nb for nb in neighbors[c4] if int(nb) not in dummy_set]
-            if sum(int(numbers[nb]) == 17 for nb in real_c4) != 1:
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_n)
+            if n_c != 2 or n_o != 1:
                 return False
-            real_c2 = [nb for nb in neighbors[c2] if int(nb) not in dummy_set]
-            return len(real_c2) == 2 and all(int(numbers[nb]) == 6
-                                            for nb in real_c2)
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            if len(real_o) != 1:
+                return False
+            for c in range(int(self.natoms)):
+                if int(numbers[c]) != 6:
+                    continue
+                real_c = [nb for nb in neighbors[c] if int(nb) not in dummy_set]
+                if len(real_c) != 3:
+                    continue
+                if any(int(numbers[nb]) == 9 for nb in real_c):
+                    return True
+            return False
 
-        enyne_cc_ok = set()
-        if soft_dummy_angle and self.natoms < 18:
+        no_ok = set()
+        if soft_pyridine_angle:
             cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _enyne_cc(bond)]
-            if len(cands) == 1:
-                enyne_cc_ok = set(cands)
+                     if _fluoro_noxide_no(bond)]
+            if len(cands) == 2:
+                no_ok = set(cands)
             ntrans = len(self.internals['translations'])
-            for ib in enyne_cc_ok:
+            for ib in no_ok:
                 h0[ntrans + ib] = 0.10 * units.Hartree / units.Bohr**2
 
         def _sios(angle) -> bool:
