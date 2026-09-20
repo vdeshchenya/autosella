@@ -32,8 +32,9 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and connected 30≤n_atoms<80 also use 0.10 Ha
-on at most two mixed 3-/4-coordinate carbamate C–O–C angles.
+oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
+on exactly one aryl phenol C–O–H (ipso carbon has two
+3-coordinate carbon neighbors).
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4418,42 +4419,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 isolated_csc_ok = set(cands)
 
-        def _carbamate_coc(angle) -> bool:
-            # Mixed 3-/4-coord carbamate C–O–C: 2-coord O, one C is
-            # 3-coord {O, O, N}, the other is 4-coord.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 8:
-                return False
-            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-            real_a = [nb for nb in neighbors[ia] if int(nb) not in dummy_set]
-            real_c = [nb for nb in neighbors[ic] if int(nb) not in dummy_set]
-
-            def is_carbamate_c(nbs):
-                if len(nbs) != 3:
-                    return False
-                zs = [int(numbers[nb]) for nb in nbs]
-                return zs.count(8) == 2 and zs.count(7) == 1
-
-            return (
-                (is_carbamate_c(real_a) and len(real_c) == 4)
-                or (is_carbamate_c(real_c) and len(real_a) == 4)
-            )
-
-        carbamate_coc_ok = set()
-        if soft_pyridine_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _carbamate_coc(angle)]
-            if 1 <= len(cands) <= 2:
-                carbamate_coc_ok = set(cands)
-
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4480,6 +4445,45 @@ class Internals(BaseInternals):
                      if _css(angle)]
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
+
+        def _aryl_phenol_coh(angle) -> bool:
+            # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
+            # whose other two neighbors are 3-coordinate carbons.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 8:
+                return False
+            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_o) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {1, 6}:
+                return False
+            c_idx = ia if za == 6 else ic
+            real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
+                return False
+            if sum(int(numbers[nb]) == 8 for nb in real_c) != 1:
+                return False
+            carbons = [nb for nb in real_c if int(numbers[nb]) == 6]
+            if len(carbons) != 2:
+                return False
+            for cn in carbons:
+                real_cn = [nb for nb in neighbors[int(cn)]
+                           if int(nb) not in dummy_set]
+                if len(real_cn) != 3:
+                    return False
+            return True
+
+        aryl_phenol_ok = set()
+        if soft_medium_angle and int(self.natoms) >= 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _aryl_phenol_coh(angle)]
+            # Exactly one: spare diphenol 135095125 (2) and 30-80 extras.
+            if len(cands) == 1:
+                aryl_phenol_ok = set(cands)
 
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
@@ -4542,11 +4546,11 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in isolated_csc_ok:
                 # Isolated 3-coordinate sulfide C–S–C.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in carbamate_coc_ok:
-                # Mixed 3-/4-coordinate carbamate C–O–C.
-                h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_medium_angle and ia in aryl_phenol_ok:
+                # Isolated aryl phenol C–O–H on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
