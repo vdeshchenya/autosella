@@ -11,7 +11,9 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
-30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O}. Connected
+30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
+with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
+3-coordinate carbon). Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -38,8 +40,7 @@ carbon neighbors) also use 0.12 Ha on dummy-involving dihedrals.
 Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors), and on 1–2 C–C–C at 3-coordinate
-isocyanide ipso carbon {C, C, N}, and on at most two 4-coordinate O–C–C
+guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
 ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
 cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
@@ -4917,42 +4918,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 fused_ch2_ok = set(cands)
 
-        def _isocyanide_ccc(angle) -> bool:
-            # C–C–C at 3-coordinate isocyanide ipso carbon {C, C, N}.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 3:
-                return False
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
-            n_n = sum(int(numbers[nb]) == 7 for nb in real_c)
-            if n_c != 2 or n_n != 1:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-            n_idx = next(int(nb) for nb in real_c if int(numbers[nb]) == 7)
-            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
-            if len(real_n) != 2:
-                return False
-            if any(int(numbers[nb]) != 6 for nb in real_n):
-                return False
-            return any(
-                len([x for x in neighbors[nb] if int(x) not in dummy_set]) == 1
-                for nb in real_n
-            )
-
-        isocyanide_ccc_ok = set()
-        if soft_pyridine_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _isocyanide_ccc(angle)]
-            if 1 <= len(cands) <= 2:
-                isocyanide_ccc_ok = set(cands)
-
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
             # whose other two neighbors are 3-coordinate carbons.
@@ -5088,9 +5053,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in fused_ch2_ok:
                 # Fused CH2 C–C–C at a 3-coordinate ring carbon on 30≤n<80.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in isocyanide_ccc_ok:
-                # Isocyanide ipso C–C–C on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
@@ -7401,6 +7363,20 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if n_noxide >= 2:
                 opt._has_bis_noxide = True
                 opt.pes.exact_geodesic = True
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 4:
+                    continue
+                n_f = sum(int(numbers[nb]) == 9 for nb in real)
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                if n_f != 3 or n_c != 1:
+                    continue
+                attach = next(nb for nb in real if int(numbers[nb]) == 6)
+                if len(neighbors[attach]) == 3:
+                    opt.pes.exact_geodesic = True
+                    break
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
