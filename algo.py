@@ -4814,6 +4814,9 @@ class InternalPES(PES):
                 (P * (diagonal * (labels == kind))) @ P
                 for kind in range(4) if np.any(labels == kind)
             ]
+            pi_correction = self._conjugated_bond_curvature(P, diagonal)
+            if pi_correction is not None:
+                self._fit_blocks[0] += pi_correction
             auxiliary_start = len(self._fit_blocks)
             auxiliary = self._auxiliary_curvature(B)
             self._fit_blocks.extend(auxiliary)
@@ -4846,6 +4849,84 @@ class InternalPES(PES):
         self._pinv_cache = _LRU2()
         self._qr_cache = _LRU2()
         self._Hc_cache = _LRU2()
+
+    def _conjugated_bond_curvature(self, projector, diagonal):
+        """HSSH reference bond correlations with Badger marginal stiffness."""
+        if self.atoms.pbc.any():
+            return None
+        numbers = self.atoms.numbers
+        count = len(numbers)
+        neighbors = [set() for _ in range(count)]
+        bond_rows = {}
+        row = self.int.ntrans
+        for bond, active in zip(self.int.internals['bonds'], self.int._active['bonds']):
+            i, j = bond.indices
+            if 0 <= i < count and 0 <= j < count:
+                neighbors[i].add(j)
+                neighbors[j].add(i)
+                if active:
+                    bond_rows[tuple(sorted((i, j)))] = row
+            if active:
+                row += 1
+        # One neutral p electron per three-coordinate carbon; heteroatom
+        # orbital energies/occupations are not represented by this model.
+        pi_atoms = {i for i in range(count) if numbers[i] == 6
+                    and len(neighbors[i]) == 3
+                    and all(numbers[j] in (1, 6) for j in neighbors[i])}
+        unseen = set(pi_atoms)
+        correction = np.zeros_like(projector)
+        used = False
+        while unseen:
+            component = []
+            todo = [min(unseen)]
+            unseen.remove(todo[0])
+            while todo:
+                i = todo.pop()
+                component.append(i)
+                for j in sorted(neighbors[i] & unseen):
+                    unseen.remove(j)
+                    todo.append(j)
+            component.sort()
+            n = len(component)
+            if n < 2 or n % 2:
+                continue
+            index = {atom: k for k, atom in enumerate(component)}
+            edges = [(i, j, bond_rows[(i, j)]) for i in component
+                     for j in sorted(neighbors[i]) if i < j and j in index
+                     and (i, j) in bond_rows]
+            if not edges:
+                continue
+            # All pi hoppings at the published equal-bond reference beta=-1.
+            hamiltonian = np.zeros((n, n))
+            for i, j, _ in edges:
+                hamiltonian[index[i], index[j]] = -1.0
+                hamiltonian[index[j], index[i]] = -1.0
+            energies, orbitals = eigh(hamiltonian)
+            occupied = n // 2
+            gaps = energies[occupied:][None, :] - energies[:occupied, None]
+            tolerance = 64.0 * np.finfo(float).eps * n * max(1.0, np.max(np.abs(energies)))
+            if np.min(gaps) <= tolerance:
+                continue
+            amplitudes = np.array([
+                (np.outer(orbitals[index[i], :occupied], orbitals[index[j], occupied:])
+                 + np.outer(orbitals[index[j], :occupied], orbitals[index[i], occupied:])
+                 ).ravel() for i, j, _ in edges])
+            weighted = amplitudes / np.sqrt(gaps.ravel())
+            # Divide the electronic response plus harmonic sigma springs by
+            # spring curvature 2/(x*y), x=.189 A and y=.2756 A.
+            relative = np.eye(len(edges)) - (2.0 * 0.189 / 0.2756) * (weighted @ weighted.T)
+            eigenvalues = eigh(relative, eigvals_only=True)
+            if np.min(eigenvalues) <= 64.0 * np.finfo(float).eps * len(edges):
+                continue
+            marginal = np.sqrt(np.diag(relative))
+            correlation = relative / marginal[:, None] / marginal[None, :]
+            rows = np.array([r for _, _, r in edges], dtype=int)
+            mapping = projector[:, rows] * np.sqrt(diagonal[rows])
+            correction += mapping @ (correlation - np.eye(len(edges))) @ mapping.T
+            used = True
+        if not used:
+            return None
+        return 0.5 * (correction + correction.T)
 
     def _stretch_bend_curvature(self, projector, diagonal):
         """Bounded signed correlation on the real bond-angle incidence graph."""
