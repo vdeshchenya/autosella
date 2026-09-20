@@ -12,7 +12,8 @@ Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha.
+Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
+when 1–3 such angles are present.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4461,7 +4462,7 @@ class Internals(BaseInternals):
         if soft_dummy_angle and self.natoms < 18:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _sns(angle)]
-            if 1 <= len(cands) <= 4:
+            if 1 <= len(cands) <= 3:
                 sns_ok = set(cands)
 
         def _css(angle) -> bool:
@@ -4619,7 +4620,7 @@ class Internals(BaseInternals):
                 # 2-coordinate Si–O–S on connected 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif ia in sns_ok:
-                # 2-coordinate S–N–S on connected n<18.
+                # 2-coordinate S–N–S on connected n<18 (1–3 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
