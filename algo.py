@@ -13,9 +13,7 @@ n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
-3-coordinate carbon). Connected 30≤n_atoms<80 with a
-1-coordinate carbon bonded to nitrogen skip two-point GDIIS.
-Connected
+3-coordinate carbon). Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -28,7 +26,8 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
-{S, S, S}, and on
+{S, S, S}, 0.25 Ha/Bohr² on 1–2 C–S at 3-coordinate sulfoxide
+S {C, C, O} on connected n<12, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
@@ -4161,12 +4160,46 @@ class Internals(BaseInternals):
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
+        dummy_pre = set(range(self.natoms, self.natoms + self.ndummies))
+        numbers_pre = np.asarray(self.all_atoms.numbers)
+        neighbors_pre = [[] for _ in range(len(self.all_atoms))]
+        for bond in self.internals['bonds']:
+            i, j = int(bond.indices[0]), int(bond.indices[1])
+            neighbors_pre[i].append(j)
+            neighbors_pre[j].append(i)
+
+        def _sulfoxide_cs(ia, ic) -> bool:
+            for a, b in ((ia, ic), (ic, ia)):
+                if int(a) in dummy_pre or int(b) in dummy_pre:
+                    continue
+                if int(numbers_pre[a]) != 16 or int(numbers_pre[b]) != 6:
+                    continue
+                real = [nb for nb in neighbors_pre[a] if int(nb) not in dummy_pre]
+                if len(real) != 3:
+                    continue
+                n_c = sum(int(numbers_pre[nb]) == 6 for nb in real)
+                n_o = sum(int(numbers_pre[nb]) == 8 for nb in real)
+                if n_c == 2 and n_o == 1:
+                    return True
+            return False
+
+        sulfoxide_cs_ok = set()
+        if getattr(self, 'soft_oxo_angle_h0', False):
+            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
+                     if _sulfoxide_cs(int(bond.indices[0]), int(bond.indices[1]))]
+            if 1 <= len(cands) <= 2:
+                sulfoxide_cs_ok = set(cands)
+
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
-        for bond in self.internals['bonds']:
-            h0[idx] = self._h0_bond(bond)
+        for ib, bond in enumerate(self.internals['bonds']):
+            if ib in sulfoxide_cs_ok:
+                # C–S at 3-coord sulfoxide S {C,C,O} on connected n<12.
+                h0[idx] = 0.25 * units.Hartree / units.Bohr**2
+            else:
+                h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -7073,8 +7106,6 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if getattr(self, "_skip_gdiis", False):
-            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7353,7 +7384,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
-        opt._skip_gdiis = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
@@ -7398,15 +7428,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 attach = next(nb for nb in real if int(numbers[nb]) == 6)
                 if len(neighbors[attach]) == 3:
                     opt.pes.exact_geodesic = True
-                    break
-            for i in range(n_atoms):
-                if int(numbers[i]) != 6:
-                    continue
-                real = neighbors[i]
-                if len(real) != 1:
-                    continue
-                if int(numbers[real[0]]) == 7:
-                    opt._skip_gdiis = True
                     break
         opt._hydrocarbon = False
         if not connected:
