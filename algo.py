@@ -33,8 +33,8 @@ use 0.15 Ha when at most two such dummies are present. Connected
 n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
 carbon neighbors) also use 0.15 Ha on dummy-involving dihedrals.
 Connected n_atoms≥30 isocyanides (2-coordinate N bonded to
-1-coordinate C) use 0.15 Ha on those dummy-involving dihedrals.
-Connected 30≤n_atoms<80 use 0.10 Ha
+1-coordinate C) use 0.08 Ha on dummy-involving angles at those
+dummies. Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
@@ -3930,20 +3930,6 @@ class Internals(BaseInternals):
                         range(self.natoms, self.natoms + self.ndummies)
                     )
                     break
-        if self.natoms >= 30:
-            numbers = np.asarray(self.atoms.numbers[:self.natoms])
-            iso = set()
-            for j in range(self.natoms):
-                if int(numbers[j]) != 7 or len(real_nb[j]) != 2:
-                    continue
-                if any(int(numbers[t]) == 6 and len(real_nb[t]) == 1
-                       for t in real_nb[j]):
-                    d = int(self.dinds[j])
-                    if d >= self.natoms:
-                        iso.add(d)
-            if 1 <= len(iso) <= 2:
-                cur = set(getattr(self, 'alkyne_soft_dummy_atoms', set()))
-                self.alkyne_soft_dummy_atoms = cur | iso
 
     def find_all_dihedrals(self) -> None:
         # First, find proper dihedrals from angle combinations.
@@ -4983,7 +4969,33 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                h0[idx] = 0.10 * units.Hartree
+                scale = 0.10
+                if self.natoms >= 30:
+                    for j in angle.indices:
+                        jj = int(j)
+                        if jj not in dummy_set:
+                            continue
+                        hosts = [h for h in neighbors[jj] if int(h) not in dummy_set]
+                        tagged = False
+                        for h in hosts:
+                            if int(numbers[h]) != 7:
+                                continue
+                            real_h = [nb for nb in neighbors[h]
+                                      if int(nb) not in dummy_set]
+                            if len(real_h) != 2:
+                                continue
+                            if any(
+                                int(numbers[t]) == 6 and
+                                len([nb for nb in neighbors[t]
+                                     if int(nb) not in dummy_set]) == 1
+                                for t in real_h
+                            ):
+                                scale = 0.08
+                                tagged = True
+                                break
+                        if tagged:
+                            break
+                h0[idx] = scale * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
