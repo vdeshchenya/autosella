@@ -2,7 +2,7 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
-use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
+without a P–F bond use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -6931,7 +6931,22 @@ class Sella(Optimizer):
                 rs_kwargs['wa'] = 0.75
                 intern = getattr(self.pes, "int", None)
                 if intern is not None and int(intern.natoms) < 12:
-                    rs_kwargs['wa'] = 0.70
+                    has_pf = getattr(self, "_has_pf_bond", None)
+                    if has_pf is None:
+                        has_pf = False
+                        numbers = intern.atoms.numbers
+                        natoms = int(intern.natoms)
+                        for bond in intern.internals.get('bonds', []):
+                            i, j = int(bond.indices[0]), int(bond.indices[1])
+                            if i >= natoms or j >= natoms:
+                                continue
+                            za, zb = int(numbers[i]), int(numbers[j])
+                            if {za, zb} == {9, 15}:
+                                has_pf = True
+                                break
+                        self._has_pf_bond = has_pf
+                    if not has_pf:
+                        rs_kwargs['wa'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
