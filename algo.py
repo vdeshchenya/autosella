@@ -19,7 +19,8 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
 3-coordinate N-oxide nitrogen {C, C, O}.
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
-P–O–P and tetrahedral O–P–O angles, 0.10 Ha on P–O–H and on
+P–O–P and tetrahedral O–P–O angles except silicon-containing
+molecules, 0.10 Ha on P–O–H and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
@@ -53,7 +54,8 @@ a CF3 neighbor, and an unfluorinated other carbon, and on
 1–2 isolated alkyl–aryl mixed C–S–C, and on
 1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon,
 excluding sulfur-containing molecules, and on 1–2 carbamate N–C–O
-at 3-coordinate carbon {N, O, O} with a 2-coordinate ether oxygen.
+at 3-coordinate carbon {N, O, O} with a 2-coordinate ether oxygen,
+skipping N-sulfonyl nitrogen.
 Connected 12≤n_atoms<30
 also use 0.10 Ha on at most two 4-coordinate C–C–Cl
 angles whose carbon terminal is not 3-coordinate, and connected
@@ -4169,6 +4171,7 @@ class Internals(BaseInternals):
         soft_medium_angle = getattr(self, 'soft_medium_angle_h0', False)
         soft_phenol_angle = getattr(self, 'soft_phenol_angle_h0', False)
         numbers = np.asarray(self.all_atoms.numbers)
+        has_silicon = any(int(numbers[i]) == 14 for i in range(int(self.natoms)))
         neighbors = [[] for _ in range(len(self.all_atoms))]
         for bond in self.internals['bonds']:
             i, j = bond.indices
@@ -4245,8 +4248,23 @@ class Internals(BaseInternals):
             if {za, zc} != {7, 8}:
                 return False
             o_idx = ia if za == 8 else ic
+            n_idx = ia if za == 7 else ic
             real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            return len(real_o) == 2
+            if len(real_o) != 2:
+                return False
+            # Skip N-sulfonyl carbamates (valid 135065494); keep N–S–S
+            # (train 135267488). Cycle 328 skipped every N–S bond.
+            for nb in neighbors[n_idx]:
+                if int(nb) in dummy_set:
+                    continue
+                if int(numbers[nb]) != 16:
+                    continue
+                n_so = sum(int(numbers[nbb]) == 8
+                           for nbb in neighbors[nb]
+                           if int(nbb) not in dummy_set)
+                if n_so >= 2:
+                    return False
+            return True
 
         def _ether_oxygen(angle) -> bool:
             ia, _, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -5076,8 +5094,8 @@ class Internals(BaseInternals):
                 za = int(numbers[int(angle.indices[0])])
                 zc = int(numbers[int(angle.indices[2])])
                 if za == 15 and zc == 15:
-                    # Bridging P–O–P on connected n<12.
-                    h0[idx] = 0.08 * units.Hartree
+                    # Bridging P–O–P on connected n<12; Si cages stay 0.10.
+                    h0[idx] = (0.10 if has_silicon else 0.08) * units.Hartree
                 else:
                     h0[idx] = 0.10 * units.Hartree
             elif (
@@ -5086,8 +5104,8 @@ class Internals(BaseInternals):
                 and int(numbers[int(angle.indices[0])]) == 8
                 and int(numbers[int(angle.indices[2])]) == 8
             ):
-                # Tetrahedral O–P–O on connected n<12.
-                h0[idx] = 0.08 * units.Hartree
+                # Tetrahedral O–P–O on connected n<12; Si cages stay 0.10.
+                h0[idx] = (0.10 if has_silicon else 0.08) * units.Hartree
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 14
