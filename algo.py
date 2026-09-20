@@ -4,8 +4,8 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
 without a P–F bond and connected 30≤n_atoms<80 with at least two
 N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
-Connected 12≤n_atoms<30 with a 4-coordinate thiosulfonate sulfur
-{O, O, S, C} use MaxInternalStep `wd=0.70`.
+Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
+use MaxInternalStep `wd=0.70`.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -6972,7 +6972,7 @@ class Sella(Optimizer):
                         rs_kwargs['wa'] = 0.70
                 elif getattr(self, "_has_bis_noxide", False):
                     rs_kwargs['wa'] = 0.70
-                if getattr(self, "_has_thiosulfonate", False):
+                if getattr(self, "_has_sulfoxide", False):
                     rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7353,8 +7353,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
-        opt._has_thiosulfonate = False
-        if connected and 12 <= n_atoms < 30:
+        opt._has_sulfoxide = False
+        if connected and n_atoms < 12:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
             for bond in probe.internals.get('bonds', []):
@@ -7367,13 +7367,12 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 if int(numbers[i]) != 16:
                     continue
                 real = neighbors[i]
-                if len(real) != 4:
+                if len(real) != 3:
                     continue
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                n_s = sum(int(numbers[nb]) == 16 for nb in real)
                 n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                if n_o == 2 and n_s == 1 and n_c == 1:
-                    opt._has_thiosulfonate = True
+                n_o = sum(int(numbers[nb]) == 8 for nb in real)
+                if n_c == 2 and n_o == 1:
+                    opt._has_sulfoxide = True
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
