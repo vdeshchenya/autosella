@@ -5,8 +5,9 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<30 which use 0.20 Ha. Connected n_atoms==16 or
-18≤n_atoms<20 geodesic ODE steps recompute Binv at every RHS. Connected
+n_atoms<30 which use 0.20 Ha. Connected n_atoms==16 with a
+2-coordinate C–C–C, or 18≤n_atoms<20, geodesic ODE steps recompute
+Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -6822,6 +6823,22 @@ class _WrappedCalc(Calculator):
         self.results["energy"] = energy_kj / _EV_TO_KJ
         self.results["forces"] = np.array(forces_kj_nm) / _EV_TO_KJ * _ANGSTROM_TO_NM
 
+def _has_two_coord_ccc(internals) -> bool:
+    """True if a 2-coordinate carbon is bonded to two carbons."""
+    numbers = np.asarray(internals.atoms.numbers)
+    neighbors = [[] for _ in range(len(numbers))]
+    for bond in internals.internals.get('bonds', []):
+        i, j = (int(bond.indices[0]), int(bond.indices[1]))
+        neighbors[i].append(j)
+        neighbors[j].append(i)
+    for i, z in enumerate(numbers):
+        if int(z) != 6 or len(neighbors[i]) != 2:
+            continue
+        if int(numbers[neighbors[i][0]]) == 6 and int(numbers[neighbors[i][1]]) == 6:
+            return True
+    return False
+
+
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
@@ -6842,7 +6859,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and (n_atoms == 16 or 18 <= n_atoms < 20):
+        if connected and 18 <= n_atoms < 20:
+            opt.pes.exact_geodesic = True
+        if connected and n_atoms == 16 and _has_two_coord_ccc(probe):
             opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
