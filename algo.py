@@ -1,17 +1,17 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps
-(after 10 steps when n_atoms<12). Dimers floor the trust radius at
-`delta_min=0.02`. Connected molecules also floor δ at 0.15 after 20
-steps (after 10 steps when n_atoms<12). Connected dummy-atom dihedral
+`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
+Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
+also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted (cosine ≥ 0.85 on
+connected n_atoms<12, else ≥ 0.90). Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
@@ -6534,8 +6534,8 @@ class Sella(Optimizer):
 
         Cycle 117's 2–4 point milder GDIIS passed train but inflated
         seven valid jobs. Restrict to the two most recent points so the
-        interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90. Accept only when the previous step was well
+        interpolant stays on the last segment.         Keep c_i≥0, ||s_DIIS||≤||s_QN||,
+        and cosine ≥ 0.90 (0.85 on connected n_atoms<12). Accept only when the previous step was well
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
         connected-only.
@@ -6592,7 +6592,8 @@ class Sella(Optimizer):
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
+        cos_min = 0.85 if getattr(self, "_gdiis_cos_n12", False) else 0.90
+        if cos < cos_min or cos < 0.0:
             return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
@@ -6657,10 +6658,7 @@ class Sella(Optimizer):
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
-        # n_atoms<12 start that floor at 10 so small leftover tails are not
-        # truncated in steps 10–20.
-        floor_after = 10 if getattr(self, '_early_connected_floor', False) else 20
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= floor_after:
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
@@ -6821,7 +6819,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         if connected and n_atoms < 12:
-            opt._early_connected_floor = True
+            opt._gdiis_cos_n12 = True
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if not connected:
