@@ -10,9 +10,12 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted (after 15 steps on
-connected 30≤n<80, else after 20). Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
+Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
+when 1–3 such angles are present. Connected n<18 Cl–C–H at
+4-coordinate carbon with exactly one Cl uses 0.10 Ha when 1–2
+such angles are present.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4443,6 +4446,50 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 sios_ok = set(cands)
 
+        def _sns(angle) -> bool:
+            # 2-coordinate S–N–S (sulfur-nitrogen cage).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return za == 16 and zc == 16
+
+        sns_ok = set()
+        if soft_dummy_angle and self.natoms < 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _sns(angle)]
+            if 1 <= len(cands) <= 3:
+                sns_ok = set(cands)
+
+        def _clch(angle) -> bool:
+            # Cl–C–H at 4-coordinate carbon with exactly one Cl.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            if sum(int(numbers[nb]) == 17 for nb in real_c) != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {1, 17}
+
+        clch_ok = set()
+        if soft_dummy_angle and self.natoms < 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _clch(angle)]
+            if 1 <= len(cands) <= 2:
+                clch_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4596,6 +4643,12 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
+                h0[idx] = 0.10 * units.Hartree
+            elif ia in sns_ok:
+                # 2-coordinate S–N–S on connected n<18 (1–3 cap).
+                h0[idx] = 0.10 * units.Hartree
+            elif ia in clch_ok:
+                # Cl–C–H at mono-chloro carbon on connected n<18.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
@@ -6538,10 +6591,9 @@ class Sella(Optimizer):
         and cosine ≥ 0.90. Accept only when the previous step was well
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only. Connected 30≤n<80 start at 15 steps.
+        connected-only.
         """
-        gdiis_after = getattr(self, "_gdiis_after", 20)
-        if self.nsteps < gdiis_after:
+        if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
@@ -6818,8 +6870,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and 30 <= n_atoms < 80:
-            opt._gdiis_after = 15
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if not connected:
