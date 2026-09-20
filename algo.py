@@ -4921,9 +4921,10 @@ class Internals(BaseInternals):
 
         def _acetate_ester_cco(angle) -> bool:
             # C–C–O at acetate-ester carbonyl: 3-coord C {C, O, O} with
-            # one 1-coord carbonyl O and one 2-coord alkoxy O; the carbon
-            # terminal is methyl {H, H, H, C}. Skips formate (no acyl C)
-            # and carboxylic acids (OH, not alkoxy).
+            # one carbonyl-like O (no extra C neighbor) and one alkoxy O
+            # (extra C neighbor); the carbon terminal is methyl
+            # {H, H, H, C}. Skips formate (no acyl C) and carboxylic
+            # acids (OH, not alkoxy).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4944,12 +4945,15 @@ class Internals(BaseInternals):
                     continue
                 real_o = [nb for nb in neighbors[int(o_idx)]
                           if int(nb) not in dummy_set]
-                if len(real_o) == 1:
-                    has_carbonyl = True
-                elif (len(real_o) == 2
-                      and any(int(numbers[nb]) == 6 and int(nb) != icen
-                              for nb in real_o)):
+                # Carbonyl-like: no carbon besides the carbonyl carbon.
+                # Allows H-bonded =O that connecting internals count as
+                # 2-coordinate (cycle 535 1-coord miss).
+                other_c = [nb for nb in real_o
+                           if int(numbers[nb]) == 6 and int(nb) != icen]
+                if other_c:
                     has_alkoxy = True
+                else:
+                    has_carbonyl = True
             if not (has_carbonyl and has_alkoxy):
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
