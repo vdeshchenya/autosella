@@ -21,9 +21,7 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H and on
-F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers,
-and 0.8× Fischer P–O stretch guesses except silicon-containing
-molecules.
+F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -57,7 +55,7 @@ a CF3 neighbor, and an unfluorinated other carbon, and on
 1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon,
 excluding sulfur-containing molecules, and on 1–2 carbamate N–C–O
 at 3-coordinate carbon {N, O, O} with a 2-coordinate ether oxygen,
-skipping N-sulfonyl nitrogen.
+skipping N-sulfonyl nitrogen, using 0.08 Ha.
 Connected 12≤n_atoms<30
 also use 0.10 Ha on at most two 4-coordinate C–C–Cl
 angles whose carbon terminal is not 3-coordinate, and connected
@@ -4156,21 +4154,11 @@ class Internals(BaseInternals):
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
         idx = 0
-        numbers_early = np.asarray(self.all_atoms.numbers)
-        has_silicon_early = any(
-            int(numbers_early[i]) == 14 for i in range(int(self.natoms))
-        )
-        soft_oxo_early = getattr(self, 'soft_oxo_angle_h0', False)
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for bond in self.internals['bonds']:
             h0[idx] = self._h0_bond(bond)
-            if soft_oxo_early and not has_silicon_early:
-                ia, ib = int(bond.indices[0]), int(bond.indices[1])
-                if {int(numbers_early[ia]), int(numbers_early[ib])} == {8, 15}:
-                    # P–O stretches on connected n<12 without silicon.
-                    h0[idx] *= 0.8
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -5036,7 +5024,7 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in oxazolidinone_nco_ok:
                 # Oxazolidinone carbamate N–C–O at 3-coordinate carbon.
-                h0[idx] = 0.10 * units.Hartree
+                h0[idx] = 0.08 * units.Hartree
             elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
                 h0[idx] = 0.10 * units.Hartree
