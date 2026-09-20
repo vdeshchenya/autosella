@@ -42,7 +42,8 @@ also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
 and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
 a CF3 neighbor, and an unfluorinated other carbon, and on
 1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I), and on
-1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon.
+1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon,
+excluding sulfur-containing molecules.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4631,7 +4632,8 @@ class Internals(BaseInternals):
             return False
 
         fused_ch2_ok = set()
-        if soft_pyridine_angle:
+        if (soft_pyridine_angle
+                and not any(int(z) == 16 for z in numbers[:int(self.natoms)])):
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _fused_ch2_ccc(angle)]
             if 1 <= len(cands) <= 2:
