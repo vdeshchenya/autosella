@@ -38,10 +38,7 @@ carbon neighbors) also use 0.12 Ha on dummy-involving dihedrals.
 Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
-guanidinium (≥3 N neighbors), and on 1–2 3-coordinate pyridine
-C–C–N at carbon {C, C, N} with 2-coordinate nitrogen whose
-two carbons are 3-coordinate when the
-molecule has a 1-coordinate carbon bonded to nitrogen, and on at most two 4-coordinate O–C–C
+guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
 ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
 cyclic ethers, and on at most two carboxyl/ester
 Cα C–C–N angles, and on at most two 2-coordinate C–N–N
@@ -49,7 +46,8 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
+oxygen-substituted, and 0.25 Ha/Bohr² on 1–2 S–O stretches
+at 4-coordinate thiosulfonate sulfur {O, O, S, C}, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
@@ -4184,6 +4182,32 @@ class Internals(BaseInternals):
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
 
+        if soft_medium_angle:
+            n_trans = len(self.internals['translations'])
+
+            def _thio_so(ia, ic) -> bool:
+                if ia in dummy_set or ic in dummy_set:
+                    return False
+                za, zc = int(numbers[ia]), int(numbers[ic])
+                if {za, zc} != {8, 16}:
+                    return False
+                s_idx = ia if za == 16 else ic
+                real = [nb for nb in neighbors[s_idx]
+                        if int(nb) not in dummy_set]
+                if len(real) != 4:
+                    return False
+                n_o = sum(int(numbers[nb]) == 8 for nb in real)
+                n_s = sum(int(numbers[nb]) == 16 for nb in real)
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                return n_o == 2 and n_s == 1 and n_c == 1
+
+            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
+                     if _thio_so(int(bond.indices[0]), int(bond.indices[1]))]
+            if 1 <= len(cands) <= 2:
+                scale = 0.25 * units.Hartree / units.Bohr**2
+                for ib in cands:
+                    h0[n_trans + ib] = scale
+
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
@@ -4919,55 +4943,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 fused_ch2_ok = set(cands)
 
-        def _has_isocyanide() -> bool:
-            for i in range(int(self.natoms)):
-                if int(i) in dummy_set or int(numbers[i]) != 6:
-                    continue
-                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
-                if len(real) != 1:
-                    continue
-                if int(numbers[real[0]]) == 7:
-                    return True
-            return False
-
-        def _pyridine_ccn(angle) -> bool:
-            # 3-coordinate pyridine C–C–N (ortho carbon {C, C, N};
-            # nitrogen is 2-coordinate C–N–C).
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 3:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 7}:
-                return False
-            n_idx = ia if za == 7 else ic
-            c_term = ic if za == 7 else ia
-            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
-            if len(real_n) != 2:
-                return False
-            if any(int(numbers[nb]) != 6 for nb in real_n):
-                return False
-            # Drop isocyanide ipso C–C–N (one N neighbor is 1-coordinate C)
-            # so leftover pyridine ortho C–C–N stays inside the 1–2 cap.
-            for nb in real_n:
-                real_nb = [x for x in neighbors[nb] if int(x) not in dummy_set]
-                if len(real_nb) != 3:
-                    return False
-            real_ct = [nb for nb in neighbors[c_term] if int(nb) not in dummy_set]
-            return len(real_ct) == 3
-
-        pyridine_ccn_ok = set()
-        if soft_pyridine_angle and _has_isocyanide():
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _pyridine_ccn(angle)]
-            if 1 <= len(cands) <= 2:
-                pyridine_ccn_ok = set(cands)
-
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
             # whose other two neighbors are 3-coordinate carbons.
@@ -5103,9 +5078,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in fused_ch2_ok:
                 # Fused CH2 C–C–C at a 3-coordinate ring carbon on 30≤n<80.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in pyridine_ccn_ok:
-                # Isocyanide-gated pyridine C–C–N on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
