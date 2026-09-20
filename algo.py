@@ -4546,73 +4546,64 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 alkyl_aryl_csc_ok = set(cands)
 
-        def _naryl_alkyl_sch2(bond) -> bool:
-            # S–CH2 of isolated alkyl–aryl sulfide; the aryl carbon has a
-            # 3-coordinate N-substituted carbon neighbor (aniline /
-            # benzothiazine, not isocyanate).
+        def _protonated_ester_ome(bond) -> bool:
+            # Methoxy C–O of a protonated methyl ester: 2-coord O between
+            # a methyl carbon and a 3-coord carbonyl {O, O, C} that also
+            # has a hydroxyl oxygen.
             ia, ib = int(bond.indices[0]), int(bond.indices[1])
             if ia in dummy_set or ib in dummy_set:
                 return False
             za, zb = int(numbers[ia]), int(numbers[ib])
-            if {za, zb} != {6, 16}:
+            if {za, zb} != {6, 8}:
                 return False
-            s_idx = ia if za == 16 else ib
-            c4 = ib if za == 16 else ia
-            real_s = [nb for nb in neighbors[s_idx] if int(nb) not in dummy_set]
-            if len(real_s) != 2:
+            o_idx = ia if za == 8 else ib
+            c_idx = ib if za == 8 else ia
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            if len(real_o) != 2:
                 return False
-            real_c4 = [nb for nb in neighbors[c4] if int(nb) not in dummy_set]
-            if len(real_c4) != 4:
+            if int(numbers[c_idx]) != 6:
                 return False
-            if sum(int(numbers[nb]) == 1 for nb in real_c4) != 2:
+            # Soften the O–methyl stretch, not O–carbonyl.
+            real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
                 return False
-            others = [nb for nb in real_c4
-                      if int(nb) != s_idx and int(numbers[nb]) != 1]
-            if len(others) != 1:
+            if sum(int(numbers[nb]) == 1 for nb in real_c) != 3:
                 return False
-            if int(numbers[others[0]]) != 6:
+            if sum(int(numbers[nb]) == 8 for nb in real_c) != 1:
                 return False
-            real_o = [x for x in neighbors[others[0]]
-                      if int(x) not in dummy_set]
-            if len(real_o) != 4:
+            carb = next((int(nb) for nb in real_o if int(nb) != c_idx), None)
+            if carb is None or int(numbers[carb]) != 6:
                 return False
-            c3 = next(int(nb) for nb in real_s if int(nb) != c4)
-            if int(numbers[c3]) != 6:
+            real_carb = [nb for nb in neighbors[carb]
+                         if int(nb) not in dummy_set]
+            if len(real_carb) != 3:
                 return False
-            real_c3 = [nb for nb in neighbors[c3] if int(nb) not in dummy_set]
-            if len(real_c3) != 3:
+            zs = [int(numbers[nb]) for nb in real_carb]
+            if zs.count(8) != 2 or zs.count(6) != 1:
                 return False
-            n3c = 0
-            has_naryl = False
-            for nb in real_c3:
-                if int(nb) == s_idx:
+            kinds = []
+            for oi in real_carb:
+                if int(numbers[oi]) != 8:
                     continue
-                zn = int(numbers[nb])
-                if zn not in (1, 6):
+                real_oi = [nb for nb in neighbors[int(oi)]
+                           if int(nb) not in dummy_set]
+                if len(real_oi) != 2:
                     return False
-                if zn != 6:
-                    continue
-                real_nb = [x for x in neighbors[nb] if int(x) not in dummy_set]
-                if len(real_nb) != 3:
-                    return False
-                n3c += 1
-                for k in real_nb:
-                    if int(numbers[k]) != 7 or int(k) in dummy_set:
-                        continue
-                    real_n = [x for x in neighbors[int(k)]
-                              if int(x) not in dummy_set]
-                    if len(real_n) == 3:
-                        has_naryl = True
-            return n3c >= 2 and has_naryl
+                if any(int(numbers[nb]) == 1 for nb in real_oi):
+                    kinds.append('oh')
+                elif any(int(numbers[nb]) == 6 and int(nb) != carb
+                         for nb in real_oi):
+                    kinds.append('ome')
+            return sorted(kinds) == ['oh', 'ome']
 
-        sch2_ok = set()
+        ome_ok = set()
         if soft_pyridine_angle:
             cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _naryl_alkyl_sch2(bond)]
+                     if _protonated_ester_ome(bond)]
             if len(cands) == 1:
-                sch2_ok = set(cands)
+                ome_ok = set(cands)
             ntrans = len(self.internals['translations'])
-            for ib in sch2_ok:
+            for ib in ome_ok:
                 h0[ntrans + ib] = 0.10 * units.Hartree / units.Bohr**2
 
         def _sios(angle) -> bool:
