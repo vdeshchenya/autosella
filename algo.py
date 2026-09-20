@@ -18,9 +18,8 @@ with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
-at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses,
-as do connected 12≤n_atoms<30 with a 4-coordinate thiosulfonate
-sulfur {O, O, S, C}. Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
+Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
 3-coordinate N-oxide nitrogen {C, C, O}.
@@ -29,6 +28,9 @@ P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
 {S, S, S}, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
+Connected 12≤n_atoms<30 use 0.25 Ha/Bohr² on 1–2 sulfonyl
+methyl C–S stretches at 4-coordinate S {O, O, S, C} bonded to
+methyl C {S, H, H, H}.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4160,12 +4162,54 @@ class Internals(BaseInternals):
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
+        dummy_pre = set(range(self.natoms, self.natoms + self.ndummies))
+        numbers_pre = np.asarray(self.all_atoms.numbers)
+        neighbors_pre = [[] for _ in range(len(self.all_atoms))]
+        for bond in self.internals['bonds']:
+            i, j = int(bond.indices[0]), int(bond.indices[1])
+            neighbors_pre[i].append(j)
+            neighbors_pre[j].append(i)
+
+        def _sulfonyl_methyl_cs(ia, ic) -> bool:
+            for a, b in ((ia, ic), (ic, ia)):
+                if int(a) in dummy_pre or int(b) in dummy_pre:
+                    continue
+                if int(numbers_pre[a]) != 16 or int(numbers_pre[b]) != 6:
+                    continue
+                real_s = [nb for nb in neighbors_pre[a] if int(nb) not in dummy_pre]
+                if len(real_s) != 4:
+                    continue
+                n_o = sum(int(numbers_pre[nb]) == 8 for nb in real_s)
+                n_s = sum(int(numbers_pre[nb]) == 16 for nb in real_s)
+                n_c = sum(int(numbers_pre[nb]) == 6 for nb in real_s)
+                if not (n_o == 2 and n_s == 1 and n_c == 1):
+                    continue
+                real_c = [nb for nb in neighbors_pre[b] if int(nb) not in dummy_pre]
+                if len(real_c) != 4:
+                    continue
+                n_h = sum(int(numbers_pre[nb]) == 1 for nb in real_c)
+                n_s_c = sum(int(numbers_pre[nb]) == 16 for nb in real_c)
+                if n_h == 3 and n_s_c == 1:
+                    return True
+            return False
+
+        sulfonyl_cs_ok = set()
+        if getattr(self, 'soft_medium_angle_h0', False):
+            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
+                     if _sulfonyl_methyl_cs(int(bond.indices[0]), int(bond.indices[1]))]
+            if 1 <= len(cands) <= 2:
+                sulfonyl_cs_ok = set(cands)
+
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
-        for bond in self.internals['bonds']:
-            h0[idx] = self._h0_bond(bond)
+        for ib, bond in enumerate(self.internals['bonds']):
+            if ib in sulfonyl_cs_ok:
+                # Sulfonyl methyl C–S at 4-coord S {O,O,S,C}.
+                h0[idx] = 0.25 * units.Hartree / units.Bohr**2
+            else:
+                h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -7346,27 +7390,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
-        if 12 <= n_atoms < 30:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 4:
-                    continue
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                n_s = sum(int(numbers[nb]) == 16 for nb in real)
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                if n_o == 2 and n_s == 1 and n_c == 1:
-                    Internals.soft_dummy_angle_h0_default = True
-                    break
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
