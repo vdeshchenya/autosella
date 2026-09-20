@@ -18,7 +18,7 @@ Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
 Cl–Si–X, and F–B–F angles at silicon or boron centers, and on
-1–2 Br–C–S at 4-coordinate CBr3 carbon bonded to sulfur.
+at most two Br–C–S at 4-coordinate CBr3 carbon bonded to sulfur.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4617,8 +4617,8 @@ class Internals(BaseInternals):
         if soft_oxo_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _tribromo_brcs(angle)]
-            if 1 <= len(cands) <= 2:
-                tribromo_brcs_ok = set(cands)
+            if len(cands) >= 1:
+                tribromo_brcs_ok = set(cands[:2])
 
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
@@ -4760,7 +4760,7 @@ class Internals(BaseInternals):
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_oxo_angle and ia in tribromo_brcs_ok:
-                # CBr3 Br–C–S on connected n<12 (1–2 cap).
+                # CBr3 Br–C–S on connected n<12 (two of six).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in aryl_phenol_ok:
                 # Isolated aryl phenol C–O–H on connected 18≤n<30.
