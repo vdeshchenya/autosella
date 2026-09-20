@@ -4,6 +4,8 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
 without a P–F bond and connected 30≤n_atoms<80 with at least two
 N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
+Connected 12≤n_atoms<30 with a 4-coordinate thiosulfonate sulfur
+{O, O, S, C} use MaxInternalStep `wd=0.70`.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -28,10 +30,6 @@ P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
 {S, S, S}, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
-Connected 12≤n_atoms<30 use 0.25 Ha/Bohr² on 1–2 choline
-disulfide linker C–C stretches at 4-coordinate C {N, C, H, H}
-bonded to 4-coordinate C {C, S, H, H} whose nitrogen is
-4-coordinate trimethylammonium.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4163,73 +4161,12 @@ class Internals(BaseInternals):
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
-        dummy_pre = set(range(self.natoms, self.natoms + self.ndummies))
-        numbers_pre = np.asarray(self.all_atoms.numbers)
-        neighbors_pre = [[] for _ in range(len(self.all_atoms))]
-        for bond in self.internals['bonds']:
-            i, j = int(bond.indices[0]), int(bond.indices[1])
-            neighbors_pre[i].append(j)
-            neighbors_pre[j].append(i)
-
-        def _is_methyl_carbon(idx) -> bool:
-            real = [nb for nb in neighbors_pre[idx] if int(nb) not in dummy_pre]
-            return sum(int(numbers_pre[nb]) == 1 for nb in real) >= 3
-
-        def _is_trimethylammonium(n_idx) -> bool:
-            real_n = [nb for nb in neighbors_pre[n_idx] if int(nb) not in dummy_pre]
-            if len(real_n) != 4:
-                return False
-            if any(int(numbers_pre[nb]) != 6 for nb in real_n):
-                return False
-            return sum(_is_methyl_carbon(nb) for nb in real_n) >= 3
-
-        def _choline_ss_cc(ia, ic) -> bool:
-            if int(ia) in dummy_pre or int(ic) in dummy_pre:
-                return False
-            if int(numbers_pre[ia]) != 6 or int(numbers_pre[ic]) != 6:
-                return False
-            real_a = [nb for nb in neighbors_pre[ia] if int(nb) not in dummy_pre]
-            real_c = [nb for nb in neighbors_pre[ic] if int(nb) not in dummy_pre]
-            if len(real_a) != 4 or len(real_c) != 4:
-                return False
-
-            def _nchh(real):
-                n_n = sum(int(numbers_pre[nb]) == 7 for nb in real)
-                n_c = sum(int(numbers_pre[nb]) == 6 for nb in real)
-                n_h = sum(int(numbers_pre[nb]) == 1 for nb in real)
-                return n_n == 1 and n_c == 1 and n_h == 2
-
-            def _cshh(real):
-                n_c = sum(int(numbers_pre[nb]) == 6 for nb in real)
-                n_s = sum(int(numbers_pre[nb]) == 16 for nb in real)
-                n_h = sum(int(numbers_pre[nb]) == 1 for nb in real)
-                return n_c == 1 and n_s == 1 and n_h == 2
-
-            if _nchh(real_a) and _cshh(real_c):
-                n_idx = next(nb for nb in real_a if int(numbers_pre[nb]) == 7)
-                return _is_trimethylammonium(n_idx)
-            if _nchh(real_c) and _cshh(real_a):
-                n_idx = next(nb for nb in real_c if int(numbers_pre[nb]) == 7)
-                return _is_trimethylammonium(n_idx)
-            return False
-
-        choline_cc_ok = set()
-        if getattr(self, 'soft_medium_angle_h0', False):
-            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _choline_ss_cc(int(bond.indices[0]), int(bond.indices[1]))]
-            if 1 <= len(cands) <= 2:
-                choline_cc_ok = set(cands)
-
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
-        for ib, bond in enumerate(self.internals['bonds']):
-            if ib in choline_cc_ok:
-                # Choline disulfide linker C–C (N–CH2–CH2–S).
-                h0[idx] = 0.25 * units.Hartree / units.Bohr**2
-            else:
-                h0[idx] = self._h0_bond(bond)
+        for bond in self.internals['bonds']:
+            h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -7035,6 +6972,8 @@ class Sella(Optimizer):
                         rs_kwargs['wa'] = 0.70
                 elif getattr(self, "_has_bis_noxide", False):
                     rs_kwargs['wa'] = 0.70
+                if getattr(self, "_has_thiosulfonate", False):
+                    rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7414,6 +7353,28 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
+        opt._has_thiosulfonate = False
+        if connected and 12 <= n_atoms < 30:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 4:
+                    continue
+                n_o = sum(int(numbers[nb]) == 8 for nb in real)
+                n_s = sum(int(numbers[nb]) == 16 for nb in real)
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                if n_o == 2 and n_s == 1 and n_c == 1:
+                    opt._has_thiosulfonate = True
+                    break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
