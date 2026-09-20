@@ -5,16 +5,14 @@ Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<30 which use 0.20 Ha. Connected n_atoms==16 with a
-2-coordinate C–C–C, or 18≤n_atoms<20, geodesic ODE steps recompute
-Binv at every RHS. Connected
+n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
+geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted (after 15 steps on
+connected 30≤n<80, else after 20). Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
-Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
-when 1–3 such angles are present.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4445,27 +4443,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 sios_ok = set(cands)
 
-        def _sns(angle) -> bool:
-            # 2-coordinate S–N–S (sulfur-nitrogen cage).
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 7:
-                return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 2:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 16 and zc == 16
-
-        sns_ok = set()
-        if soft_dummy_angle and self.natoms < 18:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _sns(angle)]
-            if 1 <= len(cands) <= 3:
-                sns_ok = set(cands)
-
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4619,9 +4596,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
-                h0[idx] = 0.10 * units.Hartree
-            elif ia in sns_ok:
-                # 2-coordinate S–N–S on connected n<18 (1–3 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
@@ -6564,9 +6538,10 @@ class Sella(Optimizer):
         and cosine ≥ 0.90. Accept only when the previous step was well
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only.
+        connected-only. Connected 30≤n<80 start at 15 steps.
         """
-        if self.nsteps < 20:
+        gdiis_after = getattr(self, "_gdiis_after", 20)
+        if self.nsteps < gdiis_after:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
@@ -6823,22 +6798,6 @@ class _WrappedCalc(Calculator):
         self.results["energy"] = energy_kj / _EV_TO_KJ
         self.results["forces"] = np.array(forces_kj_nm) / _EV_TO_KJ * _ANGSTROM_TO_NM
 
-def _has_two_coord_ccc(internals) -> bool:
-    """True if a 2-coordinate carbon is bonded to two carbons."""
-    numbers = np.asarray(internals.atoms.numbers)
-    neighbors = [[] for _ in range(len(numbers))]
-    for bond in internals.internals.get('bonds', []):
-        i, j = (int(bond.indices[0]), int(bond.indices[1]))
-        neighbors[i].append(j)
-        neighbors[j].append(i)
-    for i, z in enumerate(numbers):
-        if int(z) != 6 or len(neighbors[i]) != 2:
-            continue
-        if int(numbers[neighbors[i][0]]) == 6 and int(numbers[neighbors[i][1]]) == 6:
-            return True
-    return False
-
-
 def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     pos_ang = np.array(positions) / _ANGSTROM_TO_NM
     atoms = Atoms(numbers=atomic_numbers, positions=pos_ang)
@@ -6859,9 +6818,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
+        if connected and 30 <= n_atoms < 80:
+            opt._gdiis_after = 15
         if connected and 18 <= n_atoms < 20:
-            opt.pes.exact_geodesic = True
-        if connected and n_atoms == 16 and _has_two_coord_ccc(probe):
             opt.pes.exact_geodesic = True
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
