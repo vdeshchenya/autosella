@@ -13,12 +13,12 @@ steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
-when 1–3 such angles are present, and 1–3 C–N–C at
-3-coordinate NH {C, C, H}.
+when 1–3 such angles are present.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, and F–B–F angles at silicon or boron centers.
+Cl–Si–X, and F–B–F angles at silicon or boron centers, and
+oxygen-free P–S stretches use 0.25 Ha/Bohr².
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4090,20 +4090,30 @@ class Internals(BaseInternals):
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
+        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
+        soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
+        soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
+        numbers_for_bonds = np.asarray(self.all_atoms.numbers)
+        oxo_no_oxygen = (
+            soft_oxo_angle
+            and not any(int(z) == 8 for z in numbers_for_bonds[:int(self.natoms)])
+        )
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for bond in self.internals['bonds']:
-            h0[idx] = self._h0_bond(bond)
+            i, j = bond.indices
+            zs = {int(numbers_for_bonds[int(i)]), int(numbers_for_bonds[int(j)])}
+            if oxo_no_oxygen and zs == {15, 16}:
+                # Oxygen-free P–S stretch on connected n<12 (P4S6).
+                h0[idx] = 0.25 * units.Hartree / units.Bohr**2
+            else:
+                h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
-            i, j = bond.indices
             nbonds[i] += 1
             nbonds[j] += 1
-        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
-        soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
-        soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
         soft_pyridine_angle = getattr(self, 'soft_pyridine_angle_h0', False)
         soft_medium_angle = getattr(self, 'soft_medium_angle_h0', False)
         soft_phenol_angle = getattr(self, 'soft_phenol_angle_h0', False)
@@ -4595,31 +4605,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _imidazole_cnc(angle) -> bool:
-            # C–N–C at 3-coordinate NH {C, C, H}, not N-oxide.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 7:
-                return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 3:
-                return False
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
-            n_h = sum(int(numbers[nb]) == 1 for nb in real_n)
-            if n_c != 2 or n_h != 1:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 6 and zc == 6
-
-        imidazole_cnc_ok = set()
-        if soft_dummy_angle and self.natoms < 18:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _imidazole_cnc(angle)]
-            if 1 <= len(cands) <= 3:
-                imidazole_cnc_ok = set(cands)
-
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
             # whose other two neighbors are 3-coordinate carbons.
@@ -4755,9 +4740,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif ia in sns_ok:
                 # 2-coordinate S–N–S on connected n<18 (1–3 cap).
-                h0[idx] = 0.10 * units.Hartree
-            elif ia in imidazole_cnc_ok:
-                # 3-coordinate NH C–N–C on connected n<18 (1–3 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
