@@ -8,9 +8,6 @@ Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons.
-Connected 30≤n_atoms<80 that also have a 4-coordinate gem-CF2
-carbon {F, F, C, C} use 0.25 Ha/Bohr² on 1–2 2-coordinate
-alkyne C–C stretches.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -35,6 +32,8 @@ P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
 {S, S, S}, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
+Connected 12≤n_atoms<30 Si/H-only oligosilanes with at least four
+Si use 0.10 Ha on 1–3 Si–Si–Si angles at 4-coordinate SiH2.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4166,52 +4165,12 @@ class Internals(BaseInternals):
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
-        dummy_pre = set(range(self.natoms, self.natoms + self.ndummies))
-        numbers_pre = np.asarray(self.all_atoms.numbers)
-        neighbors_pre = [[] for _ in range(len(self.all_atoms))]
-        for bond in self.internals['bonds']:
-            i, j = int(bond.indices[0]), int(bond.indices[1])
-            neighbors_pre[i].append(j)
-            neighbors_pre[j].append(i)
-
-        def _is_gemcf2(idx) -> bool:
-            if int(idx) in dummy_pre or int(numbers_pre[idx]) != 6:
-                return False
-            real = [nb for nb in neighbors_pre[idx] if int(nb) not in dummy_pre]
-            if len(real) != 4:
-                return False
-            n_f = sum(int(numbers_pre[nb]) == 9 for nb in real)
-            n_c = sum(int(numbers_pre[nb]) == 6 for nb in real)
-            return n_f == 2 and n_c == 2
-
-        has_gemcf2 = any(_is_gemcf2(i) for i in range(int(self.natoms)))
-
-        def _alkyne_cc(ia, ic) -> bool:
-            if int(ia) in dummy_pre or int(ic) in dummy_pre:
-                return False
-            if int(numbers_pre[ia]) != 6 or int(numbers_pre[ic]) != 6:
-                return False
-            real_a = [nb for nb in neighbors_pre[ia] if int(nb) not in dummy_pre]
-            real_c = [nb for nb in neighbors_pre[ic] if int(nb) not in dummy_pre]
-            return len(real_a) == 2 and len(real_c) == 2
-
-        alkyne_cc_ok = set()
-        if getattr(self, 'soft_pyridine_angle_h0', False) and has_gemcf2:
-            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _alkyne_cc(int(bond.indices[0]), int(bond.indices[1]))]
-            if 1 <= len(cands) <= 2:
-                alkyne_cc_ok = set(cands)
-
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
-        for ib, bond in enumerate(self.internals['bonds']):
-            if ib in alkyne_cc_ok:
-                # Alkyne C–C on a gem-CF2 molecule.
-                h0[idx] = 0.25 * units.Hartree / units.Bohr**2
-            else:
-                h0[idx] = self._h0_bond(bond)
+        for bond in self.internals['bonds']:
+            h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -4867,6 +4826,34 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
+        def _sisi(angle) -> bool:
+            # Oligosilane Si–Si–Si at 4-coordinate SiH2 {Si, Si, H, H}.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 14:
+                return False
+            if int(numbers[ia]) != 14 or int(numbers[ic]) != 14:
+                return False
+            real = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real) != 4:
+                return False
+            n_si = sum(int(numbers[nb]) == 14 for nb in real)
+            n_h = sum(int(numbers[nb]) == 1 for nb in real)
+            return n_si == 2 and n_h == 2
+
+        silane_only = (
+            sum(int(numbers[i]) == 14 for i in range(int(self.natoms))) >= 4
+            and all(int(numbers[i]) in (1, 14) for i in range(int(self.natoms)))
+        )
+        sisi_ok = set()
+        if soft_medium_angle and silane_only:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _sisi(angle)]
+            if 1 <= len(cands) <= 3:
+                sisi_ok = set(cands)
+
         def _ccl(angle) -> bool:
             # 4-coordinate C–C–Cl; skip 3-coordinate carbon terminal.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -5119,6 +5106,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in dithiole_ok:
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_medium_angle and ia in sisi_ok:
+                # Oligosilane Si–Si–Si at SiH2 on connected 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
