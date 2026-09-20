@@ -12,14 +12,16 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted. Connected n_atoms<12
+with 10≤n_atoms and a bridging P–O–P skip two-point GDIIS.
+Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
 3-coordinate N-oxide nitrogen {C, C, O}.
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
-P–O–P / P–O–H and tetrahedral O–P–O angles, and 0.10 Ha on
+P–O–P and tetrahedral O–P–O angles, 0.10 Ha on P–O–H and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
@@ -5039,8 +5041,13 @@ class Internals(BaseInternals):
                     or int(numbers[int(angle.indices[2])]) == 15
                 )
             ):
-                # Bridging P–O–P and terminal P–O–H on connected n<12.
-                h0[idx] = 0.08 * units.Hartree
+                za = int(numbers[int(angle.indices[0])])
+                zc = int(numbers[int(angle.indices[2])])
+                if za == 15 and zc == 15:
+                    # Bridging P–O–P on connected n<12.
+                    h0[idx] = 0.08 * units.Hartree
+                else:
+                    h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 15
@@ -6972,6 +6979,8 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
+        if getattr(self, "_pop_n12", False):
+            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7252,6 +7261,21 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         opt._hydrocarbon = False
+        opt._pop_n12 = False
+        if connected and 10 <= n_atoms < 12:
+            nbs = [[] for _ in range(n_atoms)]
+            for bond in probe.internals['bonds']:
+                i, j = (int(bond.indices[0]), int(bond.indices[1]))
+                if i < n_atoms and j < n_atoms:
+                    nbs[i].append(j)
+                    nbs[j].append(i)
+            zs = [int(z) for z in atomic_numbers]
+            for i, z in enumerate(zs):
+                if z != 8 or len(nbs[i]) != 2:
+                    continue
+                if zs[nbs[i][0]] == 15 and zs[nbs[i][1]] == 15:
+                    opt._pop_n12 = True
+                    break
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
