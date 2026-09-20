@@ -12,13 +12,14 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted, except connected
+n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
+carbon neighbors), which keep the QN step. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
-3-coordinate N-oxide nitrogen {C, C, O}, and 1–2 C–C–C at
-2-coordinate allene carbon whose terminals are both 3-coordinate.
+3-coordinate N-oxide nitrogen {C, C, O}.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4725,33 +4726,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 noxide_ok = set(cands)
 
-        def _allene_ccc(angle) -> bool:
-            # C–C–C at 2-coordinate allene carbon; both terminals 3-coord C.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 2:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-            for t in (ia, ic):
-                real_t = [nb for nb in neighbors[t] if int(nb) not in dummy_set]
-                if len(real_t) != 3:
-                    return False
-            return True
-
-        allene_ok = set()
-        if soft_dummy_angle and self.natoms < 18:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _allene_ccc(angle)]
-            if 1 <= len(cands) <= 2:
-                allene_ok = set(cands)
-
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -5025,9 +4999,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif ia in noxide_ok:
                 # N-oxide O–N–C on connected n<18 (1–2 cap).
-                h0[idx] = 0.10 * units.Hartree
-            elif ia in allene_ok:
-                # Allene C–C–C on connected n<18 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in dithiole_ok:
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
@@ -6988,6 +6959,8 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
+        if getattr(self, "_allene_n18", False):
+            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7268,6 +7241,23 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         opt._hydrocarbon = False
+        opt._allene_n18 = False
+        if connected and n_atoms < 18:
+            nbs = [[] for _ in range(n_atoms)]
+            for bond in probe.internals['bonds']:
+                i, j = (int(bond.indices[0]), int(bond.indices[1]))
+                if i < n_atoms and j < n_atoms:
+                    nbs[i].append(j)
+                    nbs[j].append(i)
+            zs = [int(z) for z in atomic_numbers]
+            for i, z in enumerate(zs):
+                if z != 6 or len(nbs[i]) != 2:
+                    continue
+                ia, ic = nbs[i]
+                if (zs[ia] == 6 and zs[ic] == 6
+                        and len(nbs[ia]) == 3 and len(nbs[ic]) == 3):
+                    opt._allene_n18 = True
+                    break
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
