@@ -12,7 +12,7 @@ guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} and
-connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}. Connected
+connected n_atoms<12 with a 3-coordinate phosphorus {S, S, S}. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -7343,14 +7343,12 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 neighbors[i].append(j)
                 neighbors[j].append(i)
             for i in range(n_atoms):
-                if int(numbers[i]) != 16:
+                if int(numbers[i]) != 15:
                     continue
                 real = neighbors[i]
                 if len(real) != 3:
                     continue
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                if n_c == 2 and n_o == 1:
+                if all(int(numbers[nb]) == 16 for nb in real):
                     opt.pes.exact_geodesic = True
                     break
         if connected and 30 <= n_atoms < 80:
