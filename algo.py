@@ -16,8 +16,8 @@ Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
 3-coordinate N-oxide nitrogen {C, C, O}, and exactly one
-primary-alcohol C–O stretch at CH2OH bonded to a 2-coordinate
-carbon.
+primary-alcohol C–O stretch at CH2OH bonded to a 3-coordinate
+vinyl/allene carbon.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4692,8 +4692,8 @@ class Internals(BaseInternals):
 
         def _vinyl_ch2oh_co(bond) -> bool:
             # Primary-alcohol C–O at CH2OH whose unique carbon neighbor
-            # is 2-coordinate (vinyl/allene). Skips ethanol (4-coord
-            # methyl) and cyanohydrin {O, C, C, H}.
+            # is 3-coordinate (vinyl/allene terminal). Skips ethanol
+            # (4-coord methyl) and central allene (2-coord).
             ia, ib = (int(bond.indices[0]), int(bond.indices[1]))
             if any(j in dummy_set for j in (ia, ib)):
                 return False
@@ -4717,7 +4717,7 @@ class Internals(BaseInternals):
                 return False
             c_nb = next(int(nb) for nb in real_c if int(numbers[nb]) == 6)
             real_cn = [nb for nb in neighbors[c_nb] if int(nb) not in dummy_set]
-            return len(real_cn) == 2
+            return len(real_cn) == 3
 
         ch2oh_co_ok = set()
         if soft_dummy_angle and self.natoms < 18:
