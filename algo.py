@@ -38,7 +38,7 @@ C–S–S disulfide angles whose carbon is 4-coordinate or
 oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
-angles at 3-coordinate carbon {O, C, H}, and on 1–2 O–S–S at
+angles at 3-coordinate carbon {O, C, H}, and on the first O–S–S at
 4-coordinate thiosulfonate sulfur {O, O, S, C}. Connected 30≤n_atoms<80
 also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
 and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
@@ -4703,8 +4703,8 @@ class Internals(BaseInternals):
         if soft_medium_angle and self.natoms >= 18:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _thiosulfonate_oss(angle)]
-            if 1 <= len(cands) <= 2:
-                thiosulfonate_ok = set(cands)
+            if len(cands) >= 1:
+                thiosulfonate_ok = set(cands[:1])
 
         def _fused_ch2_ccc(angle) -> bool:
             # C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon.
@@ -4898,7 +4898,7 @@ class Internals(BaseInternals):
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in thiosulfonate_ok:
-                # Thiosulfonate O–S–S on connected 18≤n<30.
+                # Thiosulfonate O–S–S on connected 18≤n<30 (first angle).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in aryl_phenol_ok:
                 # Isolated aryl phenol C–O–H on connected 18≤n<30.
