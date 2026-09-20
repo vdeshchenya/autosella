@@ -14,7 +14,8 @@ when the previous ratio ρ was well predicted. Connected molecules with fewer th
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
-4-coordinate CF3 carbon bonded to sulfur.
+4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
+3-coordinate N-oxide nitrogen {C, C, O}.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4657,6 +4658,36 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 3:
                 cf3s_ok = set(cands)
 
+        def _noxide_onc(angle) -> bool:
+            # Pyridine/imidazole N-oxide O–N–C: 3-coord N {C, C, O},
+            # terminal oxygen.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
+                return False
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_n)
+            if n_c != 2 or n_o != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 8}:
+                return False
+            o_idx = ia if za == 8 else ic
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            return len(real_o) == 1
+
+        noxide_ok = set()
+        if soft_dummy_angle and self.natoms < 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _noxide_onc(angle)]
+            if 1 <= len(cands) <= 2:
+                noxide_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4927,6 +4958,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif ia in cf3s_ok:
                 # CF3–S F–C–S on connected n<18 (1–3 cap).
+                h0[idx] = 0.10 * units.Hartree
+            elif ia in noxide_ok:
+                # N-oxide O–N–C on connected n<18 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in dithiole_ok:
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
