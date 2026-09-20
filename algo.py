@@ -3,7 +3,8 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
-dimers skip two-point GDIIS. Connected molecules
+dimers skip two-point GDIIS and keep the QN stepper after 80
+steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -6820,7 +6821,8 @@ class Sella(Optimizer):
 
         step_method = self.method
         if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
-            step_method = 'rfo'
+            if not getattr(self, "_hydrocarbon", False):
+                step_method = 'rfo'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
