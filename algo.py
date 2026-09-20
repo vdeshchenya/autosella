@@ -13,7 +13,8 @@ n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
-3-coordinate carbon). Connected
+3-coordinate carbon), and connected n_atoms<18 oligosilanes
+(only Si and H, at least four Si). Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -7334,6 +7335,11 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_bis_noxide = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
+        if connected and n_atoms < 18:
+            zset = {int(z) for z in atoms.numbers}
+            n_si = sum(int(z) == 14 for z in atoms.numbers)
+            if zset <= {1, 14} and n_si >= 4:
+                opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
