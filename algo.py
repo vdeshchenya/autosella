@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
 without a P–F bond use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
-Connected n_atoms<18 allenes skip the GDIIS ρ window.
+Connected n_atoms<18 allenes start GDIIS at 15 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -7049,16 +7049,15 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if self.nsteps < 20:
+        gdiis_start = 20
+        intern = getattr(self.pes, "int", None)
+        if (intern is not None and int(intern.natoms) < 18
+                and getattr(intern, "alkyne_soft_dummy_atoms", set())):
+            gdiis_start = 15
+        if self.nsteps < gdiis_start:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        intern = getattr(self.pes, "int", None)
-        skip_rho = (
-            intern is not None
-            and int(intern.natoms) < 18
-            and bool(getattr(intern, "alkyne_soft_dummy_atoms", set()))
-        )
-        if not skip_rho and not (1.0 / self.rho_inc < rho < self.rho_inc):
+        if not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
