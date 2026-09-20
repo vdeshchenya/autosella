@@ -28,8 +28,7 @@ otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses, except windowed C–C–C alkynes
 without silicon or 4-coordinate oxygenated alkyne carbons, which
-use 0.15 Ha when at most two such dummies are present, and dummy-involving
-angles at those alkyne_soft dummies on n≥30 use 0.08 Ha. Connected
+use 0.15 Ha when at most two such dummies are present. Connected
 n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
 carbon neighbors) also use 0.15 Ha on dummy-involving dihedrals.
 Connected 30≤n_atoms<80 use 0.10 Ha
@@ -53,7 +52,9 @@ a CF3 neighbor, and an unfluorinated other carbon, and on
 1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I), and on
 1–2 isolated alkyl–aryl mixed C–S–C, and on
 1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon,
-excluding sulfur-containing molecules. Connected 12≤n_atoms<30
+excluding sulfur-containing molecules, and on 1–2 carbamate N–C–O
+at 3-coordinate carbon {N, O, O} with a 2-coordinate ether oxygen.
+Connected 12≤n_atoms<30
 also use 0.10 Ha on at most two 4-coordinate C–C–Cl
 angles whose carbon terminal is not 3-coordinate, and connected
 30≤n<80 use 0.10 Ha on at most two S–C–S angles at
@@ -4225,6 +4226,28 @@ class Internals(BaseInternals):
             real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
             return len(real_o) == 2
 
+        def _oxazolidinone_nco(angle) -> bool:
+            # N–C–O at 3-coordinate carbamate carbon {N, O, O}.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
+                return False
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_c)
+            n_n = sum(int(numbers[nb]) == 7 for nb in real_c)
+            if n_o != 2 or n_n != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {7, 8}:
+                return False
+            o_idx = ia if za == 8 else ic
+            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+            return len(real_o) == 2
+
         def _ether_oxygen(angle) -> bool:
             ia, _, ic = (int(angle.indices[0]), int(angle.indices[1]),
                          int(angle.indices[2]))
@@ -4292,6 +4315,13 @@ class Internals(BaseInternals):
                     and not _fused_small_cyclic_ether(
                         self.internals['angles'][ia])
                 }
+
+        oxazolidinone_nco_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _oxazolidinone_nco(angle)]
+            if 1 <= len(cands) <= 2:
+                oxazolidinone_nco_ok = set(cands)
 
         def _carboxyl_carbon(cn) -> bool:
             nbs = [nbb for nbb in neighbors[cn] if int(nbb) not in dummy_set]
@@ -4967,17 +4997,15 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                alkyne_soft = getattr(self, 'alkyne_soft_dummy_atoms', set())
-                if (self.natoms >= 30
-                        and any(int(j) in alkyne_soft for j in angle.indices)):
-                    h0[idx] = 0.08 * units.Hartree
-                else:
-                    h0[idx] = 0.10 * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in oxazolidinone_occ_ok:
                 # Oxazolidinone C5 O–C–C at 4-coordinate carbon.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in oxazolidinone_nco_ok:
+                # Oxazolidinone carbamate N–C–O at 3-coordinate carbon.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in carboxyl_ccn_ok:
                 # Amino-acid Cα C–C–N next to a carboxyl/ester carbon.
