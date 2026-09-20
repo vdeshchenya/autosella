@@ -15,8 +15,7 @@ geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted, except connected
-n_atoms<12 without a P–F bond which start GDIIS at 15 steps. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
@@ -25,7 +24,8 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H and on
-F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
+F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers,
+and 0.10 Ha on 2-coordinate P–S–P and S–P–S at phosphorus.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -5112,6 +5112,23 @@ class Internals(BaseInternals):
                 h0[idx] = (0.10 if has_silicon else 0.08) * units.Hartree
             elif (
                 soft_oxo_angle
+                and int(numbers[int(angle.indices[1])]) == 15
+                and int(numbers[int(angle.indices[0])]) == 16
+                and int(numbers[int(angle.indices[2])]) == 16
+            ):
+                # S–P–S at phosphorus on connected n<12.
+                h0[idx] = 0.10 * units.Hartree
+            elif (
+                soft_oxo_angle
+                and int(numbers[int(angle.indices[1])]) == 16
+                and int(nbonds[int(angle.indices[1])]) == 2
+                and int(numbers[int(angle.indices[0])]) == 15
+                and int(numbers[int(angle.indices[2])]) == 15
+            ):
+                # Bridging P–S–P on connected n<12.
+                h0[idx] = 0.10 * units.Hartree
+            elif (
+                soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 14
                 and (
                     int(numbers[int(angle.indices[0])]) == 9
@@ -7053,27 +7070,7 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        gdiis_start = 20
-        intern = getattr(self.pes, "int", None)
-        if (intern is not None and int(intern.natoms) < 12
-                and getattr(self, "_allow_angle_wa", False)):
-            has_pf = getattr(self, "_has_pf_bond", None)
-            if has_pf is None:
-                has_pf = False
-                numbers = intern.atoms.numbers
-                natoms = int(intern.natoms)
-                for bond in intern.internals.get('bonds', []):
-                    i, j = int(bond.indices[0]), int(bond.indices[1])
-                    if i >= natoms or j >= natoms:
-                        continue
-                    za, zb = int(numbers[i]), int(numbers[j])
-                    if {za, zb} == {9, 15}:
-                        has_pf = True
-                        break
-                self._has_pf_bond = has_pf
-            if not has_pf:
-                gdiis_start = 15
-        if self.nsteps < gdiis_start:
+        if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
