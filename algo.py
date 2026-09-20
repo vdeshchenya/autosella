@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
 without a P–F bond use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
-Connected n_atoms<18 `alkyne_soft` dummy-dihedral limiters use wd 0.7.
+Connected n_atoms<18 `alkyne_soft` C≡C stretches use 0.10 Ha/Bohr².
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -4159,6 +4159,7 @@ class Internals(BaseInternals):
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
+        bond_start = idx
         for bond in self.internals['bonds']:
             h0[idx] = self._h0_bond(bond)
             idx += 1
@@ -4179,6 +4180,27 @@ class Internals(BaseInternals):
             i, j = bond.indices
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
+
+        alkyne_soft = getattr(self, 'alkyne_soft_dummy_atoms', set())
+        if (getattr(self, 'soft_dummy_dihedral_h0', False)
+                and int(self.natoms) < 18 and alkyne_soft):
+            # n<18 allene: C≡C is both real carbons 2-coordinate (dummy bonds
+            # excluded). 1–2 cap; leftover 135169446 has one C#C.
+            cc_idx = []
+            for k, bond in enumerate(self.internals['bonds']):
+                ia, ib = int(bond.indices[0]), int(bond.indices[1])
+                if ia >= self.natoms or ib >= self.natoms:
+                    continue
+                if int(numbers[ia]) != 6 or int(numbers[ib]) != 6:
+                    continue
+                real_a = [nb for nb in neighbors[ia] if int(nb) not in dummy_set]
+                real_b = [nb for nb in neighbors[ib] if int(nb) not in dummy_set]
+                if len(real_a) == 2 and len(real_b) == 2:
+                    cc_idx.append(k)
+            if 1 <= len(cc_idx) <= 2:
+                scale = 0.10 * units.Hartree / units.Bohr**2
+                for k in cc_idx:
+                    h0[bond_start + k] = scale
 
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -6995,8 +7017,6 @@ class Sella(Optimizer):
         Cycle 167 re-solved with global wd_dummy=0.8 whenever any dummy
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
-        Connected n<18 alkyne_soft dummy limiters use 0.7 (leftover
-        135169446); all n<18 0.7 extraed leftover 252089162 (cycle 422).
         """
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
@@ -7029,21 +7049,6 @@ class Sella(Optimizer):
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
         kw['w_index_value'] = 0.8
-        if int(intern.natoms) < 18:
-            alkyne_soft = getattr(intern, 'alkyne_soft_dummy_atoms', set())
-            if alkyne_soft:
-                dstart = intern.ntrans + intern.nbonds + intern.nangles
-                for dih, active in zip(
-                    intern.internals['dihedrals'], intern._active['dihedrals']
-                ):
-                    if not active:
-                        continue
-                    if dstart == idx and any(
-                        int(j) in alkyne_soft for j in dih.indices
-                    ):
-                        kw['w_index_value'] = 0.7
-                        break
-                    dstart += 1
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
