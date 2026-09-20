@@ -17,7 +17,8 @@ when 1–3 such angles are present.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, and F–B–F angles at silicon or boron centers.
+Cl–Si–X, and F–B–F angles at silicon or boron centers, and on
+1–2 C–S–C at 3-coordinate sulfoxide sulfur {C, C, O}.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -34,8 +35,7 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on 1–3 methyl–methyl C–N–C at 4-coordinate nitrogen
-with four carbon neighbors and at least two methyl carbons, and connected 18≤n_atoms<30 also use 0.10 Ha
+oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
@@ -4595,38 +4595,30 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _methyl_carbon(c_idx) -> bool:
-            real = [nb for nb in neighbors[int(c_idx)]
-                    if int(nb) not in dummy_set]
-            return (sum(int(numbers[nb]) == 1 for nb in real) == 3
-                    and sum(int(numbers[nb]) == 7 for nb in real) == 1)
-
-        def _ammonium_cnc(angle) -> bool:
-            # Methyl–methyl C–N–C at tetrahedral NR4 with ≥2 methyl carbons.
+        def _sulfoxide_csc(angle) -> bool:
+            # C–S–C at 3-coordinate sulfoxide S {C, C, O}.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 7:
+            if int(numbers[icen]) != 16:
                 return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 4:
+            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_s) != 3:
                 return False
-            if any(int(numbers[nb]) != 6 for nb in real_n):
-                return False
-            if sum(_methyl_carbon(nb) for nb in real_n) < 2:
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_s)
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_s)
+            if n_c != 2 or n_o != 1:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-            return _methyl_carbon(ia) and _methyl_carbon(ic)
+            return za == 6 and zc == 6
 
-        ammonium_ok = set()
-        if soft_medium_angle:
+        sulfoxide_csc_ok = set()
+        if soft_oxo_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _ammonium_cnc(angle)]
-            if 1 <= len(cands) <= 3:
-                ammonium_ok = set(cands)
+                     if _sulfoxide_csc(angle)]
+            if 1 <= len(cands) <= 2:
+                sulfoxide_csc_ok = set(cands)
 
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
@@ -4767,8 +4759,8 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in ammonium_ok:
-                # Tetrahedral NR4 methyl–methyl C–N–C on 12≤n<30 (1–3 cap).
+            elif soft_oxo_angle and ia in sulfoxide_csc_ok:
+                # 3-coordinate sulfoxide C–S–C on connected n<12 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in aryl_phenol_ok:
                 # Isolated aryl phenol C–O–H on connected 18≤n<30.
