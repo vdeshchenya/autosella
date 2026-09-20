@@ -3,7 +3,7 @@
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
 without a P–F bond use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
-Connected n_atoms<18 allenes use exact geodesic Binv.
+Connected n_atoms<18 allenes skip the GDIIS ρ window.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -7052,7 +7052,13 @@ class Sella(Optimizer):
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        if not (1.0 / self.rho_inc < rho < self.rho_inc):
+        intern = getattr(self.pes, "int", None)
+        skip_rho = (
+            intern is not None
+            and int(intern.natoms) < 18
+            and bool(getattr(intern, "alkyne_soft_dummy_atoms", set()))
+        )
+        if not skip_rho and not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
@@ -7328,10 +7334,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._allow_angle_wa = connected
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
-        if connected and n_atoms < 18:
-            intern = getattr(opt.pes, "int", None)
-            if intern is not None and getattr(intern, "alkyne_soft_dummy_atoms", set()):
-                opt.pes.exact_geodesic = True
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
