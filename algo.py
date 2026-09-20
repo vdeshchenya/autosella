@@ -8,7 +8,8 @@ Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons, and connected n_atoms<18 Si/H-only
-oligosilanes with at least four Si.
+oligosilanes with at least four Si, and connected n_atoms<18
+allenes (2-coordinate carbon with two 3-coordinate carbon neighbors).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -6977,7 +6978,9 @@ class Sella(Optimizer):
                     rs_kwargs['wa'] = 0.70
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
-                ) or getattr(self, "_has_oligosilane", False):
+                ) or getattr(self, "_has_oligosilane", False) or getattr(
+                    self, "_has_allene", False
+                ):
                     rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7361,11 +7364,31 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_sulfoxide = False
         opt._has_pyrrolidine_noxide = False
         opt._has_oligosilane = False
+        opt._has_allene = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
             n_si = sum(int(z) == 14 for z in numbers)
             if n_si >= 4 and all(int(z) in (1, 14) for z in numbers):
                 opt._has_oligosilane = True
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                if all(
+                    int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                    for nb in real
+                ):
+                    opt._has_allene = True
+                    break
         if connected and n_atoms < 12:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
