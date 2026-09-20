@@ -39,7 +39,7 @@ oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}, and on the first O–S–S at
-4-coordinate thiosulfonate sulfur {O, O, S, C}. Connected 30≤n_atoms<80
+4-coordinate thiosulfonate sulfur {O, O, S, C} with 0.21 Ha. Connected 30≤n_atoms<80
 also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
 and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
 a CF3 neighbor, and an unfluorinated other carbon, and on
@@ -4898,8 +4898,8 @@ class Internals(BaseInternals):
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in thiosulfonate_ok:
-                # Thiosulfonate O–S–S on connected 18≤n<30 (first angle).
-                h0[idx] = 0.10 * units.Hartree
+                # Thiosulfonate O–S–S 0.21 Ha on connected 18≤n<30 (first angle).
+                h0[idx] = 0.21 * units.Hartree
             elif soft_medium_angle and ia in aryl_phenol_ok:
                 # Isolated aryl phenol C–O–H on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
