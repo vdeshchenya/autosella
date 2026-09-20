@@ -1,7 +1,7 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules, except connected n_atoms<12
+`wa=0.75` on connected molecules, except connected n_atoms<18
 without a P–F bond and connected 30≤n_atoms<80 with at least two
 N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
@@ -6932,7 +6932,7 @@ class Sella(Optimizer):
             if getattr(self, "_allow_angle_wa", False):
                 rs_kwargs['wa'] = 0.75
                 intern = getattr(self.pes, "int", None)
-                if intern is not None and int(intern.natoms) < 12:
+                if intern is not None and int(intern.natoms) < 18:
                     has_pf = getattr(self, "_has_pf_bond", None)
                     if has_pf is None:
                         has_pf = False
