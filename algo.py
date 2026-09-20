@@ -13,10 +13,7 @@ n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
-3-coordinate carbon). Connected n_atoms<12 sulfoxides with a
-3-coordinate sulfur {C, C, O} realize internal steps
-with iterative Cartesian B⁺ instead of the geodesic ODE.
-Connected
+3-coordinate carbon). Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -29,7 +26,9 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H and on
-F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
+F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers,
+and 0.25 Ha/Bohr² on 1–2 S=O stretches at 3-coordinate
+sulfoxide sulfur {C, C, O} with a terminal oxygen.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4186,6 +4185,36 @@ class Internals(BaseInternals):
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
 
+        if soft_oxo_angle:
+            n_trans = len(self.internals['translations'])
+
+            def _sulfoxide_so(ia, ic) -> bool:
+                if ia in dummy_set or ic in dummy_set:
+                    return False
+                za, zc = int(numbers[ia]), int(numbers[ic])
+                if {za, zc} != {8, 16}:
+                    return False
+                s_idx = ia if za == 16 else ic
+                o_idx = ic if za == 16 else ia
+                real_s = [nb for nb in neighbors[s_idx]
+                          if int(nb) not in dummy_set]
+                if len(real_s) != 3:
+                    return False
+                n_c = sum(int(numbers[nb]) == 6 for nb in real_s)
+                n_o = sum(int(numbers[nb]) == 8 for nb in real_s)
+                if n_c != 2 or n_o != 1:
+                    return False
+                real_o = [nb for nb in neighbors[o_idx]
+                          if int(nb) not in dummy_set]
+                return len(real_o) == 1
+
+            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
+                     if _sulfoxide_so(int(bond.indices[0]), int(bond.indices[1]))]
+            if 1 <= len(cands) <= 2:
+                scale = 0.25 * units.Hartree / units.Bohr**2
+                for ib in cands:
+                    h0[n_trans + ib] = scale
+
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
@@ -7337,26 +7366,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_bis_noxide = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
-        if connected and n_atoms < 12:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 3:
-                    continue
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                if n_c == 2 and n_o == 1:
-                    opt.pes.iterative_stepper = 1
-                    break
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
