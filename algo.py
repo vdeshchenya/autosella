@@ -13,7 +13,8 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
-at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses,
+except n_atoms<18 allene `alkyne_soft` dummy angles which use 0.08 Ha.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
@@ -5015,7 +5016,12 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                h0[idx] = 0.10 * units.Hartree
+                alkyne_soft = getattr(self, 'alkyne_soft_dummy_atoms', set())
+                if (int(self.natoms) < 18
+                        and any(int(j) in alkyne_soft for j in angle.indices)):
+                    h0[idx] = 0.08 * units.Hartree
+                else:
+                    h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
