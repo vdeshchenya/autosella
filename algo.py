@@ -13,9 +13,8 @@ n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
-3-coordinate carbon). Connected n_atoms<12 cages with a
-3-coordinate phosphorus {S, S, S} realize internal steps
-with iterative Cartesian B⁺ instead of the geodesic ODE.
+3-coordinate carbon). Connected n_atoms<18 oligosilanes
+(only Si and H, at least four Si) skip two-point GDIIS.
 Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
@@ -7057,6 +7056,8 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
+        if getattr(self, "_skip_gdiis", False):
+            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7335,26 +7336,14 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
+        opt._skip_gdiis = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
-        if connected and n_atoms < 12:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 15:
-                    continue
-                real = neighbors[i]
-                if len(real) != 3:
-                    continue
-                if all(int(numbers[nb]) == 16 for nb in real):
-                    opt.pes.iterative_stepper = 1
-                    break
+        if connected and n_atoms < 18:
+            zset = {int(z) for z in atoms.numbers}
+            n_si = sum(int(z) == 14 for z in atoms.numbers)
+            if zset <= {1, 14} and n_si >= 4:
+                opt._skip_gdiis = True
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
