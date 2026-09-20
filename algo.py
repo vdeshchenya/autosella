@@ -26,8 +26,9 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
-{S, S, S}, 0.25 Ha/Bohr² on 1–6 C–Br at 4-coordinate C
-{Br, Br, Br, S}, and on
+{S, S, S}, 0.25 Ha/Bohr² on 1–2 C–S at 4-coordinate methylene
+C {C, S, H, H} bonded to 2-coordinate disulfide S on connected
+12≤n<30, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
@@ -4168,35 +4169,41 @@ class Internals(BaseInternals):
             neighbors_pre[i].append(j)
             neighbors_pre[j].append(i)
 
-        def _cbr3s_cbr(ia, ic) -> bool:
+        def _disulfide_cs(ia, ic) -> bool:
             for a, b in ((ia, ic), (ic, ia)):
                 if int(a) in dummy_pre or int(b) in dummy_pre:
                     continue
-                if int(numbers_pre[a]) != 6 or int(numbers_pre[b]) != 35:
+                if int(numbers_pre[a]) != 6 or int(numbers_pre[b]) != 16:
                     continue
-                real = [nb for nb in neighbors_pre[a] if int(nb) not in dummy_pre]
-                if len(real) != 4:
+                real_c = [nb for nb in neighbors_pre[a] if int(nb) not in dummy_pre]
+                if len(real_c) != 4:
                     continue
-                n_br = sum(int(numbers_pre[nb]) == 35 for nb in real)
-                n_s = sum(int(numbers_pre[nb]) == 16 for nb in real)
-                if n_br == 3 and n_s == 1:
+                n_c = sum(int(numbers_pre[nb]) == 6 for nb in real_c)
+                n_s = sum(int(numbers_pre[nb]) == 16 for nb in real_c)
+                n_h = sum(int(numbers_pre[nb]) == 1 for nb in real_c)
+                if n_c != 1 or n_s != 1 or n_h != 2:
+                    continue
+                real_s = [nb for nb in neighbors_pre[b] if int(nb) not in dummy_pre]
+                if len(real_s) != 2:
+                    continue
+                if any(int(numbers_pre[nb]) == 16 for nb in real_s):
                     return True
             return False
 
-        cbr_ok = set()
-        if getattr(self, 'soft_oxo_angle_h0', False):
+        disulfide_cs_ok = set()
+        if getattr(self, 'soft_medium_angle_h0', False):
             cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _cbr3s_cbr(int(bond.indices[0]), int(bond.indices[1]))]
-            if 1 <= len(cands) <= 6:
-                cbr_ok = set(cands)
+                     if _disulfide_cs(int(bond.indices[0]), int(bond.indices[1]))]
+            if 1 <= len(cands) <= 2:
+                disulfide_cs_ok = set(cands)
 
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for ib, bond in enumerate(self.internals['bonds']):
-            if ib in cbr_ok:
-                # C–Br at 4-coord C {Br,Br,Br,S} on connected n<12.
+            if ib in disulfide_cs_ok:
+                # C–S at 4-coord methylene C {C,S,H,H} bonded to disulfide S.
                 h0[idx] = 0.25 * units.Hartree / units.Bohr**2
             else:
                 h0[idx] = self._h0_bond(bond)
