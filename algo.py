@@ -13,9 +13,7 @@ steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
-when 1–3 such angles are present. Connected n<18 Cl–C–H at
-4-coordinate carbon with exactly one Cl uses 0.10 Ha when 1–2
-such angles are present.
+when 1–3 such angles are present.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -40,7 +38,9 @@ oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
-also use 0.10 Ha on at most two 2-coordinate Si–O–S angles.
+also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
+and on 1–4 F–C–C at 4-coordinate carbon with exactly two F
+and a CF3 neighbor.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4446,6 +4446,44 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 sios_ok = set(cands)
 
+        def _cf3_carbon(c_idx) -> bool:
+            real = [nb for nb in neighbors[int(c_idx)]
+                    if int(nb) not in dummy_set]
+            if len(real) != 4:
+                return False
+            n_f = sum(int(numbers[nb]) == 9 for nb in real)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real)
+            return n_f == 3 and n_c == 1
+
+        def _penta_fcc(angle) -> bool:
+            # F–C–C at pentafluoroethyl CF2: 4-coord C with exactly two F
+            # and a CF3 neighbor.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            n_f = sum(int(numbers[nb]) == 9 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            if n_f != 2 or n_c != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 9}:
+                return False
+            carbons = [nb for nb in real_c if int(numbers[nb]) == 6]
+            return any(_cf3_carbon(cn) for cn in carbons)
+
+        penta_fcc_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _penta_fcc(angle)]
+            if 1 <= len(cands) <= 4:
+                penta_fcc_ok = set(cands)
+
         def _sns(angle) -> bool:
             # 2-coordinate S–N–S (sulfur-nitrogen cage).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4466,29 +4504,6 @@ class Internals(BaseInternals):
                      if _sns(angle)]
             if 1 <= len(cands) <= 3:
                 sns_ok = set(cands)
-
-        def _clch(angle) -> bool:
-            # Cl–C–H at 4-coordinate carbon with exactly one Cl.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
-                return False
-            if sum(int(numbers[nb]) == 17 for nb in real_c) != 1:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return {za, zc} == {1, 17}
-
-        clch_ok = set()
-        if soft_dummy_angle and self.natoms < 18:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _clch(angle)]
-            if 1 <= len(cands) <= 2:
-                clch_ok = set(cands)
 
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
@@ -4644,11 +4659,11 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in penta_fcc_ok:
+                # Pentafluoroethyl F–C–C on connected 30≤n<80 (1–4 cap).
+                h0[idx] = 0.10 * units.Hartree
             elif ia in sns_ok:
                 # 2-coordinate S–N–S on connected n<18 (1–3 cap).
-                h0[idx] = 0.10 * units.Hartree
-            elif ia in clch_ok:
-                # Cl–C–H at mono-chloro carbon on connected n<18.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
