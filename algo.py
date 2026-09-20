@@ -25,7 +25,8 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 3-coordinate N-oxide nitrogen {C, C, O}.
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
-molecules, 0.10 Ha on P–O–H and on
+molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
+{S, S, S}, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
@@ -70,10 +71,7 @@ and one carbon terminal.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
-3-coordinate with exactly one oxygen). Dimers that also have a
-2-coordinate pyridine C–N–C use 0.10 Ha on 1–2 3-coordinate
-amide C–N–C (nitrogen bonded to two carbons, one of which has
-a terminal carbonyl oxygen).
+3-coordinate with exactly one oxygen).
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -5021,42 +5019,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
-        def _amide_cnc(angle) -> bool:
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 7:
-                return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 3:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-
-            def _carbonyl_c(cn) -> bool:
-                for nb in neighbors[cn]:
-                    j = int(nb)
-                    if j in dummy_set or int(numbers[j]) != 8:
-                        continue
-                    real_o = [o for o in neighbors[j] if int(o) not in dummy_set]
-                    if len(real_o) == 1:
-                        return True
-                return False
-
-            return _carbonyl_c(ia) or _carbonyl_c(ic)
-
-        amide_py_ok = set()
-        if soft_phenol_angle:
-            has_pyridine = any(_pyridine_cnc(ang)
-                               for ang in self.internals['angles'])
-            if has_pyridine:
-                cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                         if _amide_cnc(angle)]
-                if 1 <= len(cands) <= 2:
-                    amide_py_ok = set(cands)
-
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -5126,9 +5088,6 @@ class Internals(BaseInternals):
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_phenol_angle and ia in amide_py_ok:
-                # Amide C–N–C on dimers that also have pyridine C–N–C.
-                h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 8
@@ -5153,6 +5112,22 @@ class Internals(BaseInternals):
             ):
                 # Tetrahedral O–P–O on connected n<12; Si cages stay 0.10.
                 h0[idx] = (0.10 if has_silicon else 0.08) * units.Hartree
+            elif (
+                soft_oxo_angle
+                and int(numbers[int(angle.indices[1])]) == 15
+                and int(numbers[int(angle.indices[0])]) == 16
+                and int(numbers[int(angle.indices[2])]) == 16
+            ):
+                icen = int(angle.indices[1])
+                real = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+                if (
+                    len(real) == 3
+                    and all(int(numbers[nb]) == 16 for nb in real)
+                ):
+                    # Oxygen-free 3-coord S–P–S at P {S,S,S}; skip mixed S–P–O.
+                    h0[idx] = 0.10 * units.Hartree
+                else:
+                    h0[idx] = self._h0_angle(angle)
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 14
