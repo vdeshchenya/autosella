@@ -2,7 +2,9 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
-without a P–F bond and connected 30≤n_atoms<80 with at least two
+without a P–F bond, connected 12≤n_atoms<30 with a
+4-coordinate thiosulfonate sulfur {O, O, S, C}, and connected
+30≤n_atoms<80 with at least two
 N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
@@ -26,8 +28,7 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
-{S, S, S}, 0.25 Ha/Bohr² on 1–2 C–S at 3-coordinate sulfoxide
-S {C, C, O} on connected n<12, and on
+{S, S, S}, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
@@ -4160,46 +4161,12 @@ class Internals(BaseInternals):
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
-        dummy_pre = set(range(self.natoms, self.natoms + self.ndummies))
-        numbers_pre = np.asarray(self.all_atoms.numbers)
-        neighbors_pre = [[] for _ in range(len(self.all_atoms))]
-        for bond in self.internals['bonds']:
-            i, j = int(bond.indices[0]), int(bond.indices[1])
-            neighbors_pre[i].append(j)
-            neighbors_pre[j].append(i)
-
-        def _sulfoxide_cs(ia, ic) -> bool:
-            for a, b in ((ia, ic), (ic, ia)):
-                if int(a) in dummy_pre or int(b) in dummy_pre:
-                    continue
-                if int(numbers_pre[a]) != 16 or int(numbers_pre[b]) != 6:
-                    continue
-                real = [nb for nb in neighbors_pre[a] if int(nb) not in dummy_pre]
-                if len(real) != 3:
-                    continue
-                n_c = sum(int(numbers_pre[nb]) == 6 for nb in real)
-                n_o = sum(int(numbers_pre[nb]) == 8 for nb in real)
-                if n_c == 2 and n_o == 1:
-                    return True
-            return False
-
-        sulfoxide_cs_ok = set()
-        if getattr(self, 'soft_oxo_angle_h0', False):
-            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _sulfoxide_cs(int(bond.indices[0]), int(bond.indices[1]))]
-            if 1 <= len(cands) <= 2:
-                sulfoxide_cs_ok = set(cands)
-
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
-        for ib, bond in enumerate(self.internals['bonds']):
-            if ib in sulfoxide_cs_ok:
-                # C–S at 3-coord sulfoxide S {C,C,O} on connected n<12.
-                h0[idx] = 0.25 * units.Hartree / units.Bohr**2
-            else:
-                h0[idx] = self._h0_bond(bond)
+        for bond in self.internals['bonds']:
+            h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -7003,7 +6970,7 @@ class Sella(Optimizer):
                         self._has_pf_bond = has_pf
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
-                elif getattr(self, "_has_bis_noxide", False):
+                elif getattr(self, "_has_bis_noxide", False) or getattr(self, "_has_thiosulfonate", False):
                     rs_kwargs['wa'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7384,6 +7351,28 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
+        opt._has_thiosulfonate = False
+        if connected and 12 <= n_atoms < 30:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 4:
+                    continue
+                n_o = sum(int(numbers[nb]) == 8 for nb in real)
+                n_s = sum(int(numbers[nb]) == 16 for nb in real)
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                if n_o == 2 and n_s == 1 and n_c == 1:
+                    opt._has_thiosulfonate = True
+                    break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
