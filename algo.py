@@ -1602,6 +1602,37 @@ class Angle(Internal):
     _eval2 = staticmethod(_hessian(_angle))
     _eval_cell_grad = staticmethod(_angle_cell_grad_single)
 
+def _transverse_bend(pos, component):
+    left = pos[0] - pos[1]
+    right = pos[2] - pos[1]
+    axis = pos[2] - pos[0]
+    axis = axis / jnp.linalg.norm(axis)
+    first = jnp.cross(axis, pos[3] - pos[1])
+    first = first / jnp.linalg.norm(first)
+    second = jnp.cross(axis, first)
+    direction = (1 - component) * first + component * second
+    return (left / jnp.linalg.norm(left)
+            + right / jnp.linalg.norm(right)) @ direction
+
+
+class TransverseBend(Coordinate):
+    """Rigid-motion-invariant bends in a molecular four-atom frame."""
+    nindices = 4
+    _eval0 = staticmethod(jit(_transverse_bend))
+    _eval1 = staticmethod(_gradient(_transverse_bend))
+    _eval2 = staticmethod(_hessian(_transverse_bend))
+
+    def __init__(self, indices, component):
+        Coordinate.__init__(self, indices)
+        self.kwargs.update(component=component)
+
+    def __eq__(self, other):
+        if not isinstance(other, TransverseBend):
+            return NotImplemented
+        return (np.array_equal(self.indices, other.indices)
+                and self.kwargs['component'] == other.kwargs['component'])
+
+
 def _dihedral(
     pos: jnp.ndarray,
     tvecs: jnp.ndarray
@@ -3669,6 +3700,8 @@ class Internals(BaseInternals):
             if j < self.natoms:
                 bonds[j].append(bond.reverse())
 
+        direct_bends = (not self.atoms.pbc.any() and self.ndummies == 0
+                        and self.cons.nint == 0)
         for j, jbonds in enumerate(bonds):
             linear = []
             for b1, b2 in combinations(jbonds, 2):
@@ -3683,6 +3716,45 @@ class Internals(BaseInternals):
                     self.forbid_angle(new)
                     linear.append((b1, b2))
             if linear:
+                if (direct_bends and len(jbonds) == 2
+                        and (linear[0][0] + linear[0][1]).calc(self.atoms)
+                        >= np.pi - self.atol):
+                    endpoints = sorted(int(b.indices[1]) for b in jbonds)
+                    # An actual intrafragment atom makes both bend scalars
+                    # invariant under global translation and rotation.
+                    connected = {j}
+                    frontier = [j]
+                    while frontier:
+                        current = frontier.pop()
+                        for bond in bonds[current]:
+                            neighbor = int(bond.indices[1])
+                            if 0 <= neighbor < self.natoms and neighbor not in connected:
+                                connected.add(neighbor)
+                                frontier.append(neighbor)
+                    options = sorted(connected - {j, *endpoints})
+                    reference_atom = None
+                    if options:
+                        xyz = self.atoms.positions
+                        axis = xyz[endpoints[1]] - xyz[endpoints[0]]
+                        axis /= np.linalg.norm(axis)
+                        vectors = xyz[options] - xyz[j]
+                        lengths2 = np.sum(vectors * vectors, axis=1)
+                        transverse2 = np.sum(np.cross(axis, vectors)**2, axis=1)
+                        sine2 = np.divide(transverse2, lengths2,
+                                          out=np.zeros_like(lengths2),
+                                          where=lengths2 > 0.0)
+                        best = int(np.argmax(sine2))
+                        if sine2[best] > np.sin(self.atol)**2:
+                            reference_atom = options[best]
+                    if reference_atom is not None:
+                        for component in range(2):
+                            try:
+                                self.add_other(TransverseBend(
+                                    (endpoints[0], j, endpoints[1], reference_atom),
+                                    component))
+                            except DuplicateInternalError:
+                                pass
+                        continue
                 if len(jbonds) == 2:
                     # Add a dummy atom to an atom center with only 2 bonds
                     # sort bonds from shortest to longest to ensure
@@ -3777,6 +3849,47 @@ class Internals(BaseInternals):
                             )
 
     def find_all_dihedrals(self) -> None:
+        # Preserve relative twist across a chain whose interior bends are
+        # represented by transverse components rather than dummy atoms.
+        linear_centers = {int(c.indices[1]) for c in self.internals['other']
+                          if isinstance(c, TransverseBend)}
+        if linear_centers:
+            neighbors = [set() for _ in range(self.natoms)]
+            for bond in self.internals['bonds']:
+                a, b = map(int, bond.indices)
+                if a < self.natoms and b < self.natoms:
+                    neighbors[a].add(b)
+                    neighbors[b].add(a)
+            paths = set()
+            for center in sorted(linear_centers):
+                if len(neighbors[center]) != 2:
+                    continue
+                left, right = sorted(neighbors[center])
+                path = [left, center, right]
+                for reverse in (False, True):
+                    if reverse:
+                        path.reverse()
+                    while path[-1] in linear_centers:
+                        onward = neighbors[path[-1]] - set(path)
+                        if len(onward) != 1:
+                            break
+                        path.append(next(iter(onward)))
+                paths.add(min(tuple(path), tuple(reversed(path))))
+            for path in sorted(paths):
+                left, right = path[0], path[-1]
+                for a in sorted(neighbors[left] - set(path)):
+                    for d in sorted(neighbors[right] - set(path)):
+                        if a == d:
+                            continue
+                        first = Angle((a, left, right)).calc(self.atoms)
+                        second = Angle((left, right, d)).calc(self.atoms)
+                        if not (self.atol < first < np.pi - self.atol
+                                and self.atol < second < np.pi - self.atol):
+                            continue
+                        try:
+                            self.add_dihedral((a, left, right, d))
+                        except DuplicateInternalError:
+                            pass
         # First, find proper dihedrals from angle combinations.
         # Group angles by their bond edges so we only try pairs that
         # share a bond (required for __add__ to succeed).
@@ -4082,6 +4195,13 @@ class Internals(BaseInternals):
                             self._linear_bend_torsions.add(tuple(dihedral.indices))
             else:
                 h0[idx] = self._h0_dihedral(dihedral, nbonds)
+            idx += 1
+        for coord in self.internals['other']:
+            if isinstance(coord, TransverseBend):
+                outer = self.atoms.numbers[coord.indices[[0, 2]]]
+                h0[idx] = (0.160 if 1 in outer else 0.250) * units.Hartree
+            else:
+                h0[idx] = h0cart
             idx += 1
         for rot in self.internals['rotations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
@@ -4682,6 +4802,12 @@ class InternalPES(PES):
                                        self.int._active['dihedrals']):
                 if active:
                     if tuple(torsion.indices) in self.int._linear_bend_torsions:
+                        labels[row] = 1
+                    row += 1
+            for coord, active in zip(self.int.internals['other'],
+                                     self.int._active['other']):
+                if active:
+                    if isinstance(coord, TransverseBend):
                         labels[row] = 1
                     row += 1
             self._fit_blocks = [
@@ -5921,6 +6047,14 @@ class MaxInternalStep(BaseRestrictedStep):
             + [self.wo] * self.pes.int.nother
             + [self.wx] * self.pes.int.nrotations
         )
+        row = (self.pes.int.ntrans + self.pes.int.nbonds
+               + self.pes.int.nangles + self.pes.int.ndihedrals)
+        for coord, active in zip(self.pes.int.internals['other'],
+                                 self.pes.int._active['other']):
+            if active:
+                if isinstance(coord, TransverseBend):
+                    w[row] = self.wa
+                row += 1
         if n_cell_dof > 0:
             w = np.concatenate([w, [self.wc] * n_cell_dof])
         self._weights_cache = (key, w)
