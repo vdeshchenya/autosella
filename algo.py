@@ -21,7 +21,9 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H and on
-F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
+F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers,
+and 0.8× Fischer P–O stretch guesses except silicon-containing
+molecules.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -32,8 +34,6 @@ without silicon or 4-coordinate oxygenated alkyne carbons, which
 use 0.15 Ha when at most two such dummies are present. Connected
 n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
 carbon neighbors) also use 0.12 Ha on dummy-involving dihedrals.
-Connected n≥30 `alkyne_soft` dummy-dihedral MIS limiters use
-weight 0.7 instead of 0.8.
 Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
@@ -4156,11 +4156,21 @@ class Internals(BaseInternals):
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
         idx = 0
+        numbers_early = np.asarray(self.all_atoms.numbers)
+        has_silicon_early = any(
+            int(numbers_early[i]) == 14 for i in range(int(self.natoms))
+        )
+        soft_oxo_early = getattr(self, 'soft_oxo_angle_h0', False)
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for bond in self.internals['bonds']:
             h0[idx] = self._h0_bond(bond)
+            if soft_oxo_early and not has_silicon_early:
+                ia, ib = int(bond.indices[0]), int(bond.indices[1])
+                if {int(numbers_early[ia]), int(numbers_early[ib])} == {8, 15}:
+                    # P–O stretches on connected n<12 without silicon.
+                    h0[idx] *= 0.8
             idx += 1
             # count number of bonds per atom for dihedral later
             i, j = bond.indices
@@ -6972,12 +6982,11 @@ class Sella(Optimizer):
         return out
 
     def _maybe_dummy_limiter_wd(self, s, smag, rs_kwargs):
-        """Downweight only the limiter dummy dihedral.
+        """Downweight only the limiter dummy dihedral to 0.8.
 
         Cycle 167 re-solved with global wd_dummy=0.8 whenever any dummy
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
-        Connected n≥30 alkyne_soft dummy limiters use 0.7.
         """
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
@@ -7007,24 +7016,9 @@ class Sella(Optimizer):
         idx = int(np.argmax(np.abs(s * w)))
         if idx not in self._dummy_dihedral_s_indices(intern):
             return s, smag
-        wd_lim = 0.8
-        alkyne_soft = getattr(intern, 'alkyne_soft_dummy_atoms', set())
-        if int(intern.natoms) >= 30 and alkyne_soft:
-            dummy_set = set(range(intern.natoms, intern.natoms + intern.ndummies))
-            d_idx = intern.ntrans + intern.nbonds + intern.nangles
-            for dih, active in zip(intern.internals['dihedrals'],
-                                   intern._active['dihedrals']):
-                if not active:
-                    continue
-                if (d_idx == idx
-                        and any(j in dummy_set for j in dih.indices)
-                        and any(int(j) in alkyne_soft for j in dih.indices)):
-                    wd_lim = 0.7
-                    break
-                d_idx += 1
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        kw['w_index_value'] = wd_lim
+        kw['w_index_value'] = 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
