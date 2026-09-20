@@ -13,9 +13,7 @@ n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
-3-coordinate carbon). Connected n_atoms<18 oligosilanes
-(only Si and H, at least four Si) skip two-point GDIIS.
-Connected
+3-coordinate carbon). Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -50,7 +48,8 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
+oxygen-substituted, and 0.25 Ha/Bohr² on 1–4 Si–Si stretches
+when the molecule is Si/H-only with at least four Si, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
@@ -4185,6 +4184,24 @@ class Internals(BaseInternals):
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
 
+        if soft_medium_angle:
+            n_trans = len(self.internals['translations'])
+            zset = {int(numbers[i]) for i in range(int(self.natoms))}
+            n_si = sum(int(numbers[i]) == 14 for i in range(int(self.natoms)))
+
+            def _sisi(ia, ic) -> bool:
+                if ia in dummy_set or ic in dummy_set:
+                    return False
+                return int(numbers[ia]) == 14 and int(numbers[ic]) == 14
+
+            if zset <= {1, 14} and n_si >= 4:
+                cands = [ib for ib, bond in enumerate(self.internals['bonds'])
+                         if _sisi(int(bond.indices[0]), int(bond.indices[1]))]
+                if 1 <= len(cands) <= 4:
+                    scale = 0.25 * units.Hartree / units.Bohr**2
+                    for ib in cands:
+                        h0[n_trans + ib] = scale
+
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
@@ -7056,8 +7073,6 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if getattr(self, "_skip_gdiis", False):
-            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7336,14 +7351,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
-        opt._skip_gdiis = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
-        if connected and n_atoms < 18:
-            zset = {int(z) for z in atoms.numbers}
-            n_si = sum(int(z) == 14 for z in atoms.numbers)
-            if zset <= {1, 14} and n_si >= 4:
-                opt._skip_gdiis = True
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
