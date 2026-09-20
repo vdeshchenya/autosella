@@ -2,7 +2,8 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
-without a P–F bond use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
+without a P–F bond and connected 30≤n_atoms<80 with at least two
+N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -13,9 +14,7 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted, except connected
-30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O}
-which start GDIIS at 15 steps. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
@@ -6949,6 +6948,13 @@ class Sella(Optimizer):
                         self._has_pf_bond = has_pf
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
+                elif intern is not None and 30 <= int(intern.natoms) < 80:
+                    has_bis = getattr(self, "_has_bis_noxide", None)
+                    if has_bis is None:
+                        has_bis = self._count_noxide_nitrogens(intern) >= 2
+                        self._has_bis_noxide = has_bis
+                    if has_bis:
+                        rs_kwargs['wa'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7084,16 +7090,7 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        gdiis_start = 20
-        intern = getattr(self.pes, "int", None)
-        if intern is not None and 30 <= int(intern.natoms) < 80:
-            has_bis = getattr(self, "_has_bis_noxide", None)
-            if has_bis is None:
-                has_bis = self._count_noxide_nitrogens(intern) >= 2
-                self._has_bis_noxide = has_bis
-            if has_bis:
-                gdiis_start = 15
-        if self.nsteps < gdiis_start:
+        if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
