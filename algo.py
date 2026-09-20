@@ -15,7 +15,9 @@ geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted, except connected
+12≤n_atoms<30 thiosulfonates (4-coordinate S {O, O, S, C}) which
+keep the QN stepper. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
@@ -46,9 +48,7 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and on 1–2 N–C–C at 4-coordinate
-choline methylene {N, C, H, H} whose nitrogen is
-trimethylammonium, and connected 18≤n_atoms<30 also use 0.10 Ha
+oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
@@ -4819,53 +4819,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _trimethylammonium_n(n_idx) -> bool:
-            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
-            if len(real_n) != 4:
-                return False
-            if any(int(numbers[nb]) != 6 for nb in real_n):
-                return False
-            n_methyl = 0
-            for nb in real_n:
-                real_c = [x for x in neighbors[nb] if int(x) not in dummy_set]
-                if len(real_c) != 4:
-                    continue
-                n_h = sum(int(numbers[x]) == 1 for x in real_c)
-                n_n = sum(int(numbers[x]) == 7 for x in real_c)
-                if n_h == 3 and n_n == 1:
-                    n_methyl += 1
-            return n_methyl >= 3
-
-        def _ammonium_ncc(angle) -> bool:
-            # N–C–C at 4-coordinate choline methylene {N, C, H, H}
-            # whose nitrogen is trimethylammonium.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 4:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 7}:
-                return False
-            n_idx = ia if za == 7 else ic
-            n_h = sum(int(numbers[x]) == 1 for x in real_c)
-            n_n = sum(int(numbers[x]) == 7 for x in real_c)
-            n_c = sum(int(numbers[x]) == 6 for x in real_c)
-            if n_h != 2 or n_n != 1 or n_c != 1:
-                return False
-            return _trimethylammonium_n(n_idx)
-
-        ammonium_ncc_ok = set()
-        if soft_medium_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _ammonium_ncc(angle)]
-            if 1 <= len(cands) <= 2:
-                ammonium_ncc_ok = set(cands)
-
         def _ccl(angle) -> bool:
             # 4-coordinate C–C–Cl; skip 3-coordinate carbon terminal.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -5121,9 +5074,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in ammonium_ncc_ok:
-                # Choline N–C–C on 12≤n<30 (GAFF c3-c3-n4).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in ccl_ok:
                 # 4-coordinate C–C–Cl on 12≤n<30; skip 3-coord C terminal.
@@ -7104,6 +7054,8 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
+        if getattr(self, "_has_thiosulfonate", False):
+            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7382,6 +7334,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
+        opt._has_thiosulfonate = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
@@ -7413,6 +7366,27 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if n_noxide >= 2:
                 opt._has_bis_noxide = True
                 opt.pes.exact_geodesic = True
+        if connected and 12 <= n_atoms < 30:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 4:
+                    continue
+                n_o = sum(int(numbers[nb]) == 8 for nb in real)
+                n_s = sum(int(numbers[nb]) == 16 for nb in real)
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                if n_o == 2 and n_s == 1 and n_c == 1:
+                    opt._has_thiosulfonate = True
+                    break
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
