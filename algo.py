@@ -4546,64 +4546,38 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 alkyl_aryl_csc_ok = set(cands)
 
-        def _protonated_ester_ome(bond) -> bool:
-            # Methoxy C–O of a protonated methyl ester: 2-coord O between
-            # a methyl carbon and a 3-coord carbonyl {O, O, C} that also
-            # has a hydroxyl oxygen.
+        def _enyne_ccl(bond) -> bool:
+            # C–Cl at 4-coordinate carbon that also has a 2-coordinate
+            # carbon neighbor (enyne/allene chloride).
             ia, ib = int(bond.indices[0]), int(bond.indices[1])
             if ia in dummy_set or ib in dummy_set:
                 return False
             za, zb = int(numbers[ia]), int(numbers[ib])
-            if {za, zb} != {6, 8}:
+            if {za, zb} != {6, 17}:
                 return False
-            o_idx = ia if za == 8 else ib
-            c_idx = ib if za == 8 else ia
-            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            if len(real_o) != 2:
-                return False
-            if int(numbers[c_idx]) != 6:
-                return False
-            # Soften the O–methyl stretch, not O–carbonyl.
+            c_idx = ia if za == 6 else ib
             real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
             if len(real_c) != 4:
                 return False
-            if sum(int(numbers[nb]) == 1 for nb in real_c) != 3:
+            if sum(int(numbers[nb]) == 17 for nb in real_c) != 1:
                 return False
-            if sum(int(numbers[nb]) == 8 for nb in real_c) != 1:
-                return False
-            carb = next((int(nb) for nb in real_o if int(nb) != c_idx), None)
-            if carb is None or int(numbers[carb]) != 6:
-                return False
-            real_carb = [nb for nb in neighbors[carb]
-                         if int(nb) not in dummy_set]
-            if len(real_carb) != 3:
-                return False
-            zs = [int(numbers[nb]) for nb in real_carb]
-            if zs.count(8) != 2 or zs.count(6) != 1:
-                return False
-            kinds = []
-            for oi in real_carb:
-                if int(numbers[oi]) != 8:
+            for nb in real_c:
+                if int(numbers[nb]) != 6:
                     continue
-                real_oi = [nb for nb in neighbors[int(oi)]
-                           if int(nb) not in dummy_set]
-                if len(real_oi) != 2:
-                    return False
-                if any(int(numbers[nb]) == 1 for nb in real_oi):
-                    kinds.append('oh')
-                elif any(int(numbers[nb]) == 6 and int(nb) != carb
-                         for nb in real_oi):
-                    kinds.append('ome')
-            return sorted(kinds) == ['oh', 'ome']
+                real_nb = [x for x in neighbors[int(nb)]
+                           if int(x) not in dummy_set]
+                if len(real_nb) == 2:
+                    return True
+            return False
 
-        ome_ok = set()
-        if soft_pyridine_angle:
+        ccl_bond_ok = set()
+        if soft_dummy_angle and self.natoms < 18:
             cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _protonated_ester_ome(bond)]
+                     if _enyne_ccl(bond)]
             if len(cands) == 1:
-                ome_ok = set(cands)
+                ccl_bond_ok = set(cands)
             ntrans = len(self.internals['translations'])
-            for ib in ome_ok:
+            for ib in ccl_bond_ok:
                 h0[ntrans + ib] = 0.10 * units.Hartree / units.Bohr**2
 
         def _sios(angle) -> bool:
