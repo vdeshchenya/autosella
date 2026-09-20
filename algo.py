@@ -34,7 +34,7 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and 0.13 Ha on 1–6 C–N–C at 4-coordinate nitrogen
+oxygen-substituted, and on 1–3 methyl–methyl C–N–C at 4-coordinate nitrogen
 with four carbon neighbors and at least two methyl carbons, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
@@ -4602,7 +4602,7 @@ class Internals(BaseInternals):
                     and sum(int(numbers[nb]) == 7 for nb in real) == 1)
 
         def _ammonium_cnc(angle) -> bool:
-            # C–N–C at tetrahedral NR4 with ≥2 methyl carbons.
+            # Methyl–methyl C–N–C at tetrahedral NR4 with ≥2 methyl carbons.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4617,13 +4617,15 @@ class Internals(BaseInternals):
             if sum(_methyl_carbon(nb) for nb in real_n) < 2:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 6 and zc == 6
+            if za != 6 or zc != 6:
+                return False
+            return _methyl_carbon(ia) and _methyl_carbon(ic)
 
         ammonium_ok = set()
         if soft_medium_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
                      if _ammonium_cnc(angle)]
-            if 1 <= len(cands) <= 6:
+            if 1 <= len(cands) <= 3:
                 ammonium_ok = set(cands)
 
         def _aryl_phenol_coh(angle) -> bool:
@@ -4766,8 +4768,8 @@ class Internals(BaseInternals):
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in ammonium_ok:
-                # Tetrahedral NR4 C–N–C on connected 12≤n<30 (1–6 cap, 0.13 Ha).
-                h0[idx] = 0.13 * units.Hartree
+                # Tetrahedral NR4 methyl–methyl C–N–C on 12≤n<30 (1–3 cap).
+                h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in aryl_phenol_ok:
                 # Isolated aryl phenol C–O–H on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
