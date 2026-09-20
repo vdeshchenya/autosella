@@ -40,7 +40,8 @@ on exactly one aryl phenol C–O–H (ipso carbon has two
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
 also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
 and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
-a CF3 neighbor, and an unfluorinated other carbon.
+a CF3 neighbor, and an unfluorinated other carbon, and on
+1–2 amidine N–C–N at 3-coordinate carbon {N, N, C}.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4490,6 +4491,40 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 4:
                 penta_fcc_ok = set(cands)
 
+        def _amidine_ncn(angle) -> bool:
+            # N–C–N at 3-coordinate carbon {N, N, C}; one N 2-coord,
+            # the other has H. Distinct from urea {O, N, N} / guanidine.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
+                return False
+            zs = [int(numbers[nb]) for nb in real_c]
+            if zs.count(7) != 2 or zs.count(6) != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 7 or zc != 7:
+                return False
+            deg_a = sum(int(nb) not in dummy_set for nb in neighbors[ia])
+            deg_c = sum(int(nb) not in dummy_set for nb in neighbors[ic])
+            if sorted((deg_a, deg_c)) != [2, 3]:
+                return False
+            amino = ia if deg_a == 3 else ic
+            return any(int(numbers[nb]) == 1
+                       for nb in neighbors[amino]
+                       if int(nb) not in dummy_set)
+
+        amidine_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _amidine_ncn(angle)]
+            if 1 <= len(cands) <= 2:
+                amidine_ok = set(cands)
+
         def _sns(angle) -> bool:
             # 2-coordinate S–N–S (sulfur-nitrogen cage).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4667,6 +4702,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in penta_fcc_ok:
                 # Organic C2F5 F–C–C on connected 30≤n<80 (1–4 cap).
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in amidine_ok:
+                # Amidine N–C–N on connected 30≤n<80 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif ia in sns_ok:
                 # 2-coordinate S–N–S on connected n<18 (1–3 cap).
