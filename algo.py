@@ -12,8 +12,7 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected n_atoms≥100
-skip two-point GDIIS. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
@@ -22,6 +21,7 @@ when 1–3 such angles are present, and 1–3 F–C–S at
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles, 0.10 Ha on P–O–H and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
+Connected n_atoms≥100 dummy-involving dihedrals use 0.15 Ha.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -5097,6 +5097,11 @@ class Internals(BaseInternals):
                     scale = 0.15
                 elif (
                     getattr(self, 'soft_dummy_dihedral_h0', False)
+                    and int(self.natoms) >= 100
+                ):
+                    scale = 0.15
+                elif (
+                    getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in windowed for j in dihedral.indices)
                 ):
                     scale = 0.20
@@ -6978,8 +6983,6 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if getattr(self, "_large_n100", False):
-            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7260,7 +7263,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         opt._hydrocarbon = False
-        opt._large_n100 = bool(connected and n_atoms >= 100)
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
