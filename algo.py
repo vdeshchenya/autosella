@@ -34,8 +34,9 @@ Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
 oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
-3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
-angles at 3-coordinate carbon {O, C, H}.
+3-coordinate carbon neighbors), on at most two aldehyde O–C–C
+angles at 3-coordinate carbon {O, C, H}, and on exactly one
+mixed 3-/4-coordinate ester C–O–C.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4510,6 +4511,43 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 aldehyde_ok = set(cands)
 
+        def _ester_coc(angle) -> bool:
+            # Mixed 3-/4-coord ester C-O-C: 2-coord O, one C is
+            # 3-coord {O, O, C} with no N, the other is 4-coord.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 8:
+                return False
+            real_o = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_o) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            real_a = [nb for nb in neighbors[ia] if int(nb) not in dummy_set]
+            real_c = [nb for nb in neighbors[ic] if int(nb) not in dummy_set]
+
+            def is_ester_c(nbs):
+                if len(nbs) != 3:
+                    return False
+                zs = [int(numbers[nb]) for nb in nbs]
+                return zs.count(8) == 2 and zs.count(6) == 1
+
+            return (
+                (is_ester_c(real_a) and len(real_c) == 4)
+                or (is_ester_c(real_c) and len(real_a) == 4)
+            )
+
+        ester_coc_ok = set()
+        if soft_medium_angle and int(self.natoms) >= 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _ester_coc(angle)]
+            # Exactly one: spare diester 249819456.
+            if len(cands) == 1:
+                ester_coc_ok = set(cands)
+
         def _has_carbonyl_o() -> bool:
             for i, z in enumerate(numbers):
                 if int(i) in dummy_set or int(z) != 8:
@@ -4579,6 +4617,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in aldehyde_ok:
                 # Aldehyde O–C–C on connected 18≤n<30.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_medium_angle and ia in ester_coc_ok:
+                # Mixed 3-/4-coordinate ester C–O–C on connected 18≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
