@@ -1,9 +1,10 @@
 """Self-contained Sella minimiser (order=0, internal coordinates).
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
-`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps.
-Dimers floor the trust radius at `delta_min=0.02`. Connected molecules
-also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
+`wa=0.75` on connected molecules, with `sigma_inc=1.16` after 20 steps
+(after 10 steps when n_atoms<12). Dimers floor the trust radius at
+`delta_min=0.02`. Connected molecules also floor δ at 0.15 after 20
+steps (after 10 steps when n_atoms<12). Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS. Connected
@@ -36,9 +37,7 @@ oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
-also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
-and on exactly one 3-coordinate carbamate C–N–C (N bonded to H
-and two C, one of which is 3-coordinate {O, O, N}).
+also use 0.10 Ha on at most two 2-coordinate Si–O–S angles.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4444,40 +4443,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 sios_ok = set(cands)
 
-        def _carbamate_cnc(angle) -> bool:
-            # Carbamate NH C–N–C: 3-coord N {C, C, H}; one C is 3-coord {O, O, N}.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 7:
-                return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 3:
-                return False
-            zs = [int(numbers[nb]) for nb in real_n]
-            if zs.count(6) != 2 or zs.count(1) != 1:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 6 or zc != 6:
-                return False
-            for c_idx in (ia, ic):
-                real_c = [nb for nb in neighbors[c_idx]
-                          if int(nb) not in dummy_set]
-                if len(real_c) != 3:
-                    continue
-                cz = [int(numbers[nb]) for nb in real_c]
-                if cz.count(8) == 2 and cz.count(7) == 1:
-                    return True
-            return False
-
-        carbamate_cnc_ok = set()
-        if soft_pyridine_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _carbamate_cnc(angle)]
-            if len(cands) == 1:
-                carbamate_cnc_ok = set(cands)
-
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4631,9 +4596,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in carbamate_cnc_ok:
-                # Isolated carbamate NH C–N–C on connected 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
@@ -6695,7 +6657,10 @@ class Sella(Optimizer):
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
+        # n_atoms<12 start that floor at 10 so small leftover tails are not
+        # truncated in steps 10–20.
+        floor_after = 10 if getattr(self, '_early_connected_floor', False) else 20
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= floor_after:
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
@@ -6855,6 +6820,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
+        if connected and n_atoms < 12:
+            opt._early_connected_floor = True
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if not connected:
