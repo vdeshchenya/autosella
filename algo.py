@@ -18,7 +18,7 @@ Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
 Cl–Si–X, and F–B–F angles at silicon or boron centers, and on
-1–2 C–S–C at 3-coordinate sulfoxide sulfur {C, C, O}.
+1–2 Br–C–S at 4-coordinate CBr3 carbon bonded to sulfur.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4595,30 +4595,30 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _sulfoxide_csc(angle) -> bool:
-            # C–S–C at 3-coordinate sulfoxide S {C, C, O}.
+        def _tribromo_brcs(angle) -> bool:
+            # Br–C–S at 4-coordinate CBr3 carbon bonded to S.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 16:
+            if int(numbers[icen]) != 6:
                 return False
-            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_s) != 3:
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
                 return False
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_s)
-            n_o = sum(int(numbers[nb]) == 8 for nb in real_s)
-            if n_c != 2 or n_o != 1:
+            n_br = sum(int(numbers[nb]) == 35 for nb in real_c)
+            n_s = sum(int(numbers[nb]) == 16 for nb in real_c)
+            if n_br != 3 or n_s != 1:
                 return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            return za == 6 and zc == 6
+            return {za, zc} == {35, 16}
 
-        sulfoxide_csc_ok = set()
+        tribromo_brcs_ok = set()
         if soft_oxo_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _sulfoxide_csc(angle)]
+                     if _tribromo_brcs(angle)]
             if 1 <= len(cands) <= 2:
-                sulfoxide_csc_ok = set(cands)
+                tribromo_brcs_ok = set(cands)
 
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
@@ -4759,8 +4759,8 @@ class Internals(BaseInternals):
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_oxo_angle and ia in sulfoxide_csc_ok:
-                # 3-coordinate sulfoxide C–S–C on connected n<12 (1–2 cap).
+            elif soft_oxo_angle and ia in tribromo_brcs_ok:
+                # CBr3 Br–C–S on connected n<12 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in aryl_phenol_ok:
                 # Isolated aryl phenol C–O–H on connected 18≤n<30.
