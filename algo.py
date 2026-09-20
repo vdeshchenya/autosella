@@ -18,10 +18,9 @@ Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
 3-coordinate N-oxide nitrogen {C, C, O}.
-Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
-angles that have a phosphorus neighbor (P–O–P / P–O–H), on
-tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, and F–B–F angles at silicon or boron centers.
+Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
+P–O–P and tetrahedral O–P–O angles, 0.10 Ha on P–O–H and on
+F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -32,9 +31,7 @@ without silicon or 4-coordinate oxygenated alkyne carbons, which
 use 0.15 Ha when at most two such dummies are present. Connected
 n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
 carbon neighbors) also use 0.15 Ha on dummy-involving dihedrals.
-Connected n_atoms≥30 isocyanides (2-coordinate N bonded to
-1-coordinate C) use 0.08 Ha on dummy-involving angles at those
-dummies. Connected 30≤n_atoms<80 use 0.10 Ha
+Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on at most two 4-coordinate O–C–C
@@ -4969,33 +4966,7 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                scale = 0.10
-                if self.natoms >= 30:
-                    for j in angle.indices:
-                        jj = int(j)
-                        if jj not in dummy_set:
-                            continue
-                        hosts = [h for h in neighbors[jj] if int(h) not in dummy_set]
-                        tagged = False
-                        for h in hosts:
-                            if int(numbers[h]) != 7:
-                                continue
-                            real_h = [nb for nb in neighbors[h]
-                                      if int(nb) not in dummy_set]
-                            if len(real_h) != 2:
-                                continue
-                            if any(
-                                int(numbers[t]) == 6 and
-                                len([nb for nb in neighbors[t]
-                                     if int(nb) not in dummy_set]) == 1
-                                for t in real_h
-                            ):
-                                scale = 0.08
-                                tagged = True
-                                break
-                        if tagged:
-                            break
-                h0[idx] = scale * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -5068,15 +5039,21 @@ class Internals(BaseInternals):
                     or int(numbers[int(angle.indices[2])]) == 15
                 )
             ):
-                h0[idx] = 0.10 * units.Hartree
+                za = int(numbers[int(angle.indices[0])])
+                zc = int(numbers[int(angle.indices[2])])
+                if za == 15 and zc == 15:
+                    # Bridging P–O–P on connected n<12.
+                    h0[idx] = 0.08 * units.Hartree
+                else:
+                    h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 15
                 and int(numbers[int(angle.indices[0])]) == 8
                 and int(numbers[int(angle.indices[2])]) == 8
             ):
-                # Complementary phosphate class: tetrahedral O–P–O at P.
-                h0[idx] = 0.10 * units.Hartree
+                # Tetrahedral O–P–O on connected n<12.
+                h0[idx] = 0.08 * units.Hartree
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 14
