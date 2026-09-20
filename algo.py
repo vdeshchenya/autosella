@@ -7,7 +7,8 @@ N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
-to two CH2 carbons.
+to two CH2 carbons, and connected n_atoms<18 Si/H-only
+oligosilanes with at least four Si.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
@@ -32,8 +33,6 @@ P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H, on S–P–S at 3-coordinate P
 {S, S, S}, and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
-Connected 12≤n_atoms<30 Si/H-only oligosilanes with at least four
-Si use 0.10 Ha on 1–3 Si–Si–Si angles at 4-coordinate SiH2.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -4826,34 +4825,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
-        def _sisi(angle) -> bool:
-            # Oligosilane Si–Si–Si at 4-coordinate SiH2 {Si, Si, H, H}.
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 14:
-                return False
-            if int(numbers[ia]) != 14 or int(numbers[ic]) != 14:
-                return False
-            real = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real) != 4:
-                return False
-            n_si = sum(int(numbers[nb]) == 14 for nb in real)
-            n_h = sum(int(numbers[nb]) == 1 for nb in real)
-            return n_si == 2 and n_h == 2
-
-        silane_only = (
-            sum(int(numbers[i]) == 14 for i in range(int(self.natoms))) >= 4
-            and all(int(numbers[i]) in (1, 14) for i in range(int(self.natoms)))
-        )
-        sisi_ok = set()
-        if soft_medium_angle and silane_only:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _sisi(angle)]
-            if 1 <= len(cands) <= 3:
-                sisi_ok = set(cands)
-
         def _ccl(angle) -> bool:
             # 4-coordinate C–C–Cl; skip 3-coordinate carbon terminal.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -5106,9 +5077,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in dithiole_ok:
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_medium_angle and ia in sisi_ok:
-                # Oligosilane Si–Si–Si at SiH2 on connected 12≤n<30.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
@@ -7009,7 +6977,7 @@ class Sella(Optimizer):
                     rs_kwargs['wa'] = 0.70
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
-                ):
+                ) or getattr(self, "_has_oligosilane", False):
                     rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7392,6 +7360,12 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_bis_noxide = False
         opt._has_sulfoxide = False
         opt._has_pyrrolidine_noxide = False
+        opt._has_oligosilane = False
+        if connected and n_atoms < 18:
+            numbers = atoms.numbers
+            n_si = sum(int(z) == 14 for z in numbers)
+            if n_si >= 4 and all(int(z) in (1, 14) for z in numbers):
+                opt._has_oligosilane = True
         if connected and n_atoms < 12:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
