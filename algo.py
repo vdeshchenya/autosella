@@ -14,8 +14,8 @@ geodesic ODE steps recompute Binv at every RHS, as do connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 3-coordinate carbon). Connected 30≤n_atoms<80 with a
-1-coordinate carbon bonded to nitrogen use iterative Cartesian
-B⁺. Connected
+1-coordinate carbon bonded to nitrogen skip two-point GDIIS.
+Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -7073,6 +7073,8 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
+        if getattr(self, "_skip_gdiis", False):
+            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7351,6 +7353,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
+        opt._skip_gdiis = False
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
@@ -7403,7 +7406,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 if len(real) != 1:
                     continue
                 if int(numbers[real[0]]) == 7:
-                    opt.pes.iterative_stepper = 1
+                    opt._skip_gdiis = True
                     break
         opt._hydrocarbon = False
         if not connected:
