@@ -39,7 +39,8 @@ Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
 guanidinium (≥3 N neighbors), and on 1–2 3-coordinate pyridine
-C–C–N at carbon {C, C, N} with 2-coordinate nitrogen when the
+C–C–N at carbon {C, C, N} with 2-coordinate nitrogen whose
+two carbons are 3-coordinate when the
 molecule has a 1-coordinate carbon bonded to nitrogen, and on at most two 4-coordinate O–C–C
 ethers after an alcohol-inclusive cap, excluding siloxane C–O–Si and N-substituted fused-aryl 4-/5-membered
 cyclic ethers, and on at most two carboxyl/ester
@@ -4951,6 +4952,12 @@ class Internals(BaseInternals):
                 return False
             if any(int(numbers[nb]) != 6 for nb in real_n):
                 return False
+            # Drop isocyanide ipso C–C–N (one N neighbor is 1-coordinate C)
+            # so leftover pyridine ortho C–C–N stays inside the 1–2 cap.
+            for nb in real_n:
+                real_nb = [x for x in neighbors[nb] if int(x) not in dummy_set]
+                if len(real_nb) != 3:
+                    return False
             real_ct = [nb for nb in neighbors[c_term] if int(nb) not in dummy_set]
             return len(real_ct) == 3
 
