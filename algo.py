@@ -14,8 +14,7 @@ when the previous ratio ρ was well predicted. Connected molecules with fewer th
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
-4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
-3-coordinate N-oxide nitrogen {C, C, O}.
+4-coordinate CF3 carbon bonded to sulfur.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -51,8 +50,7 @@ also use 0.10 Ha on at most two 4-coordinate C–C–Cl
 angles whose carbon terminal is not 3-coordinate, and connected
 30≤n<80 use 0.10 Ha on at most two S–C–S angles at
 3-coordinate carbon with two 2-coordinate sulfur terminals
-and one carbon terminal, and on at most two H–N–C angles
-at 3-coordinate nitrogen {C, C, H} with one methyl and one CH2.
+and one carbon terminal.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4772,46 +4770,56 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 dithiole_ok = set(cands)
 
-        def _alkyl_hnc(angle) -> bool:
-            # H–N–C at 3-coordinate N {C, C, H} with one methyl and one CH2.
+        def _protonated_ester_cco(angle) -> bool:
+            # C–C–O at 3-coordinate carbonyl {O, O, C} with one protonated
+            # hydroxyl O (2-coord {C, H}) and one methoxy O (2-coord to CH3).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
                 return False
-            if int(numbers[icen]) != 7:
+            if int(numbers[icen]) != 6:
                 return False
-            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_n) != 3:
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
                 return False
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
-            n_h = sum(int(numbers[nb]) == 1 for nb in real_n)
-            if n_c != 2 or n_h != 1:
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            if n_o != 2 or n_c != 1:
                 return False
-            kinds = []
-            for nb in real_n:
-                if int(numbers[nb]) != 6:
-                    continue
-                real_c = [x for x in neighbors[nb] if int(x) not in dummy_set]
-                if len(real_c) != 4:
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 8}:
+                return False
+            has_oh = False
+            has_ome = False
+            for o_idx in (nb for nb in real_c if int(numbers[nb]) == 8):
+                real_o = [nb for nb in neighbors[int(o_idx)]
+                          if int(nb) not in dummy_set]
+                if len(real_o) != 2:
                     return False
-                n_hc = sum(int(numbers[x]) == 1 for x in real_c)
-                n_cc = sum(int(numbers[x]) == 6 for x in real_c)
-                n_nc = sum(int(numbers[x]) == 7 for x in real_c)
-                if n_hc == 3 and n_cc == 0 and n_nc == 1:
-                    kinds.append('me')
-                elif n_hc == 2 and n_cc == 1 and n_nc == 1:
-                    kinds.append('ch2')
+                zs = [int(numbers[nb]) for nb in real_o]
+                if sorted(zs) == [1, 6]:
+                    has_oh = True
+                elif zs.count(6) == 2:
+                    other = next(int(nb) for nb in real_o if int(nb) != icen)
+                    real_m = [nb for nb in neighbors[other]
+                              if int(nb) not in dummy_set]
+                    n_h = sum(int(numbers[nb]) == 1 for nb in real_m)
+                    n_o_m = sum(int(numbers[nb]) == 8 for nb in real_m)
+                    if (int(numbers[other]) == 6 and len(real_m) == 4
+                            and n_h == 3 and n_o_m == 1):
+                        has_ome = True
+                    else:
+                        return False
                 else:
                     return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            return sorted(kinds) == ['ch2', 'me'] and {za, zc} == {1, 6}
+            return has_oh and has_ome
 
-        alkyl_hnc_ok = set()
+        protonated_ester_ok = set()
         if soft_pyridine_angle:
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _alkyl_hnc(angle)]
+                     if _protonated_ester_cco(angle)]
             if 1 <= len(cands) <= 2:
-                alkyl_hnc_ok = set(cands)
+                protonated_ester_ok = set(cands)
 
         def _fused_ch2_ccc(angle) -> bool:
             # C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon.
@@ -5007,8 +5015,8 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in dithiole_ok:
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in alkyl_hnc_ok:
-                # N-methyl secondary-amine H–N–C on connected 30≤n<80.
+            elif soft_pyridine_angle and ia in protonated_ester_ok:
+                # Protonated methyl-ester C–C–O on connected 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
