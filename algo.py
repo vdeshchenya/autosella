@@ -13,7 +13,8 @@ steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
-when 1–3 such angles are present.
+when 1–3 such angles are present, and 1–3 F–C–S at
+4-coordinate CF3 carbon bonded to sulfur.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4626,6 +4627,31 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 3:
                 sns_ok = set(cands)
 
+        def _cf3s_fcs(angle) -> bool:
+            # F–C–S at 4-coordinate CF3 carbon bonded to sulfur.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            n_f = sum(int(numbers[nb]) == 9 for nb in real_c)
+            n_s = sum(int(numbers[nb]) == 16 for nb in real_c)
+            if n_f != 3 or n_s != 1:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} == {9, 16}
+
+        cf3s_ok = set()
+        if soft_dummy_angle and self.natoms < 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _cf3s_fcs(angle)]
+            if 1 <= len(cands) <= 3:
+                cf3s_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4837,6 +4863,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif ia in sns_ok:
                 # 2-coordinate S–N–S on connected n<18 (1–3 cap).
+                h0[idx] = 0.10 * units.Hartree
+            elif ia in cf3s_ok:
+                # CF3–S F–C–S on connected n<18 (1–3 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
