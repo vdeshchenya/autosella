@@ -45,9 +45,9 @@ a CF3 neighbor, and an unfluorinated other carbon, and on
 1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I), and on
 1–2 isolated alkyl–aryl mixed C–S–C, and on
 1–2 C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon,
-excluding sulfur-containing molecules. Connected 12≤n_atoms<80
-use 0.10 Ha on at most two S–C–S angles at 3-coordinate carbon
-with two 2-coordinate sulfur terminals and one carbon terminal.
+excluding sulfur-containing molecules, and on 1–2 F–C–C at
+3-coordinate carbon with one F and two 3-coordinate carbons,
+skipping Cl/Br/I and CF3.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4724,9 +4724,18 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 fused_ch2_ok = set(cands)
 
-        def _dithiole_scs(angle) -> bool:
-            # S–C–S at 3-coordinate carbon with two 2-coordinate S and
-            # one carbon terminal (1,3-dithiole / ketene dithioacetal).
+        def _has_cf3() -> bool:
+            nat = int(self.natoms)
+            for i in range(nat):
+                if int(numbers[i]) != 6:
+                    continue
+                real = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                if len(real) == 4 and sum(int(numbers[nb]) == 9 for nb in real) == 3:
+                    return True
+            return False
+
+        def _aryl_f_fcc(angle) -> bool:
+            # Aryl F–C–C: 3-coordinate C with one F and two 3-coordinate C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4736,24 +4745,27 @@ class Internals(BaseInternals):
             real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
             if len(real_c) != 3:
                 return False
+            n_f = sum(int(numbers[nb]) == 9 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            if n_f != 1 or n_c != 2:
+                return False
+            carbons = [nb for nb in real_c if int(numbers[nb]) == 6]
+            for c_idx in carbons:
+                real_nb = [x for x in neighbors[c_idx] if int(x) not in dummy_set]
+                if len(real_nb) != 3:
+                    return False
             za, zc = int(numbers[ia]), int(numbers[ic])
-            if za != 16 or zc != 16:
-                return False
-            real_a = [nb for nb in neighbors[ia] if int(nb) not in dummy_set]
-            real_b = [nb for nb in neighbors[ic] if int(nb) not in dummy_set]
-            if len(real_a) != 2 or len(real_b) != 2:
-                return False
-            others = [nb for nb in real_c if int(nb) not in (ia, ic)]
-            if len(others) != 1:
-                return False
-            return int(numbers[others[0]]) == 6
+            return {za, zc} == {6, 9}
 
-        dithiole_ok = set()
-        if soft_medium_angle or soft_pyridine_angle:
+        aryl_f_ok = set()
+        if (soft_pyridine_angle
+                and not any(int(z) in (17, 35, 53)
+                            for z in numbers[:int(self.natoms)])
+                and not _has_cf3()):
             cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _dithiole_scs(angle)]
+                     if _aryl_f_fcc(angle)]
             if 1 <= len(cands) <= 2:
-                dithiole_ok = set(cands)
+                aryl_f_ok = set(cands)
 
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
@@ -4888,6 +4900,9 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in fused_ch2_ok:
                 # Fused CH2 C–C–C at a 3-coordinate ring carbon on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in aryl_f_ok:
+                # Aryl F–C–C on connected 30≤n<80, skipping Cl/Br/I and CF3.
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
@@ -4899,9 +4914,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif ia in cf3s_ok:
                 # CF3–S F–C–S on connected n<18 (1–3 cap).
-                h0[idx] = 0.10 * units.Hartree
-            elif ia in dithiole_ok:
-                # S–C–S at 3-coordinate C with two 2-coord S on 12≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
