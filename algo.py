@@ -42,7 +42,8 @@ also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
 and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
 a CF3 neighbor, and an unfluorinated other carbon, and on
 and on 1–2 amidine N–C–N at 3-coordinate carbon {N, N, C}
-that is not in a 5- or 6-membered C/N ring.
+that is not in a 5- or 6-membered C/N ring and whose carbon
+neighbor is not in a 6-membered ring.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4494,7 +4495,8 @@ class Internals(BaseInternals):
 
         def _amidine_ncn(angle) -> bool:
             # N–C–N at 3-coordinate carbon {N, N, C}; one N 2-coord,
-            # the other has H. Skip 5-/6-C/N rings (cycle 493 extras).
+            # the other has H. Skip 5-/6-C/N rings (cycle 493 extras)
+            # and fused 6-ring attach (cycle 494 104161681).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4535,6 +4537,22 @@ class Internals(BaseInternals):
                         if int(numbers[j]) not in (6, 7):
                             continue
                         stack.append((j, path + (j,)))
+            attach_c = next(int(nb) for nb in real_c if int(numbers[nb]) == 6)
+            stack = [(attach_c, (attach_c,))]
+            while stack:
+                curr, path = stack.pop()
+                if len(path) == 6:
+                    if attach_c in (int(nb) for nb in neighbors[curr]
+                                    if int(nb) not in dummy_set):
+                        return False
+                    continue
+                for nb in neighbors[curr]:
+                    j = int(nb)
+                    if j in dummy_set or j in path:
+                        continue
+                    if int(numbers[j]) not in (6, 7, 8, 16):
+                        continue
+                    stack.append((j, path + (j,)))
             return True
 
         amidine_ok = set()
