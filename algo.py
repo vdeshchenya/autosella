@@ -7,14 +7,13 @@ dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
-n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
-geodesic ODE steps recompute Binv at every RHS. Connected
+n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20 and connected n_atoms<18
+allenes (2-coordinate carbon with two 3-coordinate carbon
+neighbors) geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted, except connected
-n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
-carbon neighbors), which keep the QN step. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
@@ -6959,8 +6958,6 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if getattr(self, "_allene_n18", False):
-            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7227,6 +7224,24 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     Internals.soft_phenol_angle_h0_default = not connected
+    has_allene_n18 = False
+    n_atoms = len(atomic_numbers)
+    if connected and n_atoms < 18:
+        nbs = [[] for _ in range(n_atoms)]
+        for bond in probe.internals['bonds']:
+            i, j = (int(bond.indices[0]), int(bond.indices[1]))
+            if i < n_atoms and j < n_atoms:
+                nbs[i].append(j)
+                nbs[j].append(i)
+        zs = [int(z) for z in atomic_numbers]
+        for i, z in enumerate(zs):
+            if z != 6 or len(nbs[i]) != 2:
+                continue
+            ia, ic = nbs[i]
+            if (zs[ia] == 6 and zs[ic] == 6
+                    and len(nbs[ia]) == 3 and len(nbs[ic]) == 3):
+                has_allene_n18 = True
+                break
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
@@ -7238,26 +7253,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and 18 <= n_atoms < 20:
+        if connected and (18 <= n_atoms < 20 or has_allene_n18):
             opt.pes.exact_geodesic = True
         opt._hydrocarbon = False
-        opt._allene_n18 = False
-        if connected and n_atoms < 18:
-            nbs = [[] for _ in range(n_atoms)]
-            for bond in probe.internals['bonds']:
-                i, j = (int(bond.indices[0]), int(bond.indices[1]))
-                if i < n_atoms and j < n_atoms:
-                    nbs[i].append(j)
-                    nbs[j].append(i)
-            zs = [int(z) for z in atomic_numbers]
-            for i, z in enumerate(zs):
-                if z != 6 or len(nbs[i]) != 2:
-                    continue
-                ia, ic = nbs[i]
-                if (zs[ia] == 6 and zs[ic] == 6
-                        and len(nbs[ia]) == 3 and len(nbs[ic]) == 3):
-                    opt._allene_n18 = True
-                    break
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
             opt.delta_min = 0.02
