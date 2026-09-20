@@ -1,0 +1,110 @@
+{
+  "checksums_file": "sha256.json",
+  "checksums_sha256": "509aa23db3f4fbfd56be908b68d25cfc3e4645bc39f0b00cc748d97d01ddcc69",
+  "dataset_release_id": "main-f59f2b89a-gfn2-v1",
+  "datasets": {
+    "train": {
+      "count": 469,
+      "nonconverged_keys": [],
+      "reference_manifest": "train_XTB.json",
+      "source_counts": {
+        "des370k": 219,
+        "pubchem": 225,
+        "rowansci": 25
+      },
+      "xyz_dir": "xyz"
+    },
+    "valid": {
+      "count": 465,
+      "nonconverged_keys": [],
+      "reference_manifest": "valid_XTB.json",
+      "source_counts": {
+        "des370k": 215,
+        "pubchem": 250
+      },
+      "xyz_dir": "xyz"
+    }
+  },
+  "geometry_metadata": "geometry_metadata.json",
+  "payload_policy": "Source optimization inputs and frozen train/validation selection/reference data exported byte-for-byte from the source commit. RowanSci inputs include the declared noise. geometry_metadata.json and release/checksum manifests are packaging metadata.",
+  "preparation": {
+    "filename_suffix": "No method suffix; filename stem is the baseline key",
+    "input_geometry": "SPICE source conformers; RowanSci source coordinates with reproducible centered noise",
+    "max_conformers_per_system": 10,
+    "potential": null,
+    "preoptimization": false,
+    "pubchem_selection": {
+      "canonical_smiles_deduplication": true,
+      "conformer_order": "Deterministic hash order; sequential attempts retain the first passing conformer",
+      "fingerprint": "hydrogen-normalized 1024-bit ECFP4",
+      "ranking": "Greedy farthest-first against accepted molecules only; start with the smallest group ID that passes preparation",
+      "target_accepted_groups": 475
+    },
+    "rowansci_noise": {
+      "mean_displacement_angstrom": 0.02,
+      "seed": 42
+    },
+    "selection_seed": 42
+  },
+  "provenance_limitations": [
+    "Settings describe the source code and declared package versions at source_commit; the source artifacts have no execution-environment or executable-hash record.",
+    "No baseline was recalculated for this export. Exact numerical reproduction on a newly resolved runtime environment has not been validated."
+  ],
+  "reference": {
+    "acceptance_min_energy_decrease_hartree": 0.005,
+    "accuracy": 0.2,
+    "convergence": {
+      "implementation_source": "molecules/convergence.py",
+      "type": "geometric"
+    },
+    "energy_kind": "total_molecular_energy",
+    "energy_unit": "hartree",
+    "final_energy_geometry": "Last evaluated GFN2-xTB optimization geometry, not exported",
+    "final_geometry_acceptance": {
+      "checks_during_trajectory": false,
+      "connectivity": "Final RDKit connectivity versus mapped source SMILES; missing bonds allowed only for g < 1, extra bonds only for g > 1, with g = distance / sum of RDKit covalent radii",
+      "maximum_diameter_ratio": 2.0
+    },
+    "initial_energy_geometry": "The supplied source/noisy XYZ; no GFN-FF preoptimization",
+    "internal_coordinates": true,
+    "jax_enable_x64": true,
+    "max_force_calls": 200,
+    "num_threads": 1,
+    "optimizer": "Sella",
+    "optimizer_version_declared": "2.5.0",
+    "order": 0,
+    "potential": "GFN2-xTB",
+    "reference_convergence_required_for_selection": false,
+    "xtb_version_declared": "6.7.1"
+  },
+  "schema_version": 1,
+  "scope": "train_valid_only",
+  "selection_manifests": {
+    "des370k": "data/des370k_selected_dimers.json",
+    "pubchem": "data/pubchem_selected_conformers.json",
+    "rowansci": "data/rowansci_selected_inputs.json"
+  },
+  "source_commit": "f59f2b89ae6dcdb154a9dc27ce9f825c8c38d1d0",
+  "source_repository": "opt_problem",
+  "source_settings_sha256": {
+    "environment.yml": "651440558691f39244519cd6133e68cb0198f46aff655f1b178a0b6ad4087112",
+    "minimizers/sella_wrapper.py": "d7aead01ba3917313b8d30a394f2948f06c9868a525a72bbf3a033577e3ee6d3",
+    "molecules/convergence.py": "66de9d48e2335adeebd6819bcabba5a81aaf0c4c02025069d77ec06a92252d08",
+    "molecules/des370k.py": "81823a1a263b2b70d62c8efa9ca2bf2db3fbab8f68c82e1a31b90832cf262d01",
+    "molecules/gfn_worker.py": "a596e13cda94943051fb6e89051f906d25121c4bac155477732213471b3d9bd2",
+    "molecules/pipeline_helpers.py": "b1a0565fd02423ee36219d1b7f7d25074217e3aa6267d37e992d746e77ae771c",
+    "molecules/pubchem.py": "9f205161347a0f3c8c5169dfad15cd106bc249cccac823c0244bfb1407f95de5",
+    "molecules/rowansci.py": "8b066d28249943bb1e14ac19c1f42389e23f214086d789552a9a5f73018ce01d",
+    "molecules/train_valid_split.py": "9ad05f71081123ebd86bc784206491b94254845dda1112f81514af5929220f02",
+    "molecules/utils.py": "fd78b0578266858a455bf7087ee0b26098d5eb8edc28c6a8d5ebb3aca1be9452",
+    "molecules/xtb_molecular_system.py": "9c80a41177e971c289fe22d63b0f689fb7e7ad54581eb5c1ef94976a4cecbd8f"
+  },
+  "units": {
+    "charge": "elementary_charge",
+    "coordinates": "angstrom",
+    "reference_energy": "hartree",
+    "reference_energy_kind": "total_molecular_energy",
+    "runtime_energy": "kJ/mol",
+    "runtime_force": "kJ/(mol nm)"
+  }
+}

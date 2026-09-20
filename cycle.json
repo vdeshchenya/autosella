@@ -1,0 +1,8 @@
+{
+  "anchor_commit": "99a2d8b5482466729ddde624fc4253fc98aba249",
+  "anchor_train_json": "/workspace/evaluation_results/cycle-463-train.json",
+  "anchor_valid_json": "/workspace/evaluation_results/cycle-463-valid.json",
+  "cycle": 586,
+  "train_json": "/workspace/evaluation_results/cycle-586-train.json",
+  "valid_json": "/workspace/evaluation_results/cycle-586-valid.json"
+}

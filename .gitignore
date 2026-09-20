@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.ralph/
+.run-ready.json
+.evaluation_access/
+.evaluation_state/
+evaluation_access
+evaluation_results/
+anchors/
+diagnostics/
+research_sources/*.pdf
+research_sources/*.txt
