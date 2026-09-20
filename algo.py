@@ -5650,6 +5650,50 @@ class InternalPES(PES):
 
         return dydt.ravel()
 
+    def _kleinmichel_secant(self, dx, dg):
+        """Positive scaled rank-one update after physical block calibration."""
+        if (self._fit_blocks is None or len(self._fit_pairs) < 6
+                or np.linalg.norm(dx) < 1e-8 or self.cons.residual().size
+                or self.cons.has_inequalities()):
+            return False
+        basis = self.get_Ufree()
+        if basis.shape[1] == 0:
+            return False
+        step, change = basis.T @ dx, basis.T @ dg
+        tolerance = 64.0 * np.finfo(float).eps
+        curvature = float(step @ change)
+        if (not np.isfinite(curvature)
+                or curvature <= tolerance * np.linalg.norm(step) * np.linalg.norm(change)):
+            return False
+        model = basis.T @ self.H.B @ basis
+        model = 0.5 * (model + model.T)
+        values = eigh(model, eigvals_only=True)
+        if (not np.all(np.isfinite(values))
+                or values[0] <= tolerance * max(np.max(np.abs(values)), 1.0)):
+            return False
+        product = model @ step
+        model_curvature = float(step @ product)
+        if not np.isfinite(model_curvature) or model_curvature <= 0.0:
+            return False
+        gamma = 0.5 * curvature / model_curvature
+        residual = change - gamma * product
+        # Source gamma makes s.T residual exactly half the measured curvature.
+        updated = gamma * model + np.outer(residual, residual) / (0.5 * curvature)
+        updated = 0.5 * (updated + updated.T)
+        if (not np.all(np.isfinite(updated))
+                or np.linalg.norm(updated @ step - change)
+                > 1e-8 * max(np.linalg.norm(change), 1e-14)):
+            return False
+        try:
+            np.linalg.cholesky(updated)
+        except np.linalg.LinAlgError:
+            return False
+        result = self.H.B + basis @ (updated - model) @ basis.T
+        if not np.all(np.isfinite(result)):
+            return False
+        self.H.set_B(0.5 * (result + result.T))
+        return True
+
     def _update_H(self, dx, dg):
         if self.last['x'] is None or self.last['g'] is None:
             return
@@ -5676,6 +5720,8 @@ class InternalPES(PES):
                     symm=self.H.symm,
                     metric_diagonal=self._curvature_metric_diagonal)
             self.H.set_B(model)
+            return
+        if self._kleinmichel_secant(dx, dg):
             return
         self.H.curvature_metric_diagonal = self._curvature_metric_diagonal
         PES._update_H(self, dx, dg)
