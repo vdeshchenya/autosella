@@ -4873,6 +4873,20 @@ class InternalPES(PES):
         pi_atoms = {i for i in range(count) if numbers[i] == 6
                     and len(neighbors[i]) == 3
                     and all(numbers[j] in (1, 6) for j in neighbors[i])}
+        positions = self.atoms.positions
+        orbital_axes = {}
+        for i in sorted(pi_atoms):
+            directions = positions[sorted(neighbors[i])] - positions[i]
+            lengths = np.linalg.norm(directions, axis=1)
+            if np.any(lengths <= 0.0) or not np.all(np.isfinite(lengths)):
+                continue
+            directions = directions / lengths[:, None]
+            axis = np.cross(directions[1] - directions[0],
+                            directions[2] - directions[0])
+            norm = np.linalg.norm(axis)
+            if not np.isfinite(norm) or norm <= 64.0 * np.finfo(float).eps:
+                continue
+            orbital_axes[i] = axis / norm
         unseen = set(pi_atoms)
         correction = np.zeros_like(projector)
         used = False
@@ -4896,11 +4910,19 @@ class InternalPES(PES):
                      and (i, j) in bond_rows]
             if not edges:
                 continue
-            # All pi hoppings at the published equal-bond reference beta=-1.
+            if any(i not in orbital_axes for i in component):
+                continue
+            # Slater-Koster pp-pi projection; pp-sigma is outside this model.
+            overlaps = []
             hamiltonian = np.zeros((n, n))
             for i, j, _ in edges:
-                hamiltonian[index[i], index[j]] = -1.0
-                hamiltonian[index[j], index[i]] = -1.0
+                axis = positions[j] - positions[i]
+                axis = axis / np.linalg.norm(axis)
+                ni, nj = orbital_axes[i], orbital_axes[j]
+                overlap = ni @ nj - (ni @ axis) * (nj @ axis)
+                overlaps.append(overlap)
+                hamiltonian[index[i], index[j]] = -overlap
+                hamiltonian[index[j], index[i]] = -overlap
             energies, orbitals = eigh(hamiltonian)
             occupied = n // 2
             gaps = energies[occupied:][None, :] - energies[:occupied, None]
@@ -4911,6 +4933,9 @@ class InternalPES(PES):
                 (np.outer(orbitals[index[i], :occupied], orbitals[index[j], occupied:])
                  + np.outer(orbitals[index[j], :occupied], orbitals[index[i], occupied:])
                  ).ravel() for i, j, _ in edges])
+            # Freeze the orbital geometry in the radial response:
+            # beta_b(R) = overlap_b * (-1 + dR / y).
+            amplitudes *= np.asarray(overlaps)[:, None]
             weighted = amplitudes / np.sqrt(gaps.ravel())
             # Divide the electronic response plus harmonic sigma springs by
             # spring curvature 2/(x*y), x=.189 A and y=.2756 A.
