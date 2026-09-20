@@ -10,8 +10,8 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted (cosine ≥ 0.85 on
-connected n_atoms<12, else ≥ 0.90). Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted (ρ window skipped on
+connected n_atoms<12). Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
@@ -6534,16 +6534,18 @@ class Sella(Optimizer):
 
         Cycle 117's 2–4 point milder GDIIS passed train but inflated
         seven valid jobs. Restrict to the two most recent points so the
-        interpolant stays on the last segment.         Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90 (0.85 on connected n_atoms<12). Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
+        interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
+        and cosine ≥ 0.90. Accept only when the previous step was well
+        predicted (1/rho_inc < rho < rho_inc), except connected n_atoms<12
+        which skip the ρ window. Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
         connected-only.
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        if not (1.0 / self.rho_inc < rho < self.rho_inc):
+        if (not getattr(self, "_gdiis_skip_rho_n12", False)
+                and not (1.0 / self.rho_inc < rho < self.rho_inc)):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
@@ -6592,8 +6594,7 @@ class Sella(Optimizer):
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
-        cos_min = 0.85 if getattr(self, "_gdiis_cos_n12", False) else 0.90
-        if cos < cos_min or cos < 0.0:
+        if cos < 0.90 or cos < 0.0:
             return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
@@ -6819,7 +6820,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         if connected and n_atoms < 12:
-            opt._gdiis_cos_n12 = True
+            opt._gdiis_skip_rho_n12 = True
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if not connected:
