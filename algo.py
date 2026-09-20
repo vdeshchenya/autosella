@@ -25,7 +25,7 @@ Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles except silicon-containing
 molecules, 0.10 Ha on P–O–H and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers,
-and 0.10 Ha on 2-coordinate P–S–P and S–P–S at phosphorus.
+and 0.10 Ha on 1–3 sulfoxide C–S–C and C–S–O angles.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -5017,8 +5017,35 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
+        def _sulfoxide_angle(angle) -> bool:
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 16:
+                return False
+            real_s = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_s) != 3:
+                return False
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_s)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_s)
+            if n_o != 1 or n_c != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return {za, zc} in ({6, 6}, {6, 8})
+
+        sulfoxide_ok = set()
+        if soft_oxo_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _sulfoxide_angle(angle)]
+            if 1 <= len(cands) <= 3:
+                sulfoxide_ok = set(cands)
+
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
+                h0[idx] = 0.10 * units.Hartree
+            elif ia in sulfoxide_ok:
+                # Sulfoxide C–S–C / C–S–O on connected n<12 (1–3 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
@@ -5110,23 +5137,6 @@ class Internals(BaseInternals):
             ):
                 # Tetrahedral O–P–O on connected n<12; Si cages stay 0.10.
                 h0[idx] = (0.10 if has_silicon else 0.08) * units.Hartree
-            elif (
-                soft_oxo_angle
-                and int(numbers[int(angle.indices[1])]) == 15
-                and int(numbers[int(angle.indices[0])]) == 16
-                and int(numbers[int(angle.indices[2])]) == 16
-            ):
-                # S–P–S at phosphorus on connected n<12.
-                h0[idx] = 0.10 * units.Hartree
-            elif (
-                soft_oxo_angle
-                and int(numbers[int(angle.indices[1])]) == 16
-                and int(nbonds[int(angle.indices[1])]) == 2
-                and int(numbers[int(angle.indices[0])]) == 15
-                and int(numbers[int(angle.indices[2])]) == 15
-            ):
-                # Bridging P–S–P on connected n<12.
-                h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
                 and int(numbers[int(angle.indices[1])]) == 14
