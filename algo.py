@@ -51,10 +51,16 @@ angles whose carbon terminal is not 3-coordinate, and connected
 30≤n<80 use 0.10 Ha on at most two S–C–S angles at
 3-coordinate carbon with two 2-coordinate sulfur terminals
 and one carbon terminal.
+Connected n_atoms<18 use 0.10 Ha on at most two N-oxide O–N–C
+angles at 3-coordinate N {C, C, O} with a terminal oxygen.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
-3-coordinate with exactly one oxygen).
+3-coordinate with exactly one oxygen). Dimers that also contain
+a phenol C–O–H use 0.10 Ha on at most two acetate-ester C–C–O
+angles at 3-coordinate carbonyl carbon {C, O, O} whose oxygens
+are one 1-coordinate carbonyl and one 2-coordinate alkoxy, and
+whose carbon terminal is a methyl carbon.
 
 Entry point: minimize_func(positions_nm, atomic_numbers, calc, max_force_calls, converged)
 """
@@ -4546,47 +4552,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 alkyl_aryl_csc_ok = set(cands)
 
-        def _fluoro_noxide_no(bond) -> bool:
-            # N–O of pyridine/imidazole N-oxide: 3-coord N {C, C, O},
-            # terminal oxygen. Molecule also has aryl F (3-coord C–F).
-            ia, ib = int(bond.indices[0]), int(bond.indices[1])
-            if ia in dummy_set or ib in dummy_set:
-                return False
-            za, zb = int(numbers[ia]), int(numbers[ib])
-            if {za, zb} != {7, 8}:
-                return False
-            n_idx = ia if za == 7 else ib
-            o_idx = ib if za == 7 else ia
-            real_n = [nb for nb in neighbors[n_idx] if int(nb) not in dummy_set]
-            if len(real_n) != 3:
-                return False
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_n)
-            n_o = sum(int(numbers[nb]) == 8 for nb in real_n)
-            if n_c != 2 or n_o != 1:
-                return False
-            real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
-            if len(real_o) != 1:
-                return False
-            for c in range(int(self.natoms)):
-                if int(numbers[c]) != 6:
-                    continue
-                real_c = [nb for nb in neighbors[c] if int(nb) not in dummy_set]
-                if len(real_c) != 3:
-                    continue
-                if any(int(numbers[nb]) == 9 for nb in real_c):
-                    return True
-            return False
-
-        no_ok = set()
-        if soft_pyridine_angle:
-            cands = [ib for ib, bond in enumerate(self.internals['bonds'])
-                     if _fluoro_noxide_no(bond)]
-            if len(cands) == 2:
-                no_ok = set(cands)
-            ntrans = len(self.internals['translations'])
-            for ib in no_ok:
-                h0[ntrans + ib] = 0.10 * units.Hartree / units.Bohr**2
-
         def _sios(angle) -> bool:
             # Silyl sulfonate/sulfamate Si–O–S at 2-coordinate O.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4954,6 +4919,60 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 phenol_ok = set(cands)
 
+        def _acetate_ester_cco(angle) -> bool:
+            # C–C–O at acetate-ester carbonyl: 3-coord C {C, O, O} with
+            # one 1-coord carbonyl O and one 2-coord alkoxy O; the carbon
+            # terminal is methyl {H, H, H, C}. Skips formate (no acyl C)
+            # and carboxylic acids (OH, not alkoxy).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 3:
+                return False
+            n_o = sum(int(numbers[nb]) == 8 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            if n_o != 2 or n_c != 1:
+                return False
+            has_carbonyl = False
+            has_alkoxy = False
+            for o_idx in real_c:
+                if int(numbers[o_idx]) != 8:
+                    continue
+                real_o = [nb for nb in neighbors[int(o_idx)]
+                          if int(nb) not in dummy_set]
+                if len(real_o) == 1:
+                    has_carbonyl = True
+                elif (len(real_o) == 2
+                      and any(int(numbers[nb]) == 6 and int(nb) != icen
+                              for nb in real_o)):
+                    has_alkoxy = True
+            if not (has_carbonyl and has_alkoxy):
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if {za, zc} != {6, 8}:
+                return False
+            c_term = ia if za == 6 else ic
+            real_ct = [nb for nb in neighbors[c_term]
+                       if int(nb) not in dummy_set]
+            if len(real_ct) != 4:
+                return False
+            n_h = sum(int(numbers[nb]) == 1 for nb in real_ct)
+            n_c_term = sum(int(numbers[nb]) == 6 for nb in real_ct)
+            return n_h == 3 and n_c_term == 1
+
+        acetate_ester_ok = set()
+        if (soft_phenol_angle
+                and any(_phenol_coh(angle)
+                        for angle in self.internals['angles'])):
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _acetate_ester_cco(angle)]
+            if 1 <= len(cands) <= 2:
+                acetate_ester_ok = set(cands)
+
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
                 h0[idx] = 0.10 * units.Hartree
@@ -5019,6 +5038,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_phenol_angle and ia in phenol_ok:
                 # Phenol C–O–H on dimers that also have a carbonyl oxygen.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_phenol_angle and ia in acetate_ester_ok:
+                # Acetate-ester C–C–O on dimers that also have a phenol.
                 h0[idx] = 0.10 * units.Hartree
             elif (
                 soft_oxo_angle
