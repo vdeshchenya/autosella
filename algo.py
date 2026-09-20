@@ -11,12 +11,12 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
-30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O}
-and connected 12≤n_atoms<30 thiosulfonates (4-coordinate S {O, O, S, C}). Connected
+30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O}. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted, except connected
+n_atoms<12 without a P–F bond which start GDIIS at 15 steps. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
@@ -7053,7 +7053,27 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if self.nsteps < 20:
+        gdiis_start = 20
+        intern = getattr(self.pes, "int", None)
+        if (intern is not None and int(intern.natoms) < 12
+                and getattr(self, "_allow_angle_wa", False)):
+            has_pf = getattr(self, "_has_pf_bond", None)
+            if has_pf is None:
+                has_pf = False
+                numbers = intern.atoms.numbers
+                natoms = int(intern.natoms)
+                for bond in intern.internals.get('bonds', []):
+                    i, j = int(bond.indices[0]), int(bond.indices[1])
+                    if i >= natoms or j >= natoms:
+                        continue
+                    za, zb = int(numbers[i]), int(numbers[j])
+                    if {za, zb} == {9, 15}:
+                        has_pf = True
+                        break
+                self._has_pf_bond = has_pf
+            if not has_pf:
+                gdiis_start = 15
+        if self.nsteps < gdiis_start:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
@@ -7362,27 +7382,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if n_noxide >= 2:
                 opt._has_bis_noxide = True
                 opt.pes.exact_geodesic = True
-        if connected and 12 <= n_atoms < 30:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 4:
-                    continue
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                n_s = sum(int(numbers[nb]) == 16 for nb in real)
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                if n_o == 2 and n_s == 1 and n_c == 1:
-                    opt.pes.exact_geodesic = True
-                    break
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
