@@ -17,8 +17,7 @@ when 1–3 such angles are present.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
-Cl–Si–X, and F–B–F angles at silicon or boron centers, and
-oxygen-free P–S stretches use 0.25 Ha/Bohr².
+Cl–Si–X, and F–B–F angles at silicon or boron centers.
 Connected n_atoms≥30 place dummy atoms in an adjacent-substituent
 plane at 2-coordinate carbon centers when the linear-frame cross
 product is moderately ill-conditioned (0.04 < ||u×v|| < 0.10);
@@ -42,7 +41,8 @@ angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
 also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
 and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
 a CF3 neighbor, and an unfluorinated other carbon, and on
-1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I).
+1–2 hetero/halo 3-coordinate C–S–C (exactly one N/Cl/Br/I), and on
+1–2 C–C–C at 4-coordinate CH2 with a 3-coordinate carbon neighbor.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4090,30 +4090,20 @@ class Internals(BaseInternals):
         nbonds = np.zeros(len(self.all_atoms), dtype=np.int32)
         h0 = np.zeros(self.nint, dtype=np.float64)
         h0_tr = 0.05 * units.Hartree
-        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
-        soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
-        soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
-        numbers_for_bonds = np.asarray(self.all_atoms.numbers)
-        oxo_no_oxygen = (
-            soft_oxo_angle
-            and not any(int(z) == 8 for z in numbers_for_bonds[:int(self.natoms)])
-        )
         idx = 0
         for trans in self.internals['translations']:
             h0[idx] = h0_tr if self.allow_fragments else h0cart
             idx += 1
         for bond in self.internals['bonds']:
-            i, j = bond.indices
-            zs = {int(numbers_for_bonds[int(i)]), int(numbers_for_bonds[int(j)])}
-            if oxo_no_oxygen and zs == {15, 16}:
-                # Oxygen-free P–S stretch on connected n<12 (P4S6).
-                h0[idx] = 0.25 * units.Hartree / units.Bohr**2
-            else:
-                h0[idx] = self._h0_bond(bond)
+            h0[idx] = self._h0_bond(bond)
             idx += 1
             # count number of bonds per atom for dihedral later
+            i, j = bond.indices
             nbonds[i] += 1
             nbonds[j] += 1
+        dummy_set = set(range(self.natoms, self.natoms + self.ndummies))
+        soft_dummy_angle = getattr(self, 'soft_dummy_angle_h0', False)
+        soft_oxo_angle = getattr(self, 'soft_oxo_angle_h0', False)
         soft_pyridine_angle = getattr(self, 'soft_pyridine_angle_h0', False)
         soft_medium_angle = getattr(self, 'soft_medium_angle_h0', False)
         soft_phenol_angle = getattr(self, 'soft_phenol_angle_h0', False)
@@ -4605,6 +4595,38 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 css_ok = set(cands)
 
+        def _fused_ch2_ccc(angle) -> bool:
+            # C–C–C at 4-coordinate CH2 with a 3-coordinate carbon neighbor.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            if n_h != 2 or n_c != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            for t in (ia, ic):
+                real_t = [nb for nb in neighbors[t] if int(nb) not in dummy_set]
+                if (len(real_t) == 3
+                        and all(int(numbers[nb]) in (1, 6) for nb in real_t)):
+                    return True
+            return False
+
+        fused_ch2_ok = set()
+        if soft_pyridine_angle:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _fused_ch2_ccc(angle)]
+            if 1 <= len(cands) <= 2:
+                fused_ch2_ok = set(cands)
+
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
             # whose other two neighbors are 3-coordinate carbons.
@@ -4731,6 +4753,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in hetero_csc_ok:
                 # Hetero/halo 3-coordinate C–S–C (thiazole/chlorothiophene).
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in fused_ch2_ok:
+                # Fused CH2 C–C–C with a 3-coordinate carbon on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
