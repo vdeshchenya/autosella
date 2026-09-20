@@ -10,9 +10,9 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
-when the previous ratio ρ was well predicted (ρ window skipped on
-connected n_atoms<12). Connected molecules with fewer than 18 atoms or
+when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
 at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
+Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha.
 Connected n_atoms<12 use 0.10 Ha guesses on 2-coordinate oxygen
 angles that have a phosphorus neighbor (P–O–P / P–O–H), on
 tetrahedral O–P–O angles at phosphorus centers, and on F–Si–X,
@@ -4443,6 +4443,27 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 sios_ok = set(cands)
 
+        def _sns(angle) -> bool:
+            # 2-coordinate S–N–S (sulfur-nitrogen cage).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            return za == 16 and zc == 16
+
+        sns_ok = set()
+        if soft_dummy_angle and self.natoms < 18:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _sns(angle)]
+            if 1 <= len(cands) <= 4:
+                sns_ok = set(cands)
+
         def _css(angle) -> bool:
             # Disulfide C–S–S at 2-coordinate sulfur; alkyl or O-substituted C.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4596,6 +4617,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
+                h0[idx] = 0.10 * units.Hartree
+            elif ia in sns_ok:
+                # 2-coordinate S–N–S on connected n<18.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
@@ -6536,16 +6560,14 @@ class Sella(Optimizer):
         seven valid jobs. Restrict to the two most recent points so the
         interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
         and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc), except connected n_atoms<12
-        which skip the ρ window. Connected and dimer jobs
+        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
         connected-only.
         """
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        if (not getattr(self, "_gdiis_skip_rho_n12", False)
-                and not (1.0 / self.rho_inc < rho < self.rho_inc)):
+        if not (1.0 / self.rho_inc < rho < self.rho_inc):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
@@ -6819,8 +6841,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
-        if connected and n_atoms < 12:
-            opt._gdiis_skip_rho_n12 = True
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
         if not connected:
