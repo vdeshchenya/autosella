@@ -4770,57 +4770,6 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 dithiole_ok = set(cands)
 
-        def _protonated_ester_cco(angle) -> bool:
-            # C–C–O at 3-coordinate carbonyl {O, O, C} with one protonated
-            # hydroxyl O (2-coord {C, H}) and one methoxy O (2-coord to CH3).
-            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
-                            int(angle.indices[2]))
-            if any(j in dummy_set for j in (ia, icen, ic)):
-                return False
-            if int(numbers[icen]) != 6:
-                return False
-            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
-            if len(real_c) != 3:
-                return False
-            n_o = sum(int(numbers[nb]) == 8 for nb in real_c)
-            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
-            if n_o != 2 or n_c != 1:
-                return False
-            za, zc = int(numbers[ia]), int(numbers[ic])
-            if {za, zc} != {6, 8}:
-                return False
-            has_oh = False
-            has_ome = False
-            for o_idx in (nb for nb in real_c if int(numbers[nb]) == 8):
-                real_o = [nb for nb in neighbors[int(o_idx)]
-                          if int(nb) not in dummy_set]
-                if len(real_o) != 2:
-                    return False
-                zs = [int(numbers[nb]) for nb in real_o]
-                if sorted(zs) == [1, 6]:
-                    has_oh = True
-                elif zs.count(6) == 2:
-                    other = next(int(nb) for nb in real_o if int(nb) != icen)
-                    real_m = [nb for nb in neighbors[other]
-                              if int(nb) not in dummy_set]
-                    n_h = sum(int(numbers[nb]) == 1 for nb in real_m)
-                    n_o_m = sum(int(numbers[nb]) == 8 for nb in real_m)
-                    if (int(numbers[other]) == 6 and len(real_m) == 4
-                            and n_h == 3 and n_o_m == 1):
-                        has_ome = True
-                    else:
-                        return False
-                else:
-                    return False
-            return has_oh and has_ome
-
-        protonated_ester_ok = set()
-        if soft_pyridine_angle:
-            cands = [ia for ia, angle in enumerate(self.internals['angles'])
-                     if _protonated_ester_cco(angle)]
-            if 1 <= len(cands) <= 2:
-                protonated_ester_ok = set(cands)
-
         def _fused_ch2_ccc(angle) -> bool:
             # C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4863,6 +4812,49 @@ class Internals(BaseInternals):
                      if _fused_ch2_ccc(angle)]
             if 1 <= len(cands) <= 2:
                 fused_ch2_ok = set(cands)
+
+        def _trimethylene_ccc(angle) -> bool:
+            # C–C–C at 4-coord CH2 whose both carbon neighbors are 4-coord
+            # CH2, each with a 3-coord carbon neighbor (fused aliphatic
+            # CH2–CH2–CH2 complementary to fused_ch2).
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 6:
+                return False
+            real_c = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_c) != 4:
+                return False
+            n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
+            n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
+            if n_h != 2 or n_c != 2:
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            for t in (ia, ic):
+                real_t = [nb for nb in neighbors[t] if int(nb) not in dummy_set]
+                if len(real_t) != 4:
+                    return False
+                n_ht = sum(int(numbers[nb]) == 1 for nb in real_t)
+                n_ct = sum(int(numbers[nb]) == 6 for nb in real_t)
+                if n_ht != 2 or n_ct != 2:
+                    return False
+                if not any(int(numbers[nb]) == 6
+                           and int(nb) not in dummy_set
+                           and len([x for x in neighbors[int(nb)]
+                                    if int(x) not in dummy_set]) == 3
+                           for nb in real_t):
+                    return False
+            return True
+
+        trimethylene_ok = set()
+        if soft_pyridine_angle and not fused_ch2_ok:
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _trimethylene_ccc(angle)]
+            if 1 <= len(cands) <= 2:
+                trimethylene_ok = set(cands)
 
         def _aryl_phenol_coh(angle) -> bool:
             # Aryl phenol C-O-H: 2-coord O bonded to H and a 3-coord C
@@ -4997,6 +4989,9 @@ class Internals(BaseInternals):
             elif soft_pyridine_angle and ia in fused_ch2_ok:
                 # Fused CH2 C–C–C at a 3-coordinate ring carbon on 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in trimethylene_ok:
+                # Fused aliphatic CH2–CH2–CH2 C–C–C on 30≤n<80.
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in sios_ok:
                 # 2-coordinate Si–O–S on connected 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
@@ -5014,9 +5009,6 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in dithiole_ok:
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
-                h0[idx] = 0.10 * units.Hartree
-            elif soft_pyridine_angle and ia in protonated_ester_ok:
-                # Protonated methyl-ester C–C–O on connected 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
