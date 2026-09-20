@@ -39,8 +39,8 @@ on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
 also use 0.10 Ha on at most two 2-coordinate Si–O–S angles
-and on 1–4 F–C–C at 4-coordinate carbon with exactly two F
-and a CF3 neighbor.
+and on 1–4 F–C–C at 4-coordinate carbon with exactly two F,
+a CF3 neighbor, and an unfluorinated other carbon.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4456,8 +4456,8 @@ class Internals(BaseInternals):
             return n_f == 3 and n_c == 1
 
         def _penta_fcc(angle) -> bool:
-            # F–C–C at pentafluoroethyl CF2: 4-coord C with exactly two F
-            # and a CF3 neighbor.
+            # Organic C2F5 F–C–C: 4-coord CF2 with a CF3 neighbor and
+            # an unfluorinated other carbon (cycle 491 extraed perfluoro).
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
             if any(j in dummy_set for j in (ia, icen, ic)):
@@ -4475,7 +4475,13 @@ class Internals(BaseInternals):
             if {za, zc} != {6, 9}:
                 return False
             carbons = [nb for nb in real_c if int(numbers[nb]) == 6]
-            return any(_cf3_carbon(cn) for cn in carbons)
+            cf3s = [cn for cn in carbons if _cf3_carbon(cn)]
+            if len(cf3s) != 1:
+                return False
+            other = next(int(cn) for cn in carbons if int(cn) != int(cf3s[0]))
+            attach = [nb for nb in neighbors[other]
+                      if int(nb) not in dummy_set]
+            return not any(int(numbers[nb]) == 9 for nb in attach)
 
         penta_fcc_ok = set()
         if soft_pyridine_angle:
@@ -4660,7 +4666,7 @@ class Internals(BaseInternals):
                 # 2-coordinate Si–O–S on connected 30≤n<80.
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in penta_fcc_ok:
-                # Pentafluoroethyl F–C–C on connected 30≤n<80 (1–4 cap).
+                # Organic C2F5 F–C–C on connected 30≤n<80 (1–4 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif ia in sns_ok:
                 # 2-coordinate S–N–S on connected n<18 (1–3 cap).
