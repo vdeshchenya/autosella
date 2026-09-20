@@ -18,7 +18,6 @@ Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
 3-coordinate N-oxide nitrogen {C, C, O}.
-Connected n_atoms≥100 dummy-involving angles use 0.08 Ha.
 Connected n_atoms<12 use 0.08 Ha guesses on 2-coordinate
 P–O–P and tetrahedral O–P–O angles, 0.10 Ha on P–O–H and on
 F–Si–X, Cl–Si–X, and F–B–F angles at silicon or boron centers.
@@ -29,7 +28,8 @@ otherwise keep the Sella cross-product dummy plane. Dummy-involving
 dihedrals at windowed C–C–C alkyne (n≥30) and at C–N–O isocyanate
 dummy centers use 0.20 Ha guesses, except windowed C–C–C alkynes
 without silicon or 4-coordinate oxygenated alkyne carbons, which
-use 0.15 Ha when at most two such dummies are present. Connected
+use 0.15 Ha when at most two such dummies are present, and dummy-involving
+angles at those alkyne_soft dummies on n≥30 use 0.08 Ha. Connected
 n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
 carbon neighbors) also use 0.15 Ha on dummy-involving dihedrals.
 Connected 30≤n_atoms<80 use 0.10 Ha
@@ -4967,7 +4967,9 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                if self.natoms >= 100:
+                alkyne_soft = getattr(self, 'alkyne_soft_dummy_atoms', set())
+                if (self.natoms >= 30
+                        and any(int(j) in alkyne_soft for j in angle.indices)):
                     h0[idx] = 0.08 * units.Hartree
                 else:
                     h0[idx] = 0.10 * units.Hartree
