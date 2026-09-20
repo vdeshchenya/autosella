@@ -13,8 +13,7 @@ geodesic ODE steps recompute Binv at every RHS. Connected
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
-at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses,
-except n_atoms<18 allene `alkyne_soft` dummy angles which use 0.08 Ha.
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
@@ -32,7 +31,7 @@ dummy centers use 0.20 Ha guesses, except windowed C–C–C alkynes
 without silicon or 4-coordinate oxygenated alkyne carbons, which
 use 0.15 Ha when at most two such dummies are present. Connected
 n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
-carbon neighbors) also use 0.15 Ha on dummy-involving dihedrals.
+carbon neighbors) also use 0.12 Ha on dummy-involving dihedrals.
 Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
@@ -5016,12 +5015,7 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                alkyne_soft = getattr(self, 'alkyne_soft_dummy_atoms', set())
-                if (int(self.natoms) < 18
-                        and any(int(j) in alkyne_soft for j in angle.indices)):
-                    h0[idx] = 0.08 * units.Hartree
-                else:
-                    h0[idx] = 0.10 * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -5151,7 +5145,7 @@ class Internals(BaseInternals):
                     getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in alkyne_soft for j in dihedral.indices)
                 ):
-                    scale = 0.15
+                    scale = 0.12 if int(self.natoms) < 18 else 0.15
                 elif (
                     getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in windowed for j in dihedral.indices)
