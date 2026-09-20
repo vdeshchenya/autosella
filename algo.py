@@ -51,7 +51,9 @@ also use 0.10 Ha on at most two 4-coordinate C–C–Cl
 angles whose carbon terminal is not 3-coordinate, and connected
 30≤n<80 use 0.10 Ha on at most two S–C–S angles at
 3-coordinate carbon with two 2-coordinate sulfur terminals
-and one carbon terminal.
+and one carbon terminal, and on at most two CH2–N–CH2 angles
+in a saturated C5 ring at 3-coordinate nitrogen {C, C, C},
+skipping molecules with a 1-coordinate nitrogen.
 Dimers that contain a 1-coordinate
 carbonyl oxygen use 0.10 Ha guesses on at most two phenol C–O–H
 angles (2-coordinate O bonded to C and H; the ipso carbon is
@@ -4771,6 +4773,47 @@ class Internals(BaseInternals):
             if 1 <= len(cands) <= 2:
                 dithiole_ok = set(cands)
 
+        def _pyrrolidine_cnc(angle) -> bool:
+            # CH2–N–CH2 in a saturated C5 ring at 3-coordinate N {C, C, C}.
+            ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
+                            int(angle.indices[2]))
+            if any(j in dummy_set for j in (ia, icen, ic)):
+                return False
+            if int(numbers[icen]) != 7:
+                return False
+            real_n = [nb for nb in neighbors[icen] if int(nb) not in dummy_set]
+            if len(real_n) != 3:
+                return False
+            if any(int(numbers[nb]) != 6 for nb in real_n):
+                return False
+            za, zc = int(numbers[ia]), int(numbers[ic])
+            if za != 6 or zc != 6:
+                return False
+            for t in (ia, ic):
+                real_t = [nb for nb in neighbors[t] if int(nb) not in dummy_set]
+                if len(real_t) != 4:
+                    return False
+            for c1 in neighbors[ia]:
+                if int(c1) in dummy_set or int(c1) == icen:
+                    continue
+                if int(numbers[c1]) != 6:
+                    continue
+                for c2 in neighbors[c1]:
+                    if int(c2) in dummy_set or int(c2) in (icen, ia, ic):
+                        continue
+                    if int(numbers[c2]) != 6:
+                        continue
+                    if ic in neighbors[c2]:
+                        return True
+            return False
+
+        pyrrolidine_ok = set()
+        if soft_pyridine_angle and not _has_terminal_n():
+            cands = [ia for ia, angle in enumerate(self.internals['angles'])
+                     if _pyrrolidine_cnc(angle)]
+            if 1 <= len(cands) <= 2:
+                pyrrolidine_ok = set(cands)
+
         def _fused_ch2_ccc(angle) -> bool:
             # C–C–C at 4-coordinate CH2 fused to a 3-coordinate ring carbon.
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -4964,6 +5007,9 @@ class Internals(BaseInternals):
                 h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in dithiole_ok:
                 # S–C–S at 3-coordinate C with two 2-coord S on 30≤n<80.
+                h0[idx] = 0.10 * units.Hartree
+            elif soft_pyridine_angle and ia in pyrrolidine_ok:
+                # Pyrrolidine CH2–N–CH2 on connected 30≤n<80 (1–2 cap).
                 h0[idx] = 0.10 * units.Hartree
             elif soft_medium_angle and ia in css_ok:
                 # Alkyl or O-substituted C–S–S on 12≤n<30.
