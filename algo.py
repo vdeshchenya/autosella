@@ -11,8 +11,7 @@ to two CH2 carbons, and connected n_atoms<18 Si/H-only
 oligosilanes with at least four Si, and connected n_atoms<18
 allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
 and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
-a 2-coordinate N and a 3-coordinate C). Connected n_atoms<18 allenes
-also floor Hessian |λ| at 0.01 Eh (Helgaker) in the quasi-Newton stepper.
+a 2-coordinate N and a 3-coordinate C).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
@@ -22,6 +21,8 @@ benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`)
 and exact geodesic (recompute Binv at every ODE RHS).
+Connected n_atoms<18 allenes use the Schlegel flowchart Hessian
+update after 18 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -529,12 +530,8 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
+        return ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
-        floor = getattr(self, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
-        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5458,11 +5455,7 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
-        floor = getattr(self.H, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
-        return Hproj
+        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -6387,9 +6380,6 @@ class QuasiNewton(BaseStepper):
             self.H.evals, self.H.evecs = eigh(H_array)
 
         self.L = np.abs(self.H.evals)
-        floor = float(getattr(self.H, 'eval_floor', 0.0) or 0.0)
-        if floor > 0.0:
-            self.L = np.maximum(self.L, floor)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7055,10 +7045,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_allene", False):
-            self.pes.H.eval_floor = 0.01
-
-        if self.pes.cons.has_inequalities():
+        elif getattr(self, "_has_allene", False) and self.nsteps >= 18:
+            self.pes.H.update_method = 'flowchart'
             all_valid = False
             while not all_valid:
                 s, smag = self.rs(
