@@ -8,10 +8,11 @@ Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons, and connected n_atoms<18 Si/H-only
-oligosilanes with at least four Si, and connected n_atoms<18
-allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
-and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
-a 2-coordinate N and a 3-coordinate C).
+oligosilanes with at least four Si. Connected n_atoms<18
+allenes (2-coordinate carbon with two 3-coordinate carbon neighbors)
+use MaxInternalStep `wd=0.60`. Connected 30≤n_atoms<80 isoxazoles
+(2-coordinate O bonded to a 2-coordinate N and a 3-coordinate C)
+use MaxInternalStep `wd=0.70`.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
@@ -21,8 +22,6 @@ benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`)
 and exact geodesic (recompute Binv at every ODE RHS).
-Connected n_atoms<18 allenes (2-coordinate carbon with two
-3-coordinate carbon neighbors) also use exact geodesic.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -7024,11 +7023,11 @@ class Sella(Optimizer):
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
                 ) or getattr(self, "_has_oligosilane", False) or getattr(
-                    self, "_has_allene", False
-                ) or getattr(self, "_has_nitro_cf3", False) or getattr(
-                    self, "_has_isoxazole", False
-                ):
+                    self, "_has_nitro_cf3", False
+                ) or getattr(self, "_has_isoxazole", False):
                     rs_kwargs['wd'] = 0.70
+                if getattr(self, "_has_allene", False):
+                    rs_kwargs['wd'] = 0.60
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7449,7 +7448,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     for nb in real
                 ):
                     opt._has_allene = True
-                    opt.pes.exact_geodesic = True
                     break
         if connected and n_atoms < 12:
             numbers = atoms.numbers
