@@ -16,8 +16,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected n_atoms≥80 sulfonamides (4-coordinate S {two 1-coordinate O, N, C})
-use a Helgaker |λ| floor of 0.01 Eh on quasi-Newton Hessian eigenvalues,
-copied onto the projected Lagrangian Hessian the stepper uses.
+use exact geodesic (recompute Binv at every ODE RHS).
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
@@ -530,12 +529,8 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
+        return ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
-        floor = getattr(self, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
-        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5459,11 +5454,7 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
-        floor = getattr(self.H, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
-        return Hproj
+        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -6388,9 +6379,6 @@ class QuasiNewton(BaseStepper):
             self.H.evals, self.H.evecs = eigh(H_array)
 
         self.L = np.abs(self.H.evals)
-        floor = float(getattr(self.H, 'eval_floor', 0.0) or 0.0)
-        if floor > 0.0:
-            self.L = np.maximum(self.L, floor)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7056,8 +7044,6 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_sulfonamide", False):
-            self.pes.H.eval_floor = 1e-2
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7732,6 +7718,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 n_c = sum(int(numbers[nb]) == 6 for nb in real)
                 if n_o1 == 2 and n_n == 1 and n_c == 1:
                     opt._has_sulfonamide = True
+                    opt.pes.exact_geodesic = True
                     break
         opt._hydrocarbon = False
         if not connected:
