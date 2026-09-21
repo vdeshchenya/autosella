@@ -20,7 +20,7 @@ and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and
-Powell-damped Hessian updates (s·y < 0.05 s·Bs) after 20 steps.
+Powell-damped Hessian updates (s·y < 0.10 s·Bs) after 20 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -521,10 +521,10 @@ class ApproximateHessian(LinearOperator):
             Bs = B @ dx_u
             sBs = float(dx_u @ Bs)
             sy = float(dx_u @ dg_u)
-            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.05 * sBs:
+            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.10 * sBs:
                 denom = sBs - sy
                 if abs(denom) > 1e-14:
-                    theta = 0.95 * sBs / denom
+                    theta = 0.90 * sBs / denom
                     dg_u = theta * dg_u + (1.0 - theta) * Bs
         self.set_B(update_H(B, dx_u, dg_u, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
