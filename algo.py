@@ -7047,6 +7047,8 @@ class Sella(Optimizer):
             self.pes.H.update_method = 'flowchart'
         elif getattr(self, "_has_allene", False) and self.nsteps >= 18:
             self.pes.H.update_method = 'flowchart'
+
+        if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
                 s, smag = self.rs(
