@@ -17,7 +17,7 @@ dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
-benzothiazines use 0.10 Ha dummy-involving dihedral Hessian guesses. Connected molecules
+benzothiazines use MaxInternalStep `wa=0.70`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -3320,7 +3320,6 @@ class Internals(BaseInternals):
     soft_medium_angle_h0_default = False
     soft_phenol_angle_h0_default = False
     adj_dummy_placement_default = False
-    fused_dummy_h0_default = False
 
     def __init__(
         self,
@@ -3365,7 +3364,6 @@ class Internals(BaseInternals):
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
         self.windowed_dummy_atoms = set()
         self.alkyne_soft_dummy_atoms = set()
-        self.fused_dummy_h0 = Internals.fused_dummy_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3390,7 +3388,6 @@ class Internals(BaseInternals):
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         new.alkyne_soft_dummy_atoms = set(getattr(self, 'alkyne_soft_dummy_atoms', set()))
-        new.fused_dummy_h0 = getattr(self, 'fused_dummy_h0', False)
         return new
 
     def add_rotation(
@@ -5190,8 +5187,6 @@ class Internals(BaseInternals):
                     and any(int(j) in windowed for j in dihedral.indices)
                 ):
                     scale = 0.20
-                elif getattr(self, 'fused_dummy_h0', False):
-                    scale = 0.10
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
                     scale = 0.20 if int(self.natoms) < 30 else 0.25
                 else:
@@ -6997,6 +6992,8 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
+                if getattr(self, "_has_benzothiazoline", False):
+                    rs_kwargs['wa'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7376,55 +7373,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
-        Internals.fused_dummy_h0_default = False
-        if 30 <= n_atoms < 80:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            found = False
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 2:
-                    continue
-                c4 = [
-                    nb for nb in real
-                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 4
-                ]
-                c3 = [
-                    nb for nb in real
-                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
-                ]
-                if len(c4) != 1 or len(c3) != 1:
-                    continue
-                aryl = c3[0]
-                for nb in neighbors[aryl]:
-                    if int(numbers[nb]) != 6 or len(neighbors[nb]) != 3:
-                        continue
-                    for nb2 in neighbors[nb]:
-                        if int(numbers[nb2]) != 7:
-                            continue
-                        nreal = neighbors[nb2]
-                        if len(nreal) != 3:
-                            continue
-                        n_c4 = sum(
-                            int(numbers[x]) == 6 and len(neighbors[x]) == 4
-                            for x in nreal
-                        )
-                        if n_c4 >= 2:
-                            found = True
-                            break
-                    if found:
-                        break
-                if found:
-                    break
-            Internals.fused_dummy_h0_default = found
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -7435,6 +7383,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_allene = False
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
+        opt._has_benzothiazoline = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7621,6 +7570,45 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 if any(c_d in neighbors[n_c] for n_c in other_n):
                     opt.pes.exact_geodesic = True
                     break
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                c4 = [
+                    nb for nb in real
+                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 4
+                ]
+                c3 = [
+                    nb for nb in real
+                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                ]
+                if len(c4) != 1 or len(c3) != 1:
+                    continue
+                aryl = c3[0]
+                found = False
+                for nb in neighbors[aryl]:
+                    if int(numbers[nb]) != 6 or len(neighbors[nb]) != 3:
+                        continue
+                    for nb2 in neighbors[nb]:
+                        if int(numbers[nb2]) != 7:
+                            continue
+                        nreal = neighbors[nb2]
+                        if len(nreal) != 3:
+                            continue
+                        n_c4 = sum(
+                            int(numbers[x]) == 6 and len(neighbors[x]) == 4
+                            for x in nreal
+                        )
+                        if n_c4 >= 2:
+                            opt._has_benzothiazoline = True
+                            found = True
+                            break
+                    if found:
+                        break
+                if found:
+                    break
         if connected and n_atoms >= 80:
             opt._large = True
         opt._hydrocarbon = False
@@ -7640,7 +7628,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_medium_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
-        Internals.fused_dummy_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
