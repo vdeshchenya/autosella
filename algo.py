@@ -22,7 +22,7 @@ as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`)
 and exact geodesic (recompute Binv at every ODE RHS).
 Connected n_atoms<18 allenes use the Schlegel flowchart Hessian
-update after 18 steps.
+update after 16 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -7045,7 +7045,7 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        elif getattr(self, "_has_allene", False) and self.nsteps >= 18:
+        elif getattr(self, "_has_allene", False) and self.nsteps >= 16:
             self.pes.H.update_method = 'flowchart'
 
         if self.pes.cons.has_inequalities():
