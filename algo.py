@@ -7507,7 +7507,12 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     n_o = sum(int(numbers[nb]) == 8 for nb in real)
                     n_c = sum(int(numbers[nb]) == 6 for nb in real)
                     if n_o == 2 and n_c == 1:
-                        has_carboxylate = True
+                        n_o1 = sum(
+                            int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
+                            for nb in real
+                        )
+                        if n_o1 == 2:
+                            has_carboxylate = True
             if has_phenol and has_carboxylate:
                 opt.pes.iterative_stepper = 1
         if connected and 30 <= n_atoms < 80:
