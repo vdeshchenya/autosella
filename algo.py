@@ -15,16 +15,17 @@ a 2-coordinate N and a 3-coordinate C).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
-Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`.
-Connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to
-2-coordinate N–C) use `wb=0.70`. Connected molecules
+Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
-30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
+30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O},
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
-3-coordinate carbon). Connected
+3-coordinate carbon), or with a C-substituted 1,2,4-oxadiazole
+(2-coordinate O bonded to a 2-coordinate N and a 3-coordinate C
+that has a carbon substituent and a second 2-coordinate ring N).
+Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
@@ -6989,8 +6990,6 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
-                if getattr(self, "_has_isocyanide", False):
-                    rs_kwargs['wb'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7378,7 +7377,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_allene = False
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
-        opt._has_isocyanide = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7531,20 +7529,39 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     opt._has_isoxazole = True
                     break
             for i in range(n_atoms):
-                if int(numbers[i]) != 6:
+                if int(numbers[i]) != 8:
                     continue
                 real = neighbors[i]
-                if len(real) != 1:
+                if len(real) != 2:
                     continue
-                n_idx = real[0]
-                if int(numbers[n_idx]) != 7:
+                n_idx = None
+                c_idx = None
+                for nb in real:
+                    z = int(numbers[nb])
+                    deg = len(neighbors[nb])
+                    if z == 7 and deg == 2:
+                        n_idx = nb
+                    elif z == 6 and deg == 3:
+                        c_idx = nb
+                if n_idx is None or c_idx is None:
                     continue
-                n_nb = neighbors[n_idx]
-                if len(n_nb) != 2:
+                if not any(int(numbers[x]) == 6 for x in neighbors[c_idx]):
                     continue
-                other = n_nb[0] if n_nb[0] != i else n_nb[1]
-                if int(numbers[other]) == 6:
-                    opt._has_isocyanide = True
+                other_n = [
+                    x for x in neighbors[c_idx]
+                    if int(numbers[x]) == 7 and x != n_idx
+                    and len(neighbors[x]) == 2
+                ]
+                if not other_n:
+                    continue
+                n_a_other = [x for x in neighbors[n_idx] if x != i]
+                if len(n_a_other) != 1:
+                    continue
+                c_d = n_a_other[0]
+                if int(numbers[c_d]) != 6:
+                    continue
+                if any(c_d in neighbors[n_c] for n_c in other_n):
+                    opt.pes.exact_geodesic = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
