@@ -20,8 +20,7 @@ and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and
-Powell-damped Hessian updates (s·y < 0.2 s·Bs) from the first
-quasi-Newton update.
+Powell-damped Hessian updates (s·y < 0.2 s·Bs) after 20 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -7055,7 +7054,7 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_isocyanide", False):
+        if getattr(self, "_has_isocyanide", False) and self.nsteps >= 20:
             self.pes.H.powell_damp = True
 
         if self.pes.cons.has_inequalities():
