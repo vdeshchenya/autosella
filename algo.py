@@ -27,7 +27,7 @@ with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 that has a carbon substituent and a second 2-coordinate ring N).
 Connected 30≤n_atoms<80 fused benzothiazines (2-coordinate S
 {4-coord C, 3-coord C} whose aryl carbon is ortho to a
-3-coordinate N with two 4-coordinate C) use `wo=0.70`.
+3-coordinate N with two 4-coordinate C) skip two-point GDIIS.
 Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
@@ -6993,8 +6993,6 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
-                if getattr(self, "_has_benzothiazoline", False):
-                    rs_kwargs['wo'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7097,6 +7095,8 @@ class Sella(Optimizer):
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
+            return s_qn, smag_qn
+        if getattr(self, "_has_benzothiazoline", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
