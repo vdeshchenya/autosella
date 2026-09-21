@@ -16,7 +16,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected n_atoms≥80 sulfonamides (4-coordinate S {two 1-coordinate O, N, C})
-skip Hessian updates with s·y<0 from the first quasi-Newton update.
+start two-point GDIIS at 15 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
@@ -514,14 +514,6 @@ class ApproximateHessian(LinearOperator):
             )
             self.set_B(B)
             return
-
-        if getattr(self, '_skip_neg_curv', False):
-            s = np.asarray(dx, dtype=np.float64).reshape(-1)
-            y = np.asarray(dg, dtype=np.float64).reshape(-1)
-            n = min(s.size, y.size)
-            if n and np.isfinite(s[:n]).all() and np.isfinite(y[:n]).all():
-                if float(s[:n] @ y[:n]) < 0.0:
-                    return
 
         lams, vecs = self.evals, self.evecs
         self.set_B(update_H(B, dx, dg, method=self.update_method,
@@ -7052,8 +7044,6 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_sulfonamide", False):
-            self.pes.H._skip_neg_curv = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7148,7 +7138,8 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if self.nsteps < 20:
+        gdiis_start = 15 if getattr(self, "_has_sulfonamide", False) else 20
+        if self.nsteps < gdiis_start:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
