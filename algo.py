@@ -19,7 +19,7 @@ Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
-which also use MaxInternalStep `wa=0.70`.
+which also use iterative Cartesian B⁺ (`iterative_stepper=1`).
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7013,9 +7013,7 @@ class Sella(Optimizer):
                         self._has_pf_bond = has_pf
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
-                elif getattr(self, "_has_bis_noxide", False) or getattr(
-                    self, "_has_isocyanide", False
-                ):
+                elif getattr(self, "_has_bis_noxide", False):
                     rs_kwargs['wa'] = 0.70
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
@@ -7654,6 +7652,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     continue
                 if int(numbers[real[0]]) == 7:
                     opt._has_isocyanide = True
+                    opt.pes.iterative_stepper = 1
                     break
         if connected and n_atoms >= 80:
             opt._large = True
