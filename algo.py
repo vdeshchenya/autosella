@@ -17,7 +17,7 @@ dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
-benzothiazines use 0.08 Ha dummy-involving angle Hessian guesses. Connected molecules
+benzothiazines use 0.10 Ha dummy-involving dihedral Hessian guesses. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -5038,10 +5038,7 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                if getattr(self, 'fused_dummy_h0', False):
-                    h0[idx] = 0.08 * units.Hartree
-                else:
-                    h0[idx] = 0.10 * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -5193,6 +5190,8 @@ class Internals(BaseInternals):
                     and any(int(j) in windowed for j in dihedral.indices)
                 ):
                     scale = 0.20
+                elif getattr(self, 'fused_dummy_h0', False):
+                    scale = 0.10
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
                     scale = 0.20 if int(self.natoms) < 30 else 0.25
                 else:
