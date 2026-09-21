@@ -10,9 +10,11 @@ an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons, and connected n_atoms<18 Si/H-only
 oligosilanes with at least four Si, and connected n_atoms<18
 allenes (2-coordinate carbon with two 3-coordinate carbon neighbors).
+Connected n_atoms≥80 use Banerjee RFO after 45 steps. Connected n<18
+allenes skip two-point GDIIS.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
-steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps. Connected molecules
+steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -7084,6 +7086,8 @@ class Sella(Optimizer):
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
+            return s_qn, smag_qn
+        if getattr(self, "_has_allene", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
