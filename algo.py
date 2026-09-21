@@ -16,8 +16,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
-and Banerjee RFO after 20 steps, as do connected 30≤n_atoms<80
-sulfoniums (3-coordinate S {C, C, C}). Connected molecules
+and Banerjee RFO after 20 steps, as do connected n_atoms<18 allenes.
+Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -7000,7 +7000,7 @@ class Sella(Optimizer):
             step_method = 'rfo'
         elif (
             getattr(self, "_has_nitro_cf3", False)
-            or getattr(self, "_has_sulfonium", False)
+            or getattr(self, "_has_allene", False)
         ) and self.nsteps >= 20:
             step_method = 'rfo'
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
@@ -7384,7 +7384,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_allene = False
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
-        opt._has_sulfonium = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7570,15 +7569,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     continue
                 if any(c_d in neighbors[n_c] for n_c in other_n):
                     opt.pes.exact_geodesic = True
-                    break
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 3:
-                    continue
-                if all(int(numbers[nb]) == 6 for nb in real):
-                    opt._has_sulfonium = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
