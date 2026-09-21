@@ -15,13 +15,12 @@ a 2-coordinate N and a 3-coordinate C).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
-Connected n_atoms≥80 sulfonamides (4-coordinate S {two 1-coordinate O, N, C})
-start two-point GDIIS at 15 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
-which also use iterative Cartesian B⁺ (`iterative_stepper=1`).
+which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and
+Euclidean TrustRegion after 20 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -7045,12 +7044,18 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
 
+        rs_cls = self.rs
+        rs_call_kwargs = rs_kwargs
+        if getattr(self, "_has_isocyanide", False) and self.nsteps >= 20:
+            rs_cls = TrustRegion
+            rs_call_kwargs = {}
+
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = self.rs(
+                s, smag = rs_cls(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **rs_kwargs
+                    **rs_call_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -7058,9 +7063,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = self.rs(
+            s, smag = rs_cls(
                 self.pes, self.ord, self.delta, method=step_method,
-                **rs_kwargs
+                **rs_call_kwargs
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
@@ -7138,8 +7143,7 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        gdiis_start = 15 if getattr(self, "_has_sulfonamide", False) else 20
-        if self.nsteps < gdiis_start:
+        if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
@@ -7425,7 +7429,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_isoxazole = False
         opt._has_benzothiazoline = False
         opt._has_isocyanide = False
-        opt._has_sulfonamide = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7697,29 +7700,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
         if connected and n_atoms >= 80:
             opt._large = True
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 4:
-                    continue
-                n_o1 = sum(
-                    int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
-                    for nb in real
-                )
-                n_n = sum(int(numbers[nb]) == 7 for nb in real)
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                if n_o1 == 2 and n_n == 1 and n_c == 1:
-                    opt._has_sulfonamide = True
-                    break
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
