@@ -24,8 +24,8 @@ Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
 Connected 12≤n_atoms<30 thiosulfonates (4-coordinate S with two
-1-coordinate O and one S neighbor) use Powell-damped Hessian
-updates (s·y < 0.2 s·Bs) from the first quasi-Newton update.
+1-coordinate O and one S neighbor) use the Schlegel flowchart
+Hessian update from the first quasi-Newton step.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -517,18 +517,7 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        dx_u = np.asarray(dx, dtype=np.float64)
-        dg_u = np.asarray(dg, dtype=np.float64)
-        if getattr(self, 'powell_damp', False):
-            Bs = B @ dx_u
-            sBs = float(dx_u @ Bs)
-            sy = float(dx_u @ dg_u)
-            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.2 * sBs:
-                denom = sBs - sy
-                if abs(denom) > 1e-14:
-                    theta = 0.8 * sBs / denom
-                    dg_u = theta * dg_u + (1.0 - theta) * Bs
-        self.set_B(update_H(B, dx_u, dg_u, method=self.update_method,
+        self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
@@ -7057,7 +7046,7 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
         if getattr(self, "_has_thiosulfonate", False):
-            self.pes.H.powell_damp = True
+            self.pes.H.update_method = 'flowchart'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
