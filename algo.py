@@ -12,7 +12,6 @@ oligosilanes with at least four Si, and connected n_atoms<18
 allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
 and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
 a 2-coordinate N and a 3-coordinate C).
-Connected n_atoms<18 allenes also use MaxInternalStep `wb=0.70`.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
@@ -50,7 +49,8 @@ dummy centers use 0.20 Ha guesses, except windowed C–C–C alkynes
 without silicon or 4-coordinate oxygenated alkyne carbons, which
 use 0.15 Ha when at most two such dummies are present. Connected
 n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
-carbon neighbors) also use 0.12 Ha on dummy-involving dihedrals.
+carbon neighbors) also use 0.12 Ha on dummy-involving dihedrals
+and 0.08 Ha on dummy-involving angles whose dummy is in `alkyne_soft`.
 Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
@@ -5034,7 +5034,12 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                h0[idx] = 0.10 * units.Hartree
+                alkyne_soft = getattr(self, 'alkyne_soft_dummy_atoms', set())
+                if (self.natoms < 18
+                        and any(int(j) in alkyne_soft for j in angle.indices)):
+                    h0[idx] = 0.08 * units.Hartree
+                else:
+                    h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -6991,8 +6996,6 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
-                if getattr(self, "_has_allene", False):
-                    rs_kwargs['wb'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
