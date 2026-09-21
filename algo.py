@@ -20,8 +20,7 @@ and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and
-0.08 Ha dummy-involving angle guesses at isocyanide nitrogen dummy
-centers.
+floor δ at 0.18 after 20 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -5071,33 +5070,7 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                scale = 0.10
-                if 30 <= self.natoms < 80:
-                    for j in angle.indices:
-                        jj = int(j)
-                        if jj not in dummy_set:
-                            continue
-                        hosts = [h for h in neighbors[jj] if int(h) not in dummy_set]
-                        tagged = False
-                        for h in hosts:
-                            if int(numbers[h]) != 7:
-                                continue
-                            real_h = [nb for nb in neighbors[h]
-                                      if int(nb) not in dummy_set]
-                            if len(real_h) != 2:
-                                continue
-                            if any(
-                                int(numbers[t]) == 6 and
-                                len([nb for nb in neighbors[t]
-                                     if int(nb) not in dummy_set]) == 1
-                                for t in real_h
-                            ):
-                                scale = 0.08
-                                tagged = True
-                                break
-                        if tagged:
-                            break
-                h0[idx] = scale * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -7285,6 +7258,9 @@ class Sella(Optimizer):
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
+            if getattr(self, "_has_isocyanide", False):
+                self.delta_min = 0.18
+                self.delta = max(self.delta, 0.18)
 
         # Update trust radius
         if rho is not None:
