@@ -14,12 +14,11 @@ and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
 a 2-coordinate N and a 3-coordinate C).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
-steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
+steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps and the
+Schlegel flowchart Hessian update after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps.
-Connected 12≤n_atoms<30 thiosulfonates (4-coordinate S with two
-1-coordinate O and one S neighbor) use that flowchart after 15 steps.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7036,7 +7035,7 @@ class Sella(Optimizer):
                 step_method = 'rfo'
         if getattr(self, "_has_benzothiazoline", False) and self.nsteps >= 20:
             self.pes.H.update_method = 'flowchart'
-        elif getattr(self, "_has_thiosulfonate", False) and self.nsteps >= 15:
+        elif getattr(self, "_large", False) and self.nsteps >= 45:
             self.pes.H.update_method = 'flowchart'
 
         if self.pes.cons.has_inequalities():
@@ -7417,7 +7416,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
         opt._has_benzothiazoline = False
-        opt._has_thiosulfonate = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7462,29 +7460,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 n_o = sum(int(numbers[nb]) == 8 for nb in real)
                 if n_c == 2 and n_o == 1:
                     opt._has_sulfoxide = True
-                    break
-        if connected and 12 <= n_atoms < 30:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 4:
-                    continue
-                n_o1 = sum(
-                    int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
-                    for nb in real
-                )
-                n_s = sum(int(numbers[nb]) == 16 for nb in real)
-                if n_o1 == 2 and n_s >= 1:
-                    opt._has_thiosulfonate = True
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
