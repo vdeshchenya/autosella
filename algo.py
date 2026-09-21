@@ -20,7 +20,7 @@ and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and
-skip Hessian updates with s·y<0 after 20 steps.
+Powell-damped Hessian updates after 20 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -514,16 +514,19 @@ class ApproximateHessian(LinearOperator):
             self.set_B(B)
             return
 
-        if getattr(self, '_skip_neg_curv', False):
-            s = np.asarray(dx, dtype=np.float64).reshape(-1)
-            y = np.asarray(dg, dtype=np.float64).reshape(-1)
-            n = min(s.size, y.size)
-            if n and np.isfinite(s[:n]).all() and np.isfinite(y[:n]).all():
-                if float(s[:n] @ y[:n]) < 0.0:
-                    return
-
         lams, vecs = self.evals, self.evecs
-        self.set_B(update_H(B, dx, dg, method=self.update_method,
+        dx_u = np.asarray(dx, dtype=np.float64)
+        dg_u = np.asarray(dg, dtype=np.float64)
+        if getattr(self, 'powell_damp', False):
+            Bs = B @ dx_u
+            sBs = float(dx_u @ Bs)
+            sy = float(dx_u @ dg_u)
+            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.2 * sBs:
+                denom = sBs - sy
+                if abs(denom) > 1e-14:
+                    theta = 0.8 * sBs / denom
+                    dg_u = theta * dg_u + (1.0 - theta) * Bs
+        self.set_B(update_H(B, dx_u, dg_u, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
@@ -7052,7 +7055,7 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
         if getattr(self, "_has_isocyanide", False) and self.nsteps >= 20:
-            self.pes.H._skip_neg_curv = True
+            self.pes.H.powell_damp = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
