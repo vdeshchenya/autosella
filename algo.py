@@ -12,7 +12,7 @@ oligosilanes with at least four Si, and connected n_atoms<18
 allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
 and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
 a 2-coordinate N and a 3-coordinate C). Connected n_atoms<18 allenes
-also floor Hessian |λ| at 0.001 Eh (Helgaker) in the quasi-Newton stepper.
+also floor Hessian |λ| at 0.01 Eh (Helgaker) in the quasi-Newton stepper.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
@@ -7056,7 +7056,7 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
         if getattr(self, "_has_allene", False):
-            self.pes.H.eval_floor = 1e-3
+            self.pes.H.eval_floor = 0.01
 
         if self.pes.cons.has_inequalities():
             all_valid = False
