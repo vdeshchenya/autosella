@@ -2,8 +2,10 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
-without a P–F bond and connected 30≤n_atoms<80 with at least two
-N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
+without a P–F bond, connected 30≤n_atoms<80 with at least two
+N-oxide nitrogens {C, C, O}, and connected 12≤n_atoms<30
+trimethylammonium (4-coordinate N {C, C, C, C} with at least
+three methyl carbons) use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
@@ -6977,7 +6979,9 @@ class Sella(Optimizer):
                         self._has_pf_bond = has_pf
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
-                elif getattr(self, "_has_bis_noxide", False):
+                elif getattr(self, "_has_bis_noxide", False) or getattr(
+                    self, "_has_trimethylammonium", False
+                ):
                     rs_kwargs['wa'] = 0.70
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
@@ -7374,6 +7378,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_allene = False
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
+        opt._has_trimethylammonium = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7524,6 +7529,33 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         n_c3 += 1
                 if n_n2 == 1 and n_c3 == 1:
                     opt._has_isoxazole = True
+                    break
+        if connected and 12 <= n_atoms < 30:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 7:
+                    continue
+                real = neighbors[i]
+                if len(real) != 4:
+                    continue
+                if any(int(numbers[nb]) != 6 for nb in real):
+                    continue
+                n_methyl = 0
+                for nb in real:
+                    real_c = neighbors[nb]
+                    if len(real_c) != 4:
+                        continue
+                    if sum(int(numbers[x]) == 1 for x in real_c) >= 3:
+                        n_methyl += 1
+                if n_methyl >= 3:
+                    opt._has_trimethylammonium = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
