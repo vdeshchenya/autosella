@@ -9,13 +9,11 @@ use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons, and connected n_atoms<18 Si/H-only
 oligosilanes with at least four Si, and connected n_atoms<18
-allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
-and connected 30≤n_atoms<80 benzothiazolines (2-coordinate S bonded to
-a 4-coordinate C and a 3-coordinate C, plus a 3-coordinate N bonded to
-two CH2 carbons).
+allenes (2-coordinate carbon with two 3-coordinate carbon neighbors).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
-steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps. Connected molecules
+steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
+Connected 30≤n_atoms<80 nitro-CF3 molecules skip two-point GDIIS. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -6983,7 +6981,7 @@ class Sella(Optimizer):
                     self, "_has_pyrrolidine_noxide", False
                 ) or getattr(self, "_has_oligosilane", False) or getattr(
                     self, "_has_allene", False
-                ) or getattr(self, "_has_benzothiazoline", False):
+                ):
                     rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7087,6 +7085,8 @@ class Sella(Optimizer):
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
+            return s_qn, smag_qn
+        if getattr(self, "_has_nitro_cf3", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
@@ -7370,7 +7370,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_pyrrolidine_noxide = False
         opt._has_oligosilane = False
         opt._has_allene = False
-        opt._has_benzothiazoline = False
+        opt._has_nitro_cf3 = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7468,38 +7468,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
             if n_noxide >= 1 and has_pyrrolidine_n:
                 opt._has_pyrrolidine_noxide = True
-            has_alkyl_aryl_s = False
-            has_n_two_ch2 = False
-            for i in range(n_atoms):
-                if int(numbers[i]) == 16:
-                    real = neighbors[i]
-                    if len(real) == 2:
-                        n_c4 = sum(
-                            int(numbers[nb]) == 6 and len(neighbors[nb]) == 4
-                            for nb in real
-                        )
-                        n_c3 = sum(
-                            int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
-                            for nb in real
-                        )
-                        if n_c4 == 1 and n_c3 == 1:
-                            has_alkyl_aryl_s = True
-                if int(numbers[i]) == 7:
-                    real = neighbors[i]
-                    if len(real) == 3 and all(
-                        int(numbers[nb]) == 6 for nb in real
-                    ):
-                        n_ch2 = 0
-                        for nb in real:
-                            real_c = neighbors[nb]
-                            if len(real_c) != 4:
-                                continue
-                            if sum(int(numbers[x]) == 1 for x in real_c) >= 2:
-                                n_ch2 += 1
-                        if n_ch2 >= 2:
-                            has_n_two_ch2 = True
-            if has_alkyl_aryl_s and has_n_two_ch2:
-                opt._has_benzothiazoline = True
             for i in range(n_atoms):
                 if int(numbers[i]) != 6:
                     continue
@@ -7514,6 +7482,28 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 if len(neighbors[attach]) == 3:
                     opt.pes.exact_geodesic = True
                     break
+            has_nitro = False
+            has_cf3 = False
+            for i in range(n_atoms):
+                if int(numbers[i]) == 7:
+                    real = neighbors[i]
+                    if len(real) == 3:
+                        n_o1 = sum(
+                            int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
+                            for nb in real
+                        )
+                        n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                        if n_o1 == 2 and n_c == 1:
+                            has_nitro = True
+                if int(numbers[i]) == 6:
+                    real = neighbors[i]
+                    if len(real) == 4:
+                        n_f = sum(int(numbers[nb]) == 9 for nb in real)
+                        n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                        if n_f == 3 and n_c == 1:
+                            has_cf3 = True
+            if has_nitro and has_cf3:
+                opt._has_nitro_cf3 = True
         if connected and n_atoms >= 80:
             opt._large = True
         opt._hydrocarbon = False
