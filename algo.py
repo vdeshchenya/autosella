@@ -20,7 +20,8 @@ and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and
-Euclidean TrustRegion after 20 steps.
+Euclidean TrustRegion after 20 steps, without dummy-dihedral limiter
+re-solves.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -7090,6 +7091,8 @@ class Sella(Optimizer):
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
+        if getattr(self, "_has_isocyanide", False) and self.nsteps >= 20:
+            return s, smag
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
         if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
