@@ -27,7 +27,8 @@ with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 that has a carbon substituent and a second 2-coordinate ring N).
 Connected 30≤n_atoms<80 fused benzothiazines (2-coordinate S
 {4-coord C, 3-coord C} whose aryl carbon is ortho to a
-3-coordinate N with two 4-coordinate C) use Banerjee RFO after 20 steps.
+3-coordinate N with two 4-coordinate C) realize internal steps
+with iterative Cartesian B⁺.
 Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
@@ -6999,8 +7000,6 @@ class Sella(Optimizer):
         step_method = self.method
         if getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
-        elif getattr(self, "_has_benzothiazoline", False) and self.nsteps >= 20:
-            step_method = 'rfo'
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
                 step_method = 'rfo'
@@ -7602,6 +7601,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         )
                         if n_c4 >= 2:
                             opt._has_benzothiazoline = True
+                            opt.pes.iterative_stepper = 1
                             found = True
                             break
                     if found:
