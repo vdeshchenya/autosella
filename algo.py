@@ -16,8 +16,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
-and Banerjee RFO after 20 steps, and 0.08 Ha dummy-involving angle
-Hessian guesses. Connected molecules
+and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
+benzothiazines use 0.08 Ha dummy-involving angle Hessian guesses. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -3320,7 +3320,7 @@ class Internals(BaseInternals):
     soft_medium_angle_h0_default = False
     soft_phenol_angle_h0_default = False
     adj_dummy_placement_default = False
-    nitro_cf3_dummy_h0_default = False
+    fused_dummy_h0_default = False
 
     def __init__(
         self,
@@ -3365,7 +3365,7 @@ class Internals(BaseInternals):
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
         self.windowed_dummy_atoms = set()
         self.alkyne_soft_dummy_atoms = set()
-        self.nitro_cf3_dummy_h0 = Internals.nitro_cf3_dummy_h0_default
+        self.fused_dummy_h0 = Internals.fused_dummy_h0_default
 
     def copy(self) -> 'Internals':
         new = self.__class__(
@@ -3390,7 +3390,7 @@ class Internals(BaseInternals):
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         new.alkyne_soft_dummy_atoms = set(getattr(self, 'alkyne_soft_dummy_atoms', set()))
-        new.nitro_cf3_dummy_h0 = getattr(self, 'nitro_cf3_dummy_h0', False)
+        new.fused_dummy_h0 = getattr(self, 'fused_dummy_h0', False)
         return new
 
     def add_rotation(
@@ -5038,7 +5038,7 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                if getattr(self, 'nitro_cf3_dummy_h0', False):
+                if getattr(self, 'fused_dummy_h0', False):
                     h0[idx] = 0.08 * units.Hartree
                 else:
                     h0[idx] = 0.10 * units.Hartree
@@ -7377,7 +7377,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
-        Internals.nitro_cf3_dummy_h0_default = False
+        Internals.fused_dummy_h0_default = False
         if 30 <= n_atoms < 80:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
@@ -7387,27 +7387,45 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     continue
                 neighbors[i].append(j)
                 neighbors[j].append(i)
-            has_nitro = False
-            has_cf3 = False
+            found = False
             for i in range(n_atoms):
-                if int(numbers[i]) == 7:
-                    real = neighbors[i]
-                    if len(real) == 3:
-                        n_o1 = sum(
-                            int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
-                            for nb in real
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                c4 = [
+                    nb for nb in real
+                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 4
+                ]
+                c3 = [
+                    nb for nb in real
+                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                ]
+                if len(c4) != 1 or len(c3) != 1:
+                    continue
+                aryl = c3[0]
+                for nb in neighbors[aryl]:
+                    if int(numbers[nb]) != 6 or len(neighbors[nb]) != 3:
+                        continue
+                    for nb2 in neighbors[nb]:
+                        if int(numbers[nb2]) != 7:
+                            continue
+                        nreal = neighbors[nb2]
+                        if len(nreal) != 3:
+                            continue
+                        n_c4 = sum(
+                            int(numbers[x]) == 6 and len(neighbors[x]) == 4
+                            for x in nreal
                         )
-                        n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                        if n_o1 == 2 and n_c == 1:
-                            has_nitro = True
-                if int(numbers[i]) == 6:
-                    real = neighbors[i]
-                    if len(real) == 4:
-                        n_f = sum(int(numbers[nb]) == 9 for nb in real)
-                        n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                        if n_f == 3 and n_c == 1:
-                            has_cf3 = True
-            Internals.nitro_cf3_dummy_h0_default = has_nitro and has_cf3
+                        if n_c4 >= 2:
+                            found = True
+                            break
+                    if found:
+                        break
+                if found:
+                    break
+            Internals.fused_dummy_h0_default = found
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -7623,8 +7641,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_medium_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
-        Internals.nitro_cf3_dummy_h0_default = False
-        Internals.nitro_cf3_dummy_h0_default = False
+        Internals.fused_dummy_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
