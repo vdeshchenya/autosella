@@ -15,15 +15,13 @@ a 2-coordinate N and a 3-coordinate C).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
+Connected n_atoms≥80 sulfonamides (4-coordinate S {two 1-coordinate O, N, C})
+skip Hessian updates with s·y<0 from the first quasi-Newton update.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`).
-Connected 12≤n_atoms<30 thiosulfonates (4-coordinate S with two
-1-coordinate O and one S neighbor) use a Helgaker |λ| floor of
-0.01 Eh on quasi-Newton Hessian eigenvalues, copied onto the
-projected Lagrangian Hessian the stepper uses.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -517,6 +515,14 @@ class ApproximateHessian(LinearOperator):
             self.set_B(B)
             return
 
+        if getattr(self, '_skip_neg_curv', False):
+            s = np.asarray(dx, dtype=np.float64).reshape(-1)
+            y = np.asarray(dg, dtype=np.float64).reshape(-1)
+            n = min(s.size, y.size)
+            if n and np.isfinite(s[:n]).all() and np.isfinite(y[:n]).all():
+                if float(s[:n] @ y[:n]) < 0.0:
+                    return
+
         lams, vecs = self.evals, self.evecs
         self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
@@ -531,12 +537,8 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
+        return ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
-        floor = getattr(self, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
-        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5460,11 +5462,7 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
-        floor = getattr(self.H, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
-        return Hproj
+        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -6389,9 +6387,6 @@ class QuasiNewton(BaseStepper):
             self.H.evals, self.H.evecs = eigh(H_array)
 
         self.L = np.abs(self.H.evals)
-        floor = float(getattr(self.H, 'eval_floor', 0.0) or 0.0)
-        if floor > 0.0:
-            self.L = np.maximum(self.L, floor)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7057,8 +7052,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_thiosulfonate", False):
-            self.pes.H.eval_floor = 1e-2
+        if getattr(self, "_has_sulfonamide", False):
+            self.pes.H._skip_neg_curv = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7439,7 +7434,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_isoxazole = False
         opt._has_benzothiazoline = False
         opt._has_isocyanide = False
-        opt._has_thiosulfonate = False
+        opt._has_sulfonamide = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7484,29 +7479,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 n_o = sum(int(numbers[nb]) == 8 for nb in real)
                 if n_c == 2 and n_o == 1:
                     opt._has_sulfoxide = True
-                    break
-        if connected and 12 <= n_atoms < 30:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 4:
-                    continue
-                n_o1 = sum(
-                    int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
-                    for nb in real
-                )
-                n_s = sum(int(numbers[nb]) == 16 for nb in real)
-                if n_o1 == 2 and n_s == 1:
-                    opt._has_thiosulfonate = True
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
@@ -7734,6 +7706,29 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
         if connected and n_atoms >= 80:
             opt._large = True
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 4:
+                    continue
+                n_o1 = sum(
+                    int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
+                    for nb in real
+                )
+                n_n = sum(int(numbers[nb]) == 7 for nb in real)
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                if n_o1 == 2 and n_n == 1 and n_c == 1:
+                    opt._has_sulfonamide = True
+                    break
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
