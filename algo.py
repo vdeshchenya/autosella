@@ -24,7 +24,9 @@ geodesic ODE steps recompute Binv at every RHS, as do connected
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 3-coordinate carbon), or with a C-substituted 1,2,4-oxadiazole
 (2-coordinate O bonded to a 2-coordinate N and a 3-coordinate C
-that has a carbon substituent and a second 2-coordinate ring N).
+that has a carbon substituent and a second 2-coordinate ring N),
+or with a fused benzothiazine (2-coordinate S {4-coord C, 3-coord C}
+whose aryl carbon is ortho to a 3-coordinate N with two 4-coordinate C).
 Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
@@ -7562,6 +7564,45 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     continue
                 if any(c_d in neighbors[n_c] for n_c in other_n):
                     opt.pes.exact_geodesic = True
+                    break
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                c4 = [
+                    nb for nb in real
+                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 4
+                ]
+                c3 = [
+                    nb for nb in real
+                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                ]
+                if len(c4) != 1 or len(c3) != 1:
+                    continue
+                aryl = c3[0]
+                found = False
+                for nb in neighbors[aryl]:
+                    if int(numbers[nb]) != 6 or len(neighbors[nb]) != 3:
+                        continue
+                    for nb2 in neighbors[nb]:
+                        if int(numbers[nb2]) != 7:
+                            continue
+                        nreal = neighbors[nb2]
+                        if len(nreal) != 3:
+                            continue
+                        n_c4 = sum(
+                            int(numbers[x]) == 6 and len(neighbors[x]) == 4
+                            for x in nreal
+                        )
+                        if n_c4 >= 2:
+                            opt.pes.exact_geodesic = True
+                            found = True
+                            break
+                    if found:
+                        break
+                if found:
                     break
         if connected and n_atoms >= 80:
             opt._large = True
