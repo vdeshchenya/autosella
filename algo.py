@@ -7033,7 +7033,9 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
+        if getattr(self, "_has_alkane_phenol", False) and self.nsteps >= 20:
+            step_method = 'rfo'
+        elif getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             step_method = 'rfo'
         elif getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
@@ -7045,7 +7047,6 @@ class Sella(Optimizer):
         if self.nsteps >= 20 and (
             getattr(self, "_has_benzothiazoline", False)
             or getattr(self, "_has_isocyanide", False)
-            or getattr(self, "_has_sulfonium", False)
         ):
             self.pes.H.update_method = 'flowchart'
 
@@ -7428,8 +7429,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_isoxazole = False
         opt._has_benzothiazoline = False
         opt._has_isocyanide = False
-        opt._has_sulfonium = False
         opt._has_sulfonamide = False
+        opt._has_alkane_phenol = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7511,6 +7512,24 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         break
             if has_phenol:
                 opt.pes.iterative_stepper = 1
+                seen = [False] * n_atoms
+                for start in range(n_atoms):
+                    if seen[start]:
+                        continue
+                    stack = [start]
+                    seen[start] = True
+                    members = []
+                    while stack:
+                        k = stack.pop()
+                        members.append(k)
+                        for j in neighbors[k]:
+                            if not seen[j]:
+                                seen[j] = True
+                                stack.append(j)
+                    zs = [int(numbers[k]) for k in members]
+                    if zs and all(z in (1, 6) for z in zs) and 6 in zs:
+                        opt._has_alkane_phenol = True
+                        break
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
@@ -7699,15 +7718,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     opt._has_isocyanide = True
                     opt.pes.iterative_stepper = 1
                     opt.pes.exact_geodesic = True
-                    break
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 3:
-                    continue
-                if all(int(numbers[nb]) == 6 for nb in real):
-                    opt._has_sulfonium = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
