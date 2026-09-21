@@ -20,7 +20,8 @@ and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and a
-Helgaker |λ| floor of 0.01 Eh on quasi-Newton Hessian eigenvalues.
+Helgaker |λ| floor of 0.01 Eh on quasi-Newton Hessian eigenvalues,
+copied onto the projected Lagrangian Hessian the stepper uses.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -528,8 +529,12 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        return ApproximateHessian(n, 0, Bproj, self.update_method,
+        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
+        floor = getattr(self, 'eval_floor', 0.0)
+        if floor:
+            Hproj.eval_floor = floor
+        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5453,7 +5458,11 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        floor = getattr(self.H, 'eval_floor', 0.0)
+        if floor:
+            Hproj.eval_floor = floor
+        return Hproj
 
     # Getters for constraints and their derivatives
     def get_res(self):
