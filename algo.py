@@ -13,7 +13,9 @@ allenes (2-coordinate carbon with two 3-coordinate carbon neighbors).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
-also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
+also floor δ at 0.15 after 20 steps, except connected 30≤n_atoms<80
+isocyanides (1-coordinate carbon bonded to 2-coordinate nitrogen)
+which floor δ at 0.18. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
@@ -55,8 +57,7 @@ angles whose N–N neighbor is also 2-coordinate and whose
 N–N edge lies in a 5-membered ring of only C and N.
 Connected 12≤n_atoms<30 use 0.10 Ha guesses on at most two
 C–S–S disulfide angles whose carbon is 4-coordinate or
-oxygen-substituted, and 0.25 Ha/Bohr² on 1–2 choline N–CH2
-C–N at 4-coordinate nitrogen {C, C, C, C}, and connected 18≤n_atoms<30 also use 0.10 Ha
+oxygen-substituted, and connected 18≤n_atoms<30 also use 0.10 Ha
 on exactly one aryl phenol C–O–H (ipso carbon has two
 3-coordinate carbon neighbors) and on at most two aldehyde O–C–C
 angles at 3-coordinate carbon {O, C, H}. Connected 30≤n_atoms<80
@@ -4191,39 +4192,6 @@ class Internals(BaseInternals):
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
 
-        def _choline_nch2_cn(ia, ic) -> bool:
-            for a, b in ((ia, ic), (ic, ia)):
-                if int(a) in dummy_set or int(b) in dummy_set:
-                    continue
-                if int(numbers[a]) != 6 or int(numbers[b]) != 7:
-                    continue
-                real_n = [nb for nb in neighbors[b] if int(nb) not in dummy_set]
-                if len(real_n) != 4:
-                    continue
-                if any(int(numbers[nb]) != 6 for nb in real_n):
-                    continue
-                real_c = [nb for nb in neighbors[a] if int(nb) not in dummy_set]
-                if len(real_c) != 4:
-                    continue
-                n_h = sum(int(numbers[nb]) == 1 for nb in real_c)
-                n_c = sum(int(numbers[nb]) == 6 for nb in real_c)
-                n_n = sum(int(numbers[nb]) == 7 for nb in real_c)
-                if n_h >= 2 and n_c == 1 and n_n == 1:
-                    return True
-            return False
-
-        if soft_medium_angle:
-            cands = [
-                ib for ib, bond in enumerate(self.internals['bonds'])
-                if _choline_nch2_cn(
-                    int(bond.indices[0]), int(bond.indices[1])
-                )
-            ]
-            if 1 <= len(cands) <= 2:
-                ntrans = len(self.internals['translations'])
-                for ib in cands:
-                    h0[ntrans + ib] = 0.25 * units.Hartree / units.Bohr**2
-
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
                             int(angle.indices[2]))
@@ -7238,6 +7206,9 @@ class Sella(Optimizer):
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
+            if getattr(self, "_has_isocyanide", False):
+                self.delta_min = 0.18
+                self.delta = max(self.delta, 0.18)
 
         # Update trust radius
         if rho is not None:
@@ -7399,6 +7370,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_pyrrolidine_noxide = False
         opt._has_oligosilane = False
         opt._has_allene = False
+        opt._has_isocyanide = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
             n_si = sum(int(z) == 14 for z in numbers)
@@ -7495,6 +7467,22 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
             if n_noxide >= 1 and has_pyrrolidine_n:
                 opt._has_pyrrolidine_noxide = True
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 1:
+                    continue
+                n_idx = real[0]
+                if int(numbers[n_idx]) != 7:
+                    continue
+                n_nb = neighbors[n_idx]
+                if len(n_nb) != 2:
+                    continue
+                other = n_nb[0] if n_nb[0] != i else n_nb[1]
+                if int(numbers[other]) == 6:
+                    opt._has_isocyanide = True
+                    break
             for i in range(n_atoms):
                 if int(numbers[i]) != 6:
                     continue
