@@ -49,7 +49,8 @@ dummy centers use 0.20 Ha guesses, except windowed C–C–C alkynes
 without silicon or 4-coordinate oxygenated alkyne carbons, which
 use 0.15 Ha when at most two such dummies are present. Connected
 n_atoms<18 allenes (2-coordinate carbon with two 3-coordinate
-carbon neighbors) also use 0.10 Ha on dummy-involving dihedrals.
+carbon neighbors) also use 0.12 Ha on dummy-involving dihedrals
+and realize internal steps with iterative Cartesian B⁺.
 Connected 30≤n_atoms<80 use 0.10 Ha
 guesses on at most two 2-coordinate C–N–C angles at nitrogen bonded to
 two carbons that are not oxygen- or sulfur-substituted and not
@@ -5179,14 +5180,7 @@ class Internals(BaseInternals):
                     getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in alkyne_soft for j in dihedral.indices)
                 ):
-                    scale = (
-                        0.10
-                        if (
-                            int(self.natoms) < 18
-                            and len(alkyne_soft) == int(self.ndummies)
-                        )
-                        else (0.12 if int(self.natoms) < 18 else 0.15)
-                    )
+                    scale = 0.12 if int(self.natoms) < 18 else 0.15
                 elif (
                     getattr(self, 'soft_dummy_dihedral_h0', False)
                     and any(int(j) in windowed for j in dihedral.indices)
@@ -7409,6 +7403,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 ):
                     opt._has_allene = True
                     break
+            if opt._has_allene:
+                opt.pes.iterative_stepper = 1
         if connected and n_atoms < 12:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
