@@ -12,6 +12,7 @@ oligosilanes with at least four Si, and connected n_atoms<18
 allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
 and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
 a 2-coordinate N and a 3-coordinate C).
+Connected n_atoms<18 allenes also use MaxInternalStep `wo=0.70`.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
@@ -25,9 +26,6 @@ with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 3-coordinate carbon), or with a C-substituted 1,2,4-oxadiazole
 (2-coordinate O bonded to a 2-coordinate N and a 3-coordinate C
 that has a carbon substituent and a second 2-coordinate ring N).
-Connected 30≤n_atoms<80 fused benzothiazines (2-coordinate S
-{4-coord C, 3-coord C} whose aryl carbon is ortho to a
-3-coordinate N with two 4-coordinate C) skip two-point GDIIS.
 Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
@@ -6993,6 +6991,8 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
+                if getattr(self, "_has_allene", False):
+                    rs_kwargs['wo'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7095,8 +7095,6 @@ class Sella(Optimizer):
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
-            return s_qn, smag_qn
-        if getattr(self, "_has_benzothiazoline", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
@@ -7382,7 +7380,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_allene = False
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
-        opt._has_benzothiazoline = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7568,45 +7565,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     continue
                 if any(c_d in neighbors[n_c] for n_c in other_n):
                     opt.pes.exact_geodesic = True
-                    break
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 2:
-                    continue
-                c4 = [
-                    nb for nb in real
-                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 4
-                ]
-                c3 = [
-                    nb for nb in real
-                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
-                ]
-                if len(c4) != 1 or len(c3) != 1:
-                    continue
-                aryl = c3[0]
-                found = False
-                for nb in neighbors[aryl]:
-                    if int(numbers[nb]) != 6 or len(neighbors[nb]) != 3:
-                        continue
-                    for nb2 in neighbors[nb]:
-                        if int(numbers[nb2]) != 7:
-                            continue
-                        nreal = neighbors[nb2]
-                        if len(nreal) != 3:
-                            continue
-                        n_c4 = sum(
-                            int(numbers[x]) == 6 and len(neighbors[x]) == 4
-                            for x in nreal
-                        )
-                        if n_c4 >= 2:
-                            opt._has_benzothiazoline = True
-                            found = True
-                            break
-                    if found:
-                        break
-                if found:
                     break
         if connected and n_atoms >= 80:
             opt._large = True
