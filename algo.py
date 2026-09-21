@@ -8,11 +8,11 @@ Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons, and connected n_atoms<18 Si/H-only
-oligosilanes with at least four Si. Connected n_atoms<18
-allenes (2-coordinate carbon with two 3-coordinate carbon neighbors)
-use MaxInternalStep `wd=0.60`. Connected 30≤n_atoms<80 isoxazoles
-(2-coordinate O bonded to a 2-coordinate N and a 3-coordinate C)
-use MaxInternalStep `wd=0.70`.
+oligosilanes with at least four Si, and connected n_atoms<18
+allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
+and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
+a 2-coordinate N and a 3-coordinate C). Connected n_atoms<18 allenes
+also floor Hessian |λ| at 0.001 Eh (Helgaker) in the quasi-Newton stepper.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
@@ -529,8 +529,12 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        return ApproximateHessian(n, 0, Bproj, self.update_method,
+        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
+        floor = getattr(self, 'eval_floor', 0.0)
+        if floor:
+            Hproj.eval_floor = floor
+        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5454,7 +5458,11 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        floor = getattr(self.H, 'eval_floor', 0.0)
+        if floor:
+            Hproj.eval_floor = floor
+        return Hproj
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -6379,6 +6387,9 @@ class QuasiNewton(BaseStepper):
             self.H.evals, self.H.evecs = eigh(H_array)
 
         self.L = np.abs(self.H.evals)
+        floor = float(getattr(self.H, 'eval_floor', 0.0) or 0.0)
+        if floor > 0.0:
+            self.L = np.maximum(self.L, floor)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7023,11 +7034,11 @@ class Sella(Optimizer):
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
                 ) or getattr(self, "_has_oligosilane", False) or getattr(
-                    self, "_has_nitro_cf3", False
-                ) or getattr(self, "_has_isoxazole", False):
+                    self, "_has_allene", False
+                ) or getattr(self, "_has_nitro_cf3", False) or getattr(
+                    self, "_has_isoxazole", False
+                ):
                     rs_kwargs['wd'] = 0.70
-                if getattr(self, "_has_allene", False):
-                    rs_kwargs['wd'] = 0.60
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7044,6 +7055,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_allene", False):
+            self.pes.H.eval_floor = 1e-3
 
         if self.pes.cons.has_inequalities():
             all_valid = False
