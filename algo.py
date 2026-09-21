@@ -16,7 +16,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
-and iterative Cartesian B⁺. Connected molecules
+and Banerjee RFO after 20 steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -6997,6 +6997,8 @@ class Sella(Optimizer):
         step_method = self.method
         if getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
+        elif getattr(self, "_has_nitro_cf3", False) and self.nsteps >= 20:
+            step_method = 'rfo'
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
                 step_method = 'rfo'
@@ -7511,7 +7513,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                             has_cf3 = True
             if has_nitro and has_cf3:
                 opt._has_nitro_cf3 = True
-                opt.pes.iterative_stepper = 1
             for i in range(n_atoms):
                 if int(numbers[i]) != 8:
                     continue
