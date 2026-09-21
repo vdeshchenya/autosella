@@ -10,11 +10,9 @@ an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons, and connected n_atoms<18 Si/H-only
 oligosilanes with at least four Si, and connected n_atoms<18
 allenes (2-coordinate carbon with two 3-coordinate carbon neighbors).
-Connected 30≤n_atoms<80 isocyanides (1-coordinate carbon bonded
-to 2-coordinate nitrogen) use Banerjee RFO after 30 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
-steps. Connected molecules
+steps. Connected n_atoms≥80 use Banerjee RFO after 50 steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -6988,7 +6986,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_isocyanide", False) and self.nsteps >= 30:
+        if getattr(self, "_large", False) and self.nsteps >= 50:
             step_method = 'rfo'
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
@@ -7369,7 +7367,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_pyrrolidine_noxide = False
         opt._has_oligosilane = False
         opt._has_allene = False
-        opt._has_isocyanide = False
+        opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
             n_si = sum(int(z) == 14 for z in numbers)
@@ -7470,22 +7468,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 if int(numbers[i]) != 6:
                     continue
                 real = neighbors[i]
-                if len(real) != 1:
-                    continue
-                n_idx = real[0]
-                if int(numbers[n_idx]) != 7:
-                    continue
-                n_nb = neighbors[n_idx]
-                if len(n_nb) != 2:
-                    continue
-                other = n_nb[0] if n_nb[0] != i else n_nb[1]
-                if int(numbers[other]) == 6:
-                    opt._has_isocyanide = True
-                    break
-            for i in range(n_atoms):
-                if int(numbers[i]) != 6:
-                    continue
-                real = neighbors[i]
                 if len(real) != 4:
                     continue
                 n_f = sum(int(numbers[nb]) == 9 for nb in real)
@@ -7496,6 +7478,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 if len(neighbors[attach]) == 3:
                     opt.pes.exact_geodesic = True
                     break
+        if connected and n_atoms >= 80:
+            opt._large = True
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
