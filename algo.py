@@ -9,13 +9,13 @@ use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons, and connected n_atoms<18 Si/H-only
 oligosilanes with at least four Si, and connected n_atoms<18
-allenes (2-coordinate carbon with two 3-coordinate carbon neighbors).
+allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
+and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
+a 2-coordinate N and a 3-coordinate C).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
-Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`.
-Connected 30≤n_atoms<80 sulfoniums (3-coordinate S {C, C, C}) skip
-two-point GDIIS. Connected molecules
+Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -6983,7 +6983,9 @@ class Sella(Optimizer):
                     self, "_has_pyrrolidine_noxide", False
                 ) or getattr(self, "_has_oligosilane", False) or getattr(
                     self, "_has_allene", False
-                ) or getattr(self, "_has_nitro_cf3", False):
+                ) or getattr(self, "_has_nitro_cf3", False) or getattr(
+                    self, "_has_isoxazole", False
+                ):
                     rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7087,8 +7089,6 @@ class Sella(Optimizer):
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
-            return s_qn, smag_qn
-        if getattr(self, "_has_sulfonium", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
@@ -7373,7 +7373,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_oligosilane = False
         opt._has_allene = False
         opt._has_nitro_cf3 = False
-        opt._has_sulfonium = False
+        opt._has_isoxazole = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7508,13 +7508,22 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
             if has_nitro and has_cf3:
                 opt._has_nitro_cf3 = True
             for i in range(n_atoms):
-                if int(numbers[i]) != 16:
+                if int(numbers[i]) != 8:
                     continue
                 real = neighbors[i]
-                if len(real) != 3:
+                if len(real) != 2:
                     continue
-                if all(int(numbers[nb]) == 6 for nb in real):
-                    opt._has_sulfonium = True
+                n_n2 = 0
+                n_c3 = 0
+                for nb in real:
+                    z = int(numbers[nb])
+                    deg = len(neighbors[nb])
+                    if z == 7 and deg == 2:
+                        n_n2 += 1
+                    elif z == 6 and deg == 3:
+                        n_c3 += 1
+                if n_n2 == 1 and n_c3 == 1:
+                    opt._has_isoxazole = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
