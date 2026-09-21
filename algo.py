@@ -16,7 +16,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected n_atoms≥80 sulfonamides (4-coordinate S {two 1-coordinate O, N, C})
-use `rho_inc=1.5` after 20 steps.
+skip two-point GDIIS.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
@@ -7138,6 +7138,8 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
+        if getattr(self, "_has_sulfonamide", False):
+            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7259,8 +7261,6 @@ class Sella(Optimizer):
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
-        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
-            self.rho_inc = 1.5
 
         # Update trust radius
         if rho is not None:
