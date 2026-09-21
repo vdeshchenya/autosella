@@ -15,14 +15,13 @@ a 2-coordinate N and a 3-coordinate C).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
-Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`. Connected molecules
+Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`.
+Connected 30≤n_atoms<80 isoxazoles also use `wo=0.70`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
-30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O},
-connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to a
-2-coordinate N and a 3-coordinate C), or
+30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 3-coordinate carbon). Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
@@ -6989,6 +6988,8 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
+                if getattr(self, "_has_isoxazole", False):
+                    rs_kwargs['wo'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7526,7 +7527,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         n_c3 += 1
                 if n_n2 == 1 and n_c3 == 1:
                     opt._has_isoxazole = True
-                    opt.pes.exact_geodesic = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
