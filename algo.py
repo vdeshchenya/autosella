@@ -16,7 +16,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`.
-Connected 30≤n_atoms<80 isoxazoles skip two-point GDIIS. Connected molecules
+Connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to
+2-coordinate N–C) use `wb=0.70`. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -6988,6 +6989,8 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
+                if getattr(self, "_has_isocyanide", False):
+                    rs_kwargs['wb'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7090,8 +7093,6 @@ class Sella(Optimizer):
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
-            return s_qn, smag_qn
-        if getattr(self, "_has_isoxazole", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
@@ -7377,6 +7378,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_allene = False
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
+        opt._has_isocyanide = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7527,6 +7529,22 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         n_c3 += 1
                 if n_n2 == 1 and n_c3 == 1:
                     opt._has_isoxazole = True
+                    break
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 1:
+                    continue
+                n_idx = real[0]
+                if int(numbers[n_idx]) != 7:
+                    continue
+                n_nb = neighbors[n_idx]
+                if len(n_nb) != 2:
+                    continue
+                other = n_nb[0] if n_nb[0] != i else n_nb[1]
+                if int(numbers[other]) == 6:
+                    opt._has_isocyanide = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
