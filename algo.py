@@ -21,8 +21,8 @@ benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`)
 and exact geodesic (recompute Binv at every ODE RHS).
-Connected n_atoms<18 allenes use the Schlegel flowchart Hessian
-update after 16 steps.
+Connected n_atoms<18 allenes skip Hessian updates with s·y<0
+from the first quasi-Newton update.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -515,6 +515,14 @@ class ApproximateHessian(LinearOperator):
             )
             self.set_B(B)
             return
+
+        if getattr(self, '_skip_neg_curv', False):
+            s = np.asarray(dx, dtype=np.float64).reshape(-1)
+            y = np.asarray(dg, dtype=np.float64).reshape(-1)
+            n = min(s.size, y.size)
+            if n and np.isfinite(s[:n]).all() and np.isfinite(y[:n]).all():
+                if float(s[:n] @ y[:n]) < 0.0:
+                    return
 
         lams, vecs = self.evals, self.evecs
         self.set_B(update_H(B, dx, dg, method=self.update_method,
@@ -7045,8 +7053,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        elif getattr(self, "_has_allene", False) and self.nsteps >= 16:
-            self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_allene", False):
+            self.pes.H._skip_neg_curv = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
