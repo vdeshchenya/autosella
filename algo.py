@@ -17,9 +17,9 @@ dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
-benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
-as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N)
-which use the Bofill SR1/PSB mix after 20 steps.
+benzothiazines use the Schlegel flowchart Hessian update after 20 steps.
+Connected 12≤n_atoms<30 thiosulfonates (4-coordinate S with two
+1-coordinate O and one S neighbor) use that flowchart after 15 steps.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -288,8 +288,6 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
             Bplus = _MS_SR1(B, S, Ytilde)
         elif method == 'Greenstadt':
             Bplus = _MS_Greenstadt(B, S, Ytilde)
-        elif method == 'bofill':
-            Bplus = _MS_Bofill(B, S, Ytilde)
         else:  # pragma: no cover
             raise ValueError('Unknown update method {}'.format(method))
     except (np.linalg.LinAlgError, ValueError):
@@ -361,31 +359,6 @@ def _MS_Greenstadt(B, S, Y):
     U = solve(S.T @ MS, MS.T).T
     UJT = U @ J.T
     return (UJT + UJT.T) - U @ (J.T @ S) @ U.T
-
-
-def _MS_Bofill(B, S, Y):
-    """Bofill 1994: φ SR1 + (1−φ) PSB, φ = (z·s)² / ((z·z)(s·s))."""
-    s = np.asarray(S, dtype=np.float64)
-    y = np.asarray(Y, dtype=np.float64)
-    if s.ndim == 2:
-        s = s[:, -1]
-        y = y[:, -1]
-    z = y - B @ s
-    zz = float(z @ z)
-    ss = float(s @ s)
-    zs = float(z @ s)
-    try:
-        sr1 = _MS_SR1(B, S, Y)
-    except (np.linalg.LinAlgError, ValueError):
-        return _MS_PSB(B, S, Y)
-    psb = _MS_PSB(B, S, Y)
-    if (not np.isfinite(zz)) or (not np.isfinite(ss)) or zz < 1e-30 or ss < 1e-30:
-        return psb
-    mix = (zs * zs) / (zz * ss)
-    if not np.isfinite(mix):
-        return psb
-    mix = min(1.0, max(0.0, float(mix)))
-    return mix * sr1 + (1.0 - mix) * psb
 
 
 class NumericalHessian(LinearOperator):
@@ -7063,8 +7036,8 @@ class Sella(Optimizer):
                 step_method = 'rfo'
         if getattr(self, "_has_benzothiazoline", False) and self.nsteps >= 20:
             self.pes.H.update_method = 'flowchart'
-        elif getattr(self, "_has_isocyanide", False) and self.nsteps >= 20:
-            self.pes.H.update_method = 'bofill'
+        elif getattr(self, "_has_thiosulfonate", False) and self.nsteps >= 15:
+            self.pes.H.update_method = 'flowchart'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7444,7 +7417,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
         opt._has_benzothiazoline = False
-        opt._has_isocyanide = False
+        opt._has_thiosulfonate = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7489,6 +7462,29 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 n_o = sum(int(numbers[nb]) == 8 for nb in real)
                 if n_c == 2 and n_o == 1:
                     opt._has_sulfoxide = True
+                    break
+        if connected and 12 <= n_atoms < 30:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 4:
+                    continue
+                n_o1 = sum(
+                    int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
+                    for nb in real
+                )
+                n_s = sum(int(numbers[nb]) == 16 for nb in real)
+                if n_o1 == 2 and n_s >= 1:
+                    opt._has_thiosulfonate = True
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
@@ -7669,15 +7665,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     if found:
                         break
                 if found:
-                    break
-            for i in range(n_atoms):
-                if int(numbers[i]) != 6:
-                    continue
-                real = neighbors[i]
-                if len(real) != 1:
-                    continue
-                if int(numbers[real[0]]) == 7:
-                    opt._has_isocyanide = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
