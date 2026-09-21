@@ -2,17 +2,15 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
-without a P–F bond, connected 30≤n_atoms<80 with at least two
-N-oxide nitrogens {C, C, O}, and connected 30≤n_atoms<80 fused
-benzothiazines (2-coordinate S {4-coord C, 3-coord C} whose aryl
-carbon is ortho to a 3-coordinate N with two 4-coordinate C)
-use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
+without a P–F bond and connected 30≤n_atoms<80 with at least two
+N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons, and connected n_atoms<18 Si/H-only
 oligosilanes with at least four Si, and connected n_atoms<18
-allenes (2-coordinate carbon with two 3-coordinate carbon neighbors).
+allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
+and connected 30≤n_atoms<80 sulfoniums (3-coordinate S {C, C, C}).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
@@ -6978,15 +6976,15 @@ class Sella(Optimizer):
                         self._has_pf_bond = has_pf
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
-                elif getattr(self, "_has_bis_noxide", False) or getattr(
-                    self, "_has_benzothiazoline", False
-                ):
+                elif getattr(self, "_has_bis_noxide", False):
                     rs_kwargs['wa'] = 0.70
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
                 ) or getattr(self, "_has_oligosilane", False) or getattr(
                     self, "_has_allene", False
-                ) or getattr(self, "_has_nitro_cf3", False):
+                ) or getattr(self, "_has_nitro_cf3", False) or getattr(
+                    self, "_has_sulfonium", False
+                ):
                     rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7374,7 +7372,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_oligosilane = False
         opt._has_allene = False
         opt._has_nitro_cf3 = False
-        opt._has_benzothiazoline = False
+        opt._has_sulfonium = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7512,40 +7510,10 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 if int(numbers[i]) != 16:
                     continue
                 real = neighbors[i]
-                if len(real) != 2:
+                if len(real) != 3:
                     continue
-                c4 = [
-                    nb for nb in real
-                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 4
-                ]
-                c3 = [
-                    nb for nb in real
-                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
-                ]
-                if len(c4) != 1 or len(c3) != 1:
-                    continue
-                aryl = c3[0]
-                found = False
-                for nb in neighbors[aryl]:
-                    if int(numbers[nb]) != 6 or len(neighbors[nb]) != 3:
-                        continue
-                    for nb2 in neighbors[nb]:
-                        if int(numbers[nb2]) != 7:
-                            continue
-                        nreal = neighbors[nb2]
-                        if len(nreal) != 3:
-                            continue
-                        n_c4 = sum(
-                            int(numbers[x]) == 6 and len(neighbors[x]) == 4
-                            for x in nreal
-                        )
-                        if n_c4 >= 2:
-                            opt._has_benzothiazoline = True
-                            found = True
-                            break
-                    if found:
-                        break
-                if found:
+                if all(int(numbers[nb]) == 6 for nb in real):
+                    opt._has_sulfonium = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
