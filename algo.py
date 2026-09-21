@@ -14,11 +14,11 @@ and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
 a 2-coordinate N and a 3-coordinate C).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
-steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps and the
-Schlegel flowchart Hessian update after 45 steps.
+steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
-benzothiazines use the Schlegel flowchart Hessian update after 20 steps.
+benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
+as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N).
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7033,9 +7033,10 @@ class Sella(Optimizer):
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
                 step_method = 'rfo'
-        if getattr(self, "_has_benzothiazoline", False) and self.nsteps >= 20:
-            self.pes.H.update_method = 'flowchart'
-        elif getattr(self, "_large", False) and self.nsteps >= 45:
+        if self.nsteps >= 20 and (
+            getattr(self, "_has_benzothiazoline", False)
+            or getattr(self, "_has_isocyanide", False)
+        ):
             self.pes.H.update_method = 'flowchart'
 
         if self.pes.cons.has_inequalities():
@@ -7126,10 +7127,13 @@ class Sella(Optimizer):
         and cosine ≥ 0.90. Accept only when the previous step was well
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only.
+        connected-only. Cycle 710: skip GDIIS on 30–80 isocyanides so
+        flowchart QN steps are not interpolated on dummy-linear tails.
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
+            return s_qn, smag_qn
+        if getattr(self, "_has_isocyanide", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
@@ -7416,6 +7420,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
         opt._has_benzothiazoline = False
+        opt._has_isocyanide = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7640,6 +7645,15 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     if found:
                         break
                 if found:
+                    break
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 1:
+                    continue
+                if int(numbers[real[0]]) == 7:
+                    opt._has_isocyanide = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
