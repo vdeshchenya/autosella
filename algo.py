@@ -16,7 +16,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
-and Banerjee RFO after 20 steps, and iterative Cartesian B⁺. Connected molecules
+and Banerjee RFO after 20 steps. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -25,7 +25,8 @@ geodesic ODE steps recompute Binv at every RHS, as do connected
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 3-coordinate carbon), or with a C-substituted 1,2,4-oxadiazole
 (2-coordinate O bonded to a 2-coordinate N and a 3-coordinate C
-that has a carbon substituent and a second 2-coordinate ring N).
+that has a carbon substituent and a second 2-coordinate ring N),
+or with a sulfonium (3-coordinate S {C, C, C}).
 Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
@@ -7513,7 +7514,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                             has_cf3 = True
             if has_nitro and has_cf3:
                 opt._has_nitro_cf3 = True
-                opt.pes.iterative_stepper = 1
             for i in range(n_atoms):
                 if int(numbers[i]) != 8:
                     continue
@@ -7565,6 +7565,15 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 if int(numbers[c_d]) != 6:
                     continue
                 if any(c_d in neighbors[n_c] for n_c in other_n):
+                    opt.pes.exact_geodesic = True
+                    break
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 3:
+                    continue
+                if all(int(numbers[nb]) == 6 for nb in real):
                     opt.pes.exact_geodesic = True
                     break
         if connected and n_atoms >= 80:
