@@ -19,9 +19,8 @@ Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
-which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and
-Euclidean TrustRegion after 20 steps, without dummy-dihedral limiter
-re-solves.
+which also use iterative Cartesian B⁺ (`iterative_stepper=1`)
+and exact geodesic (recompute Binv at every ODE RHS).
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -7045,18 +7044,12 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
 
-        rs_cls = self.rs
-        rs_call_kwargs = rs_kwargs
-        if getattr(self, "_has_isocyanide", False) and self.nsteps >= 20:
-            rs_cls = TrustRegion
-            rs_call_kwargs = {}
-
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = rs_cls(
+                s, smag = self.rs(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **rs_call_kwargs
+                    **rs_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -7064,9 +7057,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = rs_cls(
+            s, smag = self.rs(
                 self.pes, self.ord, self.delta, method=step_method,
-                **rs_call_kwargs
+                **rs_kwargs
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
@@ -7091,8 +7084,6 @@ class Sella(Optimizer):
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
-        if getattr(self, "_has_isocyanide", False) and self.nsteps >= 20:
-            return s, smag
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
         if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
@@ -7700,6 +7691,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 if int(numbers[real[0]]) == 7:
                     opt._has_isocyanide = True
                     opt.pes.iterative_stepper = 1
+                    opt.pes.exact_geodesic = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
