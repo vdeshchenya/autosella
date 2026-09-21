@@ -21,6 +21,8 @@ benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`)
 and exact geodesic (recompute Binv at every ODE RHS).
+Connected n_atoms<18 allenes (2-coordinate carbon with two
+3-coordinate carbon neighbors) also use exact geodesic.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -7447,6 +7449,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     for nb in real
                 ):
                     opt._has_allene = True
+                    opt.pes.exact_geodesic = True
                     break
         if connected and n_atoms < 12:
             numbers = atoms.numbers
