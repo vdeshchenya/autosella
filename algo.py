@@ -20,8 +20,7 @@ and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`).
-Connected n_atoms<18 allenes use the Schlegel flowchart Hessian
-update after 15 steps.
+Connected n_atoms<18 allenes also use iterative Cartesian B⁺.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7041,8 +7040,6 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        elif getattr(self, "_has_allene", False) and self.nsteps >= 15:
-            self.pes.H.update_method = 'flowchart'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7447,6 +7444,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     for nb in real
                 ):
                     opt._has_allene = True
+                    opt.pes.iterative_stepper = 1
                     break
         if connected and n_atoms < 12:
             numbers = atoms.numbers
