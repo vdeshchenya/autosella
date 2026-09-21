@@ -19,8 +19,8 @@ Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
-which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and skip
-two-point GDIIS.
+which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and
+Banerjee RFO after 20 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -7033,7 +7033,8 @@ class Sella(Optimizer):
         step_method = self.method
         if getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
-        elif getattr(self, "_has_nitro_cf3", False) and self.nsteps >= 20:
+        elif (getattr(self, "_has_nitro_cf3", False)
+                or getattr(self, "_has_isocyanide", False)) and self.nsteps >= 20:
             step_method = 'rfo'
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
@@ -7136,8 +7137,6 @@ class Sella(Optimizer):
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
-            return s_qn, smag_qn
-        if getattr(self, "_has_isocyanide", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
