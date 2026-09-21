@@ -24,7 +24,7 @@ Disconnected 18≤n_atoms<30 dimers with both an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) and a 3-coordinate carboxylate carbon
 {O, O, C} with two 1-coordinate oxygens use iterative Cartesian B⁺
-and the Schlegel flowchart Hessian update after 20 steps.
+and Banerjee RFO after 20 steps.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7036,13 +7036,14 @@ class Sella(Optimizer):
             step_method = 'rfo'
         elif getattr(self, "_has_nitro_cf3", False) and self.nsteps >= 20:
             step_method = 'rfo'
+        elif getattr(self, "_has_carboxylate_phenol", False) and self.nsteps >= 20:
+            step_method = 'rfo'
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
                 step_method = 'rfo'
         if self.nsteps >= 20 and (
             getattr(self, "_has_benzothiazoline", False)
             or getattr(self, "_has_isocyanide", False)
-            or getattr(self, "_has_carboxylate_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
 
