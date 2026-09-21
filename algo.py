@@ -17,7 +17,7 @@ dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps,
 except connected n_atoms≥80 with a 4-coordinate sulfonamide
 sulfur {two 1-coordinate O, one N, one C} use Banerjee RFO
-after 10 steps.
+after 20 steps and MaxInternalStep `wd=0.70`.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
@@ -7027,13 +7027,13 @@ class Sella(Optimizer):
                     self, "_has_allene", False
                 ) or getattr(self, "_has_nitro_cf3", False) or getattr(
                     self, "_has_isoxazole", False
-                ):
+                ) or getattr(self, "_has_sulfonamide", False):
                     rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 10:
+        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             step_method = 'rfo'
         elif getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
