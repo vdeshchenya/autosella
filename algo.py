@@ -24,7 +24,7 @@ Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
 Connected 12≤n_atoms<30 thiosulfonates (4-coordinate S with two
-1-coordinate O and one S neighbor) use `sigma_inc=1.20` after 20 steps.
+1-coordinate O and one S neighbor) use `rho_inc=2.0` after 20 steps.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7260,7 +7260,7 @@ class Sella(Optimizer):
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
             if getattr(self, "_has_thiosulfonate", False):
-                self.sigma_inc = 1.20
+                self.rho_inc = 2.0
 
         # Update trust radius
         if rho is not None:
