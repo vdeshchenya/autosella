@@ -7527,7 +7527,12 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                                 seen[j] = True
                                 stack.append(j)
                     zs = [int(numbers[k]) for k in members]
-                    if zs and all(z in (1, 6) for z in zs) and 6 in zs:
+                    if not (zs and all(z in (1, 6) for z in zs) and 6 in zs):
+                        continue
+                    if all(
+                        int(numbers[k]) != 6 or len(neighbors[k]) == 4
+                        for k in members
+                    ):
                         opt._has_alkane_phenol = True
                         break
         if connected and 30 <= n_atoms < 80:
