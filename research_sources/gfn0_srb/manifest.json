@@ -1,0 +1,50 @@
+{
+  "src/xtb/gfn0.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/xtb/gfn0.f90",
+    "sha256": "2eb8bc2a40dbadb93081d41d22ad1a8561f9c8b56d4a1a3511017f8d0842780c"
+  },
+  "src/xtb/repulsion.F90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/xtb/repulsion.F90",
+    "sha256": "d92500e2b042e4401b2f1fda4a4e42337ead4a55d1a8da0a8cd0685fc90cfc4a"
+  },
+  "src/peeq_module.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/peeq_module.f90",
+    "sha256": "31376b0a2c26d2357f582ee0da7350c9c502a9bd3bec908c641e0eb1d585b8a5"
+  },
+  "src/approxrab.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/approxrab.f90",
+    "sha256": "ed6ff1196bc5d151d6ea1525a9d6a7437933f6e41b0bd200ba1309afadb7bf62"
+  },
+  "src/gfn0param.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/gfn0param.f90",
+    "sha256": "b9f2ef1245c0e5d3bfd7a2d4332a60326cd3f3da8e9a5a6f7935bd10585cecb7"
+  },
+  "src/type/param.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/type/param.f90",
+    "sha256": "b3081e6350d398f66d5416a6647274cb9eaaa9fad859e33e6c5aaebcf35ee981"
+  },
+  "param_gfn0-xtb.txt": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/param_gfn0-xtb.txt",
+    "sha256": "278461cabbf89b14379aedc78ef3e141c8cef1f911f3a3c72530aec7a52b6d34"
+  },
+  "src/disp/coordinationnumber.F90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/disp/coordinationnumber.F90",
+    "sha256": "9862b387c9fcb91247b556b4af748b17e05455b4d012c049a3acb9510c975810"
+  },
+  "src/param/covalentradd3.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/param/covalentradd3.f90",
+    "sha256": "e0ded77f3c06b5d44bd47532b786d120065ef2f9936614118870d5e365de6eb3"
+  },
+  "src/disp/ncoord.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/disp/ncoord.f90",
+    "sha256": "c63839e89e5cca2f981af23058f888acf1377e5eb5cad005cd8d86f7004f0eb0"
+  },
+  "src/gfn_paramset.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/gfn_paramset.f90",
+    "sha256": "0dc8c0019ea2a5740927d2107b893d71f4bf16c39bb6f4f5ca7b6a6f4041a059"
+  },
+  "src/read_gfn_param.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/read_gfn_param.f90",
+    "sha256": "ee8b9f6fc52795bc701b06e1778a30e99cefb0690e827c1cbc2bc139b562cdef"
+  }
+}

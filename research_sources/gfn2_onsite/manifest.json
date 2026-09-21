@@ -1,0 +1,14 @@
+{
+  "src/xtb/gfn2.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/xtb/gfn2.f90",
+    "sha256": "689d18843419c0d39437ba8ae0a7a6dcb5f7d81482c017f391c93ae8d4bfb23d"
+  },
+  "src/xtb/hamiltonian.F90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/xtb/hamiltonian.F90",
+    "sha256": "dcd4c17b608cb7607eee6f1c1a4b3c7c21dac3b59f85500b563f63827a22c539"
+  },
+  "param_gfn2-xtb.txt": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/param_gfn2-xtb.txt",
+    "sha256": "f6f05c6c5264cb2f75c54f8ac6838044541c1e493b16f1a4d4ee4fa64de5f545"
+  }
+}

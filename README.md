@@ -1,25 +1,24 @@
 # Astra high autoresearch progress
 
-Snapshot of `astra-high-new-data` at **2026-09-20T19:11:04.892696+00:00**, using `gpt-6-astra` with **high** reasoning effort. The running experiment was not stopped or changed.
+Stopped snapshot of `astra-high-new-data` captured at **2026-09-21T14:17:01.637474+00:00**, using `gpt-6-astra` with **high** reasoning effort. The run was stopped at **2026-09-21T13:26:11.306441+00:00**; research container and relay are stopped and evaluation access is paused.
 
-## Snapshot and accepted champion
+## Final research state
 
-- Latest recorded cycle: **586**, decision **invalid** (Positive scaled rank-one physical secants).
-- Root `algo.py` is the exact working source from commit `662f85875c0af3912e3407069350bfccca6b2a63` at capture time. This candidate is not the accepted champion.
-- Latest accepted champion: **cycle 463**, `99a2d8b5482466729ddde624fc4253fc98aba249`. Its source is [candidates/99a2d8b5482466729ddde624fc4253fc98aba249/algo.py](candidates/99a2d8b5482466729ddde624fc4253fc98aba249/algo.py).
-- Champion mean relative force-call cost: **0.745101515** on training and **0.766560528** on validation, as recorded in `results.tsv`.
-- Frozen dataset release: `main-f59f2b89a-gfn2-v1` (469 training and 465 validation molecules). This is the experiment's original dataset, not a substitution from a later repository revision.
+- Last recorded completed cycle: **739**, decision **discard** (Frozen-reference onsite coordination mean).
+- Working cycle at stop: **740**, commit `f3fb1debe771cce207350cb2410681a643931575`. Root `algo.py` is its exact source. It has no recorded final decision and is not the accepted champion.
+- The last local cycle-740 training receipt was pending; its saved progress and timestamp are recorded in `progress-manifest.json`. This archive does not turn that partial receipt into a completed result.
+- Accepted champion remains **cycle 463**, `99a2d8b5482466729ddde624fc4253fc98aba249`: [champion source](candidates/99a2d8b5482466729ddde624fc4253fc98aba249/algo.py).
+- Champion mean relative force-call cost: **0.745101515** on train and **0.766560528** on validation.
+- Frozen dataset release: `main-f59f2b89a-gfn2-v1` (469 training and 465 validation molecules).
 
 ## Saved research
 
-`full_log.md`, `backlog.md`, `results.tsv`, `generalizable.tsv`, and `non_generalizable.tsv` preserve the research narrative, plans, and decision summaries. The current program instructions, runner scripts/templates, and ordinary `cycle.json` record are included.
+The full log, backlog, all decision summary tables, current program instructions, runner scripts/templates, cycle record and research-time checkpoint are included. `analysis/` contains the small repeated-geometry consistency summary, not its underlying diagnostic frames.
 
-`ideas/` contains 554 Python source snapshots. `candidates/<commit>/algo.py` preserves every candidate and anchor referenced by the captured results, plus the current HEAD (585 distinct commits), including sources that may no longer be reachable through the accepted Git history. The branch also retains the source HEAD's Git ancestry.
+`ideas/` contains 709 Python source snapshots, including the full-precision ANI-1x preflight implementation. `candidates/<commit>/algo.py` preserves 739 distinct candidate/anchor sources, including every commit referenced by the result tables and the final working HEAD. Previous archived sources are retained. Git ancestry includes the stopped source HEAD as well as the earlier archive.
 
-`molecules/` contains the frozen input geometries, selection/reference data, release metadata, and verified checksums. These are benchmark inputs, distinct from generated per-evaluation outputs.
+`research_sources/` preserves downloaded implementation code, model parameters, source manifests and licenses. Paper downloads remain local; citations are in `full_log.md` and their hashes are in `progress-manifest.json`. `molecules/` preserves the experiment's frozen benchmark inputs, verified against the stopped run.
 
-## Excluded outputs and reproduction limits
+## Excluded artifacts
 
-Per-evaluation outputs (`evaluation_results/`), generated anchor evaluations (`anchors/`), and diagnostic dumps (`diagnostics/`) remain local and are excluded from Git. Runtime state, credentials, and caches are also excluded. Paths to those outputs inside the preserved logs and decision tables are historical references, not files bundled here.
-
-This archive preserves source and research evidence, not a standalone deployment of the external evaluation gateway and worker services. No scientific evaluations were rerun for this archival commit. `progress-manifest.json` records provenance and SHA-256 checksums; public-source downloads are represented by a citation and hashes.
+Raw `evaluation_results/`, generated `anchors/`, diagnostic dumps, private runtime state, credentials, caches and external service installations remain local and are excluded from Git. Historical links to those artifacts in logs are not bundled result files. No scientific evaluations were rerun for this commit. The archive preserves research progress and provenance, not a standalone deployment of the gateway and workers.

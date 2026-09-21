@@ -1,0 +1,225 @@
+{
+  "repository": "https://github.com/aiqm/ani-model-zoo",
+  "commit": "3a3368bb1b6d3ae707235f7f1dedcbb7b8b8cbc2",
+  "model": "ani-1x_8x/train0",
+  "networks": {
+    "H": [
+      {
+        "input": 384,
+        "output": 160,
+        "activation": 9
+      },
+      {
+        "input": 160,
+        "output": 128,
+        "activation": 9
+      },
+      {
+        "input": 128,
+        "output": 96,
+        "activation": 9
+      },
+      {
+        "input": 96,
+        "output": 1,
+        "activation": 6
+      }
+    ],
+    "C": [
+      {
+        "input": 384,
+        "output": 144,
+        "activation": 9
+      },
+      {
+        "input": 144,
+        "output": 112,
+        "activation": 9
+      },
+      {
+        "input": 112,
+        "output": 96,
+        "activation": 9
+      },
+      {
+        "input": 96,
+        "output": 1,
+        "activation": 6
+      }
+    ],
+    "N": [
+      {
+        "input": 384,
+        "output": 128,
+        "activation": 9
+      },
+      {
+        "input": 128,
+        "output": 112,
+        "activation": 9
+      },
+      {
+        "input": 112,
+        "output": 96,
+        "activation": 9
+      },
+      {
+        "input": 96,
+        "output": 1,
+        "activation": 6
+      }
+    ],
+    "O": [
+      {
+        "input": 384,
+        "output": 128,
+        "activation": 9
+      },
+      {
+        "input": 128,
+        "output": 112,
+        "activation": 9
+      },
+      {
+        "input": 112,
+        "output": 96,
+        "activation": 9
+      },
+      {
+        "input": 96,
+        "output": 1,
+        "activation": 6
+      }
+    ]
+  },
+  "files": {
+    "ANN-H.nnf-l1.wparam": {
+      "bytes": 245760,
+      "sha256": "b1730be1a476d572410c398f1efd398bbe8f76042d06b8a7d1feb4728583aa46"
+    },
+    "ANN-H.nnf-l1.bparam": {
+      "bytes": 640,
+      "sha256": "2eede75a968c350bb85d7643f3cc25663505538e69be5e93b2e44271b2c67a14"
+    },
+    "ANN-H.nnf-l2.wparam": {
+      "bytes": 81920,
+      "sha256": "5fda1131a58ba0eccfcd74dec039aaf8710604ad9648a663769db4d772eace32"
+    },
+    "ANN-H.nnf-l2.bparam": {
+      "bytes": 512,
+      "sha256": "e87598433ea22b559a71a560a5483f4ffe1a1020d1aa6394e6de8c9cfebe7357"
+    },
+    "ANN-H.nnf-l3.wparam": {
+      "bytes": 49152,
+      "sha256": "1776cc231a377c15bd527e9353dfa13a5f21a7d8f5c2c8b0fec9d4ae6f307c11"
+    },
+    "ANN-H.nnf-l3.bparam": {
+      "bytes": 384,
+      "sha256": "d3e89e5171de30cae4239cd44ed485ee1761f519ac1d395323062d87c3f7ee94"
+    },
+    "ANN-H.nnf-l4.wparam": {
+      "bytes": 384,
+      "sha256": "21904a4e94784dee06df75267d3f6570f121b1a1840a83aef0b0fd857fdf9354"
+    },
+    "ANN-H.nnf-l4.bparam": {
+      "bytes": 4,
+      "sha256": "848a78e299cc12617f40edd90f3011cd71b08c4bcc14b8d7a44e24fdee3d7535"
+    },
+    "ANN-C.nnf-l1.wparam": {
+      "bytes": 221184,
+      "sha256": "1919ae92dbe3a2007121eb0dfdf51645ad8759109a3d39264a83f290b0785c8c"
+    },
+    "ANN-C.nnf-l1.bparam": {
+      "bytes": 576,
+      "sha256": "9520fe7683e1dba0420eee4e6b8bb737e63083b5d099bce2a6b358501091c13c"
+    },
+    "ANN-C.nnf-l2.wparam": {
+      "bytes": 64512,
+      "sha256": "4a3bc1a2d034a16be67d7cc32ef019955e5873eab8116fe9cee17fc8db344029"
+    },
+    "ANN-C.nnf-l2.bparam": {
+      "bytes": 448,
+      "sha256": "c1a4edb25bbe3b7e3885357650472c653e5511e59aa250206ade138dd16a665b"
+    },
+    "ANN-C.nnf-l3.wparam": {
+      "bytes": 43008,
+      "sha256": "e577203c4e56982151d9040d5b0d7c3ca7dded94ca8bbffb1d410d82cd42cef9"
+    },
+    "ANN-C.nnf-l3.bparam": {
+      "bytes": 384,
+      "sha256": "2ac7cf31e2291f2bd578a5482833cd2a93a2247d0fb842a4b45cdae42064e5f1"
+    },
+    "ANN-C.nnf-l4.wparam": {
+      "bytes": 384,
+      "sha256": "fd01615cb57182882c7b22d117fba0b2d21ed047736629ec6d2463a73be5b2d6"
+    },
+    "ANN-C.nnf-l4.bparam": {
+      "bytes": 4,
+      "sha256": "44546b6192bf1eb1afa6ffcb2034b2f38f324bcf1b12c3b043ca556a3a1918e7"
+    },
+    "ANN-N.nnf-l1.wparam": {
+      "bytes": 196608,
+      "sha256": "37ab105ac9b13601b54bf96019a84a8b1604080aac4c6125d4aaedea90574113"
+    },
+    "ANN-N.nnf-l1.bparam": {
+      "bytes": 512,
+      "sha256": "81fea91cccabbd4495ba07ae49e1581af096941f6a34b2323db9248c723aecd9"
+    },
+    "ANN-N.nnf-l2.wparam": {
+      "bytes": 57344,
+      "sha256": "82fa175ce805d92644200f4f8d2d8e14366ad244574776a012d24385d6e3dad5"
+    },
+    "ANN-N.nnf-l2.bparam": {
+      "bytes": 448,
+      "sha256": "fd19b3cbce24ba7729739379d943721486dbc371f0cecf7371470ad972745e58"
+    },
+    "ANN-N.nnf-l3.wparam": {
+      "bytes": 43008,
+      "sha256": "63d05d76787a6bef27c097ce50024728538b92300fcef189a5e9a5c5f311d013"
+    },
+    "ANN-N.nnf-l3.bparam": {
+      "bytes": 384,
+      "sha256": "b826b24b1d42f2d909425462ef1e7c0477c7bd6b6cd724dc15c92ddd771ff93e"
+    },
+    "ANN-N.nnf-l4.wparam": {
+      "bytes": 384,
+      "sha256": "7fad0698a08f6c09c5046aefc9e344680254f79abbc93fb329c0ac5ec6cb68c9"
+    },
+    "ANN-N.nnf-l4.bparam": {
+      "bytes": 4,
+      "sha256": "fa3d899e6b667f234dc9d4cb71cb86f1118dbc2277fcb966f1d796dfe4dca37b"
+    },
+    "ANN-O.nnf-l1.wparam": {
+      "bytes": 196608,
+      "sha256": "183ea096588de24f02181ccdbc17db7153fb01e2c0deb5d6b2e771f6bbffbf1e"
+    },
+    "ANN-O.nnf-l1.bparam": {
+      "bytes": 512,
+      "sha256": "2d4676d12c73e4524c199002bd5ff178ea66b4ed4a148e5dc320d99b52044769"
+    },
+    "ANN-O.nnf-l2.wparam": {
+      "bytes": 57344,
+      "sha256": "2fa21c4dc97ce4f3168eefe51445467c26d434c1363ac130894b2d85e791c537"
+    },
+    "ANN-O.nnf-l2.bparam": {
+      "bytes": 448,
+      "sha256": "4362b693b5937d792cb322cb0b4bdaf6f0c86386037d2e1be4ab496468b41e74"
+    },
+    "ANN-O.nnf-l3.wparam": {
+      "bytes": 43008,
+      "sha256": "3f85d1070aa52e999cc34d0d5604a0dae17d98c709ad651d680d7d07c932f631"
+    },
+    "ANN-O.nnf-l3.bparam": {
+      "bytes": 384,
+      "sha256": "a34e5b1f53048b31279cadac687e1029052d0a635a9186864619948159fe5743"
+    },
+    "ANN-O.nnf-l4.wparam": {
+      "bytes": 384,
+      "sha256": "a8bf54a5eff80cbd190305dbaee1215ea3b5bc0fcb7195846806bda5f6703138"
+    },
+    "ANN-O.nnf-l4.bparam": {
+      "bytes": 4,
+      "sha256": "8cc8460128e531a80f8b626946cba456132723cfdb1321b745123dc59e7f7d87"
+    }
+  }
+}

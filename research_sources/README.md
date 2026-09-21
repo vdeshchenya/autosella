@@ -1,5 +1,5 @@
-# Public research source
+# Public research sources
 
-The research log cites [NeST-BO: Fast Local Bayesian Optimization via Newton-Step Targeting of Gradient and Hessian Information](https://proceedings.mlr.press/v300/tang26c.html), by Wei-Ting Tang, Akshay Kudva, and Joel A. Paulson (AISTATS 2026).
+The full research log records paper citations, URLs, revisions and their role in each experiment. Public implementation sources, downloaded model parameters, original license files and per-source manifests are preserved here, including the original float32 ANI-1x parameters used in cycle 713's full-precision preflight version.
 
-The downloaded third-party PDF and extracted text remain in the live run's `research_sources/` directory. They are not duplicated in this archive. Their SHA-256 hashes are recorded in `progress-manifest.json`.
+Downloaded paper PDFs, extracted article text and supplemental paper archives remain in the stopped local workspace. `progress-manifest.json` records their paths, sizes and SHA-256 hashes. They are not generated evaluation outputs.

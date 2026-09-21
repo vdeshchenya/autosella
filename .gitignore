@@ -10,3 +10,6 @@ anchors/
 diagnostics/
 research_sources/*.pdf
 research_sources/*.txt
+research_sources/**/*.pdf
+research_sources/**/*.zip
+research_sources/gaussian_tree/

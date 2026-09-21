@@ -1,0 +1,38 @@
+{
+  "src/xtb/halogen.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/xtb/halogen.f90",
+    "sha256": "22ed9a8e63996d8716f2de15b050f38a18dc59ed3a021b30753eb14d2dc0351c"
+  },
+  "src/xtb/gfn1.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/xtb/gfn1.f90",
+    "sha256": "504af7ccdbb419655e868314dcd080c0e3fff5dd812700536ea59b5526af157d"
+  },
+  "COPYING": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/COPYING",
+    "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  "src/xtb/data.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/xtb/data.f90",
+    "sha256": "26c85ce5c725e570ac5dfd3228a23a63ec554081d3c88956a3e23e4d28d17f8d"
+  },
+  "src/param/atomicrad.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/param/atomicrad.f90",
+    "sha256": "d4b69d5cd953087678c515e425b78986e4ef90ddac1f11ca2a711cccc237f5f6"
+  },
+  "src/neighbor.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/neighbor.f90",
+    "sha256": "6a755f05e9bb884174d4e3432fd527d5f4ebd35c5f34bc4f4db02046eba057cb"
+  },
+  "src/scc_core.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/scc_core.f90",
+    "sha256": "4d5b0c9d4f728f6b936ef88d7618b2995f9662e26bd4fe6a648d0a196315c064"
+  },
+  "src/scf_module.F90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/scf_module.F90",
+    "sha256": "755bd73e3e40c1d7ca5bf8e887235ea4729e70ea2b4e828cd68a75d4948ec0ab"
+  },
+  "src/xtb/calculator.f90": {
+    "url": "https://raw.githubusercontent.com/grimme-lab/xtb/fa035bce99a5567e24195c6c10820d8679b90255/src/xtb/calculator.f90",
+    "sha256": "9ad14baac802cc740a9e293b5697c21ef779c3b71cc87a4a9afd1577e083464f"
+  }
+}

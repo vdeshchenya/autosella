@@ -167,6 +167,9 @@ Status: deferred
 **553 reassessment:** Exact fixed GP chart still loses cost;2faster7slower460same,allconvergedvalidzeroerrors. No passive microstate diagnoses interpolation failure. Future use needs independent endpoint-curvature accuracy evidence; no strength,safeguard,budget orlinesearch sweep.
 - Cycle553; candidate `58b8ff78b0042f41988e142140f38dea52f24247`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/energy-secants/58b8ff78b0042f41988e142140f38dea52f24247/algo.py), [training](evaluation_results/cycle-553-train.json), [narrative](full_log.md#cycle-553-energy-informed-surrogate-bfgs-secants).
 
+**616 revisit/reassessment:** Used straight chords in the GP's fixed normalized vector space, eliminating the physical geodesic ambiguity. The cubic correction updates positive inverse BFGS; nonpositive corrected secants use ordinary differences. All469 converge,valid energy,zero errors but cost increases;{'slower': 7, 'same': 460, 'faster': 2}. This weakens the endpoint-curvature hypothesis in this tested short model search. Require retained secant/model-error evidence before another correction; no amplitude, clipping, positivity or budget sweep.
+- Cycle616; candidate `d96fd9c5c733661831ff4694cb8528fd7b9855f8`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/energy-secants/d96fd9c5c733661831ff4694cb8528fd7b9855f8/algo.py), [training](evaluation_results/cycle-616-train.json), [narrative](full_log.md#cycle-616-cubic-energy-surrogate-secants).
+
 ## local-gdiis: Safeguarded geometry-history extrapolation
 Status: deferred
 
@@ -533,6 +536,11 @@ Status: deferred
   [Training evidence](evaluation_results/cycle-40-train.json).
   [Passive trace](diagnostics/91e3c67fdecc4e1abe39985dee4774c3/9397e7612d708c137e5a7477345e723a21223a14af08e4c24489ea20cfe2ac8f.json).
   [Narrative](full_log.md#cycle-40-gradient-enriched-surrogate-search-subspace).
+
+**Revisit675:** Accepted106 added tangent-aware directional derivative maps after40;463 retains them. Test40's exact gradient augmentation on463 without changing rank,normalization,history,search orcritics. This supplies the stated observation-model prerequisite,not proof that all finite-chart errors are solved.
+
+**675 reassessment:** Directional maps meet the former prerequisite,but the exact augmentation still loses cost;31faster/27slower/411same,all469converge,validenergy,zeroerrors. Emptyfailure_details give no subspace/model diagnosis. Further work requires independently supported direction-quality or uncertainty information;no rank,normalization,history orcritic sweeps.
+- Cycle675;candidate `388076c0d04866258b012b9c4aac8575e38075db`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/gradient-gp-subspace/388076c0d04866258b012b9c4aac8575e38075db/algo.py),[training](evaluation_results/cycle-675-train.json),[narrative](full_log.md#cycle-675-gradient-enriched-search-with-directional-observations).
 
 ## box-quadratic-step: Refine boundary steps inside the component trust box
 Status: deferred
@@ -1685,6 +1693,11 @@ Status: deferred
 **Cycle576 reassessment:** Currentchemical Cartesian metric plus published nonlinear hat-PR+ addresses486 evolvingmetric prerequisite. Improves486 convergence172→415, but54limits,energyinvalid,464slower/1faster/4same against463. Passive200row/8frame trace shows force/motion oscillations without beta/acceptance/metricstate; no localized repair. Revisitrequires suchdiagnosis or independently coupled globalization; no beta,Wolfe,cap/floor sweeps.
 - Cycle576; candidate `c1ef6b20dfe3549e1afaa287985a88adc8e1acea`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/preconditioned-conjugate-step/c1ef6b20dfe3549e1afaa287985a88adc8e1acea/algo.py), [training](evaluation_results/cycle-576-train.json), [trace](diagnostics/173f0b70ba594bf592875f8aa3bc6c4e/02b04a7d2c247610d69ca647d86466e721e8038ab9e84c2e48e058a657182717.json), [narrative](full_log.md#cycle-576-moving-chemical-preconditioned-conjugate-gradients).
 
+**589 revisit:** Paid Wolfe search now follows native geodesics and uses transported gradients/directions with the learned native chemical Hessian. This supplies a source-supported curved-path globalization connection absent from181/486/576, not a beta or cap sweep. Source assumptions remain unproved for the mixed native chart.
+
+**589 reassessment:** Native geodesic Wolfe search and endpoint transport with learned chemical Hessian achieves469converged, but energy invalid and broad cost loss;{'slower': 458, 'faster': 8, 'same': 3}. Empty failure_details leaves trial waste versus curved-chart/preconditioner error unresolved. Await direct trial/transport evidence or independently justified globalization; no beta,Wolfe,cap,floor,budget sweeps.
+- Cycle589; candidate `5e6ae669a40da53a801accc34bf483cd248431af`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/preconditioned-conjugate-step/5e6ae669a40da53a801accc34bf483cd248431af/algo.py), [training](evaluation_results/cycle-589-train.json), [narrative](full_log.md#cycle-589-geodesic-conjugate-gradients-with-paid-wolfe-search).
+
 ## torsion-multiplicity-prior: Normalize proper torsional stiffness per central bond
 Status: deferred
 
@@ -2455,11 +2468,14 @@ Status: deferred
 **Hypothesis:**Joint normalized recent secants with residual-stabilized curvature can replace sequential rank-two learning while retaining a physical complement.
 **Outcome and uncertainty:**204 fails energy and broadly loses cost, with41 call limits and no errors. Two passive traces show persistent low-force motion; no saved model/history state separates forgetting, tangent inconsistency or complement stiffness.
 **Reason to revisit:**An independently established common-frame observation model and a derivation preserving accumulated complementary curvature might address the information loss; current traces do not justify a parameter repair.
-**Next experiment:**Await that mechanism; no memory, rank, floor or stopping-step sweep.
+**Next experiment:**692 supplied both prerequisites but broadly lost cost; await an independently justified finite-geometry curvature model before revisiting. No memory, rank, floor, radius or stopping-step sweep.
 **Attempts:**
 - Cycle204; candidate `a0f1e6e611db9928ef8eccccdb4851cf17cdfaea`; champion `84e94edf6b970ec3eb3bc422a128bec4b6bcaac6`; decision invalid.
   [Implementation](ideas/stabilized-subspace-learning/a0f1e6e611db9928ef8eccccdb4851cf17cdfaea/algo.py), [train](evaluation_results/cycle-204-train.json), [narrative](full_log.md#cycle-204-physical-prior-stabilized-subspace-learning).
   [Diagnostic manifest](diagnostics/3df70da8e1264c2db6e900c9fbfbb3e0/manifest.json).
+
+**692 update:** Recursive common-frame learner preserves accumulated complementary action by construction, but2faster/467slower,20limits; energyvalidandzeroerrors. Two passive traces show ongoingforce/displacement motion, with no saved curvature state localizing a repair. Fixed-Cartesian geometry limitations versus batchcurvature errors remain unresolved.
+- Cycle692; candidate `3465fb39acec37a681a742330bf7d5f8e9c8147d`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/stabilized-subspace-learning/3465fb39acec37a681a742330bf7d5f8e9c8147d/algo.py),[training](evaluation_results/cycle-692-train.json),[narrative](full_log.md#cycle-692-recursive-common-frame-significant-subspace-learning),[diagnostic manifest](diagnostics/deb4ad31dae045709ba2673234ea6d5e/manifest.json).
 
 ## rank-preserving-torsion-reduction: Reduce redundant proper bridge torsions
 Status: deferred
@@ -2858,6 +2874,11 @@ Status: deferred
 - Cycle252; candidate `860d84e7d6b50d0419e594a1d3b5bf6116dadc2a`; champion `025b5e2d5f90c39a0116e86fa03d3ff41da036ae`; decision discard.
   [Implementation](ideas/hydrogen-bond-angular-prior/860d84e7d6b50d0419e594a1d3b5bf6116dadc2a/algo.py), [train](evaluation_results/cycle-252-train.json), [narrative](full_log.md#cycle-252-directional-hydrogen-bond-curvature-prior).
 
+**590 revisit:** Published12/10*cos^4 interaction shape supplies the full radial-angular Cartesian Hessian, including linear transverse curvature. Keep252 detector fixed and fit one positive-mode pullback block. This supplies the deferred directional-Hessian prerequisite without changing the finite GP mean or fitting chemistry/cutoffs to outcomes.
+
+**590 reassessment:** Full radial/angular Hessian including linear transverse modes passes training with useful signal but loses validation cost; all934 converge, zero errors and no passive failure details. This resolves252's omitted full-Hessian prerequisite but does not establish a general gain. Await independently calibrated environment response or direct prior/fit/coordinate diagnosis, without chemistry, cutoff, amplitude, spectral or ridge sweeps. A finite mean extension is deferred.
+- Cycle590; candidate `f508937a85cb86aada553bee72b493af5c5376c0`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/hydrogen-bond-angular-prior/f508937a85cb86aada553bee72b493af5c5376c0/algo.py). [Training](evaluation_results/cycle-590-train.json). [Validation](evaluation_results/cycle-590-valid.json). [Narrative](full_log.md#cycle-590-full-radial-angular-hydrogen-bond-curvature).
+
 ## rotation-matrix-gp: Couple fragment rotation components in the residual kernel
 Status: deferred
 
@@ -2973,6 +2994,11 @@ Status: deferred
 **Attempts:**
 - Cycle264; candidate `e9291f050c235860f4fa2b6718fbfb5448e71416`; champion `025b5e2d5f90c39a0116e86fa03d3ff41da036ae`; decision discard.
   [Implementation](ideas/retrospective-trust-feedback/e9291f050c235860f4fa2b6718fbfb5448e71416/algo.py). [Training evidence](evaluation_results/cycle-264-train.json). [Narrative](full_log.md#cycle-264-retrospective-endpoint-quadratic-trust-feedback).
+
+**Revisit703:** Test complete forwardacceptance/retrospectiveradius algorithm in the fixed GP chart with direct model Hessians. This supplies the recorded reverse-path/globalization prerequisite; source section4 constants unchanged, no native threshold tuning.
+
+**Completed703:** Complete source-style control and fixed-chart reverse path also losecost;all469converge/validenergy/zeroerrors. Require independent endpoint-curvature/radius diagnostic evidence for further work; no threshold,radius,stencil orbudget sweep.
+- Cycle703;candidate `fe91cf111981c8b78299f7fa7c9b4970e25baa71`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/retrospective-trust-feedback/fe91cf111981c8b78299f7fa7c9b4970e25baa71/algo.py),[training](evaluation_results/cycle-703-train.json),[narrative](full_log.md#cycle-703-retrospective-trust-region-surrogate-search).
 
 ## cautious-gp-proposals: Remove first-order uphill physical eigencomponents
 Status: deferred
@@ -3324,6 +3350,11 @@ Status: deferred
 **552 reassessment:** Sequential scalar implicit equations still lose cost (24faster,34slower,411same); all converge with validenergy andzeroerrors. No passive model-state evidence distinguishes root termination from proposal quality. Await independently diagnosed model-solver error; no time,order,tolerance or budget sweep.
 - Cycle552; candidate `843c3acd2b6ce822dbcc0240e7afa841ba1c208f`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/discrete-gradient-gp/843c3acd2b6ce822dbcc0240e7afa841ba1c208f/algo.py), [training](evaluation_results/cycle-552-train.json), [narrative](full_log.md#cycle-552-coordinate-discrete-gradient-surrogate-flow).
 
+**Revisit665:** Independently derive a scalar variational functional for the path-integral mean-value equation and solve its three-point quadrature by BFGS. This changes the discrete gradient and solver structure,not304/552parameters;those failures remain counterevidence. Quadrature residual and actual model-energy descent are required before an outer step is retained. No guarantee of a globally solved nonconvex subproblem is claimed.
+
+**665 reassessment:** Variational path-average flow loses cost with all469converged and no errors;{'slower': 8, 'same': 458, 'faster': 3}. No inner model-state diagnosis justifies parameter or solver-budget repair. Await independent evidence distinguishing solve accuracy from proposal quality.
+- Cycle665; candidate `fe679b14975e21b5e00f5e1daaa88a0ab9d585d7`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/discrete-gradient-gp/fe679b14975e21b5e00f5e1daaa88a0ab9d585d7/algo.py),[training](evaluation_results/cycle-665-train.json),[narrative](full_log.md#cycle-665-variational-mean-value-surrogate-flow).
+
 ## exponential-contact-gp-mean: Integrated native auxiliary repulsion in the GP mean
 Status: deferred
 
@@ -3655,6 +3686,11 @@ Status: deferred
 **345 reassessment:**Curvature-preserving ring replacement fully converges and lowers cost, but fails energy;54 faster/43 slower/372 unchanged. One higher-energy endpoint supplies most energy loss and much of the gain. Empty passive manifest offers no localized defect to repair. Revisit only with a supported finite-path/curvature compatibility mechanism, without coordinate weights, rank thresholds, ring subsets or trust sweeps.
 - Cycle345; candidate `2f0fde58f5d133c2e53113a7561aadce5f68b05e`; champion `a049250808c5f46c1a6fb12844e8b1e900c1a7da`; decision invalid. [Implementation](ideas/collective-ring-puckering/2f0fde58f5d133c2e53113a7561aadce5f68b05e/algo.py), [training](evaluation_results/cycle-345-train.json), [manifest](diagnostics/1fdcefc75e50430bba1933bab6b9cd08/manifest.json), [narrative](full_log.md#cycle-345-curvature-preserving-ring-coordinate-replacement).
 
+**653 source-derived revisit:** SONIC2607.16550 supplies Fourier combinations of local curvilinear U angles,distinct from334/345 global mean-plane heights. Port the rank/spring-preserving replacement to463 with this scalar and its exact derivatives. This is a new finite-path hypothesis,not a diagnosed repair or a ring/weight sweep.
+
+**653 reassessment:** Local U Fourier replacement gives468converged+1ODE-work-limit error. Returned subset36faster42slower390same loses mean cost0.0068187;no full numerical score. Passive nine-call trace(eight frames,one old frame omitted) shows large first realized displacement3.66867Bohr,force spike then recovery before ODE failure. No internal spectrum/branch state localizes a repair. Await a certified finite-realization/metric mechanism;no rank,ring,weight,trust or metric-floor sweep.
+- Cycle653;candidate `236d9059487b800d0bc50620f41cd8e32542e959`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision invalid. [Implementation](ideas/collective-ring-puckering/236d9059487b800d0bc50620f41cd8e32542e959/algo.py),[training](evaluation_results/cycle-653-train.json),[passive bundle](diagnostics/6179725e96d147559e6c95bfa553ecca/3d7b3d99f9452683eaaf44599b4e22847a85d8ccd78e39a032de7fd53b5b2d81.json),[narrative](full_log.md#cycle-653-local-curvilinear-ring-puckering).
+
 ## collision-direction-projection: Cure blocked motion through tangent inequalities
 Status: deferred
 
@@ -3709,6 +3745,11 @@ Status: deferred
 
 **Attempts:**
 - Cycle341; candidate `390fda029645782824c410fe3736e6444fe39a32`; champion `a049250808c5f46c1a6fb12844e8b1e900c1a7da`; decision discard. [Implementation](ideas/self-scaled-broyden-update/390fda029645782824c410fe3736e6444fe39a32/algo.py), [training](evaluation_results/cycle-341-train.json), [manifest](diagnostics/bae20022219c4335a6984c80956a5580/manifest.json), [narrative](full_log.md#cycle-341-positive-tangent-self-scaled-broyden-learning).
+
+**Revisit702:** Supply compatible geometry/globalization by using exact same-chart GP secants and cheap strong Wolfe. Retain source coupled theta/tau and341 stable formulas; no physical update/transport or scaling sweep.
+
+**Completed702:** Fixed-chart/strong-Wolfe prerequisite is now tested: train improves, validation cost worsens, all934converge with validenergy/zeroerrors. No localized repair; await independent scale/trajectory diagnostics. No scaling,activation,line orbudget sweep.
+- Cycle702;candidate `f283b07d376639b5e0bb8f86fbc7a0e755bc650a`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision non_generalizable. [Implementation](ideas/self-scaled-broyden-update/f283b07d376639b5e0bb8f86fbc7a0e755bc650a/algo.py),[training](evaluation_results/cycle-702-train.json),[validation](evaluation_results/cycle-702-valid.json),[narrative](full_log.md#cycle-702-self-scaled-broyden-in-the-fixed-surrogate-chart).
 
 ## optimal-spectral-memory: Least-change scalar-plus-low-rank curvature
 Status: deferred
@@ -4114,6 +4155,11 @@ Status: deferred
 **Attempts:**
 - Cycle388; candidate `22e8d62d7927e91d3955d9df96c5122581e5eb8e`; champion `a049250808c5f46c1a6fb12844e8b1e900c1a7da`; decision discard. [Implementation](ideas/downshifted-bundle-proposals/22e8d62d7927e91d3955d9df96c5122581e5eb8e/algo.py), [train](evaluation_results/cycle-388-train.json), [narrative](full_log.md#cycle-388-downshifted-bundle-proposals-from-paid-history).
 
+
+**Cycle677 reassessment:** Fixed Cartesian covectors and measured-energy acceptance now supply a compatible full physical bundle formulation;test source NonOpt downshifts and dampedBFGS,not388 residualcuts underGPcritic. No claim that oldnativechart predictions have been validated.
+
+**Cycle677 outcome:** Compatiblefixedchart/paidacceptance doesnot suffice:86inverseBFGS Choleskyexceptions;376converged,7limits. Returnedcases3faster/380slower. Passive11calltraceidentifiesfactorizationfailure afterincreasingforces/near-capsteps. Expandedinversecancellationisplausiblebutunmeasured;no usefulbroadcostsignal supports immediate square-rootrepair. Revisitonlywith independentprogress/geometrymechanism,notdownshift,memory,cap,lineorcurvaturethreshold tuning.
+- Cycle677; candidate `035cc3ee5e52e4fa791e1add4d31c587490054f0`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/downshifted-bundle-proposals/035cc3ee5e52e4fa791e1add4d31c587490054f0/algo.py),[training](evaluation_results/cycle-677-train.json),[narrative](full_log.md#cycle-677-physical-nonconvex-proximal-bundle),[passivebundle](diagnostics/da7985cdbe1b43c881d0d93c979803ff/951b6ac6a9a71e53b82d80c5aaba05930db731f21c8e6bc2760cc067d3ee89e1.json).
 
 ## paid-nonlinear-conjugate-residual: Measured Hessian actions in a physical Cartesian solver
 Status: deferred
@@ -4721,6 +4767,11 @@ Status: incorporated
 **474 current-geometry reference:** Linear HSSH hopping evaluated at actual initial bond lengths retains463 orientation and radial derivatives. Training passes but validation loses cost, despite all934 converged, valid energies and no errors. Empty failure_details does not support a length, overlap, slope, scope, stiffness, refresh or blend repair. Actual-state evaluation alone does not resolve460's reference-state issue; future extension needs independent sigma-stress or response evidence. Accepted463 remains incorporated.
 - Cycle474; candidate `0df8670bde1d97602aa6e30f761817ecd3c9c11d`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/delocalized-pi-bond-correlations/0df8670bde1d97602aa6e30f761817ecd3c9c11d/algo.py), [training](evaluation_results/cycle-474-train.json), [validation](evaluation_results/cycle-474-valid.json), [narrative](full_log.md#cycle-474-current-geometry-electronic-bond-response).
 
+**730 orientation revisit:**459 explicitly deferred until independent orientation/charge/length-response support. Accepted463 supplies orientation evidence; combine its pp-pi geometry with459's unchanged heterogeneous constants/neutral typing, adding geometry-defined two-neighbor normals and terminal projected axes. Other459 radial/charge assumptions remain unresolved. Accepted carbon baseline remains incorporated; this extension was tested and is deferred after the outcome below.
+
+**730 reassessment:** The independent463 orientation model does not improve heterogeneous-response cost; all469 converge withvalidenergy/zeroerrors. No orbital/charge/radial-response states isolate a repair. Await independent charge and heterogeneous radial-response calibration; no typing,overlap,slope,strength or axis sweep.
+- Cycle730; candidate `7531bb082938f32797034d4d2da7a9d04e1e330e`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/delocalized-pi-bond-correlations/7531bb082938f32797034d4d2da7a9d04e1e330e/algo.py), [training](evaluation_results/cycle-730-train.json), [narrative](full_log.md#cycle-730-orbital-alignment-in-heterogeneous-pi-response).
+
 ## full-matrix-hypergradient: Learn paid energy response of a gradient-to-step map
 Status: deferred
 
@@ -4758,6 +4809,11 @@ Status: deferred
 
 **465 reassessment:** The independently accepted orbital-reference revision passes training but slightly loses validation cost. Both splits fully converge, pass energy and have no errors or failure_details. This tested reference prerequisite does not make the finite mean generalize; defer until independent evidence identifies finite native-length or re-centering error. No amplitude, x/y, normalization, scope or confidence sweep.
 - Cycle465; candidate `2a3a36960d980c638e90564ed5449c51db83fc73`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/finite-electronic-mean/2a3a36960d980c638e90564ed5449c51db83fc73/algo.py), [training](evaluation_results/cycle-465-train.json), [validation](evaluation_results/cycle-465-valid.json), [narrative](full_log.md#cycle-465-oriented-finite-electronic-gp-mean).
+
+**Revisit701:** Combine465finite orbital mean and639structured-minus search with an analytically differentiated electronic remainder Hessian. This tests known-model/solver interaction; no constituent parameters are tuned, and disjoint saved cost-change sets are explicit counterevidence to an additive benefit.
+
+**Completed701 combination:** Analytic electronic known curvature plus structured secants still fails validation cost, despite training gain/all934converged/valid energy. No localized repair; require independent model/search interaction evidence before further combinations.
+- Cycle701; candidate `b85bf39385df4fa52471dd990ed77de9bfde46d8`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Combined implementation](ideas/structured-electronic-surrogate/b85bf39385df4fa52471dd990ed77de9bfde46d8/algo.py),[training](evaluation_results/cycle-701-train.json),[validation](evaluation_results/cycle-701-valid.json),[narrative](full_log.md#cycle-701-structured-search-with-analytic-electronic-mean-curvature).
 
 ## feature-coordinate-search: Minimize the GP in its bending features
 Status: deferred
@@ -4835,6 +4891,16 @@ Status: deferred
 
 **Attempts:**
 - Cycle462; candidate `54163554867445bbd98b0286b27fd54884e81fc0`; champion `19ef38c155eee70f9872b95841931f5a303e74c4`; decision discard. [Implementation](ideas/cubic-surrogate-search/54163554867445bbd98b0286b27fd54884e81fc0/algo.py), [training](evaluation_results/cycle-462-train.json), [narrative](full_log.md#cycle-462-cubic-regularization-inside-the-gp-search).
+
+**648 revisit basis:** Fang/Marumo/Takeda2607.10741 Algorithm1 supplies joint energy-gradient acceptance instead of462's ratio. Hold initial sigma fixed; use explicit subproblem optimality checks. This is independent controller evidence,not a passive diagnosis of462.
+
+**648 outcome/reassessment:** Joint energy-gradient controller passes train but loses validation cost;all train/valid converge,valid energy,zero errors. No inner-state diagnosis. Revisit requires independent evidence of model/acceptance mismatch;no sigma,stencil,threshold,budget or critic sweep.
+- Cycle648; candidate `55f18dec1e977170533581fd86d175807e8a1aff`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/cubic-surrogate-search/55f18dec1e977170533581fd86d175807e8a1aff/algo.py),[training](evaluation_results/cycle-648-train.json),[validation](evaluation_results/cycle-648-valid.json),[narrative](full_log.md#cycle-648-joint-energy-gradient-cubic-acceptance).
+
+**673 revisit basis:** Gao/Ng2210.05987 supplies accepted-step momentum with its own nonincrease check and vanishing coefficient. This is a new controller mechanism,not a diagnosed repair or penalty sweep. Preserve prior cubic initialization/scaling and bounded work;full gates against463.
+
+**673 outcome/reassessment:** Accepted-step momentum loses cost with469converged,validenergy,noerrors;{'slower': 5, 'same': 462, 'faster': 2}. No localizedfailure. Furtherwork requires model/acceptance diagnosis;no momentum,penalty,ratio,FD,work orcritic sweep.
+- Cycle673;candidate `40deab141e1ccbf4695e5ee54c7edf251c02033b`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/cubic-surrogate-search/40deab141e1ccbf4695e5ee54c7edf251c02033b/algo.py),[training](evaluation_results/cycle-673-train.json),[narrative](full_log.md#cycle-673-momentum-after-a-certified-cubic-surrogate-step).
 
 ## electronic-torsion-stiffness: Delocalized bond order in the torsion prior
 Status: deferred
@@ -5449,6 +5515,11 @@ Status: deferred
 **542 reassessment:** Full C/H valence Hamiltonian with independently sourced onsite/hopping parameters and locally balanced r^-4 repulsion supplies527's prerequisite. All469converge with validenergy/zeroerrors, but aggregate cost worsens; {'same': 442, 'faster': 18, 'slower': 9}. No orbital-state diagnostics. Await independent charge/repulsion/radial-response calibration; no parameter/scope sweeps.
 - Cycle542; candidate `bc7dd4857c24525f00ec5e7fecd23c35faf748ce`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/longitudinal-orbital-hopping/bc7dd4857c24525f00ec5e7fecd23c35faf748ce/algo.py), [training](evaluation_results/cycle-542-train.json), [narrative](full_log.md#cycle-542-full-valence-bond-response-prior).
 
+**708 revisit:** Horsfield1996 provides independently calibrated local-charge neutrality, radial hopping and embedding repulsion, supplying542's recorded model prerequisite. Replace its Harrison/equilibrium-balanced model as one complete radial-response formulation; retain strictSPD, marginal normalization and disjointpi fallback. No claim that missing charge caused542's loss.
+
+**708 reassessment:** SourceLCN/GSP/embeddingreplacement supplies542's physicalmodel prerequisite butlosescost,all469converged,validenergy,noerrors. No retained internalmodelstates diagnosewhy. Furtherrevisit requires independent angular-response orobservedcurvature-error evidence;no sourceparameter,charge,scope orsolver sweep.
+- Cycle708;candidate `ac272361f5648c7b8e535b8f4256ac163cb5ed15`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;discard. [Implementation](ideas/longitudinal-orbital-hopping/ac272361f5648c7b8e535b8f4256ac163cb5ed15/algo.py),[training](evaluation_results/cycle-708-train.json),[narrative](full_log.md#cycle-708-locally-neutral-full-valence-radial-curvature).
+
 ## directional-cubic-surrogate: Directional cubic gradient microsearch
 Status: deferred
 
@@ -5549,6 +5620,11 @@ Status: deferred
 **Attempts:**
 - Cycle539; candidate `dc951725d0fc75e83e7937aa9ce68826802872d9`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/anisotropic-surrogate-descent/dc951725d0fc75e83e7937aa9ce68826802872d9/algo.py), [training](evaluation_results/cycle-539-train.json), [narrative](full_log.md#cycle-539-cosh-reference-anisotropic-surrogate-descent).
 
+**634 structural revisit:** Independent second-order source2605.12666 derives Newton on the transformed gradient with adaptive gradient fallback and mixture globalization. This changes the direction equation and globalization,not539 reference-scale or rate tuning. Compare to463; all gates unchanged.
+
+**634 outcome:** All469 converge,valid energy,zero errors;{'faster': 10, 'slower': 15, 'same': 444},cost increases. No retained transformed-Newton or fallback state localizes a repair. Await independent direction/globalization evidence; no reference-scale,basis,blend,rate,derivative or budget sweep.
+- Cycle634; candidate `b1057458eb5272c8cbc4ae7b57e189cdf7c793ac`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/anisotropic-surrogate-descent/b1057458eb5272c8cbc4ae7b57e189cdf7c793ac/algo.py), [training](evaluation_results/cycle-634-train.json), [narrative](full_log.md#cycle-634-nonlinearly-preconditioned-newton-surrogate-search).
+
 ## greedy-coordinate-surrogate: Greedy local Newton coordinate updates in the GP
 Status: deferred
 
@@ -5626,6 +5702,11 @@ Status: deferred
 **Attempts:**
 - Cycle548; candidate `8afbd18cc2499b8b0aa70257769ec1a9920d2f6e`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/quartic-cubic-surrogate/8afbd18cc2499b8b0aa70257769ec1a9920d2f6e/algo.py), [training](evaluation_results/cycle-548-train.json), [validation](evaluation_results/cycle-548-valid.json), [narrative](full_log.md#cycle-548-quartic-regularized-cubic-surrogate-models).
 
+**635 structural revisit:** Source2609.01001 motivates global convexification. Replace nonconvex adaptive polynomial models with a positive quadratic and a derived sufficient quartic penalty giving a globally positive Hessian. This is independent theory,not evidence that548 failed from its local subsolver. Actual-GP Armijo globalizes the uniquely minimized model.
+
+**635 outcome:** Explicit globally convex models pass training but lose validation cost;all934 converge,valid energy,zero errors. Train15faster/10slower/444same;validation{'same': 435, 'faster': 12, 'slower': 18}. Empty diagnostics do not establish whether conservative convexification or derivative/subsolver accuracy causes loss. Await independently retained model-state evidence; no penalty,floor,derivative,solver or budget sweep.
+- Cycle635; candidate `db06bd6e54cb0cb838e5e060173a373d3d3aea10`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/quartic-cubic-surrogate/db06bd6e54cb0cb838e5e060173a373d3d3aea10/algo.py), [training](evaluation_results/cycle-635-train.json), [validation](evaluation_results/cycle-635-valid.json), [narrative](full_log.md#cycle-635-globally-convex-cubic-surrogate-models).
+
 ## space-dilation-surrogate: Gradient-difference metric contraction
 Status: deferred
 
@@ -5661,6 +5742,11 @@ Status: deferred
 
 **Cycle578 reassessment:** Publishedpreconditioned-norm framework suppliesevolvingcurvature link. BFGScurvature plusquadratic-optimalspectralray/paidArmijo yields455converged14limits,validenergy0errors,but466slower/2faster/1same. Passive trace shows continuedrelaxationandtrialwaste withoutcurvature/rank/acceptance diagnosis. Requiresindependently supported control ofmatrixmode response orsuchdiagnosis; no rank,cap,floor,raylength,Armijo/blendsweep.
 - Cycle578; candidate `3bdf0a55eb7e1329bd3b029a96e0d0ffc1705d98`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/physical-matrix-polar/3bdf0a55eb7e1329bd3b029a96e0d0ffc1705d98/algo.py), [training](evaluation_results/cycle-578-train.json), [trace](diagnostics/c978202f51a942ba8c351cf3a7cd439f/be07ece8b81c59fb3b5525d5f2ab16b00e801c22dd080da2018b7aa5508e7a32.json), [narrative](full_log.md#cycle-578-curvature-scaled-spectral-physical-descent).
+
+**670 source-backed revisit:** Leon2602.08232v1 supplies a single smoothed momentum/second-moment matrix action,distinct from554/578 current-gradient polar normalization. Fixed chemical chart avoids moment-frame drift;BFGS calibrates only the scalar ray. This is an independent complete method,not a diagnosed repair or EMA/line/rank sweep. Completed;see outcome below.
+
+**670 outcome:** Energyinvalid,378converge91limitszeroerrors,all469slower. Selected truncatedtrace shows continuedrelaxation withforces/displacements abovecriteria,withoutmatrixdirection/controllerstate. Await independent mode-response evidence;no EMA,rank,cap,line,ray,floor orbudget sweep.
+- Cycle670;candidate `a3e99c6b5a6cf0d271ec6b5e8408ae00f1c26acb`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision invalid. [Implementation](ideas/physical-matrix-polar/a3e99c6b5a6cf0d271ec6b5e8408ae00f1c26acb/algo.py),[training](evaluation_results/cycle-670-train.json),[trace](diagnostics/453be9e7b928423a8b5c98ebf765e8ec/3246676ead64dce60ef6d31dadfe30b92bd29376d96ebe5bc87203f9f47f55ac.json),[narrative](full_log.md#cycle-670-smoothed-matrix-leader-physical-descent).
 
 ## nitrogen-umbrella-double-well: Reflection-symmetric nitrogen height mean
 Status: deferred
@@ -5704,6 +5790,11 @@ Status: deferred
 **Attempts:**
 - Cycle561; candidate `25115560c1490760211f5233548433950324e1bb`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/nonmonotone-spectral-surrogate/25115560c1490760211f5233548433950324e1bb/algo.py), [train](evaluation_results/cycle-561-train.json), [narrative](full_log.md#cycle-561-nonmonotone-spectral-gradient-surrogate-search).
 
+**655 independent controller revisit:** AdProxBB2026 Algorithm2 supplies adaptive spectral steps and a Lyapunov nonmonotone reference/L controller,distinct from561 fixed BB1/GLL. Test its smooth GP specialization with source defaults and a declared epoch-index interpretation;not a diagnosed repair or line-parameter sweep.
+
+- Cycle655; candidate `71198518284aa3b6dde921fe0752c2ae15b4a34c`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/nonmonotone-spectral-surrogate/71198518284aa3b6dde921fe0752c2ae15b4a34c/algo.py),[train](evaluation_results/cycle-655-train.json),[narrative](full_log.md#cycle-655-lyapunov-controlled-spectral-surrogate-search).
+**655 outcome/next:** All469 converge,valid energy,zero errors but cost loss. No inner-controller diagnostic;defer without initial-step,bounds,delta,reference,epsilon,line or budget sweeps. A justified new model geometry or diagnosed spectral failure is needed.
+
 ## powell-direction-surrogate: Conjugate-direction scalar energy search
 Status: deferred
 
@@ -5736,6 +5827,11 @@ Status: deferred
 
 **Attempts:**
 - Cycle564; candidate `a1bcde4f3774bc5c69e4a311a639f65cc1500eb9`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/gradient-certificate-surrogate/a1bcde4f3774bc5c69e4a311a639f65cc1500eb9/algo.py), [training](evaluation_results/cycle-564-train.json), [validation](evaluation_results/cycle-564-valid.json), [narrative](full_log.md#cycle-564-trial-gradient-certified-surrogate-newton-search).
+
+**671 source-backed revisit:** LeAP-SSN2508.16468 supplies the required nonconvex paired energy/gradient certificate and a direct lambda search. Preserve564 derivative/work settings;no claim that its earlier validation loss was diagnosed. Completed;see outcomebelow.
+
+**671 outcome:** All469converge,energyvalidzeroerrors,butcostloss;3fast3slow463same. Emptydiagnostics;require retained model-state evidence before another regularization/certificate variant. No parameter/work/critic sweep.
+- Cycle671;candidate `0adb950f302e04d56f7b98b10fa1040ae91ca011`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/gradient-certificate-surrogate/0adb950f302e04d56f7b98b10fa1040ae91ca011/algo.py),[training](evaluation_results/cycle-671-train.json),[narrative](full_log.md#cycle-671-paired-nonconvex-surrogate-newton-certificates).
 
 ## cubic-metric-surrogate: BFGS-metric cubic damping with energy certification
 Status: deferred
@@ -5803,6 +5899,11 @@ Status: deferred
 **Attempts:**
 - Cycle570; candidate `65cded16eebd0a4671d42ee6065471ba965f2bf6`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/nonlinear-proximal-surrogate/65cded16eebd0a4671d42ee6065471ba965f2bf6/algo.py), [training](evaluation_results/cycle-570-train.json), [narrative](full_log.md#cycle-570-nonlinear-proximal-surrogate-search).
 
+**Revisit666:** CR-DRS2607.22895 supplies the previously missing retained subproblem-state mechanism: transport exact residuals and use center-independent pairs dg+s. Specialize to proximal point g=0 with one accepted predictor per changing center and retained inverse BFGS. This structurally changes570 rather than adjusting its regularization or solve tolerances.
+
+**666 reassessment:** Reusing proximal curvature loses cost despiteall469converging;{'slower': 13, 'faster': 15, 'same': 441}. No inner-state diagnosis supports gamma,predictor,budget,Armijo orcritic tuning. Await evidence identifying proximal solve/retention error.
+- Cycle666; candidate `6607f5747ef7622851a4b87d46c70694db13b858`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/nonlinear-proximal-surrogate/6607f5747ef7622851a4b87d46c70694db13b858/algo.py),[training](evaluation_results/cycle-666-train.json),[narrative](full_log.md#cycle-666-curvature-recycled-proximal-surrogate-search).
+
 ## covariance-population-surrogate: Rank-selected full covariance GP search
 Status: deferred
 
@@ -5846,6 +5947,11 @@ Status: deferred
 
 **Attempts:**
 - Cycle574; candidate `54de5ea481cf315def027fadf386e97d955df8bb`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/coordination-dispersion-mean/54de5ea481cf315def027fadf386e97d955df8bb/algo.py), [training](evaluation_results/cycle-574-train.json), [narrative](full_log.md#cycle-574-coordination-dependent-dispersion-surrogate-remainder).
+
+**594 prerequisite:** Published D4 reference polarizabilities and EEQ charge derivatives now supply the independently calibrated response missing from574. Test the pair component with full analytic charge/CN response and existing local-jet subtraction; no tuned damping/amplitude or molecular scope.
+
+**594 outcome/reassessment:** Charge-scaled D4 reference polarizabilities and full EEQ derivatives meet the stated prerequisite but still lose cost to463 with all cases converged. {'same': 392, 'faster': 34, 'slower': 43}. No passive inner-state evidence supports a parameter or scope repair. Revisit only with direct mean-error/charge-response evidence or a separately calibrated complete interaction component; no automatic ATM combination after two failed pair means.
+- Cycle594; candidate `e4c36dc7440c8ff39f0322f1029fd75b5d3459ca`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/coordination-dispersion-mean/e4c36dc7440c8ff39f0322f1029fd75b5d3459ca/algo.py), [training](evaluation_results/cycle-594-train.json), [narrative](full_log.md#cycle-594-charge-dependent-dispersion-surrogate-remainder).
 
 ## doubly-optimistic-surrogate: Midpoint displacement learning with extrapolated hints
 Status: deferred
@@ -5915,3 +6021,1444 @@ Status: deferred
 
 **Attempts:**
 - Cycle584; candidate `65766722f6dc6ce90d41d39c5451148d67c79e88`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decisiondiscard. [Implementation](ideas/implicit-radau-surrogate/65766722f6dc6ce90d41d39c5451148d67c79e88/algo.py), [training](evaluation_results/cycle-584-train.json), [narrative](full_log.md#cycle-584-implicit-radau-surrogate-gradient-flow).
+
+## scaled-rank-one-secants: Positive scaled physical Hessian updates
+Status: deferred
+
+**Hypothesis:** Scaled rank-one secants maintain positive curvature and reduce distortion from indefinite-model repair after calibration.
+**Outcome and uncertainty:** Cycle586 fails energy and cost: 91 limits, 376 slower, seven faster. Stored empagliflozin trace shows small-step stagnation with elevated force; no internal Hessian/scaling states identify the cause. Ninety other bundles unavailable at receipt time.
+**Reason to revisit:** A justified update preserving unobserved chemical curvature, or direct Hessian and trust-state diagnostics, could separate rescaling damage from transport inconsistency.
+**Next experiment:** Await that evidence; no gamma, blending, activation or floor sweep from this broad loss.
+
+**Attempts:**
+- Cycle586; candidate `662f85875c0af3912e3407069350bfccca6b2a63`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/scaled-rank-one-secants/662f85875c0af3912e3407069350bfccca6b2a63/algo.py), [training](evaluation_results/cycle-586-train.json), [narrative](full_log.md#cycle-586-positive-scaled-rank-one-physical-secants).
+
+## backward-step-surrogate: GP Newton path controlled by backward defect
+Status: deferred
+
+**Hypothesis:** Limiting Newton-field variation can reach useful surrogate stationary points more efficiently than short BFGS search.
+**Outcome and uncertainty:**587all469converge with valid energy and no errors, but cost increases;{'faster': 15, 'slower': 18, 'same': 436}. No inner-field diagnostics identify budget exhaustion, singularities or path errors.
+**Reason to revisit:** Direct evidence of field discontinuity or an independently justified continuous inverse field could resolve path-control limitations.
+**Next experiment:** Await that prerequisite; no defect-bound, finite-difference, tolerance, budget or shift sweeps.
+
+**Attempts:**
+- Cycle587; candidate `2899183f05954d54c01e04148b0d266464741bf4`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/backward-step-surrogate/2899183f05954d54c01e04148b0d266464741bf4/algo.py), [training](evaluation_results/cycle-587-train.json), [narrative](full_log.md#cycle-587-backward-step-controlled-surrogate-newton-search).
+
+## squared-fixed-point-surrogate: Squared extrapolation of monotone GP maps
+Status: deferred
+
+**Hypothesis:** Two gradient-map applications provide spectral extrapolation that suppresses slowly relaxing surrogate modes.
+**Outcome and uncertainty:**588all469converge with valid energy and no errors, but cost increases;{'slower': 5, 'same': 455, 'faster': 9}. No inner-map traces establish whether extrapolation or GP fidelity limits progress.
+**Reason to revisit:** Independently observed contractive slow modes or direct map diagnostics could justify a more suitable monotone map.
+**Next experiment:** Await that evidence; no extrapolation, line-search, budget or map-length sweeps.
+
+**Attempts:**
+- Cycle588; candidate `d9e6f5350af5caecad28a70de80c2bfcded1cb2b`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/squared-fixed-point-surrogate/d9e6f5350af5caecad28a70de80c2bfcded1cb2b/algo.py), [training](evaluation_results/cycle-588-train.json), [narrative](full_log.md#cycle-588-squared-fixed-point-surrogate-acceleration).
+
+## geodesic-lm-surrogate: Geodesic acceleration of the GP gradient residual
+Status: deferred
+
+**Hypothesis:** Damped least-squares velocity plus directional acceleration can follow the curved gradient map with better finite proposals.
+**Outcome and uncertainty:**591 converges every training case but fails aggregate energy and loses cost. Empty passive failure details do not separate residual saddles, finite differences or model mismatch.
+**Reason to revisit:** A directly observed curved residual path and an energy-compatible globalization could justify a localized repair; cheap residual derivatives alone are insufficient.
+**Next experiment:** Await that evidence, with no damping, acceleration, probe or budget sweeps.
+
+**Attempts:**
+- Cycle591; candidate `3cef9fbd76c02192415503f360499b73019d6f71`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/geodesic-lm-surrogate/3cef9fbd76c02192415503f360499b73019d6f71/algo.py). [Training](evaluation_results/cycle-591-train.json). [Narrative](full_log.md#cycle-591-geodesically-accelerated-surrogate-least-squares).
+
+## greedy-surrogate-curvature: Independent curvature sharpening of BFGS
+Status: deferred
+
+**Hypothesis:** A second BFGS update along the most underrepresented coordinate of the model Hessian can improve short GP searches.
+**Outcome and uncertainty:**592 converges all cases with valid energy but loses cost; no passive inner-state evidence separates update direction, finite differences or model mismatch.
+**Reason to revisit:** Direct evidence of an unresolved Hessian direction with a supported curvature-ordering control could justify another attempt; cheap Hessian availability alone does not.
+**Next experiment:** Await that evidence; no direction, strength, spacing, spectral, Wolfe or budget sweeps.
+
+**Attempts:**
+- Cycle592; candidate `d54b359059f7346f91d81d52f672d53e4bbbd3f7`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/greedy-surrogate-curvature/d54b359059f7346f91d81d52f672d53e4bbbd3f7/algo.py). [Training](evaluation_results/cycle-592-train.json). [Narrative](full_log.md#cycle-592-greedy-curvature-sharpening-of-surrogate-bfgs).
+
+## physical-adaptive-inertia: Rank-one acceleration damping with adaptive paid steps
+Status: deferred
+
+**Hypothesis:** Suppress the latest gradient-change component in fixed chemical coordinates to damp stiffness without dense history.
+**Outcome and uncertainty:**593 fails energy and raises cost broadly;178 limits,zero errors,468 slower/1 faster. One retained passive trace shows excursions among small moves but lacks accepted state, beta and projection vectors.
+**Reason to revisit:** Direct accepted/trial-state evidence or an independently justified moving molecular metric could address trial growth and coordinate deterioration together.
+**Next experiment:** Await that prerequisite; no inertia, growth, cap, floor, Armijo or ratio sweeps.
+
+**Attempts:**
+- Cycle593; candidate `3eb3952c0342402b23a39536f467ce8a8156cb48`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/physical-adaptive-inertia/3eb3952c0342402b23a39536f467ce8a8156cb48/algo.py). [Training](evaluation_results/cycle-593-train.json). [Narrative](full_log.md#cycle-593-physically-preconditioned-adaptive-inertial-descent).
+
+## dry-friction-surrogate: Proximal dry friction with an inertial merit window
+Status: deferred
+
+**Hypothesis:** Shrink shifted velocity with a norm prox and control model energy plus momentum to improve short surrogate search.
+**Outcome and uncertainty:**595 converges all cases and passes energy but loses cost; {'slower': 26, 'same': 413, 'faster': 30}. No retained model-state diagnostics distinguish extinction, budgets or mismatch.
+**Reason to revisit:** Direct evidence of oscillatory surrogate momentum with a supported merit/friction scale could resolve the search limitation.
+**Next experiment:** Await that evidence; no friction, inertia, window, contraction, scale or budget sweeps.
+
+**Attempts:**
+- Cycle595; candidate `35081fc5595f4b92ea610afe2834e9547cff0574`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/dry-friction-surrogate/35081fc5595f4b92ea610afe2834e9547cff0574/algo.py). [Training](evaluation_results/cycle-595-train.json). [Narrative](full_log.md#cycle-595-dry-friction-surrogate-search-with-inertial-merit-control).
+
+## negative-observation-reflection: Minimum-change correction of negative curvature observations
+Status: deferred
+
+**Hypothesis:** Reflect a negative directional observation in the inverse-Hessian metric before BFGS to retain useful magnitude while preserving positivity.
+**Outcome and uncertainty:**596 passes energy and converges all cases but raises cost; {'faster': 7, 'same': 441, 'slower': 21}. No retained update-state diagnostics separate loss of saddle information from secant mismatch.
+**Reason to revisit:** Direct evidence that negative observations are unreliable, with an independently justified noise or transport model, could support a localized correction.
+**Next experiment:** Await that evidence; no sign, activation, threshold, blend or spectral-floor sweeps.
+
+**Attempts:**
+- Cycle596; candidate `9b53ce5c2cc425fc13871c2965c330304631b36f`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/negative-observation-reflection/9b53ce5c2cc425fc13871c2965c330304631b36f/algo.py). [Training](evaluation_results/cycle-596-train.json). [Narrative](full_log.md#cycle-596-minimum-change-reflection-of-negative-curvature-observations).
+
+## twin-path-surrogate: Geometric coupling of two surrogate descent paths
+Status: deferred
+
+**Hypothesis:** Mutually chosen ray lengths can traverse model valleys before BFGS finishing.
+**Outcome and uncertainty:**597 passes energy with all cases converged but increases cost; {'faster': 5, 'same': 457, 'slower': 7}. No retained auxiliary-path state separates initialization, collinearity or model mismatch.
+**Reason to revisit:** Direct evidence of distinct slowly converging valley paths and a supported auxiliary initialization could justify coupling them.
+**Next experiment:** Await that prerequisite; no seed, threshold, damping, restart or budget sweeps.
+
+**Attempts:**
+- Cycle597; candidate `e9a40fa8a84398d54468ee34d26628fde78875ef`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/twin-path-surrogate/e9a40fa8a84398d54468ee34d26628fde78875ef/algo.py). [Training](evaluation_results/cycle-597-train.json). [Narrative](full_log.md#cycle-597-coupled-twin-path-surrogate-search).
+
+## cyclic-ritz-surrogate: Cyclic dominant-curvature gradient lengths
+Status: deferred
+
+**Hypothesis:** Alternate two Cauchy lengths with a repeated inverse dominant Ritz curvature to suppress stiff model modes.
+**Outcome and uncertainty:**598 passes energy with all cases converged but loses cost; {'faster': 11, 'same': 448, 'slower': 10}. No passive model-state evidence distinguishes finite-difference curvature, held lengths and model mismatch.
+**Reason to revisit:** A directly observed persistent stiff mode with accurate derivative evidence could support a better justified cycle.
+**Next experiment:** Await that prerequisite; no period, spectral, derivative, line-search or budget sweeps.
+
+**Attempts:**
+- Cycle598; candidate `303872b8eb907f2e560e3a4cbbf7f37c3af8cdbc`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/cyclic-ritz-surrogate/303872b8eb907f2e560e3a4cbbf7f37c3af8cdbc/algo.py). [Training](evaluation_results/cycle-598-train.json). [Narrative](full_log.md#cycle-598-cyclic-ritz-gradient-surrogate-search).
+
+## physical-prodigy: Distance-adaptive momentum in fixed chemical coordinates
+Status: deferred
+
+**Hypothesis:** Accumulated gradient–displacement estimates can learn a useful physical step scale without paid line searches.
+**Outcome and uncertainty:**599 fails energy;111 converge,358 hit limits,zero errors and all469 slower. One passive trace shows tiny initial moves and large late oscillations, without optimizer accumulator state.
+**Reason to revisit:** An independently supported moving metric or distance-estimator stabilization with direct state evidence could address this failure; the default fixed-metric capped variant is not competitive.
+**Next experiment:** Await that prerequisite; no distance, coefficient, momentum, decay, cap, floor or annealing sweeps.
+
+**Attempts:**
+- Cycle599; candidate `e2c1fd7fed7a5aabdc54e481019abc7cca6fdff0`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/physical-prodigy/e2c1fd7fed7a5aabdc54e481019abc7cca6fdff0/algo.py). [Training](evaluation_results/cycle-599-train.json). [Narrative](full_log.md#cycle-599-physically-preconditioned-prodigy-descent).
+
+## hessian-norm-surrogate: Cubic damping using current model curvature
+Status: deferred
+
+**Hypothesis:** A local Hessian norm can set Newton damping while retaining the direction and improving short model search.
+**Outcome and uncertainty:**600 passes energy, converges all cases and has no errors but loses cost; {'faster': 4, 'same': 460, 'slower': 5}. Inner regularity, curvature and switch states are not retained.
+**Reason to revisit:** Direct evidence that Hessian-norm model error controls proposal quality could justify further development.
+**Next experiment:** Await that evidence; no damping, derivative, eigenfloor or budget sweeps.
+
+**Attempts:**
+- Cycle600; candidate `33776c90175dc6d5cec7e56f62a44800308435b4`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/hessian-norm-surrogate/33776c90175dc6d5cec7e56f62a44800308435b4/algo.py). [Training](evaluation_results/cycle-600-train.json). [Narrative](full_log.md#cycle-600-hessian-norm-cubic-damping-of-surrogate-newton-steps).
+
+## lm-cubic-surrogate: Quadratically regularized cubic local models
+Status: deferred
+
+**Hypothesis:** Certified local minima of a cubic Taylor model can improve proposals along curved valleys without quartic regularization.
+**Outcome and uncertainty:**601 passes training but loses validation cost, with all934 cases converged and no errors. No inner polynomial or regularity diagnostics localize the generalization loss.
+**Reason to revisit:** Direct derivative-error or local-solver evidence could support a principled improvement to cubic subproblem accuracy or robustness.
+**Next experiment:** Await that prerequisite; no sigma, derivative, curvature, acceptance, solver or budget sweeps.
+
+**Attempts:**
+- Cycle601; candidate `86c677a3a4d44d576b0f84756a759b29fe5d845b`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/lm-cubic-surrogate/86c677a3a4d44d576b0f84756a759b29fe5d845b/algo.py). [Training](evaluation_results/cycle-601-train.json). [Validation](evaluation_results/cycle-601-valid.json). [Narrative](full_log.md#cycle-601-quadratically-regularized-cubic-surrogate-models).
+
+## gradient-history-newton-surrogate: Gradient-history damping and negative curvature
+Status: deferred
+
+**Hypothesis:** Gradient contraction can reduce damping locally while explicit negative-curvature steps and a fallback keep short model searches effective.
+**Outcome and uncertainty:**602 converges all cases with valid energy and zero errors, but gain9.30e-6 misses the required1e-4. No inner regularity or fallback diagnostics establish the limiting mechanism.
+**Reason to revisit:** Independently observed gradient-growth or negative-curvature behavior could motivate a supported controller or solver change.
+**Next experiment:** Await that evidence; no coefficient, fallback, derivative, phase or budget sweeps.
+
+**Attempts:**
+- Cycle602; candidate `ff65db5415589652e6b1778089c396feb0ca34bb`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/gradient-history-newton-surrogate/ff65db5415589652e6b1778089c396feb0ca34bb/algo.py). [Training](evaluation_results/cycle-602-train.json). [Narrative](full_log.md#cycle-602-gradient-history-regularized-surrogate-newton-search).
+
+## spectral-three-term-surrogate: Gradient-orthogonal history correction
+Status: deferred
+
+**Hypothesis:** A least-squares spectral gradient scale and orthogonal secant correction can traverse model valleys with guaranteed directional descent.
+**Outcome and uncertainty:**603 passes energy and converges all cases without errors, but loses cost;{'slower': 5, 'same': 457, 'faster': 7}. No inner spectral or search state localizes the loss.
+**Reason to revisit:** Independent evidence of valley turning and reliable secant directions could justify a different coupling to the physical proposal.
+**Next experiment:** Await that prerequisite; no zeta, bounds, Wolfe or budget sweeps.
+
+**Attempts:**
+- Cycle603; candidate `ad4a501ef263e0a1f9d1034dc8e723782a67d1ca`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/spectral-three-term-surrogate/ad4a501ef263e0a1f9d1034dc8e723782a67d1ca/algo.py). [Training](evaluation_results/cycle-603-train.json). [Narrative](full_log.md#cycle-603-spectral-three-term-surrogate-descent).
+
+## quadratic-path-surrogate: Parabolic gradient-to-Newton search
+Status: deferred
+
+**Hypothesis:** A curved search path may follow model valleys better than a straight BFGS ray and improve physical proposals.
+**Outcome and uncertainty:**604 passes train cost/energy but loses validation cost; all934 converge without errors or retained failure details. Inner path behavior versus model prediction error remains unresolved.
+**Reason to revisit:** Evidence that accepted paths systematically miss reliable model minima, or an independently justified correction to the model-search interaction, could motivate another controlled test.
+**Next experiment:** Await that evidence; no path blends, Wolfe, inverse, or budget sweep.
+
+**Attempts:**
+- Cycle604; candidate `672673afb6889c01cce33ad4a14637ccad038bfe`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/quadratic-path-surrogate/672673afb6889c01cce33ad4a14637ccad038bfe/algo.py), [training](evaluation_results/cycle-604-train.json), [validation](evaluation_results/cycle-604-valid.json), [narrative](full_log.md#cycle-604-quadratic-path-surrogate-bfgs).
+
+## momentum-trust-surrogate: Checked momentum and shifted dogleg
+Status: deferred
+
+**Hypothesis:** Separate energy checking of momentum and agreement checking of a shifted quadratic can improve short model searches.
+**Outcome and uncertainty:**605 passes energy and converges all469 with zero errors but loses train cost. Empty failure_details leaves momentum, radius and model-error interactions unresolved.
+**Reason to revisit:** Retained evidence of a localized shifted-model failure or a justified curvature mechanism could motivate revision.
+**Next experiment:** Await such evidence; no momentum, radius, damping or budget sweep.
+
+**Attempts:**
+- Cycle605; candidate `1bce93a4dd248b9cfc892d663a54fc83dc67a137`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/momentum-trust-surrogate/1bce93a4dd248b9cfc892d663a54fc83dc67a137/algo.py), [training](evaluation_results/cycle-605-train.json), [narrative](full_log.md#cycle-605-momentum-trust-region-surrogate-search).
+
+## minimal-gradient-surrogate: Reduced residual model with energy acceptance
+Status: deferred
+
+**Hypothesis:** A two-dimensional least-squares gradient model plus energy checking can produce better surrogate proposals.
+**Outcome and uncertainty:**606 all469converged,zeroerrors,validenergy but loses train cost. Empty passive failure details leave derivative, subspace and prediction interactions unresolved.
+**Reason to revisit:** Retained evidence of unreliable model actions or a supported improved physical subspace could justify a revision.
+**Next experiment:** Await evidence; no eta, rank, finite-difference, fallback or budget sweep.
+
+**Attempts:**
+- Cycle606; candidate `0546ae967adaf1f447d1abee05cc040b1ef43d14`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/minimal-gradient-surrogate/0546ae967adaf1f447d1abee05cc040b1ef43d14/algo.py), [training](evaluation_results/cycle-606-train.json), [narrative](full_log.md#cycle-606-minimal-gradient-subspace-surrogate-search).
+
+## physical-bdf2-flow: Approximate two-step implicit molecular flow
+Status: deferred
+
+**Hypothesis:** A BDF2 proximal step with learned curvature could damp stiff errors and advance soft modes using one paid observation per step.
+**Outcome and uncertainty:**607 fails energy with74 limits and broad cost loss. Water-dimer passive scalars show slow continued decrease; no exception or localized implementation defect is diagnosed. Metric, proximal damping and approximate-solve effects remain confounded.
+**Reason to revisit:** Independent evidence supporting accurate physical proximal solves or a curvature-based time selection could address that confounding.
+**Next experiment:** Await that prerequisite; no timestep, history, cap, floor or damping sweep.
+
+**Attempts:**
+- Cycle607; candidate `92fa04957d2fca36f4d7e07d5a3102fb2da0d842`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/physical-bdf2-flow/92fa04957d2fca36f4d7e07d5a3102fb2da0d842/algo.py), [training](evaluation_results/cycle-607-train.json), [narrative](full_log.md#cycle-607-physical-two-step-proximal-flow).
+
+## inexact-cubic-surrogate: Separate cubic and curvature-error penalties
+Status: deferred
+
+**Hypothesis:** An adaptive quadratic error penalty can stabilize a cubic BFGS model and improve GP proposals.
+**Outcome and uncertainty:**608 converges all469 with valid energy and zero errors, but loses paid cost;{'slower': 4, 'same': 461, 'faster': 4}. No passive inner solver state diagnoses the cause.
+**Reason to revisit:** Evidence of localized approximation error, with an independently justified estimator, could resolve whether the penalty is excessive or insufficient.
+**Next experiment:** Await that prerequisite; no penalty, BFGS, controller or budget sweep.
+
+**Attempts:**
+- Cycle608; candidate `8c0be8209b15e8bcce618ed7025b6e46f2358443`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/inexact-cubic-surrogate/8c0be8209b15e8bcce618ed7025b6e46f2358443/algo.py), [training](evaluation_results/cycle-608-train.json), [narrative](full_log.md#cycle-608-error-regularized-cubic-surrogate-bfgs).
+
+## collective-dispersion-mean: Beyond-pair charge-dependent oscillator response
+Status: deferred
+
+**Hypothesis:** All-order collective dipole fluctuations, matched to D4 atomic response and with their pair/local-quadratic terms removed, could improve nonlinear GP predictions.
+**Outcome and uncertainty:**609 all469 converge,validenergy,zeroerrors but loses cost;{'same': 442, 'faster': 17, 'slower': 10}. Empty failure details do not reveal mean activation, compression error or finite-chart error.
+**Reason to revisit:** A supported frequency-resolved response or independently validated geometry mapping could resolve those approximation limits. Merely changing damping cannot distinguish them.
+**Next experiment:** Await that prerequisite or retained model-error evidence; no damping, amplitude, quadrature, size-scope or budget sweep.
+
+**Attempts:**
+- Cycle609; candidate `dac47f99dce68f378ca0fffe7254a85859230ec0`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/collective-dispersion-mean/dac47f99dce68f378ca0fffe7254a85859230ec0/algo.py), [training](evaluation_results/cycle-609-train.json), [narrative](full_log.md#cycle-609-collective-dispersion-oscillator-remainder).
+
+## directional-poll-surrogate: Deterministic dense direction search
+Status: deferred
+
+**Hypothesis:** Scrambled directional coverage and forward tracking can find lower surrogate basins missed by local BFGS.
+**Outcome and uncertainty:**610 all469 converge with valid energy and zero errors but loses cost;29 faster,26 slower,414 unchanged. No retained inner state localizes the loss.
+**Reason to revisit:** Evidence distinguishing model-basin search benefit from unreliable distant predictions could justify a geometry-aware direction construction.
+**Next experiment:** Await such evidence; no sequence, scale, forcing or budget sweep.
+
+**Attempts:**
+- Cycle610; candidate `8b2f8cf1dedf21009694348cd3977d986ba63a91`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/directional-poll-surrogate/8b2f8cf1dedf21009694348cd3977d986ba63a91/algo.py), [training](evaluation_results/cycle-610-train.json), [narrative](full_log.md#cycle-610-scrambled-directional-surrogate-polling).
+
+## accelerated-residual-surrogate: Spectral roots with cheap secant acceleration
+Status: deferred
+
+**Hypothesis:** Put spectral residual backtracking and sequential secants inside the GP to reduce the physical expense of374's root solver.
+**Outcome and uncertainty:**611 all469 converge,valid energy,zero errors but loses cost;{'faster': 15, 'slower': 19, 'same': 435}. Empty passive details do not distinguish stationary-root quality from GP realization error.
+**Reason to revisit:** Retained model-root/energy evidence or an independently supported physical root classifier could resolve that distinction.
+**Next experiment:** Await evidence; no spectral-bound, memory, eta, search or budget sweep.
+
+**Attempts:**
+- Cycle611; candidate `91b56f9ac231f57fd8fc8452f0ab2e6c0611b896`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/accelerated-residual-surrogate/91b56f9ac231f57fd8fc8452f0ab2e6c0611b896/algo.py), [training](evaluation_results/cycle-611-train.json), [narrative](full_log.md#cycle-611-accelerated-spectral-residual-surrogate-search).
+
+## velocity-control-surrogate: Smoothness-adaptive inertial model search
+Status: deferred
+
+**Hypothesis:** Three-candidate velocity control can preserve useful inertial motion while estimating nonlinear curvature from first-order model observations.
+**Outcome and uncertainty:**612 all469 converge,valid energy,zero errors but loses cost;{'slower': 95, 'faster': 67, 'same': 307}. No passive inner state localizes the short-horizon loss.
+**Reason to revisit:** Independently supported finite-horizon control or retained model-error evidence could separate controller behavior from realization error.
+**Next experiment:** Await evidence; no damping, output, smoothness, retry or budget sweep.
+
+**Attempts:**
+- Cycle612; candidate `2f6b1ee753d5e5283e27e01cc569dfedaad83e90`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/velocity-control-surrogate/2f6b1ee753d5e5283e27e01cc569dfedaad83e90/algo.py), [training](evaluation_results/cycle-612-train.json), [narrative](full_log.md#cycle-612-adaptive-velocity-control-surrogate-dynamics).
+
+## physical-directional-cubic: Signed SR1 with modewise cubic penalties
+Status: deferred
+
+**Hypothesis:** Direct Cartesian SR1 learns from every paid trial while directional cubic regularization handles negative curvature without a shared secular shift.
+**Outcome and uncertainty:**613 fails energy and cost;436 converge,33 limits,zero errors,466 slower. A passive water-dimer trace shows repeated late uphill trials and a large final force; it contains no internal curvature/penalty states.
+**Reason to revisit:** Independently supported curvature reliability or axis-invariant negative-mode control could address the observed late excursions; fixed chemical whitening alone is insufficient here.
+**Next experiment:** Await such evidence; no penalty, displacement-cap, SR1 threshold or memory sweep. A new mechanism must reduce excursions and pass unchanged aggregate gates.
+
+**Attempts:**
+- Cycle613; candidate `b204c388f4f2ae3917ad5418f2f77669a5a5e315`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/physical-directional-cubic/b204c388f4f2ae3917ad5418f2f77669a5a5e315/algo.py), [training](evaluation_results/cycle-613-train.json), [narrative](full_log.md#cycle-613-physical-sr1-with-directional-cubic-regularization).
+
+## online-proximal-surrogate: Rejected-chord learning for a proximal certificate
+Status: deferred
+
+**Hypothesis:** Learn symmetric PSD curvature from proximal residual failures, then use a cheap extragradient correction to improve model proposals.
+**Outcome and uncertainty:**614 all469 converge with valid energy and zero errors, but loses cost;{'slower': 9, 'faster': 10, 'same': 450}. No retained inner states identify whether the learned matrix or correction is limiting.
+**Reason to revisit:** Independent secant-loss/certificate evidence could justify a different matrix feasible set or controller; a near tie alone is insufficient.
+**Next experiment:** Await such evidence; no learning-rate, certificate, correction, output or query-budget sweep.
+
+**Attempts:**
+- Cycle614; candidate `4cc8706ab99ea8db279811d04b195b0b3766869d`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/online-proximal-surrogate/4cc8706ab99ea8db279811d04b195b0b3766869d/algo.py), [training](evaluation_results/cycle-614-train.json), [narrative](full_log.md#cycle-614-online-secant-loss-proximal-surrogate-search).
+
+## stabilized-flow-surrogate: Cheap Chebyshev stages with refreshed curvature
+Status: deferred
+
+**Hypothesis:** Refresh local curvature and accept entire polynomial macrosteps inside the GP to exploit stiffness without paid intermediate oscillations.
+**Outcome and uncertainty:**615 all469 converge,valid energy,zero errors but loses cost;{'slower': 11, 'faster': 10, 'same': 448}. No passive model states localize a stage or spectral-estimation defect.
+**Reason to revisit:** Independent evidence of stiff-model search limitations and finite-horizon filtering could justify a different integration design.
+**Next experiment:** Await such evidence; no damping, stage count, Hessian-spacing or query-budget sweep.
+
+**Attempts:**
+- Cycle615; candidate `5ccee07ad6c7c2ce58cdc661fd66fc547400fdb4`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/stabilized-flow-surrogate/5ccee07ad6c7c2ce58cdc661fd66fc547400fdb4/algo.py), [training](evaluation_results/cycle-615-train.json), [narrative](full_log.md#cycle-615-stabilized-polynomial-surrogate-gradient-flow).
+
+## exponential-curve-surrogate: Energy-certified search along quadratic relaxation
+Status: deferred
+
+**Hypothesis:** An exponential BFGS flow can relax stiff directions and advance soft ones, with nonlinear curved-line energy and derivative checks choosing time.
+**Outcome and uncertainty:**617 all469 converge,valid energy,zero errors but loses cost;{'slower': 13, 'faster': 12, 'same': 444}. No retained curve or line-search states diagnose the loss.
+**Reason to revisit:** Independent evidence of path mismatch or short-horizon curvature error could support a different curve model.
+**Next experiment:** Await such evidence; no time, Wolfe, bracket, curvature or query-budget sweep.
+
+**Attempts:**
+- Cycle617; candidate `a0552b41b054a55ad9b229f0d942e02661268239`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/exponential-curve-surrogate/a0552b41b054a55ad9b229f0d942e02661268239/algo.py), [training](evaluation_results/cycle-617-train.json), [narrative](full_log.md#cycle-617-exponential-curve-surrogate-line-search).
+
+## physical-adan-linesearch: Chemical scaling and gradient-difference moments
+Status: deferred
+
+**Hypothesis:** Adan gradient/difference moments can retain useful soft-mode motion when a chemical metric and paid energy line search control steps.
+**Outcome and uncertainty:**618 fails energy and cost;30 converge,439 limits,zero errors,all469 slower. Passive late trials repeatedly increase energy then halve displacement; no moment or accepted-state trace localizes the cause.
+**Reason to revisit:** Independently supported deterministic curvature-aware moment control could address repeated costly line-search excursions; stochastic convergence theory and fixed initial scaling are insufficient here.
+**Next experiment:** Await that evidence; no beta, epsilon, cap, line length or reset sweep.
+
+**Attempts:**
+- Cycle618; candidate `047504bf1fdb41b51dd6f8abf05b32047a76d1e4`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/physical-adan-linesearch/047504bf1fdb41b51dd6f8abf05b32047a76d1e4/algo.py), [training](evaluation_results/cycle-618-train.json), [narrative](full_log.md#cycle-618-chemically-scaled-adan-with-energy-line-search).
+
+## averaged-hessian-surrogate: Full signed curvature memory for model search
+Status: deferred
+
+**Hypothesis:** Averaging local model Hessians before spectral reflection could smooth spatial curvature changes and improve short surrogate proposals.
+**Outcome and uncertainty:**619 all469 converge,valid energy,zero errors but loses cost;{'faster': 6, 'same': 457, 'slower': 6}. No passive inner states diagnose the loss; deterministic curvature has no claimed subsampling variance.
+**Reason to revisit:** Independent evidence that spatial curvature fluctuations, rather than memory bias, limit model search could justify this history mechanism.
+**Next experiment:** Await such evidence; no weight, floor, spacing, search or budget sweep.
+
+**Attempts:**
+- Cycle619; candidate `72d9cef01e89e8595e5c3f286f34dd2a24c62d9f`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/averaged-hessian-surrogate/72d9cef01e89e8595e5c3f286f34dd2a24c62d9f/algo.py), [training](evaluation_results/cycle-619-train.json), [narrative](full_log.md#cycle-619-path-averaged-hessian-surrogate-search).
+
+## accelerated-graal-surrogate: Nesterov coupling and energy-defect step adaptation
+Status: deferred
+
+**Hypothesis:** Cheap gradient, extrapolated and averaged sequences could exploit adaptive first-order acceleration without paid intermediate steps or physical clipping.
+**Outcome and uncertainty:**620 all469 converge,valid energy,zero errors but loses cost;{'slower': 46, 'faster': 40, 'same': 383}. No inner state distinguishes finite-horizon conservatism from nonpositive curvature exits.
+**Reason to revisit:** Independently supported nonconvex curvature handling or short-horizon guarantees could make the recurrence useful; a convex asymptotic guarantee does not supply them.
+**Next experiment:** Await such evidence; no theta,gamma,nu,initial-step,output or query-budget sweep.
+
+**Attempts:**
+- Cycle620; candidate `3f8777719a64bb50eb06f00f9abd42d6c7297099`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/accelerated-graal-surrogate/3f8777719a64bb50eb06f00f9abd42d6c7297099/algo.py), [training](evaluation_results/cycle-620-train.json), [narrative](full_log.md#cycle-620-accelerated-graal-surrogate-coupling).
+
+## rational-function-surrogate: Signed augmented curvature in cheap model search
+Status: deferred
+
+**Hypothesis:** A rational model supplies a gradient-dependent Hessian shift, while model-energy backtracking globalizes its step.
+**Outcome and uncertainty:**621 all469 converge,valid energy,zero errors but loses cost;{'faster': 5, 'same': 459, 'slower': 5}. No inner-state evidence localizes a cause.
+**Reason to revisit:** Independent evidence of an unhandled rational hard case or useful spectral scale could support a distinct solver; physical RFO failures remain counterevidence.
+**Next experiment:** Await such evidence; no scale, eigenvector threshold, derivative or budget sweep.
+
+**Attempts:**
+- Cycle621; candidate `4fc03749e12fa3eac588c0b3c9c67b5150599014`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/rational-function-surrogate/4fc03749e12fa3eac588c0b3c9c67b5150599014/algo.py), [training](evaluation_results/cycle-621-train.json), [narrative](full_log.md#cycle-621-rational-function-surrogate-line-search).
+
+## shifted-replay-surrogate: Rebuild old secants for the current implicit-flow scale
+Status: deferred
+
+**Hypothesis:** A common evolving shift across retained secants can damp model search consistently and vanish near stationarity.
+**Outcome and uncertainty:**622 all469 converge,valid energy,zero errors but loses cost;{'slower': 6, 'same': 458, 'faster': 5}. No inner states diagnose regularization or memory loss.
+**Reason to revisit:** Independent finite-horizon evidence for a better implicit-stage construction could make common-shift replay useful.
+**Next experiment:** Await such evidence; no shift-scale, memory, line-search or budget sweep.
+
+**Attempts:**
+- Cycle622; candidate `a52f736c53a132d66fe6f198ec687ff6b353df93`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/shifted-replay-surrogate/a52f736c53a132d66fe6f198ec687ff6b353df93/algo.py), [training](evaluation_results/cycle-622-train.json), [narrative](full_log.md#cycle-622-implicit-flow-shifted-secant-replay-in-surrogate-search).
+
+## derivative-knowledge-gradient: Value a complete prospective energy/gradient observation
+Status: deferred
+
+**Hypothesis:** Conditional Gaussian innovations can rank safe search-path points by expected improvement in the next posterior decision, reducing paid calls.
+**Outcome and uncertainty:**623 all469 converge,valid energy,zero errors but loses cost;{'slower': 71, 'faster': 75, 'same': 323}. No passive selection states isolate a covariance or finite-set defect.
+**Reason to revisit:** Independent posterior calibration or a demonstrated link between posterior decision improvement and physical call cost could justify the utility.
+**Next experiment:** Await that evidence; no seed, sample count, support, noise or confidence sweep.
+
+**Attempts:**
+- Cycle623; candidate `49fafb32f38f0715cb55c67f40c26af0e6f91dfa`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/derivative-knowledge-gradient/49fafb32f38f0715cb55c67f40c26af0e6f91dfa/algo.py), [training](evaluation_results/cycle-623-train.json), [narrative](full_log.md#cycle-623-derivative-knowledge-gradient-on-the-surrogate-search-path).
+
+## residual-curvature-surrogate: Truncated MINRES residual directions and forward energy search
+Status: deferred
+
+**Hypothesis:** A non-positive-curvature residual can preserve downhill motion before an indefinite inverse destroys descent, improving model proposals.
+**Outcome and uncertainty:**624 all469 converge,valid energy,zero errors but loses cost;{'faster': 6, 'same': 458, 'slower': 5}. No passive inner state identifies Krylov, finite-difference or forward-search failure.
+**Reason to revisit:** Independent evidence of a useful residual escape missed by the current model search could justify this direction; the asymptotic exact-Hessian result alone cannot.
+**Next experiment:** Await such evidence; no regularization, residual tolerance, derivative spacing or budget sweep.
+
+**Attempts:**
+- Cycle624; candidate `cff20e9179e627157f048e0e65242682839f6434`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/residual-curvature-surrogate/cff20e9179e627157f048e0e65242682839f6434/algo.py), [training](evaluation_results/cycle-624-train.json), [narrative](full_log.md#cycle-624-truncated-residual-curvature-and-forward-surrogate-search).
+
+## torsion-modulated-bend-coupling: Phase-dependent coupling of bends across a bond
+Status: deferred
+
+**Hypothesis:** A fitted cosine-modulated bend/bend cross block can supply missing initial coupling before dense secants learn it.
+**Outcome and uncertainty:**625 all469 converge,valid energy,zero errors but loses cost;{'slower': 14, 'same': 445, 'faster': 10}. No fit-state evidence distinguishes redundancy from poor shared calibration.
+**Reason to revisit:** Independent quantitative evidence for environment-dependent angle coupling or a consistent finite-energy model could replace the shared frozen-curvature approximation.
+**Next experiment:** Await that model or evidence; no amplitude, phase, ridge or topology sweep.
+
+**Attempts:**
+- Cycle625; candidate `46432ec4db79edc65a47437e9fbf6b1c5e07932e`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/torsion-modulated-bend-coupling/46432ec4db79edc65a47437e9fbf6b1c5e07932e/algo.py), [training](evaluation_results/cycle-625-train.json), [narrative](full_log.md#cycle-625-torsion-modulated-adjacent-bend-calibration).
+
+## anisotropic-proximal-surrogate: Coupling-aware diagonal nonlinear resolvents
+Status: deferred
+
+**Hypothesis:** Anchor-fixed diagonal regularization with inner-work adaptation can stabilize nonlinear Newton searches while retaining useful finite curvature.
+**Outcome and uncertainty:**626 all469 converge,valid energy,zero errors but loses cost;{'faster': 6, 'same': 456, 'slower': 7}. No retained inner states isolate derivative, penalty or subproblem error.
+**Reason to revisit:** Independent evidence supporting a finite-work nonlinear resolvent or a diagnosed proximal subproblem defect could justify a revised construction.
+**Next experiment:** Await that evidence; no penalty, diagonal floor, residual tolerance or budget sweep.
+
+**Attempts:**
+- Cycle626; candidate `288c23f87dbd6cf189de47e174dc5fac334721af`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/anisotropic-proximal-surrogate/288c23f87dbd6cf189de47e174dc5fac334721af/algo.py), [training](evaluation_results/cycle-626-train.json), [narrative](full_log.md#cycle-626-anisotropic-nonlinear-proximal-surrogate-search).
+
+## smooth-convex-regression: Shape-constrained joint energy-gradient proposals
+Status: deferred
+
+**Hypothesis:** Joint smooth convex regression can suppress unsupported local extrema while representing finite nonlinear response.
+**Outcome and uncertainty:**627 all469 converge,valid energy,zero errors but loses cost;{'slower': 205, 'faster': 58, 'same': 206}. No model/fit states identify a localized defect.
+**Reason to revisit:** Independent evidence for a physical curvature band or an interpolation choice that accurately predicts finite response could support a revised model; the jet constraints and global simplex minimizer are reusable.
+**Next experiment:** Await such evidence; no curvature-band, fit-weight, budget, history or admission sweep.
+
+**Attempts:**
+- Cycle627; candidate `73963fe9b1d78ca3410153b33e1a7c855c8617f1`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/smooth-convex-regression/73963fe9b1d78ca3410153b33e1a7c855c8617f1/algo.py), [training](evaluation_results/cycle-627-train.json), [narrative](full_log.md#cycle-627-smooth-convex-regression-proposals-from-paid-observations).
+
+## physical-shampoo-linesearch: Two-sided accumulated gradient geometry
+Status: deferred
+
+**Hypothesis:** Separate atom/spatial Gram accumulators can learn useful physical descent scales.
+**Outcome and uncertainty:**628 invalid energy;50 converge,419 limits,all469 slower,zero errors. A bounded trace shows repeated paid halving and large residual forces, but no internal accumulator defect is identified.
+**Reason to revisit:** Independent evidence for a curvature-consistent two-sided metric could connect the reusable matrix construction to molecular stiffness; accumulated gradient correlations alone did not suffice.
+**Next experiment:** Await that evidence; no ridge,power,decay,normalization or line-search sweep.
+
+**Attempts:**
+- Cycle628; candidate `2661a88dcfbb7aba620f195726d226c5a0b13edc`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/physical-shampoo-linesearch/2661a88dcfbb7aba620f195726d226c5a0b13edc/algo.py), [training](evaluation_results/cycle-628-train.json), [narrative](full_log.md#cycle-628-two-sided-accumulated-gradient-physical-descent).
+
+## hj-proximal-surrogate: Quadratic-guided Gaussian proximal averaging
+Status: deferred
+
+**Hypothesis:** Analytically removing the quadratic from proximal importance weights can stabilize finite nonlinear proposals.
+**Outcome and uncertainty:**629 all469 converge,valid energy,zero errors but cost fails;{'slower': 110, 'faster': 72, 'same': 287}. No sample-state diagnostics identify a localized defect.
+**Reason to revisit:** Independent evidence of concentrated weights or a justified deterministic integration rule could resolve finite-estimator bias without arbitrary temperature tuning.
+**Next experiment:** Await such evidence; no sample,temperature,time,seed or work-budget sweep.
+
+**Attempts:**
+- Cycle629; candidate `e42aae042dc33b1cbbfc3c54d51a1a013e7bcad3`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/hj-proximal-surrogate/e42aae042dc33b1cbbfc3c54d51a1a013e7bcad3/algo.py), [training](evaluation_results/cycle-629-train.json), [narrative](full_log.md#cycle-629-quadratic-guided-hamilton-jacobi-proximal-proposals).
+
+## stein-newton-surrogate: Interacting particles with entropy-aware globalization
+Status: deferred
+
+**Hypothesis:** Kernel-coupled gradient/curvature transport with repulsion can find useful finite model proposals.
+**Outcome and uncertainty:**630 all469 converge,valid energy,zero errors but cost fails;{'slower': 153, 'faster': 65, 'same': 251}. No ensemble-state diagnostics localize a defect.
+**Reason to revisit:** Independent evidence showing that a finite ensemble captures physically relevant competing model minima could justify an improved representation or integration scheme.
+**Next experiment:** Await such evidence; no particle,temperature,seed,metric,derivative or budget sweep.
+
+**Attempts:**
+- Cycle630; candidate `e88b60196e4d7b6fe6dca6a07239919e31ab59f7`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/stein-newton-surrogate/e88b60196e4d7b6fe6dca6a07239919e31ab59f7/algo.py), [training](evaluation_results/cycle-630-train.json), [narrative](full_log.md#cycle-630-entropy-globalized-stein-newton-surrogate-search).
+
+## universal-trust-surrogate: Gradient-scaled trust balls with joint progress tests
+Status: deferred
+
+**Hypothesis:** Curvature-class-dependent regularization and a joint function/gradient acceptance test can improve finite proposals.
+**Outcome and uncertainty:**631 all469 converge,valid energy,zero errors but loses cost;{'faster': 4, 'same': 457, 'slower': 8}. No retained inner diagnostics localize a defect.
+**Reason to revisit:** Evidence of systematically inaccurate trust subproblems or a justified finite-work curvature estimator could support a repair.
+**Next experiment:** Await that evidence; no penalty, tolerance, derivative or budget sweep.
+
+**Attempts:**
+- Cycle631; candidate `7138f6b5ef0af01c47e60783b5d40fe2b21c4c70`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/universal-trust-surrogate/7138f6b5ef0af01c47e60783b5d40fe2b21c4c70/algo.py), [training](evaluation_results/cycle-631-train.json), [narrative](full_log.md#cycle-631-adaptive-universal-trust-region-surrogate-search).
+
+## nonlocal-gradient-surrogate: Finite-neighborhood symmetric gradient regression
+Status: deferred
+
+**Hypothesis:** Fit gradients over a finite region to suppress narrow model artifacts and obtain useful nonlocal directions.
+**Outcome and uncertainty:**632 all469 converge,valid energy,zero errors but loses cost;{'slower': 26, 'faster': 28, 'same': 415}. No retained fit/grid states isolate a repair.
+**Reason to revisit:** Independent evidence of model artifacts at a known scale or a justified adaptive neighborhood could improve the representation.
+**Next experiment:** Await such evidence; no radius,stencil,grid,floor or budget sweep.
+
+**Attempts:**
+- Cycle632; candidate `6c59e83d883ec12a9da8cf76335b39f0b5d7555f`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/nonlocal-gradient-surrogate/6c59e83d883ec12a9da8cf76335b39f0b5d7555f/algo.py), [training](evaluation_results/cycle-632-train.json), [narrative](full_log.md#cycle-632-nonlocal-gradient-regression-surrogate-search).
+
+## physical-aos-bfgs: Independent one-pair curvature for physical BFGS ray length
+Status: deferred
+
+**Hypothesis:** Latest-pair directional curvature can correct the length of an accumulated quasi-Newton direction without extra curvature calls.
+**Outcome and uncertainty:**633 invalid energy,461converge/8limits/zero errors;5faster/460slower/4same. Two traces show sustained descent with unresolved residual force,not a localized implementation error.
+**Reason to revisit:** Independent evidence separating directional metric error from ray-curvature error could support a consistent moving-coordinate construction.
+**Next experiment:** Await such evidence; no step,cap,threshold or line-search sweep.
+
+**Attempts:**
+- Cycle633; candidate `03789dda020967faaa01aba39152dd623309d47e`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/physical-aos-bfgs/03789dda020967faaa01aba39152dd623309d47e/algo.py), [training](evaluation_results/cycle-633-train.json), [narrative](full_log.md#cycle-633-secant-scaled-physical-bfgs-descent).
+
+## kalman-precision-surrogate: Full-rank Kalman covariance dynamics
+Status: deferred
+
+**Hypothesis:** Joint signed curvature and time evolution improve finite GP proposals without reflecting each Hessian.
+**Outcome and uncertainty:**636 fully converges,valid energy,zero errors,but loses cost;{'slower': 9, 'same': 454, 'faster': 6}. Empty diagnostics leave precision adaptation and proposal quality unresolved.
+**Reason to revisit:** Independently retained precision spectra or time-step/rejection evidence could identify a useful covariance evolution or a localized stability defect.
+**Next experiment:** Await that evidence; no initial covariance,time-step,backtracking,FD or budget sweep.
+
+**Attempts:**
+- Cycle636; candidate `f21dec50c0fa6dd25d2344d2b76f10727e0f946a`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/kalman-precision-surrogate/f21dec50c0fa6dd25d2344d2b76f10727e0f946a/algo.py), [training](evaluation_results/cycle-636-train.json), [narrative](full_log.md#cycle-636-signed-precision-kalman-surrogate-flow).
+
+## consensus-gradient-surrogate: Hybrid consensus and gradient population
+Status: deferred
+
+**Hypothesis:** Attractive noisy population dynamics with local gradient refinement can yield better finite GP proposals.
+**Outcome and uncertainty:**637 fully converges with valid energy and zero errors,but loses cost;53faster/56slower/360same. No inner population diagnostics localize a repair.
+**Reason to revisit:** Independently demonstrated model-basin improvement and critic admission evidence could identify useful cooperative dynamics.
+**Next experiment:** Await that evidence; no population,temperature,noise,seed,radius,budget or critic sweep.
+
+**Attempts:**
+- Cycle637; candidate `ec68877ffaf9e00836376a390282c7b9ffee9119`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/consensus-gradient-surrogate/ec68877ffaf9e00836376a390282c7b9ffee9119/algo.py), [training](evaluation_results/cycle-637-train.json), [narrative](full_log.md#cycle-637-consensus-and-gradient-surrogate-search).
+
+## bond-valence-vector-response: Local squared bond-valence-vector norm
+Status: deferred
+
+**Hypothesis:** Analytic invariant-vector response adds coupled radial/angular curvature absent from incidence-only channels.
+**Outcome and uncertainty:**638 all469 converge with valid energy and zero errors,but loses cost;{'faster': 22, 'same': 432, 'slower': 15}. No fit-state diagnostics identify a defect.
+**Reason to revisit:** Independently justified relative bond valences or retained coefficient/residual evidence could establish a useful geometry-dependent coupling basis.
+**Next experiment:** Await that evidence; no decay,normalization,prior,bounds or neighborhood sweep.
+
+**Attempts:**
+- Cycle638; candidate `b88acc178f3cc45a420949c824b6808f58dd1f3b`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/bond-valence-vector-response/b88acc178f3cc45a420949c824b6808f58dd1f3b/algo.py), [training](evaluation_results/cycle-638-train.json), [narrative](full_log.md#cycle-638-bond-valence-vector-response-channel).
+
+## structured-surrogate-secants: Analytic known-model BFGS-minus in a common GP chart
+Status: deferred
+
+**Hypothesis:** Exact bend Hessians and residual-gradient secants avoid relearning known nonlinear curvature.
+**Outcome and uncertainty:**639 passes train,but validation cost fails;all934 converge with valid energy and zero errors. Train4faster/2slower/463same;valid{'same': 459, 'faster': 2, 'slower': 4}. No inner-state diagnosis.
+**Reason to revisit:** Independent evidence of known/residual curvature separation or a localized line-search failure could support a different structured solve. Analytic bend Hessian is reusable.
+**Next experiment:** Await that evidence; no update-sign,line-search,threshold,model-amplitude or budget sweep.
+
+**Attempts:**
+- Cycle639; candidate `cc214b197df34ce2126bf614b501dea2b5248694`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/structured-surrogate-secants/cc214b197df34ce2126bf614b501dea2b5248694/algo.py), [train](evaluation_results/cycle-639-train.json), [validation](evaluation_results/cycle-639-valid.json), [narrative](full_log.md#cycle-639-structured-bfgs-surrogate-secants).
+
+**Revisit668:** AURORA2608.07354 gives a distinct variable-base replay: use current known bend Hessian,ordinary total-gradient pairs,and current-base Powell damping for each pair. This replaces639 structured-minus updating and tests retained known curvature directly;not a parameter repair.
+
+**668 reassessment:** Fresh known curvature with ordinary secant replay loses cost;{'faster': 3, 'same': 461, 'slower': 5},all469converged,noerrors. No internalstate diagnosis justifies damping,memory,SPD,work orcritic changes. Await evidence identifying known/residual curvature mismatch.
+- Cycle668; candidate `b621fb52714e7d446262268032fe3cc40e6bfce4`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/structured-surrogate-secants/b621fb52714e7d446262268032fe3cc40e6bfce4/algo.py),[training](evaluation_results/cycle-668-train.json),[narrative](full_log.md#cycle-668-variable-base-surrogate-curvature-replay).
+
+**Revisit701:** Combine465finite orbital mean and639structured-minus search with an analytically differentiated electronic remainder Hessian. This tests known-model/solver interaction; no constituent parameters are tuned, and disjoint saved cost-change sets are explicit counterevidence to an additive benefit.
+
+**Completed701 combination:** Analytic electronic known curvature plus structured secants still fails validation cost, despite training gain/all934converged/valid energy. No localized repair; require independent model/search interaction evidence before further combinations.
+- Cycle701; candidate `b85bf39385df4fa52471dd990ed77de9bfde46d8`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Combined implementation](ideas/structured-electronic-surrogate/b85bf39385df4fa52471dd990ed77de9bfde46d8/algo.py),[training](evaluation_results/cycle-701-train.json),[validation](evaluation_results/cycle-701-valid.json),[narrative](full_log.md#cycle-701-structured-search-with-analytic-electronic-mean-curvature).
+
+## polyak-bundle-surrogate: Polyak tangent bundles for surrogate stationarity
+Status: deferred
+
+**Hypothesis:** Intersect scalar gradient-norm tangent equations to obtain useful stationary proposals.
+**Outcome and uncertainty:**640 fully converges with valid energy and zero errors,but loses cost;17faster/19slower/433same. No inner-state diagnostics isolate a defect.
+**Reason to revisit:** Independent evidence that bundle intersections recover useful minima,or a localized residual-linearization failure,could justify a better residual representation.
+**Next experiment:** Await such evidence; no radius,rank,derivative,halving,iteration,budget or critic sweep.
+
+**Attempts:**
+- Cycle640; candidate `b70272b60c27affdced751993ff927afc12f04e7`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/polyak-bundle-surrogate/b70272b60c27affdced751993ff927afc12f04e7/algo.py), [training](evaluation_results/cycle-640-train.json), [narrative](full_log.md#cycle-640-polyak-residual-bundle-surrogate-search).
+
+## vector-epsilon-surrogate: Rational vector extrapolation of model descent
+Status: deferred
+
+**Hypothesis:** Nested reciprocal-vector recurrences remove trajectory errors that linear extrapolation leaves behind.
+**Outcome and uncertainty:**641 fully converges with valid energy and zero errors,but loses cost;{'faster': 7, 'slower': 6, 'same': 456}. No inner-state diagnosis.
+**Reason to revisit:** Independently retained trajectory/table evidence could distinguish loss of regular error structure from unstable extrapolation or critic rejection.
+**Next experiment:** Await such evidence; no depth,block,step,tolerance,budget or critic sweep.
+
+**Attempts:**
+- Cycle641; candidate `b7a0c920935c285c9226d3a04db0f780d3025c0c`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/vector-epsilon-surrogate/b7a0c920935c285c9226d3a04db0f780d3025c0c/algo.py), [training](evaluation_results/cycle-641-train.json), [narrative](full_log.md#cycle-641-vector-epsilon-surrogate-extrapolation).
+
+## secant-subspace-surrogate: Curvature-regime-dependent reduced energy models
+Status: deferred
+
+**Hypothesis:** Two-dimensional secant energy models with quadratic-consistency restart improve finite GP proposals.
+**Outcome and uncertainty:**642 fully converges with valid energy and zero errors,but loses cost;{'faster': 9, 'slower': 11, 'same': 449}. No inner-state diagnosis.
+**Reason to revisit:** Independent branch/curvature/restart evidence could identify an inaccurate reduced model or a localized line failure.
+**Next experiment:** Await such evidence; no branch,threshold,line,restart,budget or critic sweep.
+
+**Attempts:**
+- Cycle642; candidate `5a86f3f44f1a9f2481dc0893a28f9b0b3b412bb6`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/secant-subspace-surrogate/5a86f3f44f1a9f2481dc0893a28f9b0b3b412bb6/algo.py), [training](evaluation_results/cycle-642-train.json), [narrative](full_log.md#cycle-642-secant-subspace-surrogate-conjugate-gradients).
+
+## kratzer-bond-coordinates: Finite Kratzer potential bond chart
+Status: deferred
+
+**Hypothesis:** A reciprocal-distance coordinate flattens a finite pair potential while matching the initial physical metric.
+**Outcome and uncertainty:**643 all469 converge with valid energy and zero errors,but loses cost;45faster/50slower/374same. No passive chart-state diagnosis.
+**Reason to revisit:** An independently justified equilibrium reference or evidence of a mismatch between finite path geometry and physical curvature could support a new consistent chart/metric formulation.
+**Next experiment:** Await that evidence; no exponent,reference,domain,radius or metric-amplitude sweep.
+
+**Attempts:**
+- Cycle643; candidate `298c4ca28a30bcf8e8fcb6c1555e30ecaaec3c51`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/kratzer-bond-coordinates/298c4ca28a30bcf8e8fcb6c1555e30ecaaec3c51/algo.py), [training](evaluation_results/cycle-643-train.json), [narrative](full_log.md#cycle-643-kratzer-bond-coordinates).
+
+## search-accelerate-surrogate: Adaptive discrete gradient and momentum search
+Status: deferred
+
+**Hypothesis:** Two-stage grid minimization avoids a poor fixed momentum or curvature estimate in finite GP refinement.
+**Outcome and uncertainty:**644 all469 converge with valid energy and zero errors,but loses cost;{'slower': 18, 'faster': 14, 'same': 437}. No inner-state diagnosis.
+**Reason to revisit:** Independent evidence of systematic missed line minima or a justified non-grid search could establish a useful acceleration mechanism.
+**Next experiment:** Await such evidence; no grid,gain,floor,iteration,budget or critic sweep.
+
+**Attempts:**
+- Cycle644; candidate `361d818b954d58d99bbc90a2a61b4df25a8ee6d9`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/search-accelerate-surrogate/361d818b954d58d99bbc90a2a61b4df25a8ee6d9/algo.py), [training](evaluation_results/cycle-644-train.json), [narrative](full_log.md#cycle-644-search-and-accelerate-surrogate-refinement).
+
+## ngmres-newton-surrogate: Nonlinear-residual extrapolation of Newton images
+Status: deferred
+
+**Hypothesis:** Residual-minimizing affine extrapolation improves early Newton steps without fixed-point residual mixing.
+**Outcome and uncertainty:**645 all469 converge with valid energy and zero errors,but loses cost;{'faster': 6, 'same': 457, 'slower': 6}. No inner-state diagnosis.
+**Reason to revisit:** Independent evidence that interpolation improves model stationarity but fails energy globalization,or a localized curvature error,could identify a useful reformulation.
+**Next experiment:** Await such evidence; no depth,coefficient,FD,floor,line,budget or critic sweep.
+
+**Attempts:**
+- Cycle645; candidate `10f89dc26f5eff82886716fad8fa6325f76d0784`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/ngmres-newton-surrogate/10f89dc26f5eff82886716fad8fa6325f76d0784/algo.py), [training](evaluation_results/cycle-645-train.json), [narrative](full_log.md#cycle-645-nonlinear-residual-newton-acceleration).
+
+## adjacent-torsion-response: Neighboring-bond Fourier cross curvature
+Status: deferred
+
+**Hypothesis:** Two parity-even phase products learn correlated rotation response missing from independent torsion stiffness scales.
+**Outcome and uncertainty:**646 all469 converge with valid energy and zero errors,but loses cost;{'faster': 3, 'same': 458, 'slower': 8}. No fit-state diagnosis.
+**Reason to revisit:** Independent physical evidence for a richer coupling basis or retained coefficient/residual diagnostics could establish which correlations are supported by early secants.
+**Next experiment:** Await such evidence; no harmonic,scope,phase,amplitude,normalization,ridge or bounds sweep.
+
+**Attempts:**
+- Cycle646; candidate `aef7de0e94a0fc2ccddc1246e3ad323e1708e94f`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/adjacent-torsion-response/aef7de0e94a0fc2ccddc1246e3ad323e1708e94f/algo.py), [training](evaluation_results/cycle-646-train.json), [narrative](full_log.md#cycle-646-adjacent-torsion-fourier-response).
+
+
+## variational-gaussian-surrogate: Gaussian variational gradient search
+Status: deferred
+
+**Hypothesis:** Joint covariance and averaged-gradient evolution improves finite model refinement.
+**Outcome and uncertainty:**647 all469 converge with valid energy and zero errors,but loses cost;{'slower': 81, 'faster': 78, 'same': 310}. No distribution-state diagnosis.
+**Reason to revisit:** Independent evidence of a covariance or objective-scaling mismatch could justify a coordinate-consistent distribution formulation.
+**Next experiment:** Await that evidence; no covariance,learning-rate,sample-count,seed,iteration,budget or critic sweep.
+
+**Attempts:**
+- Cycle647; candidate `16b0875e1b756290394346d43131471b2c48171c`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/variational-gaussian-surrogate/16b0875e1b756290394346d43131471b2c48171c/algo.py), [training](evaluation_results/cycle-647-train.json), [narrative](full_log.md#cycle-647-gaussian-variational-surrogate-search).
+
+
+## memoryless-cg-surrogate: Closest memoryless-BFGS CG direction
+Status: deferred
+
+**Hypothesis:** A curvature-informed conjugate direction improves finite model refinement in one fixed chart.
+**Outcome and uncertainty:**649 all469 converge,valid energy,zero errors,but loses cost;{'faster': 8, 'same': 456, 'slower': 5}. No model-line/restart trace.
+**Reason to revisit:** Independent evidence of lost conjugacy or line-search truncation could support a better matched solver.
+**Next experiment:** Await that evidence;no beta,restart,line,budget or critic sweeps.
+
+**Attempts:**
+- Cycle649;candidate `5ecc27f8a119c839f43254a5ad091462efd68248`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/memoryless-cg-surrogate/5ecc27f8a119c839f43254a5ad091462efd68248/algo.py),[training](evaluation_results/cycle-649-train.json),[narrative](full_log.md#cycle-649-memoryless-bfgs-conjugate-gradient-surrogate-search).
+
+
+## iterated-basis-surrogate: Multiplicative changes of search basis
+Status: deferred
+
+**Hypothesis:** Rank-one coordinate changes retain a positive adaptive metric without imposing inexact BFGS secants.
+**Outcome and uncertainty:**650 all469 converge,valid energy,zero errors,but loses cost;{'faster': 6, 'same': 456, 'slower': 7}. No basis-state diagnosis.
+**Reason to revisit:** Independent evidence of basis conditioning or source-compatible line accuracy could establish a useful metric/solver combination.
+**Next experiment:** Await that evidence;no basis reset,curvature tolerance,line,budget or critic sweeps.
+
+**Attempts:**
+- Cycle650;candidate `67669cfb4fe7d5f1b95b0d6542a6fad1f61e8998`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/iterated-basis-surrogate/67669cfb4fe7d5f1b95b0d6542a6fad1f61e8998/algo.py),[training](evaluation_results/cycle-650-train.json),[narrative](full_log.md#cycle-650-iterated-basis-surrogate-descent).
+
+## sparse-physical-calibration: Sparse corrections to physical stiffness defaults
+Status: deferred
+
+**Hypothesis:** Laplace deviations retain unsupported stiffness classes at their physical defaults.
+**Outcome and uncertainty:**651 all469 converge,valid energy,zero errors,but loses cost;103faster175slower191same. No fit-state diagnostics.
+**Reason to revisit:** Independent evidence for observation noise or coefficient identifiability could support a principled sparse prior with a calibrated likelihood.
+**Next experiment:** Await such evidence;no penalty,center,bounds,schedule,solver-budget or observation-weight sweeps.
+
+**Attempts:**
+- Cycle651;candidate `47a7a3b7f69819b20a6ae2d3071d3da89d6b4a45`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/sparse-physical-calibration/47a7a3b7f69819b20a6ae2d3071d3da89d6b4a45/algo.py),[training](evaluation_results/cycle-651-train.json),[narrative](full_log.md#cycle-651-sparse-deviations-in-physical-calibration).
+
+## semiimplicit-hamiltonian-surrogate: Curvature-resolved linear momentum dynamics
+Status: deferred
+
+**Hypothesis:** A linearized discrete gradient resolves stiff directions without nonlinear implicit solves.
+**Outcome and uncertainty:**652 all469 converge,valid energy,zero errors,but loses cost;{'slower': 25, 'faster': 20, 'same': 424}. No momentum/curvature trace.
+**Reason to revisit:** Independent model smoothness or trajectory evidence could establish a compatible discretization and stiffness model.
+**Next experiment:** Await that evidence;no timestep,damping,curvature-memory,budget or critic sweep.
+
+**Attempts:**
+- Cycle652;candidate `e55a7c9fecb4a8b29e35a982d8144c9fba85445a`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/semiimplicit-hamiltonian-surrogate/e55a7c9fecb4a8b29e35a982d8144c9fba85445a/algo.py),[training](evaluation_results/cycle-652-train.json),[narrative](full_log.md#cycle-652-semi-implicit-hamiltonian-surrogate-search).
+
+## local-smooth-newton-surrogate: Gradient-proportional Newton regularization
+Status: deferred
+
+**Hypothesis:** Signed curvature,gradient-growth checks and reduction ratios improve finite model refinement.
+**Outcome and uncertainty:**654 all469 converge,valid energy,zero errors,but loses cost;{'faster': 3, 'same': 460, 'slower': 6}. No controller-state trace.
+**Reason to revisit:** Independently observed mismatch between local regularity and proposal acceptance could establish a better controller/Hessian pairing.
+**Next experiment:** Await that evidence;no coefficient,initial-sigma,stencil,epsilon,budget or critic sweep.
+
+**Attempts:**
+- Cycle654;candidate `ed986fc97adeb6eba8e15a3d4cd6a22a8ad4be4b`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/local-smooth-newton-surrogate/ed986fc97adeb6eba8e15a3d4cd6a22a8ad4be4b/algo.py),[training](evaluation_results/cycle-654-train.json),[narrative](full_log.md#cycle-654-local-smoothness-regularized-surrogate-newton).
+
+## logarithmic-newton-surrogate: Logarithmic decrease model for adaptive Newton
+Status: deferred
+
+**Hypothesis:** Finite logarithmic model agreement calibrates regularization and improves surrogate proposals.
+**Outcome and uncertainty:**656 all469 converge,valid energy,zero errors,but cost loss;{'faster': 5, 'same': 460, 'slower': 4}. No inner-state trace or self-concordance certificate.
+**Reason to revisit:** An independently supported regularizer F or measured model-curvature discrepancy could make the logarithmic controller meaningful.
+**Next experiment:** Await that evidence;no sigma,kappa,stencil,budget or critic sweep.
+
+**Attempts:**
+- Cycle656;candidate `de13a8a1d79dd145d7f7950662da37faad731f0d`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/logarithmic-newton-surrogate/de13a8a1d79dd145d7f7950662da37faad731f0d/algo.py),[training](evaluation_results/cycle-656-train.json),[narrative](full_log.md#cycle-656-logarithmic-regularization-model-for-surrogate-newton).
+
+## taylor-remainder-surrogate: Estimate curvature variation from Taylor remainders
+Status: deferred
+
+**Hypothesis:** Observed gradient and energy prediction errors set effective vanishing Newton regularization.
+**Outcome and uncertainty:**657 all469 converge,valid energy,zero errors,but cost loss;{'slower': 26, 'faster': 25, 'same': 418}. No inner-state trace.
+**Reason to revisit:** Independent evidence of local derivative accuracy or excessive historical regularity could identify a better model/controller pairing.
+**Next experiment:** Await that evidence;no gamma,exponent,stencil,line,budget or critic sweep.
+
+**Attempts:**
+- Cycle657;candidate `1e13c6459cf394a80416fbf467c10c742a87d339`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/taylor-remainder-surrogate/1e13c6459cf394a80416fbf467c10c742a87d339/algo.py),[training](evaluation_results/cycle-657-train.json),[narrative](full_log.md#cycle-657-taylor-remainder-controlled-surrogate-newton).
+
+## bond-order-angular-response: Directed bond-order angular cross response
+Status: deferred
+
+**Hypothesis:** Directed-bond competition supplies structured mixed angular response beyond uniform common-center coupling.
+**Outcome and uncertainty:**658 all469 converge with valid energy and zero errors,but cost loss;6faster4slower459same. No fit-state diagnostics.
+**Reason to revisit:** Independently calibrated bond-order response or coefficient-identifiability evidence could separate missing physics from redundant features.
+**Next experiment:** Await that evidence;no amplitude,ridge,element-scope,cutoff,parameter-set or schedule sweeps.
+
+**Attempts:**
+- Cycle658;candidate `5b77df184eca6aa169de42fc083e1677ad6e48db`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/bond-order-angular-response/5b77df184eca6aa169de42fc083e1677ad6e48db/algo.py),[training](evaluation_results/cycle-658-train.json),[narrative](full_log.md#cycle-658-bond-order-angular-cross-curvature).
+
+## finite-shift-surrogate: Discrete conditioning shifts for reflected surrogate Newton
+Status: deferred
+
+**Hypothesis:** A finite shift menu retains curvature magnitudes while avoiding singular model steps.
+**Outcome and uncertainty:**659 all469 converge,valid energy,zero errors,but cost loss;3faster5slower461same. No inner-state trace.
+**Reason to revisit:** Independent evidence on model degeneracy and derivative accuracy could support a better-conditioned curvature model.
+**Next experiment:** Await that evidence;no shift-menu,exponent,normalization,line,stencil,budget or critic sweep.
+
+**Attempts:**
+- Cycle659;candidate `4319716a1f0b7113a117c1e6bd688138f1a522e7`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/finite-shift-surrogate/4319716a1f0b7113a117c1e6bd688138f1a522e7/algo.py),[training](evaluation_results/cycle-659-train.json),[narrative](full_log.md#cycle-659-finite-shift-reflected-newton-surrogate-search).
+
+## kahan-surrogate: Energy-controlled Kahan gradient steps
+Status: deferred
+
+**Hypothesis:** Finite energy defects adapt gradient steps to nonquadratic model behavior.
+**Outcome and uncertainty:**660 all469 converge,valid energy,zero errors,but cost loss;11faster10slower448same. No inner-state trace.
+**Reason to revisit:** Independent evidence of energy-residual cancellation or model calibration could identify a useful controller/model pairing.
+**Next experiment:** Await that evidence;no alpha0,window,variant,bounds,line,budget or critic sweep.
+
+**Attempts:**
+- Cycle660;candidate `3db9d6239a8f8e894e929d7e940cb725f1f25ab3`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/kahan-surrogate/3db9d6239a8f8e894e929d7e940cb725f1f25ab3/algo.py),[training](evaluation_results/cycle-660-train.json),[narrative](full_log.md#cycle-660-kahan-energy-controlled-surrogate-descent).
+
+## fractional-memory-surrogate: Power-law gradient memory
+Status: deferred
+
+**Hypothesis:** Slowly decaying memory accumulates useful directions across model curvature changes.
+**Outcome and uncertainty:**661 all469 converge,valid energy,zero errors,but cost loss;16faster17slower436same. No inner-state diagnostics.
+**Reason to revisit:** Independent evidence of sustained gradient alignment over a useful memory horizon could support a suitable model/dynamics pairing.
+**Next experiment:** Await that evidence;no alpha,normalization,restart,line,budget or critic sweep.
+
+**Attempts:**
+- Cycle661;candidate `adef2852e2bf49c6778e49961ba0c82e93050e8d`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/fractional-memory-surrogate/adef2852e2bf49c6778e49961ba0c82e93050e8d/algo.py),[training](evaluation_results/cycle-661-train.json),[narrative](full_log.md#cycle-661-fractional-memory-surrogate-descent).
+
+## subgame-surrogate: First-order bundle planning of momentum
+Status: deferred
+
+**Hypothesis:** Dynamically optimize momentum and retain null-trial information under estimated local smoothness.
+**Outcome and uncertainty:**662 all469 converge,valid energy,zero errors,but cost loss;24faster21slower424same. No planning-state or convexity diagnosis.
+**Reason to revisit:** Independently certified locally convex models or evidence of planning inaccuracies could establish a useful model/controller pairing.
+**Next experiment:** Await that evidence;no memory,Lprobe,solver-tolerance,budget,null-step or critic sweep.
+
+**Attempts:**
+- Cycle662;candidate `7eebfd2063082ba159fa1ed02877ae2d63cce631`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/subgame-surrogate/7eebfd2063082ba159fa1ed02877ae2d63cce631/algo.py),[training](evaluation_results/cycle-662-train.json),[narrative](full_log.md#cycle-662-subgame-planned-surrogate-search).
+
+## physical-acfgm: Three-sequence locally conditioned acceleration
+Status: deferred
+
+**Hypothesis:** Adaptive acceleration can exploit falling curvature with one paid observation per step.
+**Outcome and uncertainty:**663 energy-invalid,81converged388force limits,zero errors;2faster467slower. One passive trace retains force above threshold with alternating energy changes;internal control states unavailable.
+**Reason to revisit:** A supported moving chemical metric and a compatible acceleration transport could address fixed-metric stiffness;direct sequence-state evidence would distinguish metric from repeated restart effects.
+**Next experiment:** Await that evidence;no alpha,beta,L0,restart,cap,metric-floor or budget sweep.
+
+**Attempts:**
+- Cycle663;candidate `9a82f04ffd5cef7362f012c868dc6e0a1211ab07`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision invalid. [Implementation](ideas/physical-acfgm/9a82f04ffd5cef7362f012c868dc6e0a1211ab07/algo.py),[training](evaluation_results/cycle-663-train.json),[narrative](full_log.md#cycle-663-physical-auto-conditioned-fast-gradient-method).
+
+## metropolis-surrogate: Trial-dependent cooling in nonmonotone BFGS
+Status: deferred
+
+**Hypothesis:** Controlled uphill model motion can cross shallow basins and improve finite proposals.
+**Outcome and uncertainty:**664 all469converge,validenergy,zeroerrors,but cost loss;{'slower': 20, 'same': 427, 'faster': 22}. No inner-state diagnostics.
+**Reason to revisit:** Direct model-search trajectories showing useful basin crossings or a supported energy-origin invariant allowance could identify a suitable model/controller pairing.
+**Next experiment:** Await that evidence;no theta,sigma,M,line,budget or critic sweep.
+
+**Attempts:**
+- Cycle664;candidate `ec7be977270e85ca5941488e1af850b48e401113`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/metropolis-surrogate/ec7be977270e85ca5941488e1af850b48e401113/algo.py),[training](evaluation_results/cycle-664-train.json),[narrative](full_log.md#cycle-664-modified-metropolis-surrogate-search).
+
+## inertial-newton-surrogate: Curvature queried at an inertial lookahead
+Status: deferred
+
+**Hypothesis:** Momentum changes where curvature is observed,while gradient-norm regularization controls the Newton step.
+**Outcome and uncertainty:**667 loses cost with469converged and no errors;{'faster': 7, 'same': 451, 'slower': 11}. No model-state trace distinguishes shifted-matrix early exits from unhelpful completed proposals.
+**Reason to revisit:** Independent evidence of a lookahead-model defect or a supported nonconvex inertial regularization rule could make this mechanism useful.
+**Next experiment:** Await such evidence;no momentum,regularization,FD,work,SPD orcritic sweep.
+
+**Attempts:**
+- Cycle667; candidate `57869ee1ae8f19f382901ff713fbf266df95faa2`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/inertial-newton-surrogate/57869ee1ae8f19f382901ff713fbf266df95faa2/algo.py),[training](evaluation_results/cycle-667-train.json),[narrative](full_log.md#cycle-667-inertial-regularized-newton-surrogate-search).
+
+## radial-projection-surrogate: Radial balance in a local displacement chart
+Status: deferred
+
+**Hypothesis:** A selected normalized radial projector can balance movement along the current displacement and transverse model gradient.
+**Outcome and uncertainty:**669 valid/all469converged,small gain below gate;no failure bundles localize the insufficient gain.
+**Reason to revisit:** Evidence that the local chart origin or radial/transverse curvature causes a specific search failure could support a geometrically justified projector.
+**Next experiment:** Require that evidence before altering the direction;no angle,cap,line,work orcritic sweep. Compare full gates against current champion.
+
+**Attempts:**
+- Cycle669;candidate `aef262b64693bc3c3924694c7706d420b3b6201a`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/radial-projection-surrogate/aef262b64693bc3c3924694c7706d420b3b6201a/algo.py),[training](evaluation_results/cycle-669-train.json),[narrative](full_log.md#cycle-669-radial-projection-surrogate-acceleration).
+
+## carbon-promotion-mean: Coupled atomic promotion-energy remainder
+Status: deferred
+
+**Hypothesis:** Electronic promotion couples neighboring stretches and may improve finite surrogate predictions without changing the learned quadratic.
+**Outcome and uncertainty:**672 all469converge,validenergy,zeroerrors,but cost loss;4faster4slower461same. No inner-model diagnostics.
+**Reason to revisit:** An independently supported angular promotion model or evidence that the local-charge-neutral radial approximation misses specific coupling could support a different physical remainder.
+**Next experiment:** Await that evidence;no amplitude,pairparameter,scope,cutoff orwork sweep. Test a derived coupling against current champion under unchanged gates.
+
+**Attempts:**
+- Cycle672;candidate `0f4c5575443d5329ed36d574f87fd949f559dc97`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/carbon-promotion-mean/0f4c5575443d5329ed36d574f87fd949f559dc97/algo.py),[training](evaluation_results/cycle-672-train.json),[narrative](full_log.md#cycle-672-carbon-promotion-energy-surrogate-remainder).
+
+## conic-secant-surrogate: Live conic models of the GP posterior
+Status: deferred
+
+**Hypothesis:** Cheap successive posterior values and gradients identify a rational local model, improving finite proposals without Hessian probes.
+**Outcome and uncertainty:** Cycle674 is valid and allconverged but loses cost (1faster/7slower/461same). Emptyfailure_details leave horizon quality and subproblem progress unresolved. This tests live microquery secants,distinct from198/284's physical historical fitting.
+**Reason to revisit:** Passive conic-prediction/acceptance evidence or a independently justified horizon estimation method could distinguish inaccurate rational models from constrained search failures.
+**Next experiment:** Defer until that evidence or model change exists;no radius,horizon,solver,work orcritic sweeps from this loss.
+
+**Attempts:**
+- Cycle674;candidate `2d66b9abd411f04eb313c58c8d63efca2a525be7`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard.
+  [Implementation](ideas/conic-secant-surrogate/2d66b9abd411f04eb313c58c8d63efca2a525be7/algo.py). [Training evidence](evaluation_results/cycle-674-train.json). [Narrative](full_log.md#cycle-674-live-conic-secants-inside-the-surrogate-search).
+
+## symmetric-hessian-surrogate: Symmetric path-integral curvature from surrogate queries
+Status: deferred
+
+**Hypothesis:** A symmetric matrixGP conditions on cheap acceptedgradientdifferences aslineintegrals,inferring changingendpointcurvature inonefixedmicrochart.
+**Outcome and uncertainty:**676isvalidandallconverged,butlosescost;7faster/5slower/457same. Emptyfailure_details leave covariancefit,integrability,quadrature andsearchpath qualityunresolved. Unlike233,thisdoesnot usepaidnativeframeapproximations.
+**Reason to revisit:** A derived integrable symmetriccurvatureprocess or passivequerypredictionevidence could establish whether pathaveragesinform useful endpoint directions.
+**Next experiment:** Deferuntil thatmodel/evidenceexists;no bandwidth,ridge,quadrature,floor,window,work orcritic sweeps.
+
+**Attempts:**
+- Cycle676;candidate `fa1f4f918d8d8775ed0b519aa40683684f362244`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/symmetric-hessian-surrogate/fa1f4f918d8d8775ed0b519aa40683684f362244/algo.py),[training](evaluation_results/cycle-676-train.json),[narrative](full_log.md#cycle-676-symmetric-integral-hessian-surrogate-search).
+
+
+**682 revisit:** Scalar-derived fourth-derivative covariance provides the independently derived integrable field requested above. Preserve all676 observation and search controls, with unit diagonal variance normalization; offdiagonal correlations follow from integrability. This is a model change, not a diagnosed repair.
+
+**682 reassessment:** The integrable scalar-field prerequisite is now met, yet cost still loses with469converged andvalidenergy; {'faster': 7, 'same': 455, 'slower': 7}. No query-state diagnosis. Further work requires observed curvature-prediction error or a separately validated local field model,not covariance amplitude,length,ridge,quadrature,work orcritic sweeps.
+- Cycle682;candidate `11d0a925f970ef377d98ce4a60dba9145c88bce1`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/symmetric-hessian-surrogate/11d0a925f970ef377d98ce4a60dba9145c88bce1/algo.py),[training](evaluation_results/cycle-682-train.json),[narrative](full_log.md#cycle-682-integrable-scalar-derived-hessian-surrogate-process).
+
+## shape-changing-surrogate: Signed multisecant search in a curvature-aligned trust region
+Status: deferred
+
+**Hypothesis:** Fresh GPsecants identifynegativecurvature;exactboundedSC-INF stepsmayimprove finiteproposals.
+**Outcome and uncertainty:**678 convergesall469,validenergy,zeroerrors,butcostloss;{'faster': 4, 'slower': 7, 'same': 458}. Emptyfailure_details leavesinnercurvature/radius behaviorunobserved.
+**Reason to revisit:** Independentevidence that thesignedMSSmodel accuratelypredicts a usefulstep rejectedby a specifictrustgeometry couldjustify a boundedchange.
+**Next experiment:** Awaitthatevidence;no rank,memory,initialization,radius,ratio,work orcritic sweep.
+**Attempts:**
+- Cycle678;candidate `a29d86a1faf0c1c1cc196cddc529c161d16b05cd`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/shape-changing-surrogate/a29d86a1faf0c1c1cc196cddc529c161d16b05cd/algo.py),[training](evaluation_results/cycle-678-train.json),[narrative](full_log.md#cycle-678-shape-changing-multisecant-surrogate-search).
+
+
+## two-stage-spectral-surrogate: Two-stage scalar gradient correction with live probes
+Status: deferred
+
+**Hypothesis:** A cheapuphillgradientprobe identifies aBB2scale;thefirststage response identifies asecondcorrection withoutHessianconstruction.
+**Outcome and uncertainty:**679 convergesall469,validenergy,zeroerrors,butcostloss;{'slower': 18, 'faster': 17, 'same': 434}. Emptyfailure_details doesnotidentifyprobecurvature orsecondstagefailures.
+**Reason to revisit:** Independentobservedmodelgradient-responseaccuracy or a newfinite-probeerrorbound couldsupport adifferentcorrection.
+**Next experiment:** Awaitthatevidence;no probe,correction,line,work orcritic sweep.
+**Attempts:**
+- Cycle679;candidate `0d5e4d5e909f865749ffc8c454af849242846e65`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/two-stage-spectral-surrogate/0d5e4d5e909f865749ffc8c454af849242846e65/algo.py),[training](evaluation_results/cycle-679-train.json),[narrative](full_log.md#cycle-679-two-stage-spectral-probe-surrogate-search).
+
+## lemniscate-surrogate: Finite-horizon gradient-norm acceleration
+Status: deferred
+
+**Hypothesis:** A single finite-horizon acceleration sequence can improve the GP stationary point without Hessian queries.
+**Outcome and uncertainty:**680 convergesall469 with validenergy andzeroerrors, butcostloss; {'slower': 15, 'same': 431, 'faster': 23}. Emptyfailure_details leave interpolation restarts and posterior-minimum quality unresolved.
+**Reason to revisit:** An independently established convex posterior region or passive interpolation-defect evidence could justify a compatible acceleration controller.
+**Next experiment:** Await that evidence; no horizon,L,budget,tolerance orcritic sweeps.
+**Attempts:**
+- Cycle680; candidate `f8875821b2693e6fa5d8f5f4a7569cb233af4f87`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/lemniscate-surrogate/f8875821b2693e6fa5d8f5f4a7569cb233af4f87/algo.py), [training](evaluation_results/cycle-680-train.json), [narrative](full_log.md#cycle-680-lemniscate-finite-horizon-surrogate-acceleration).
+
+## physical-schedule-free: Physical averaging dynamics with gap-potential admission
+Status: deferred
+
+**Hypothesis:** Three-sequence averaging retains useful physical motion, with an energy-plus-gap potential admitting nonmonotone energy steps safely.
+**Outcome and uncertainty:**681 has77converged,391calllimits and1invalid-direction exception. Of468returned cases467losecost. The134-call error receipt localizes the check, but its passive artifact is unavailable; no rate or sequence-state diagnosis is possible.
+**Passive follow-up:** A stored200-call trace shows energy decreasing but maxforce.006845Eh/Bohr remains above threshold; eight frames retained,192omitted. No sequence/rate state. [Trace](diagnostics/4dd6e9af11e840898c70fbd99740e867/ff367d8b96d221f98ec33aa6e2d05670663a1c2451860abf0bba186057d1e66c.json).
+**Reason to revisit:** An independently supported changing metric compatible with all three sequences, or direct evidence separating potential restarts from stale conditioning, could support a new formulation.
+**Next experiment:** Await that evidence; no beta,rate,cap,potential orwhitening tuning. The current broadloss does not justify a repair sequence.
+**Attempts:**
+- Cycle681; candidate `640df6ecaecf94e220f6f4ea4b9d94cb135ed23e`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/physical-schedule-free/640df6ecaecf94e220f6f4ea4b9d94cb135ed23e/algo.py), [training](evaluation_results/cycle-681-train.json), [narrative](full_log.md#cycle-681-physical-schedule-free-dynamics-with-potential-admission).
+
+## bayesian-line-surrogate: Retaining ray observations in a Bayesian Wolfe search
+Status: deferred
+
+**Hypothesis:** Value/slope posterior information may improve finite surrogate BFGS trajectories and reduce paid calls.
+**Outcome and uncertainty:**683 convergesall469,validenergy,zeroerrors,butcostloss; {'same': 466, 'faster': 2, 'slower': 1}. No passive traces establish whether LCB selection, finite line work or starting-step differences dominate.
+**Reason to revisit:** Independent ray-level evidence of interpolation failure, or a derived acquisition calibrated to this posterior, could support a different bounded controller.
+**Next experiment:** Awaitthat evidence; no length,amplitude,noise,LCB,work orcritic sweep.
+**Attempts:**
+- Cycle683;candidate `95e9b7519e6c28603a0474fb0a31283abf874fb8`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/bayesian-line-surrogate/95e9b7519e6c28603a0474fb0a31283abf874fb8/algo.py),[training](evaluation_results/cycle-683-train.json),[narrative](full_log.md#cycle-683-information-preserving-bayesian-surrogate-line-search).
+
+## valley-restart-surrogate: Gradient-ranked cumulative restart directions
+Status: deferred
+
+**Hypothesis:** Three best accepted gradientnorm points retain useful valley motion during CGrestarts.
+**Outcome and uncertainty:**684trainpasses(19fast17slow433same),validlosescost{'same': 420, 'slower': 26, 'faster': 19};allconverged,validenergy,zeroerrorsbothsplits. No traces distinguish restart effectiveness from underlyingHS path. Fixed neutral adaptationparametersareexplicitlydocumented.
+**Reason to revisit:** Passive evidence of harmful restart geometry or an independently derived triangle-selection rule could preserve thetraininggain while addressing a localizedcause.
+**Next experiment:** Await such evidence; no weight,stagnation,SDC,cap,line,work orcritic tuning.
+**Attempts:**
+- Cycle684;candidate `6fcb5556ceee8301eb413fa04ad4ccdc69f13f5b`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision non_generalizable. [Implementation](ideas/valley-restart-surrogate/6fcb5556ceee8301eb413fa04ad4ccdc69f13f5b/algo.py),[training](evaluation_results/cycle-684-train.json),[validation](evaluation_results/cycle-684-valid.json),[narrative](full_log.md#cycle-684-valley-seeking-conjugate-gradient-surrogate-restarts).
+
+## curved-line-surrogate: Value-based curved sufficient decrease
+Status: deferred
+
+**Hypothesis:** Admission of negative-curvature rays and a compulsory quadratic refinement may improve finite model trajectories.
+**Outcome and uncertainty:**685all469converge,validenergy,zeroerrors,butcostloss; {'faster': 6, 'same': 457, 'slower': 6}. Emptytraces do not distinguish line behavior from curvature-update omissions.
+**Reason to revisit:** Independent ray-level evidence could show whether CLS reaches useful directions that need a coherent indefinite-curvature search metric.
+**Next experiment:** Awaitthat evidence; no beta,expansion,work,critic orupdate-threshold tuning.
+**Attempts:**
+- Cycle685;candidate `06802f35d31cfd93b5961114caffd81ecb3ba942`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/curved-line-surrogate/06802f35d31cfd93b5961114caffd81ecb3ba942/algo.py),[training](evaluation_results/cycle-685-train.json),[narrative](full_log.md#cycle-685-curved-sufficient-decrease-surrogate-line-search).
+
+## matrix-dai-liao-surrogate: Matrix conjugacy correction
+Status: deferred
+
+**Hypothesis:** Additional gradientdifference action improves finite cheapsearch while preserving uniformdescent.
+**Outcome and uncertainty:**686all469converge,validenergy,zeroerrors,butcostloss; {'slower': 10, 'faster': 8, 'same': 451}. No passive states separate finiteCG convergence from proposal rejection.
+**Reason to revisit:** Independent evidence of inaccurate scalarcurvature directions together with a reliable matrixselection mechanism could support anotherformulation.
+**Next experiment:** Awaitthat evidence; no fact,line,work orcritic sweep.
+**Attempts:**
+- Cycle686;candidate `887a09541c5bbd7d3c7bad2f103b8f2f98c9857f`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/matrix-dai-liao-surrogate/887a09541c5bbd7d3c7bad2f103b8f2f98c9857f/algo.py),[training](evaluation_results/cycle-686-train.json),[narrative](full_log.md#cycle-686-matrix-dai-liao-surrogate-descent).
+
+## backstepping-surrogate: Dissipative gradient tracking dynamics
+Status: deferred
+
+**Hypothesis:** Coupled gradientfilter andtrackingerror retain valley motion under measuredLyapunovdescent.
+**Outcome and uncertainty:**687trainingpassesbutvalidationcostloss;bothsplitsconverged,validenergy,zeroerrors; {'train': {'faster': 9, 'same': 450, 'slower': 10}, 'valid': {'same': 439, 'slower': 17, 'faster': 9}}. No passive innerstatesdiagnose thefailure.
+**Reason to revisit:** Independent evidence of integrationerror versus modelbias,or a discretization preserving a stronger stationary-pointcertificate,could make thetraininggain useful.
+**Next experiment:** Awaitthat evidence; no gains,step,admission,work orcritic sweep.
+**Attempts:**
+- Cycle687;candidate `ca14cc9bd375eb9ad861dc6ce63699b594a12d2a`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision non_generalizable. [Implementation](ideas/backstepping-surrogate/ca14cc9bd375eb9ad861dc6ce63699b594a12d2a/algo.py),[training](evaluation_results/cycle-687-train.json),[validation](evaluation_results/cycle-687-valid.json),[narrative](full_log.md#cycle-687-dissipative-backstepping-surrogate-dynamics).
+
+## bond-information-gp: Covalent-radius relative-motion covariance
+Status: deferred
+
+**Hypothesis:** The BondMin complete pair-vector metric pulled into the current tangent chart may describe residual correlation better than isotropic energy-whitened distance.
+**Outcome and uncertainty:** All training converges with no errors and adequate energy, but paidcost worsens. No retained failure states; chart and anisotropy contributions unresolved.
+**Reason to revisit:** Independent evidence of finite chart distortion or a rotation-invariant finite relative-motion model could separate descriptor error from metric quality.
+**Next experiment:** Only with that prerequisite, replace the local tangent descriptor by a consistent finite representation, keeping covariance normalization and gates; do not sweep radii,length,blend or critics.
+
+**Attempts:**
+- Cycle 688; candidate `fb9045c0856c55cb55c8ac7507284269d5446a85`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard.
+  [Implementation](ideas/bond-information-gp/fb9045c0856c55cb55c8ac7507284269d5446a85/algo.py).
+  [Training evidence](evaluation_results/cycle-688-train.json).
+  [Narrative](full_log.md#cycle-688-bond-information-metric-for-the-residual-gp).
+
+## ellipcenter-surrogate: Equal-energy companion level-set search
+Status: deferred
+
+**Hypothesis:** A same-energy point supplies a second gradient normal, enabling a valley-aware ellipse-center semiline search.
+**Outcome and uncertainty:** All training converges, energyvalid,zeroerrors,but paidcost worsens. No passive root/search states localize failure; finite-root work and nonconvex levelgeometry remain unresolved.
+**Reason to revisit:** Independent evidence of root truncation or a justified finite-region level-set representation could separate geometric benefit from the current search overhead.
+**Next experiment:** Only with that prerequisite, change the diagnosed component under the same model/critics; no root tolerance,work orline sweep.
+
+**Attempts:**
+- Cycle689; candidate `e849122cdd6338b2c43320c74437d4a2c50679b8`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard.
+  [Implementation](ideas/ellipcenter-surrogate/e849122cdd6338b2c43320c74437d4a2c50679b8/algo.py).
+  [Training evidence](evaluation_results/cycle-689-train.json).
+  [Narrative](full_log.md#cycle-689-equal-energy-ellipcenter-surrogate-search).
+
+## unscented-surrogate: Finite sigma-gradient Kalman inversion
+Status: deferred
+
+**Hypothesis:** A spatially averaged gradient response may produce robust stationary proposals without local Hessian differentiation.
+**Outcome and uncertainty:**690 converges all training with adequate energy and no errors, but costs more; no retained inner states localize the loss.
+**Reason to revisit:** Independent evidence separating stationary-root errors from covariance conditioning could support a geometry-aware inversion model.
+**Next experiment:** Await that evidence; change the diagnosed gradient-response model under fixed gates, without a covariance/noise/work/critic sweep.
+
+**Attempts:**
+- Cycle690; candidate `62ac06df89f602947c02d5e518eb80a31a2b5d7a`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard.
+  [Implementation](ideas/unscented-surrogate/62ac06df89f602947c02d5e518eb80a31a2b5d7a/algo.py). [Training evidence](evaluation_results/cycle-690-train.json). [Narrative](full_log.md#cycle-690-unscented-kalman-surrogate-stationarity-inversion).
+
+## cumulative-cubic-surrogate: Gradient-driven cumulative regularization
+Status: deferred
+
+**Hypothesis:** Cumulative step length and gradient-model norm mismatch can stabilize nonmonotone model exploration without energy-based backtracking.
+**Outcome and uncertainty:**691 converges all training with adequate energy and no errors, but costs more; {'faster': 5, 'slower': 8, 'same': 456}. No passive inner states identify a repair.
+**Reason to revisit:** A certified model-Hessian error bound or evidence separating derivative approximation from cumulative regularization could justify a revised formulation.
+**Next experiment:** Await that prerequisite; no initialization,regularization,work orcritic sweep.
+
+**Attempts:**
+- Cycle691; candidate `28fa3ff1cd83a6bed8e5387d3fe1c628c7829ec8`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard.
+  [Implementation](ideas/cumulative-cubic-surrogate/28fa3ff1cd83a6bed8e5387d3fe1c628c7829ec8/algo.py). [Training evidence](evaluation_results/cycle-691-train.json). [Narrative](full_log.md#cycle-691-cumulative-gradient-driven-cubic-surrogate-regularization).
+
+## regularized-conmin-surrogate: Regularized conjugacy repair in GP search
+Status: deferred
+
+**Hypothesis:** Retry lost-conjugacy endpoints using shifted two-pair curvature to obtain better GP proposals.
+**Outcome and uncertainty:**693 fullyconverges withvalidenergy but loses cost;4faster4slower461same. Emptyfailure_details cannot distinguish rare activation, rejected proposals and poor endpoints.
+**Reason to revisit:** A diagnosed conjugacy failure on a supported fixed model could justify the regularization mechanism; current evidence does not.
+**Next experiment:** Only after such evidence, target the identified curvature/rollback issue against the current champion; no shift,restart orbudget sweep.
+
+**Attempts:**
+- Cycle693; candidate `188b5cfa93398a81088292451e235e5c2081fc4c`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/regularized-conmin-surrogate/188b5cfa93398a81088292451e235e5c2081fc4c/algo.py),[training](evaluation_results/cycle-693-train.json),[narrative](full_log.md#cycle-693-powell-triggered-regularized-two-pair-surrogate-search).
+
+## distance-adaptive-surrogate: D-adapted dual averaging on the fixed GP
+Status: deferred
+
+**Hypothesis:** Distance-adaptive gradient accumulation and weighted averaging yield useful posterior proposals without line searches.
+**Outcome and uncertainty:**694 allconverged,energyvalid,zeroerrors,but broadcostloss. The model-only output solves the previously deferred average-geometry issue; warmup andnonconvexaveraging remain unobserved.
+**Reason to revisit:** A independently justified distance initialization or finite-horizon averaging theory applicable to this model could supply a new mechanism.
+**Next experiment:** Await that prerequisite; no initialdistance,work orcritic sweep.
+
+**Attempts:**
+- Cycle694;candidate `1ee2a9ac787b18800c8a18ff0769e28869e655f5`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/distance-adaptive-surrogate/1ee2a9ac787b18800c8a18ff0769e28869e655f5/algo.py),[training](evaluation_results/cycle-694-train.json),[narrative](full_log.md#cycle-694-distance-adaptive-dual-averaging-surrogate-search).
+
+## sequential-subspace-surrogate: SESOP over model trajectory directions
+Status: deferred
+
+**Hypothesis:** Joint model minimization over gradient and accumulated trajectory directions improves physical proposals.
+**Outcome and uncertainty:**695 fullyconverges,energyvalid,zeroerrors,but losespaidcost. No innerstates distinguish subspace quality from inexactsolve truncation.
+**Reason to revisit:** A supported nonlinear subspace mechanism or localized inner-solve defect could make this retained formulation useful.
+**Next experiment:** Awaitthat prerequisite; no directioncount,rank,work,accuracy orcritic sweep.
+
+**Attempts:**
+- Cycle695;candidate `8e85f05726797741fa9f37ad534b663e5842e75c`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/sequential-subspace-surrogate/8e85f05726797741fa9f37ad534b663e5842e75c/algo.py),[training](evaluation_results/cycle-695-train.json),[narrative](full_log.md#cycle-695-sequential-subspace-surrogate-minimization).
+
+## gradient-penalty-surrogate: Descent-checked positive gradient penalty
+Status: deferred
+
+**Hypothesis:** A gradient-norm penalty changes model search toward flatter stationary regions and improves physical proposals.
+**Outcome and uncertainty:** Cycle 696 fails aggregate energy and increases cost despite full convergence and zero errors. No passive inner states distinguish basin changes from poor search.
+**Reason to revisit:** A localized trajectory defect or justified adaptive penalty mechanism could support a revised formulation.
+**Next experiment:** Await that prerequisite; no lambda, stencil, budget or critic sweep.
+
+**Attempts:**
+- Cycle 696; candidate `d08661e53f225b12fdd3677827ae65fd9210b6fc`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/gradient-penalty-surrogate/d08661e53f225b12fdd3677827ae65fd9210b6fc/algo.py), [training](evaluation_results/cycle-696-train.json), [narrative](full_log.md#cycle-696-descent-checked-gradient-penalty-surrogate-search).
+
+## lazy-cubic-surrogate: Phase-certified reuse of signed model curvature
+Status: deferred
+
+**Hypothesis:** Reuse one model Hessian across multiple cubic steps, admitting entire phases through summed gradient progress.
+**Outcome and uncertainty:**697 converges all training with valid energy and zero errors but increases cost; {'slower': 8, 'faster': 3, 'same': 458}. No retained phase diagnostics.
+**Reason to revisit:** Evidence separating stale-curvature error from phase-certification truncation could justify a targeted revision.
+**Next experiment:** Await that evidence; no phase length, regularization, stencil, budget or critic sweep.
+
+**Attempts:**
+- Cycle 697; candidate `2da9fad13317a17c32cfeac35a0a4846fb51580b`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/lazy-cubic-surrogate/2da9fad13317a17c32cfeac35a0a4846fb51580b/algo.py), [training](evaluation_results/cycle-697-train.json), [narrative](full_log.md#cycle-697-phase-certified-lazy-cubic-surrogate-search).
+
+## contracting-domain-surrogate: Source-scheduled bounded quadratic search
+Status: deferred
+
+**Hypothesis:** Contract signed quadratic searches within the existing native motion bounds to produce better GP proposals.
+**Outcome and uncertainty:**698 fully converges with valid energy and zero errors, but increases cost; {'slower': 88, 'same': 275, 'faster': 106}. Inner active-set and model states unavailable.
+**Reason to revisit:** Evidence of a localized quadratic-solve or nonconvex-trajectory defect could justify a revision.
+**Next experiment:** Await that evidence; no domain, schedule, accuracy, work or critic sweep.
+
+**Attempts:**
+- Cycle 698; candidate `2f5af364d5e135d246283b9a24e67e6c5064e136`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/contracting-domain-surrogate/2f5af364d5e135d246283b9a24e67e6c5064e136/algo.py), [training](evaluation_results/cycle-698-train.json), [narrative](full_log.md#cycle-698-contracting-domain-quadratic-surrogate-search).
+
+## differential-evolution-surrogate: Population differences and crossover in the GP
+Status: deferred
+
+**Hypothesis:** Differential mutation searches distinct useful model basins within existing motion bounds.
+**Outcome and uncertainty:**699 converges all training with validenergy/zeroerrors but broadcostloss;{'slower': 185, 'same': 205, 'faster': 79}. Population/constraint states not retained.
+**Reason to revisit:** A diagnosed population feasibility or finite-horizon defect, or independent local-search interaction evidence, could motivate revision.
+**Next experiment:** Await that evidence; no seed,population,mutation,crossover,work orpolishing sweep.
+
+**Attempts:**
+- Cycle699;candidate `3449a41457ef94410382f9118eac6a796aa26fb7`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/differential-evolution-surrogate/3449a41457ef94410382f9118eac6a796aa26fb7/algo.py),[training](evaluation_results/cycle-699-train.json),[narrative](full_log.md#cycle-699-differential-evolution-surrogate-proposals).
+
+## physical-quickprop: Fixed chemical modes with scalar parabolic extrapolation
+Status: closed
+
+**Hypothesis:** Two-gradient parabolas adapt modewise compliance faster than sign or RMS histories.
+**Outcome and uncertainty:**700 has25converged444limits,zeroerrors,energyfailure and468slowercases. Passive late forces/motion remain large with alternating energies; no scalar controller state.
+**Reason to revisit:** None for this fixed-mode specification. Coupled, independently justified curvature inference would be a different mechanism; do not tune ignition or caps.
+**Next experiment:** No further scalar Quickprop experiment planned.
+
+**Attempts:**
+- Cycle700;candidate `a0f88250f429c06877210a77752213580b6acd9e`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision invalid. [Implementation](ideas/physical-quickprop/a0f88250f429c06877210a77752213580b6acd9e/algo.py),[training](evaluation_results/cycle-700-train.json),[narrative](full_log.md#cycle-700-physical-per-mode-parabolic-quickprop),[passive trace](diagnostics/b8278702450c49da9b95c1b0c4a2e2b2/0064e1fdd90542d468fdbb46691690f8ef6816ad3a6bdbb36b08cc4e853a66e4.json).
+
+## minimax-secant-calibration: Worst normalized-history residual
+Status: deferred
+
+**Hypothesis:** Minimax aggregation balances the physical fit across early normalized secants.
+**Outcome and uncertainty:** Cycle704 is a valid broad cost loss; all469 converge and no inner fit states are retained. Worst scenarios may reflect nonlinear contamination.
+**Reason to revisit:** Independent evidence of a reliably identifiable contaminated observation could support a robust scenario construction before minimax fitting; no such evidence exists now.
+**Next experiment:** Only with that evidence, compare one principled scenario construction against463 under unchanged gates; no exponent or prior sweep.
+
+**Attempts:**
+- Cycle704;candidate `f4b69cfaee25afb7e9afad67b142f362a76d355d`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;discard(cost). [Implementation](ideas/minimax-secant-calibration/f4b69cfaee25afb7e9afad67b142f362a76d355d/algo.py). [Training](evaluation_results/cycle-704-train.json). [Narrative](full_log.md#cycle-704-minimax-normalized-secant-physical-calibration).
+
+## diagonal-hypergradient-surrogate: Online diagonal rates and scalar momentum
+Status: deferred
+
+**Hypothesis:** Coordinate AdaGrad hypergradients learn effective cheap-GP steps, including from rejected modeltrials.
+**Outcome and uncertainty:**705 passestraining but failsvalidationcost;all934converge,noerrors. Emptyfailure_details cannot distinguish learning warmup from modelbias.451physicalfullmatrix remains a separate deferredidea.
+**Reason to revisit:** Independent evidence of meta-state adaptation error or a supported initialization tied to actual modelcurvature could establish a useful learner/model pairing.
+**Next experiment:** Awaitthat evidence;no rate,momentum,work orcritic sweep. Test one justified learner correction against currentchampion.
+
+**Attempts:**
+- Cycle705;candidate `93941b7c880bafefb2456feff7ac05686853dd0e`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;non_generalizable. [Implementation](ideas/diagonal-hypergradient-surrogate/93941b7c880bafefb2456feff7ac05686853dd0e/algo.py),[training](evaluation_results/cycle-705-train.json),[validation](evaluation_results/cycle-705-valid.json),[narrative](full_log.md#cycle-705-diagonal-hypergradient-surrogate-search).
+
+## ellipsoid-backtracking-surrogate: Geometric sets of diagonal step sizes
+Status: deferred
+
+**Hypothesis:** Rejected GP trials cut an ellipsoid of possible diagonalpreconditioners while gradientdependentselection seeks sufficientprogress.
+**Outcome and uncertainty:**706validtrainingcostloss;all469converge,noerrors. No cut orsearchstates retained.
+**Reason to revisit:** A locallycertifiedconvexposterior region or directcut-degeneracy evidence could establish compatiblemodelconditions.
+**Next experiment:** Awaitthat prerequisite;no initialset,gamma,expansion,cut,work orcritic sweep.
+
+**Attempts:**
+- Cycle706;candidate `0e029ab1a713663b681e27cc0e3760c26e0875f2`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;discard. [Implementation](ideas/ellipsoid-backtracking-surrogate/0e029ab1a713663b681e27cc0e3760c26e0875f2/algo.py),[training](evaluation_results/cycle-706-train.json),[narrative](full_log.md#cycle-706-ellipsoid-multidimensional-surrogate-backtracking).
+
+## bounded-posterior-calibration: Average the Gaussian fit inside coefficient bounds
+Status: deferred
+
+**Hypothesis:** Correlated boundedposterior expectations avoid overconfident clippedmode estimates.
+**Outcome and uncertainty:**707broadtrainingcostloss;all469converge,noerrors. Unitnoise interpretation,asymmetricpriorbound bias andquadratureerror remainunmeasured.
+**Reason to revisit:** Independently calibrated coefficientlikelihood ordirectquadratureerror evidence could support a revisedinferencemodel.
+**Next experiment:** Awaitthat evidence;no nodecount,seed,noise,ridge,box orschedule sweep.
+
+**Attempts:**
+- Cycle707;candidate `971ea1172f74ec43dd49a21a738ff0f2c93f0212`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;discard. [Implementation](ideas/bounded-posterior-calibration/971ea1172f74ec43dd49a21a738ff0f2c93f0212/algo.py),[training](evaluation_results/cycle-707-train.json),[narrative](full_log.md#cycle-707-bounded-posterior-mean-physical-calibration).
+
+## average-curvature-fista-surrogate: Projected acceleration with averaged functional curvature
+Status: deferred
+
+**Hypothesis:** Functional-curvature averages and good/bad composite branches improve short GP searches.
+**Outcome and uncertainty:**709 passes training but loses validation cost; all cases converge with valid energies and no errors. No inner-state traces diagnose the discrepancy.
+**Reason to revisit:** Direct projection/curvature-state evidence or an independently justified compact model domain could isolate the finite-search limitation.
+**Next experiment:** Await that evidence; no radius, initialization, floor, averaging or work sweep.
+
+**Attempts:**
+- Cycle709; candidate `3df362453f4835230dc017d8fcd6b2eac16ca813`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision non_generalizable. [Implementation](ideas/average-curvature-fista-surrogate/3df362453f4835230dc017d8fcd6b2eac16ca813/algo.py), [training](evaluation_results/cycle-709-train.json), [validation](evaluation_results/cycle-709-valid.json), [narrative](full_log.md#cycle-709-average-curvature-fista-surrogate-search).
+
+**724 prerequisite/revisit:** The actual unchanged native-step bounds, relative norm, descent halfspace and angular slabs define an independently justified convex domain. Replace709 ballprojection with bounded Euclidean projection onto that intersection. Keep all recurrence parameters and final gates; this is not a radius/coefficient sweep. Await full evaluation before any further change.
+
+**724 reassessment:** The actual-admission convex domain supplies the recorded geometric prerequisite but loses training cost; all469 converge, valid energy, no errors. No retained projection/curvature states diagnose why. Further work requires direct model/projection evidence; no solver tolerance, slack, constraints, curvature or iteration sweep.
+- Cycle724; candidate `c381ae4bb031ddc17e2c2a5e7c8ad2c216881eac`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/average-curvature-fista-surrogate/c381ae4bb031ddc17e2c2a5e7c8ad2c216881eac/algo.py), [training](evaluation_results/cycle-724-train.json), [narrative](full_log.md#cycle-724-ac-fista-on-the-actual-admissible-step-region).
+
+## rational-gradient-line-surrogate: AAA interpolation of directional model gradients
+Status: deferred
+
+**Hypothesis:** Rational roots improve finite Wolfe searches when cubic interpolation is inaccurate.
+**Outcome and uncertainty:**710 valid training cost loss, all469 converge, zero errors. No ray/pole/search-state evidence.
+**Reason to revisit:** Direct evidence of difficult rational-shaped ray gradients or interpolation failures could establish a compatible controller case.
+**Next experiment:** Await that evidence; no degree, tolerance, bracket, budget or critic sweep.
+
+**Attempts:**
+- Cycle710; candidate `bb45e1a0b8925cfa52ce22daf850f314971d70ba`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/rational-gradient-line-surrogate/bb45e1a0b8925cfa52ce22daf850f314971d70ba/algo.py), [training](evaluation_results/cycle-710-train.json), [narrative](full_log.md#cycle-710-rational-gradient-interpolation-in-surrogate-line-search).
+
+## interval-hessian-surrogate: Region-wide Hessian preconditioning
+Status: deferred
+
+**Hypothesis:** Reusing a region-bounded curvature matrix improves finite GP optimization.
+**Outcome and uncertainty:**711 valid training cost loss, all469 converge with no errors. No bound/shift/search traces diagnose the loss; arithmetic is not formally verified for libm endpoints.
+**Reason to revisit:** The closed warped-GP Hessian and interval propagation enable independently justified bounded searches; the controller itself needs direct curvature-state evidence.
+**Next experiment:** Test interval lower bounds for global surrogate initialization as a distinct use, not a shift or width sweep.
+
+**Attempts:**
+- Cycle711; candidate `4ee672d1c011862471a76ee46835ad827932210f`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/interval-hessian-surrogate/4ee672d1c011862471a76ee46835ad827932210f/algo.py), [training](evaluation_results/cycle-711-train.json), [narrative](full_log.md#cycle-711-interval-hessian-surrogate-preconditioning).
+
+## interval-bound-global-surrogate: Region-bound initialization before BFGS
+Status: deferred
+
+**Hypothesis:** Interval lower bounds identify better model basins within bounded global work.
+**Outcome and uncertainty:**712 valid training cost loss, all469 converge, zero errors. Finite-tree coverage and interval looseness remain unmeasured.
+**Reason to revisit:** Direct branch/bound/model-state evidence or a supported tighter region representation could establish useful global exploration.
+**Next experiment:** Await that evidence; no region, split count, bound or refinement sweep.
+
+**Attempts:**
+- Cycle712; candidate `566b8b0d39271e4312ed2b728e9fbfd58f62d266`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/interval-bound-global-surrogate/566b8b0d39271e4312ed2b728e9fbfd58f62d266/algo.py), [training](evaluation_results/cycle-712-train.json), [narrative](full_log.md#cycle-712-interval-lower-bounds-for-surrogate-initialization).
+
+## ani1x-curvature: Published neural initial Hessian
+Status: deferred
+
+**Hypothesis:** A pretrained molecular potential provides coupled initial curvature that needs fewer paid secants than generic physical blocks.
+**Outcome and uncertainty:**713 fully converges with valid aggregate energy and no errors but substantially worsens training cost. Empty failure_details and passive manifest leave model transfer, Hessian quality, scalar calibration and float16 coefficient effects unresolved. The full-precision package never passed the1MiB client preflight.
+**Reason to revisit:** Independently trained curvature is a substantially different prior; passive evidence may identify a bounded implementation or numerical repair if useful progress appears.
+**Next experiment:** Await independent evidence of useful neural curvature or a diagnosed transfer/implementation mechanism; no model/member/precision/blend/fit-parameter sweep from broad loss.
+
+**Preflight artifact:** Full-precision commit `1dd6a24cf8ac4785a7f61c71d468a764a2ce0244` was never submitted and has no scientific decision. Its [exact source](ideas/ani1x-curvature/1dd6a24cf8ac4785a7f61c71d468a764a2ce0244/algo.py) is preserved; original binary parameters and the provenance manifest are in research_sources/ani1x. See [narrative](full_log.md#cycle-713-published-ani-1x-initial-curvature). 
+
+**Attempts:**
+- Cycle713; candidate `4458be73ee44f579944b97294e490d33734a1111`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/ani1x-curvature/4458be73ee44f579944b97294e490d33734a1111/algo.py), [training](evaluation_results/cycle-713-train.json), [narrative](full_log.md#cycle-713-published-ani-1x-initial-curvature).
+
+## moving-asymptote-surrogate: Conservative separable reciprocal models
+Status: deferred
+
+**Hypothesis:** Oscillation-adapted asymptotes provide useful short GP searches after physical whitening.
+**Outcome and uncertainty:**714 lowers cost but fails energy. All469converge, no errors; one higher-energy converged endpoint dominates the recovery loss. No inner-state diagnostics.
+**Reason to revisit:** Direct model/path evidence or a compatible independently supported basin-selection principle could distinguish useful separable motion from endpoint changes.
+**Next experiment:** Await that evidence; no bound/rho/asymptote/work/critic sweep.
+
+**Attempts:**
+- Cycle714; candidate `4edfdf04cb6d5912bc924207d0c64b9eb4a43d0c`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/moving-asymptote-surrogate/4edfdf04cb6d5912bc924207d0c64b9eb4a43d0c/algo.py), [training](evaluation_results/cycle-714-train.json), [narrative](full_log.md#cycle-714-conservative-moving-asymptote-gp-search).
+
+## averaged-reference-surrogate: Running-average nonmonotone Wolfe reference
+Status: deferred
+
+**Hypothesis:** An energy average permits useful model-valley motion without discarding low accepted values.
+**Outcome and uncertainty:**715 valid training cost loss, all469 converge with no errors. No reference/line states retained.
+**Reason to revisit:** Direct evidence of monotone-search stagnation or a compatible finite-horizon model-path criterion could support this controller.
+**Next experiment:** Await that evidence; no eta/reference/line/work/critic sweep.
+
+**Attempts:**
+- Cycle715; candidate `778130cfd738b4da505902e048b8405dc2dac172`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/averaged-reference-surrogate/778130cfd738b4da505902e048b8405dc2dac172/algo.py), [training](evaluation_results/cycle-715-train.json), [narrative](full_log.md#cycle-715-averaged-reference-nonmonotone-gp-line-search).
+
+## sparse-label-gp-reliability: Null-versus-one historical variance selection
+Status: deferred
+
+**Hypothesis:** Sparse observation reliability avoids widespread downweighting while limiting isolated chart/model inconsistencies.
+**Outcome and uncertainty:**716 valid training cost loss, all469 converge with no errors. No selection or predictive-error states retained.
+**Reason to revisit:** Independently measured isolated chart inconsistency or calibrated observation reliability could establish whether sparse support is appropriate.
+**Next experiment:** Await that evidence; no support/prior/noise/variance/critic sweep.
+
+**Attempts:**
+- Cycle716; candidate `8ac69a553a32f30139ce991f9e547d5e18ae1fb8`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/sparse-label-gp-reliability/8ac69a553a32f30139ce991f9e547d5e18ae1fb8/algo.py), [training](evaluation_results/cycle-716-train.json), [narrative](full_log.md#cycle-716-sparse-single-label-gp-reliability).
+
+## monotone-energy-preconditioning: Initial-jet-matched scalar physical objective
+Status: deferred
+
+**Hypothesis:** A monotone asinh energy transform introduces force-direction curvature without changing physical stationary points or the initial Hessian.
+**Outcome and uncertainty:**717 valid training cost loss, all469 converge with no errors. Scalar scaling, later prior mismatch and secant/controller effects are unisolated.
+**Reason to revisit:** Direct transformed-curvature evidence or an independently consistent transformed physical model could resolve the learning/globalization interaction.
+**Next experiment:** Await that prerequisite; no scalar function/scale/fit/controller sweep.
+
+**Attempts:**
+- Cycle717; candidate `fda1790cda0492b084be3965f4474a1443f57447`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/monotone-energy-preconditioning/fda1790cda0492b084be3965f4474a1443f57447/algo.py), [training](evaluation_results/cycle-717-train.json), [narrative](full_log.md#cycle-717-monotone-physical-energy-preconditioning).
+
+## centered-gram-gp-shape: Tangent-normalized global shape covariance
+Status: deferred
+
+**Hypothesis:** Finite centered-Gram curvature improves global shape correlations while matching current feature derivatives.
+**Outcome and uncertainty:**718 valid training cost loss, all469 converge without errors. Native-lift approximation, tangent projection and rank sensitivity remain unmeasured.
+**Reason to revisit:** Direct geometric/model-error evidence or an independently consistent finite lift could identify useful Gram information.
+**Next experiment:** Await that evidence; no rank/tensor/lift/support/kernel sweep.
+
+**Attempts:**
+- Cycle718; candidate `7886bd5a4d3d511673c067dfd7b00ab1dddd26eb`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/centered-gram-gp-shape/7886bd5a4d3d511673c067dfd7b00ab1dddd26eb/algo.py), [training](evaluation_results/cycle-718-train.json), [narrative](full_log.md#cycle-718-centered-gram-gp-shape-coordinates).
+
+## pi-trust-radius: Two-observation agreement-error filter
+Status: deferred
+
+**Hypothesis:** Temporal model-error filtering improves radius stability and paid progress.
+**Outcome and uncertainty:**719 fails energy and broadly loses cost; all469 converge with no errors. Error-order and inactive-radius effects are not diagnosed.
+**Reason to revisit:** Direct radius/error trajectories or a supported model-error order could establish a compatible digital controller.
+**Next experiment:** Await that evidence; no order/PIcoefficients/error-normalization/factor/radius sweep.
+
+**Attempts:**
+- Cycle719; candidate `c2095e420ff896b3a8ac9f079a50d193d30b1473`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/pi-trust-radius/c2095e420ff896b3a8ac9f079a50d193d30b1473/algo.py), [training](evaluation_results/cycle-719-train.json), [narrative](full_log.md#cycle-719-pi-filtered-physical-trust-radius).
+
+## mmff94-saturated-bond-curvature: Typed positive stretch curvature
+Status: deferred
+
+**Hypothesis:** Source-fitted saturated C–C/C–H quartic curvature improves the physical starting matrix.
+**Outcome and uncertainty:**720 valid training cost loss, all469 converge without errors. Typing, quartic shape and model transfer are unisolated.
+**Reason to revisit:** Independent curvature/fit residual evidence could establish a useful typed stretch model or a compatible calibration design.
+**Next experiment:** Await that evidence; no parameter/typing/scope/curvature/scale sweep.
+
+**Attempts:**
+- Cycle720; candidate `2b990799b4a77db2d59621dfd5b64b255255ed2d`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/mmff94-saturated-bond-curvature/2b990799b4a77db2d59621dfd5b64b255255ed2d/algo.py), [training](evaluation_results/cycle-720-train.json), [narrative](full_log.md#cycle-720-mmff94-saturated-bond-initial-curvature).
+
+## mmff94-tetrahedral-angle-curvature: Typed current-angle diagonal curvature
+Status: deferred
+
+**Hypothesis:** Published tetrahedral-carbon angular response improves the bend prior independently of bond stiffness.
+**Outcome and uncertainty:**721 fails energy and cost despite all469 converging without errors. No typing/curvature/fit diagnostics isolate the cause.
+**Reason to revisit:** Independent angular-curvature error or model-transfer evidence could justify a different physically calibrated bend model.
+**Next experiment:** Await that evidence; no parameter/typing/support/positivity/scale sweep.
+
+**Attempts:**
+- Cycle721; candidate `4d9ee4367c0251c5f4207a2c0004cd91e27bf85b`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision invalid. [Implementation](ideas/mmff94-tetrahedral-angle-curvature/4d9ee4367c0251c5f4207a2c0004cd91e27bf85b/algo.py), [training](evaluation_results/cycle-721-train.json), [narrative](full_log.md#cycle-721-mmff94-tetrahedral-carbon-angle-curvature).
+
+## mmff-relative-stretch-bend: Source ligand asymmetry in normalized incidence
+Status: deferred
+
+**Hypothesis:** Unequal source cross constants improve the direction of the fitted stretch-bend correlation at unchanged global scale.
+**Outcome and uncertainty:**722 valid training cost loss, all469 converge without errors. No fitted-coupling/trajectory states retained.
+**Reason to revisit:** Independent cross-curvature or calibration evidence could establish useful ligand response beyond this normalized basis.
+**Next experiment:** Await that evidence; no ratio/strength/typing/scope/fit sweep.
+
+**Attempts:**
+- Cycle722; candidate `d5e0b68cb1587a52dbf1a21e60fc7ccd7ccf879e`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/mmff-relative-stretch-bend/d5e0b68cb1587a52dbf1a21e60fc7ccd7ccf879e/algo.py), [training](evaluation_results/cycle-722-train.json), [narrative](full_log.md#cycle-722-mmff-relative-ligand-asymmetry-in-stretch-bend-learning).
+
+## posterior-gradient-window: Expected Gaussian window around zero gradient
+Status: deferred
+
+**Hypothesis:** Joint posterior gradient mean/covariance identifies more useful near-stationary proposals.
+**Outcome and uncertainty:**723 valid training cost loss, all469 converge without errors. Uncertainty calibration, covariance projection and acquisition search are unisolated.
+**Reason to revisit:** Direct posterior-gradient calibration or acquisition-state evidence could identify a compatible probabilistic stationarity criterion.
+**Next experiment:** Await that evidence; no tau/covariance/jitter/stencil/work/critic sweep.
+
+**Attempts:**
+- Cycle723; candidate `98ad5d6834e75c5604b479ae037a120c753492fe`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/posterior-gradient-window/98ad5d6834e75c5604b479ae037a120c753492fe/algo.py), [training](evaluation_results/cycle-723-train.json), [narrative](full_log.md#cycle-723-posterior-gradient-gaussian-window-search).
+
+## log-stiffness-contrast-fit: Low-dimensional stiffness-law corrections
+Status: deferred
+
+**Hypothesis:** One contrast per homogeneous primitive kind captures relative soft/stiff calibration error while preserving shared amplitude learning.
+**Outcome and uncertainty:**725 valid training cost loss, all469 converge without errors. No coefficient/identifiability states distinguish wrong ordering from finite-data variance.
+**Reason to revisit:** Independently measured stiffness-correlated errors or a principled identifiable response basis could justify selective calibration flexibility.
+**Next experiment:** Await that evidence; no group/normalization/amplitude/ridge/bounds/window sweep.
+
+**Attempts:**
+- Cycle725; candidate `670a68016c2d3f703abab6ca277df97f5ad82729`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/log-stiffness-contrast-fit/670a68016c2d3f703abab6ca277df97f5ad82729/algo.py), [training](evaluation_results/cycle-725-train.json), [narrative](full_log.md#cycle-725-log-stiffness-contrasts-in-physical-calibration).
+
+## nested-accelerated-regularization: AR and SCAR-PM inside the nonconvex proximal hierarchy
+Status: deferred
+
+**Hypothesis:** Accelerated inner solves and explicit gradient-halving checks distinguish curvature-guess failure from incomplete proximal solving.
+**Outcome and uncertainty:**726 valid training cost loss, all469 converge without errors. No nested-state traces isolate work exhaustion, domain failure or changed proximal paths.
+**Reason to revisit:** A supported smooth model domain or direct nested-state evidence could establish whether the full hierarchy provides useful progress within bounded work.
+**Next experiment:** Await that evidence; no work,epsilon,curvature,growth,initialization or certificate sweep.
+
+**Attempts:**
+- Cycle726; candidate `56732eae1acf39cc8ad10b9f2f8cd376ba0b0d0d`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/nested-accelerated-regularization/56732eae1acf39cc8ad10b9f2f8cd376ba0b0d0d/algo.py), [training](evaluation_results/cycle-726-train.json), [narrative](full_log.md#cycle-726-nested-accelerated-accumulative-regularization).
+
+## bending-work-feedback: Known-potential correction to retrospective work
+Status: deferred
+
+**Hypothesis:** Exact known-bending work plus residual endpoint quadrature improves radius feedback after acceptable downhill steps.
+**Outcome and uncertainty:**727 valid cost loss with all469 converging and no errors. No radius or quadrature residual states identify a repair.
+**Reason to revisit:** Direct integrated-work and next-step model-quality evidence could establish when retrospective work is predictive.
+**Next experiment:** Await that evidence; no potential, ratio, guard, radius or controller sweep.
+
+**Attempts:**
+- Cycle727; candidate `92fbfd7198218db3377f6c15e1d0a2c7fa5f84ae`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/bending-work-feedback/92fbfd7198218db3377f6c15e1d0a2c7fa5f84ae/algo.py), [training](evaluation_results/cycle-727-train.json), [narrative](full_log.md#cycle-727-known-bending-correction-to-retrospective-work-feedback).
+
+## d-optimal-calibration-bootstrap: Information-directed early secants
+Status: revisiting
+
+**Hypothesis:** Early steps that identify existing physical coefficients better can lower later cost without sacrificing ordinary predicted energy.
+**Outcome and uncertainty:**728 valid cost loss, all469 converge without errors. Realized information and coefficient improvements are unobserved.
+**Reason to revisit:** Independent evidence linking design precision to actual secant/model quality could support an informative bootstrap policy.
+**Next experiment:** Await that evidence; no scope,weight,rank,work,ridge or energy-sacrifice sweep.
+
+**Attempts:**
+- Cycle728; candidate `7c70cbcd18c579cc2a56aef2448f6051802bf31f`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/d-optimal-calibration-bootstrap/7c70cbcd18c579cc2a56aef2448f6051802bf31f/algo.py), [training](evaluation_results/cycle-728-train.json), [narrative](full_log.md#cycle-728-d-optimal-physical-calibration-bootstrap).
+
+**740 decision-loss control:** A-GOODE sourceprovides a formal prediction-loss criterion; use localregularizedNewton sensitivity toweightposteriorcoefficientcovariance. This is an independentlyderived objective,notempiricalvalidation of728's uncertainstatisticalmodel or a diagnosedrepair. All728scope,fit,energy/motionconstraints andbudgets remainfixed.
+
+## ordinary-direction-elimination: Nonlinear conditional objective reduction
+Status: deferred
+
+**Hypothesis:** Solving the longitudinal surrogate stationarity condition before transverse corrections improves model proposals.
+**Outcome and uncertainty:**729 valid costloss, all469 converge without errors. Conditional branch and inner convergence states unavailable.
+**Reason to revisit:** A supported conditional branch structure or direct reduced-solver defect could establish useful objective elimination.
+**Next experiment:** Await evidence; no direction,partition,tolerance,spacing,work or critic sweep.
+
+**Attempts:**
+- Cycle729; candidate `4b83de4b75895e427ba32766cd0660afd503dcb3`; champion `99a2d8b5482466729ddde624fc4253fc98aba249`; decision discard. [Implementation](ideas/ordinary-direction-elimination/4b83de4b75895e427ba32766cd0660afd503dcb3/algo.py), [training](evaluation_results/cycle-729-train.json), [narrative](full_log.md#cycle-729-ordinary-direction-nonlinear-variable-elimination).
+
+## physical-row-momentum: Product-row-ball physical descent
+Status: deferred
+
+**Hypothesis:** Row-normalized accepted-gradient momentum balances chemical-coordinate progress while BFGS calibrates its scalar ray.
+**Outcome and uncertainty:**731 invalid:6unrepresentable-displacement errors,280converged/183limits; all463scoredcases slower. Errortrace confirms late contraction at unchangedenergy/above-thresholdforces; nonerrorloss remains broad.
+**Reason to revisit:** An independently supported chemical row metric and direction/globalization pairing would need to address broad costloss as well as line stalls; current evidence does not justify momentum or line tuning.
+**Next experiment:** Await that formulation; no beta,rowweight,cap,floor,reset,line orray sweep.
+
+**Attempts:**
+- Cycle731;candidate `7ddd0635799c81ccf78f7e2be34a171985ca0c8a`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision invalid. [Implementation](ideas/physical-row-momentum/7ddd0635799c81ccf78f7e2be34a171985ca0c8a/algo.py),[training](evaluation_results/cycle-731-train.json),[error trace](diagnostics/6c85f46e8d864ae08bb7d524546dd32c/9ffebdd1a579dc619a5e861c499d1f1d5914190ef5e500eafece3038c4525fb6.json),[narrative](full_log.md#cycle-731-row-momentum-physical-descent).
+
+## gaussian-tree-surrogate-metric: Chow–Liu projection of BFGS inverse curvature
+Status: deferred
+
+**Hypothesis:** Retaining strong tree correlations while removing cycles improves a short GPsearch.
+**Outcome and uncertainty:**732 validcostloss,all469converge,zeroerrors. No tree/metric/searchstates localize overregularization or secantdamage.
+**Reason to revisit:** Independent evidence about useful inverse-curvature dependence structure or a secant-compatible graphical projection could support this geometry.
+**Next experiment:** Awaitthat evidence;no graph,treewidth,blend,frequency,basis,line orwork sweep.
+
+**Attempts:**
+- Cycle732;candidate `e84255a9ae0149c145b877ee22afe0be842e740c`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/gaussian-tree-surrogate-metric/e84255a9ae0149c145b877ee22afe0be842e740c/algo.py),[training](evaluation_results/cycle-732-train.json),[narrative](full_log.md#cycle-732-gaussian-tree-inverse-metric-in-surrogate-bfgs).
+
+## directional-halogen-curvature: Positive modes of GFN1-XB response
+Status: deferred
+
+**Hypothesis:** Directional weak-interaction curvature supplies useful initial bond/angularcoupling withoutcharge estimates.
+**Outcome and uncertainty:**733 all469converge withvalidenergy/zeroerrors; everycallcount identical to463. Termactivation andcurvaturestrength are unobserved.
+**Reason to revisit:** Independent localcurvature or activation evidence could identify a supported missing directionalresponse; countidentityalone doesnot justify strongerterms.
+**Next experiment:** Awaitthat evidence;nostrength,radius,cutoff,typing,eigenvalue orfit sweep.
+
+**Attempts:**
+- Cycle733;candidate `03aeed2c4cb525cc3ba443afc14c0286ebe941b4`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/directional-halogen-curvature/03aeed2c4cb525cc3ba443afc14c0286ebe941b4/algo.py),[training](evaluation_results/cycle-733-train.json),[narrative](full_log.md#cycle-733-directional-halogen-bond-initial-curvature).
+
+## coordination-polar-bond-mean: Finite GFN0-SRB remainder with complete CN derivative
+Status: deferred
+
+**Hypothesis:** Coordination-dependent polar-bond preferredlengths supply useful anharmonic GPresponse while preservingcurrentquadraticinformation.
+**Outcome and uncertainty:**734 validcostloss,all469convergewithout errors. Modeltransfer,affinegeometry andcomponentforcequality unisolated.
+**Reason to revisit:** Independent polar-bond response or finitechart evidence could identify a compatible model; sourcebasis-correction transfer alone was insufficient.
+**Next experiment:** Awaitthat evidence; no amplitude,CN,EN,cutoff,width,spacing orscope sweep.
+
+**Attempts:**
+- Cycle734;candidate `f81fe4116dbd521dd8ee36c329a25b05575dc523`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/coordination-polar-bond-mean/f81fe4116dbd521dd8ee36c329a25b05575dc523/algo.py),[training](evaluation_results/cycle-734-train.json),[narrative](full_log.md#cycle-734-coordination-dependent-short-range-polar-bond-mean).
+
+## recycled-surrogate-curvature: Transfer admitted cheap-search inverse curvature
+Status: deferred
+
+**Hypothesis:** Physicallymapped priorGP inversecurvature improves the nextshortBFGS search.
+**Outcome and uncertainty:**735 validgain belowgate,all469convergewithout errors; no microstatefailuretrace. ReturnedSciPyinverse omitsfinalsecant upongradient convergence, unlike sourceAlgorithm3.
+**Reason to revisit:** The statically identified handoffomission permits a boundedsource-completion control; it doesnot causallyexplain theinsufficientgain.
+**Next experiment:**736 completes theidentifiedhandoffbutfailsvalidationcost. Awaitdirectcachedmetric/model-consistency evidence;noage,rank,blend,scope orwork sweep.
+
+**Attempts:**
+- Cycle735;candidate `309e850c985cd54d060786c4a1b58c21b0fa5c73`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/recycled-surrogate-curvature/309e850c985cd54d060786c4a1b58c21b0fa5c73/algo.py),[training](evaluation_results/cycle-735-train.json),[narrative](full_log.md#cycle-735-recycling-admitted-surrogate-inverse-curvature).
+
+**736 reassessment:** Source-completefinalsecant yieldsfulltraininggain,butvalidationcostincreases despiteall934converged/energyvalid/zeroerrors. No furtherstateevidence isolates a repair.
+- Cycle736;candidate `ded7df53deb9d94936521574cfb69b771d3a56b3`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision non_generalizable. [Implementation](ideas/recycled-surrogate-curvature/ded7df53deb9d94936521574cfb69b771d3a56b3/algo.py),[training](evaluation_results/cycle-736-train.json),[validation](evaluation_results/cycle-736-valid.json),[narrative](full_log.md#cycle-736-complete-the-recycled-final-secant).
+
+## controlled-surrogate-path: Finite-horizon control effort plus terminal energy
+Status: deferred
+
+**Hypothesis:** A low-effort path through the GPgradientflow supplies a more useful terminalproposal than directstationarity.
+**Outcome and uncertainty:**737 validcostloss,all469convergewithout errors. Finitediscretization,FDgradient andterminalreachability remainunisolated.
+**Reason to revisit:** Independent path-quality/optimality or nonlinearcontrol evidence could establish a useful finite-horizon objective.
+**Next experiment:** Awaitthat evidence;nohorizon,segments,weight,stencil,work orcritic sweep.
+
+**Attempts:**
+- Cycle737;candidate `e1a95b0c7c5cd7091f214cee400b75800375c545`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/controlled-surrogate-path/e1a95b0c7c5cd7091f214cee400b75800375c545/algo.py),[training](evaluation_results/cycle-737-train.json),[narrative](full_log.md#cycle-737-finite-horizon-controlled-surrogate-path).
+
+## physical-eigenbasis-adam: SOAP-style two-sided moving moments
+Status: deferred
+
+**Hypothesis:** Atom/spatial eigenbases with transported per-modevariances improvephysicalrelaxation overfactorizedGram orrownorm response.
+**Outcome and uncertainty:**738 validenergy/zeroerrors,376converged93limits;all469slower. Passiveendtrace showscontinuedrelaxation andoscillation withoutmoment/basis/controllerstates.
+**Reason to revisit:** Independently supported molecularmode/moment dynamics or ray/globalization evidence would need toaddressbroadcostloss; diagonalclosure bookkeeping aloneisinsufficient.
+**Next experiment:** Awaitthat evidence; no betas,epsilon,frequency,transport,cap,floor orline sweep.
+
+**Attempts:**
+- Cycle738;candidate `7af0258c25179a48375464dbb1d0d298186c2ce4`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/physical-eigenbasis-adam/7af0258c25179a48375464dbb1d0d298186c2ce4/algo.py),[training](evaluation_results/cycle-738-train.json),[trace](diagnostics/21a391a28fd64bf997416e0087c9a3a3/005c936d5cd1dd961a9caa7dd98279596c0f97e337e9913ff8fe109e6973879d.json),[narrative](full_log.md#cycle-738-physical-adam-in-moving-two-sided-eigenbases).
+
+## reference-onsite-coordination: Frozen GFN2 shell occupations in nonlinear GP mean
+Status: deferred
+
+**Hypothesis:** Published coordination-level response supplies usefulhigherorder radial information while preservingcurrentquadratic.
+**Outcome and uncertainty:**739 validcostloss,all469convergewithout errors. Hopping/population cancellation andaffinechart approximations remainunisolated.
+**Reason to revisit:** Independent shellpopulation/onsite-force evidence could establish a consistent electronicmean beyondfrozenreference occupations.
+**Next experiment:** Awaitthat evidence; no occupation,kCN,CNscale,cutoff,amplitude,scope orderivative sweep.
+
+**Attempts:**
+- Cycle739;candidate `b2fb06a45bb0cb6f1936e76249fc90582d94321f`;champion `99a2d8b5482466729ddde624fc4253fc98aba249`;decision discard. [Implementation](ideas/reference-onsite-coordination/b2fb06a45bb0cb6f1936e76249fc90582d94321f/algo.py),[training](evaluation_results/cycle-739-train.json),[narrative](full_log.md#cycle-739-frozen-reference-onsite-coordination-mean).
