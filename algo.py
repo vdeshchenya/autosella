@@ -14,10 +14,7 @@ and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
 a 2-coordinate N and a 3-coordinate C).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
-steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps,
-except connected n_atoms≥80 with a 4-coordinate sulfonamide
-sulfur {two 1-coordinate O, one N, one C} use Banerjee RFO
-after 20 steps and MaxInternalStep `wd=0.70` after 20 steps.
+steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
@@ -26,6 +23,9 @@ which also use iterative Cartesian B⁺ (`iterative_stepper=1`).
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
+Connected 12≤n_atoms<30 thiosulfonates (4-coordinate S with two
+1-coordinate O and one S neighbor) skip Hessian updates with
+s·y<0 from the first quasi-Newton update.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -515,6 +515,14 @@ class ApproximateHessian(LinearOperator):
             )
             self.set_B(B)
             return
+
+        if getattr(self, '_skip_neg_curv', False):
+            s = np.asarray(dx, dtype=np.float64).reshape(-1)
+            y = np.asarray(dg, dtype=np.float64).reshape(-1)
+            n = min(s.size, y.size)
+            if n and np.isfinite(s[:n]).all() and np.isfinite(y[:n]).all():
+                if float(s[:n] @ y[:n]) < 0.0:
+                    return
 
         lams, vecs = self.evals, self.evecs
         self.set_B(update_H(B, dx, dg, method=self.update_method,
@@ -7029,15 +7037,11 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
-                if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
-                    rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
-            step_method = 'rfo'
-        elif getattr(self, "_large", False) and self.nsteps >= 45:
+        if getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
         elif getattr(self, "_has_nitro_cf3", False) and self.nsteps >= 20:
             step_method = 'rfo'
@@ -7049,6 +7053,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_thiosulfonate", False):
+            self.pes.H._skip_neg_curv = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7429,7 +7435,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_isoxazole = False
         opt._has_benzothiazoline = False
         opt._has_isocyanide = False
-        opt._has_sulfonamide = False
+        opt._has_thiosulfonate = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7474,6 +7480,29 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 n_o = sum(int(numbers[nb]) == 8 for nb in real)
                 if n_c == 2 and n_o == 1:
                     opt._has_sulfoxide = True
+                    break
+        if connected and 12 <= n_atoms < 30:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 4:
+                    continue
+                n_o1 = sum(
+                    int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
+                    for nb in real
+                )
+                n_s = sum(int(numbers[nb]) == 16 for nb in real)
+                if n_o1 == 2 and n_s == 1:
+                    opt._has_thiosulfonate = True
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
@@ -7701,29 +7730,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
         if connected and n_atoms >= 80:
             opt._large = True
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 4:
-                    continue
-                n_o1 = sum(
-                    int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
-                    for nb in real
-                )
-                n_n = sum(int(numbers[nb]) == 7 for nb in real)
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                if n_o1 == 2 and n_n == 1 and n_c == 1:
-                    opt._has_sulfonamide = True
-                    break
         opt._hydrocarbon = False
         if not connected:
             # Dimers: do not let poor-ρ shrinks collapse δ to eta (1e-4).
