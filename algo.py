@@ -16,8 +16,8 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
-and Banerjee RFO after 20 steps, as do connected n_atoms<18 allenes.
-Connected molecules
+and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
+benzothiazines use the Schlegel flowchart Hessian update. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -269,21 +269,26 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
             lams_STY, vecs_STY = eigh(S.T @ Ytilde, S.T @ S)
             if np.all(lams_STY > 0):
                 method = 'BFGS'
+    elif method == 'flowchart':
+        method = _flowchart_pick(B, S, Ytilde)
 
-    if method == 'BFGS':
-        Bplus = _MS_BFGS(B, S, Ytilde)
-    elif method == 'TS-BFGS':
+    try:
+        if method == 'BFGS':
+            Bplus = _MS_BFGS(B, S, Ytilde)
+        elif method == 'TS-BFGS':
+            Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs)
+        elif method == 'PSB':
+            Bplus = _MS_PSB(B, S, Ytilde)
+        elif method == 'DFP':
+            Bplus = _MS_DFP(B, S, Ytilde)
+        elif method == 'SR1':
+            Bplus = _MS_SR1(B, S, Ytilde)
+        elif method == 'Greenstadt':
+            Bplus = _MS_Greenstadt(B, S, Ytilde)
+        else:  # pragma: no cover
+            raise ValueError('Unknown update method {}'.format(method))
+    except (np.linalg.LinAlgError, ValueError):
         Bplus = _MS_TS_BFGS(B, S, Ytilde, lams, vecs)
-    elif method == 'PSB':
-        Bplus = _MS_PSB(B, S, Ytilde)
-    elif method == 'DFP':
-        Bplus = _MS_DFP(B, S, Ytilde)
-    elif method == 'SR1':
-        Bplus = _MS_SR1(B, S, Ytilde)
-    elif method == 'Greenstadt':
-        Bplus = _MS_Greenstadt(B, S, Ytilde)
-    else:  # pragma: no cover
-        raise ValueError('Unknown update method {}'.format(method))
 
     Bplus += B
     # Symmetrize to clean up floating-point roundoff. The MS_* updates above
@@ -293,6 +298,29 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
     Bplus = (Bplus + Bplus.T) * 0.5
 
     return Bplus
+
+
+def _flowchart_pick(B, S, Y):
+    """Schlegel flowchart: SR1, else BFGS, else PSB (JCC 2018)."""
+    s = np.asarray(S, dtype=np.float64)
+    y = np.asarray(Y, dtype=np.float64)
+    if s.ndim == 2:
+        s = s[:, -1]
+        y = y[:, -1]
+    z = y - B @ s
+    ns = float(np.linalg.norm(s))
+    nz = float(np.linalg.norm(z))
+    ny = float(np.linalg.norm(y))
+    if (not np.isfinite(ns)) or ns < 1e-16:
+        return 'TS-BFGS'
+    sr1_quot = float(z @ s) / (max(nz, 1e-16) * ns)
+    bfgs_quot = float(y @ s) / (max(ny, 1e-16) * ns)
+    if np.isfinite(sr1_quot) and sr1_quot < -0.1:
+        return 'SR1'
+    if np.isfinite(bfgs_quot) and bfgs_quot > 0.1:
+        return 'BFGS'
+    return 'PSB'
+
 
 def _MS_BFGS(B, S, Y):
     return Y @ solve(Y.T @ S, Y.T) - B @ S @ solve(S.T @ B @ S, S.T @ B)
@@ -6998,14 +7026,13 @@ class Sella(Optimizer):
         step_method = self.method
         if getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
-        elif (
-            getattr(self, "_has_nitro_cf3", False)
-            or getattr(self, "_has_allene", False)
-        ) and self.nsteps >= 20:
+        elif getattr(self, "_has_nitro_cf3", False) and self.nsteps >= 20:
             step_method = 'rfo'
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
                 step_method = 'rfo'
+        if getattr(self, "_has_benzothiazoline", False):
+            self.pes.H.update_method = 'flowchart'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7384,6 +7411,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_allene = False
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
+        opt._has_benzothiazoline = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7569,6 +7597,45 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     continue
                 if any(c_d in neighbors[n_c] for n_c in other_n):
                     opt.pes.exact_geodesic = True
+                    break
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                c4 = [
+                    nb for nb in real
+                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 4
+                ]
+                c3 = [
+                    nb for nb in real
+                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                ]
+                if len(c4) != 1 or len(c3) != 1:
+                    continue
+                aryl = c3[0]
+                found = False
+                for nb in neighbors[aryl]:
+                    if int(numbers[nb]) != 6 or len(neighbors[nb]) != 3:
+                        continue
+                    for nb2 in neighbors[nb]:
+                        if int(numbers[nb2]) != 7:
+                            continue
+                        nreal = neighbors[nb2]
+                        if len(nreal) != 3:
+                            continue
+                        n_c4 = sum(
+                            int(numbers[x]) == 6 and len(neighbors[x]) == 4
+                            for x in nreal
+                        )
+                        if n_c4 >= 2:
+                            opt._has_benzothiazoline = True
+                            found = True
+                            break
+                    if found:
+                        break
+                if found:
                     break
         if connected and n_atoms >= 80:
             opt._large = True
