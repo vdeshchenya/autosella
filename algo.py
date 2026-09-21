@@ -2,8 +2,11 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
-without a P–F bond and connected 30≤n_atoms<80 with at least two
-N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
+without a P–F bond, connected 30≤n_atoms<80 with at least two
+N-oxide nitrogens {C, C, O}, and connected 30≤n_atoms<80 fused
+benzothiazines (2-coordinate S {4-coord C, 3-coord C} whose aryl
+carbon is ortho to a 3-coordinate N with two 4-coordinate C)
+use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
@@ -18,7 +21,6 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
-n_atoms<18 allenes, connected
 30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 3-coordinate carbon). Connected
@@ -6976,7 +6978,9 @@ class Sella(Optimizer):
                         self._has_pf_bond = has_pf
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
-                elif getattr(self, "_has_bis_noxide", False):
+                elif getattr(self, "_has_bis_noxide", False) or getattr(
+                    self, "_has_benzothiazoline", False
+                ):
                     rs_kwargs['wa'] = 0.70
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
@@ -7370,6 +7374,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_oligosilane = False
         opt._has_allene = False
         opt._has_nitro_cf3 = False
+        opt._has_benzothiazoline = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7394,7 +7399,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     for nb in real
                 ):
                     opt._has_allene = True
-                    opt.pes.exact_geodesic = True
                     break
         if connected and n_atoms < 12:
             numbers = atoms.numbers
@@ -7504,6 +7508,45 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                             has_cf3 = True
             if has_nitro and has_cf3:
                 opt._has_nitro_cf3 = True
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                c4 = [
+                    nb for nb in real
+                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 4
+                ]
+                c3 = [
+                    nb for nb in real
+                    if int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                ]
+                if len(c4) != 1 or len(c3) != 1:
+                    continue
+                aryl = c3[0]
+                found = False
+                for nb in neighbors[aryl]:
+                    if int(numbers[nb]) != 6 or len(neighbors[nb]) != 3:
+                        continue
+                    for nb2 in neighbors[nb]:
+                        if int(numbers[nb2]) != 7:
+                            continue
+                        nreal = neighbors[nb2]
+                        if len(nreal) != 3:
+                            continue
+                        n_c4 = sum(
+                            int(numbers[x]) == 6 and len(neighbors[x]) == 4
+                            for x in nreal
+                        )
+                        if n_c4 >= 2:
+                            opt._has_benzothiazoline = True
+                            found = True
+                            break
+                    if found:
+                        break
+                if found:
+                    break
         if connected and n_atoms >= 80:
             opt._large = True
         opt._hydrocarbon = False
