@@ -18,7 +18,8 @@ steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
-as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N).
+as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N)
+after 15 steps.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7033,10 +7034,9 @@ class Sella(Optimizer):
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
                 step_method = 'rfo'
-        if self.nsteps >= 20 and (
-            getattr(self, "_has_benzothiazoline", False)
-            or getattr(self, "_has_isocyanide", False)
-        ):
+        if getattr(self, "_has_benzothiazoline", False) and self.nsteps >= 20:
+            self.pes.H.update_method = 'flowchart'
+        elif getattr(self, "_has_isocyanide", False) and self.nsteps >= 15:
             self.pes.H.update_method = 'flowchart'
 
         if self.pes.cons.has_inequalities():
