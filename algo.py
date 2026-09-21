@@ -24,9 +24,10 @@ geodesic ODE steps recompute Binv at every RHS, as do connected
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 3-coordinate carbon), or with a C-substituted 1,2,4-oxadiazole
 (2-coordinate O bonded to a 2-coordinate N and a 3-coordinate C
-that has a carbon substituent and a second 2-coordinate ring N),
-or with a fused benzothiazine (2-coordinate S {4-coord C, 3-coord C}
-whose aryl carbon is ortho to a 3-coordinate N with two 4-coordinate C).
+that has a carbon substituent and a second 2-coordinate ring N).
+Connected 30≤n_atoms<80 fused benzothiazines (2-coordinate S
+{4-coord C, 3-coord C} whose aryl carbon is ortho to a
+3-coordinate N with two 4-coordinate C) use `wo=0.70`.
 Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
 Connected tails after 20
@@ -6992,6 +6993,8 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
+                if getattr(self, "_has_benzothiazoline", False):
+                    rs_kwargs['wo'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7379,6 +7382,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_allene = False
         opt._has_nitro_cf3 = False
         opt._has_isoxazole = False
+        opt._has_benzothiazoline = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7597,7 +7601,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                             for x in nreal
                         )
                         if n_c4 >= 2:
-                            opt.pes.exact_geodesic = True
+                            opt._has_benzothiazoline = True
                             found = True
                             break
                     if found:
