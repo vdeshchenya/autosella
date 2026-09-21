@@ -4152,7 +4152,7 @@
     "molecules/xyz/upadacitinib.xyz": "c529533327b6886348f47f873fcdaca4079b030ea2b48ad06fdd4c00ec9931c6",
     "molecules/xyz/venetoclax.xyz": "9af655b9dfcbd33593941ce0c783e3f470c9401254af199fb14077a297a258d7",
     "molecules/xyz/zanubrutinib.xyz": "a01bc85a4d96564be3426faa7dae7af779bc56b9928c80ea7c47aa1c001e37ac",
-    "algo.py": "d6619e6a7e9f5776f7c3ef761314c2a002f6893fd67a6c2d9077b2221c4d7d83",
+    "algo.py": "2e07cc802a8666d4e97bc3f1ed034469437ea87351f4a2a7054fa3450d67ba54",
     "program.md": "a0656139eb0d8de34ef87a5a88f60eb140b21bfa4f42fcbcf5c29f9afa7ddd93",
     "full_log.md": "28f15cdbf9194744b22043d8cbfabfa1ff2e394580fe52275f3d3c74c08a6a2b",
     "backlog.md": "a08437dcd9e607d09519031b8c671bc8f1785b9415efeb3cf19e459d746089fb",
@@ -4163,5 +4163,14 @@
     "ralph_autoresearch_prompt.md": "bff64c33a5f121c9b71e9878d7c824bda944a4af5f68831e80eb227554acd755",
     "ralph_autoresearch_template.md": "8164ab4ce6175dcf5d10df4a1925261e1b3215e66cd04df54399f65fd7f7643d",
     "research_time_checkpoint.json": "a2d4489e49bf5b4c82253b56e0b4e0ab9d8c09a1e614e0b9a2702c336b00f412"
-  }
+  },
+  "root_algo": {
+    "role": "latest accepted champion",
+    "cycle": 463,
+    "commit": "99a2d8b5482466729ddde624fc4253fc98aba249",
+    "sha256": "2e07cc802a8666d4e97bc3f1ed034469437ea87351f4a2a7054fa3450d67ba54",
+    "selected_utc": "2026-09-21T15:13:48.261554+00:00"
+  },
+  "working_candidate_source": "candidates/f3fb1debe771cce207350cb2410681a643931575/algo.py",
+  "captured_research_record_sha256_note": "These are the original stopped-workspace capture hashes. Root algo.py now selects the accepted champion; the original working source remains at working_candidate_source."
 }

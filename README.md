@@ -5,7 +5,8 @@ Stopped snapshot of `astra-high-new-data` captured at **2026-09-21T14:17:01.6374
 ## Final research state
 
 - Last recorded completed cycle: **739**, decision **discard** (Frozen-reference onsite coordination mean).
-- Working cycle at stop: **740**, commit `f3fb1debe771cce207350cb2410681a643931575`. Root `algo.py` is its exact source. It has no recorded final decision and is not the accepted champion.
+- Root `algo.py` is the exact **latest accepted champion, cycle 463**, commit `99a2d8b5482466729ddde624fc4253fc98aba249`.
+- Working cycle at stop: **740**, commit `f3fb1debe771cce207350cb2410681a643931575`. Its unfinished source is preserved at [candidates/f3fb1debe771cce207350cb2410681a643931575/algo.py](candidates/f3fb1debe771cce207350cb2410681a643931575/algo.py); it has no recorded final decision.
 - The last local cycle-740 training receipt was pending; its saved progress and timestamp are recorded in `progress-manifest.json`. This archive does not turn that partial receipt into a completed result.
 - Accepted champion remains **cycle 463**, `99a2d8b5482466729ddde624fc4253fc98aba249`: [champion source](candidates/99a2d8b5482466729ddde624fc4253fc98aba249/algo.py).
 - Champion mean relative force-call cost: **0.745101515** on train and **0.766560528** on validation.
