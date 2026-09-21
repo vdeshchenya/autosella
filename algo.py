@@ -20,7 +20,7 @@ and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`) and
-three-point then two-point C1 GDIIS.
+two-point GDIIS after 15 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -7137,7 +7137,8 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if self.nsteps < 20:
+        gdiis_start = 15 if getattr(self, "_has_isocyanide", False) else 20
+        if self.nsteps < gdiis_start:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
@@ -7161,44 +7162,41 @@ class Sella(Optimizer):
             return s_qn, smag_qn
         err = err / nmin
         coords = np.stack(xs)
-        uses = (3, 2) if (
-            getattr(self, "_has_isocyanide", False)
-            and err.shape[0] >= 3
-        ) else (2,)
-        for use in uses:
-            if err.shape[0] < use:
-                continue
-            use_vecs = err[::-1][:use]
-            A = use_vecs @ use_vecs.T
-            try:
-                coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
-            except np.linalg.LinAlgError:
-                continue
-            if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-                continue
-            csum = float(np.sum(coeffs))
-            if abs(csum) < 1e-16:
-                continue
-            coeffs = coeffs / csum
-            if np.any(coeffs < -1e-8):
-                continue
-            pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-            neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-            if pos_sum > 15.0 or neg_sum > 15.0:
-                continue
-            diis_coords = coeffs @ coords[::-1][:use]
-            diis_step = diis_coords - coords[-1]
-            ndiis = float(np.linalg.norm(diis_step))
-            if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-                continue
-            cos = float(diis_step @ s_qn) / (ndiis * nref)
-            if cos < 0.90 or cos < 0.0:
-                continue
-            smag = float(np.max(np.abs(diis_step))) if diis_step.size else 0.0
-            if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-                continue
-            return diis_step, smag
-        return s_qn, smag_qn
+        accepted = None
+        use = 2
+        if err.shape[0] < use:
+            return s_qn, smag_qn
+        use_vecs = err[::-1][:use]
+        A = use_vecs @ use_vecs.T
+        try:
+            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
+        except np.linalg.LinAlgError:
+            return s_qn, smag_qn
+        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
+            return s_qn, smag_qn
+        csum = float(np.sum(coeffs))
+        if abs(csum) < 1e-16:
+            return s_qn, smag_qn
+        coeffs = coeffs / csum
+        if np.any(coeffs < -1e-8):
+            return s_qn, smag_qn
+        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
+        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
+        if pos_sum > 15.0 or neg_sum > 15.0:
+            return s_qn, smag_qn
+        diis_coords = coeffs @ coords[::-1][:use]
+        diis_step = diis_coords - coords[-1]
+        ndiis = float(np.linalg.norm(diis_step))
+        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
+            return s_qn, smag_qn
+        cos = float(diis_step @ s_qn) / (ndiis * nref)
+        if cos < 0.90 or cos < 0.0:
+            return s_qn, smag_qn
+        accepted = diis_step
+        smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
+        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
+            return s_qn, smag_qn
+        return accepted, smag
 
     def step(self):
         s, smag = self._predict_step()
