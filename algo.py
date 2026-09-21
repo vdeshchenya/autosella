@@ -16,7 +16,7 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`.
-Connected 30≤n_atoms<80 isoxazoles also use `wo=0.70`. Connected molecules
+Connected 30≤n_atoms<80 isoxazoles skip two-point GDIIS. Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
@@ -6988,8 +6988,6 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
-                if getattr(self, "_has_isoxazole", False):
-                    rs_kwargs['wo'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7092,6 +7090,8 @@ class Sella(Optimizer):
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
+            return s_qn, smag_qn
+        if getattr(self, "_has_isoxazole", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
