@@ -2,10 +2,8 @@
 
 Vendored from the `sella` package (2.5.0). Fragment-gated MaxInternalStep
 `wa=0.75` on connected molecules, except connected n_atoms<12
-without a P–F bond, connected 30≤n_atoms<80 with at least two
-N-oxide nitrogens {C, C, O}, and connected 30≤n_atoms<80 isoxazoles
-(2-coordinate O bonded to a 2-coordinate N and a 3-coordinate C)
-use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
+without a P–F bond and connected 30≤n_atoms<80 with at least two
+N-oxide nitrogens {C, C, O} use `wa=0.70`, with `sigma_inc=1.16` after 20 steps.
 Connected n_atoms<12 with a 3-coordinate sulfoxide sulfur {C, C, O}
 use MaxInternalStep `wd=0.70`, as do connected 30≤n_atoms<80 with
 an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
@@ -22,7 +20,9 @@ also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
-30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O} or
+30≤n_atoms<80 with at least two N-oxide nitrogens {C, C, O},
+connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to a
+2-coordinate N and a 3-coordinate C), or
 with an aryl-CF3 (4-coordinate C {F, F, F, C} bonded to a
 3-coordinate carbon). Connected
 30≤n<80 tertiary/2-coord sulfonamide C–S–N uses 0.10 Ha.
@@ -6979,9 +6979,7 @@ class Sella(Optimizer):
                         self._has_pf_bond = has_pf
                     if not has_pf:
                         rs_kwargs['wa'] = 0.70
-                elif getattr(self, "_has_bis_noxide", False) or getattr(
-                    self, "_has_isoxazole", False
-                ):
+                elif getattr(self, "_has_bis_noxide", False):
                     rs_kwargs['wa'] = 0.70
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
@@ -7528,6 +7526,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         n_c3 += 1
                 if n_n2 == 1 and n_c3 == 1:
                     opt._has_isoxazole = True
+                    opt.pes.exact_geodesic = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
