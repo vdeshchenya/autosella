@@ -25,8 +25,7 @@ Connected n_atoms≥80 sulfonamides (4-coordinate S {two 1-coordinate O, N, C})
 use Banerjee RFO after 20 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
-neighbors are 3-coordinate C) use iterative Cartesian B⁺
-and exact geodesic (recompute Binv at every ODE RHS).
+neighbors are 3-coordinate C) use iterative Cartesian B⁺.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7046,6 +7045,7 @@ class Sella(Optimizer):
         if self.nsteps >= 20 and (
             getattr(self, "_has_benzothiazoline", False)
             or getattr(self, "_has_isocyanide", False)
+            or getattr(self, "_has_sulfonium", False)
         ):
             self.pes.H.update_method = 'flowchart'
 
@@ -7428,6 +7428,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_isoxazole = False
         opt._has_benzothiazoline = False
         opt._has_isocyanide = False
+        opt._has_sulfonium = False
         opt._has_sulfonamide = False
         opt._large = False
         if connected and n_atoms < 18:
@@ -7510,7 +7511,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         break
             if has_phenol:
                 opt.pes.iterative_stepper = 1
-                opt.pes.exact_geodesic = True
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
@@ -7699,6 +7699,15 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     opt._has_isocyanide = True
                     opt.pes.iterative_stepper = 1
                     opt.pes.exact_geodesic = True
+                    break
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 3:
+                    continue
+                if all(int(numbers[nb]) == 6 for nb in real):
+                    opt._has_sulfonium = True
                     break
         if connected and n_atoms >= 80:
             opt._large = True
