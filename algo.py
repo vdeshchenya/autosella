@@ -10,12 +10,12 @@ an N-oxide nitrogen {C, C, O} and a 3-coordinate nitrogen bonded
 to two CH2 carbons, and connected n_atoms<18 Si/H-only
 oligosilanes with at least four Si, and connected n_atoms<18
 allenes (2-coordinate carbon with two 3-coordinate carbon neighbors).
+Connected 30≤n_atoms<80 isocyanides (1-coordinate carbon bonded
+to 2-coordinate nitrogen) use Banerjee RFO after 30 steps.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected molecules
-also floor δ at 0.15 after 20 steps, except connected 30≤n_atoms<80
-isocyanides (1-coordinate carbon bonded to 2-coordinate nitrogen)
-which floor δ at 0.18. Connected dummy-atom dihedral
+also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
 n_atoms<30 which use 0.20 Ha. Connected 18≤n_atoms<20
 geodesic ODE steps recompute Binv at every RHS, as do connected
@@ -6988,7 +6988,9 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
+        if getattr(self, "_has_isocyanide", False) and self.nsteps >= 30:
+            step_method = 'rfo'
+        elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
                 step_method = 'rfo'
 
@@ -7206,9 +7208,6 @@ class Sella(Optimizer):
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
-            if getattr(self, "_has_isocyanide", False):
-                self.delta_min = 0.18
-                self.delta = max(self.delta, 0.18)
 
         # Update trust radius
         if rho is not None:
