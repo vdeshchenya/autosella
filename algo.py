@@ -19,7 +19,7 @@ Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
 and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N)
-after 15 steps.
+which use the Bofill SR1/PSB mix after 20 steps.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -288,6 +288,8 @@ def update_H(B, S, Y, method='TS-BFGS', symm=2, lams=None, vecs=None):
             Bplus = _MS_SR1(B, S, Ytilde)
         elif method == 'Greenstadt':
             Bplus = _MS_Greenstadt(B, S, Ytilde)
+        elif method == 'bofill':
+            Bplus = _MS_Bofill(B, S, Ytilde)
         else:  # pragma: no cover
             raise ValueError('Unknown update method {}'.format(method))
     except (np.linalg.LinAlgError, ValueError):
@@ -359,6 +361,31 @@ def _MS_Greenstadt(B, S, Y):
     U = solve(S.T @ MS, MS.T).T
     UJT = U @ J.T
     return (UJT + UJT.T) - U @ (J.T @ S) @ U.T
+
+
+def _MS_Bofill(B, S, Y):
+    """Bofill 1994: φ SR1 + (1−φ) PSB, φ = (z·s)² / ((z·z)(s·s))."""
+    s = np.asarray(S, dtype=np.float64)
+    y = np.asarray(Y, dtype=np.float64)
+    if s.ndim == 2:
+        s = s[:, -1]
+        y = y[:, -1]
+    z = y - B @ s
+    zz = float(z @ z)
+    ss = float(s @ s)
+    zs = float(z @ s)
+    try:
+        sr1 = _MS_SR1(B, S, Y)
+    except (np.linalg.LinAlgError, ValueError):
+        return _MS_PSB(B, S, Y)
+    psb = _MS_PSB(B, S, Y)
+    if (not np.isfinite(zz)) or (not np.isfinite(ss)) or zz < 1e-30 or ss < 1e-30:
+        return psb
+    mix = (zs * zs) / (zz * ss)
+    if not np.isfinite(mix):
+        return psb
+    mix = min(1.0, max(0.0, float(mix)))
+    return mix * sr1 + (1.0 - mix) * psb
 
 
 class NumericalHessian(LinearOperator):
@@ -7036,8 +7063,8 @@ class Sella(Optimizer):
                 step_method = 'rfo'
         if getattr(self, "_has_benzothiazoline", False) and self.nsteps >= 20:
             self.pes.H.update_method = 'flowchart'
-        elif getattr(self, "_has_isocyanide", False) and self.nsteps >= 15:
-            self.pes.H.update_method = 'flowchart'
+        elif getattr(self, "_has_isocyanide", False) and self.nsteps >= 20:
+            self.pes.H.update_method = 'bofill'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
