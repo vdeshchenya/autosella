@@ -21,8 +21,8 @@ benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`)
 and exact geodesic (recompute Binv at every ODE RHS).
-Connected n_atoms<18 allenes use Powell-damped Hessian updates
-(s·y < 0.2 s·Bs) from the first quasi-Newton update.
+Connected n_atoms<18 allenes use Euclidean TrustRegion from the
+first step and skip dummy-limiter MaxInternalStep re-solves.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
@@ -517,18 +517,7 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        dx_u = np.asarray(dx, dtype=np.float64)
-        dg_u = np.asarray(dg, dtype=np.float64)
-        if getattr(self, 'powell_damp', False):
-            Bs = B @ dx_u
-            sBs = float(dx_u @ Bs)
-            sy = float(dx_u @ dg_u)
-            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.2 * sBs:
-                denom = sBs - sy
-                if abs(denom) > 1e-14:
-                    theta = 0.8 * sBs / denom
-                    dg_u = theta * dg_u + (1.0 - theta) * Bs
-        self.set_B(update_H(B, dx_u, dg_u, method=self.update_method,
+        self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
@@ -7056,15 +7045,19 @@ class Sella(Optimizer):
             or getattr(self, "_has_isocyanide", False)
         ):
             self.pes.H.update_method = 'flowchart'
+
+        rs_cls = self.rs
+        rs_call_kwargs = rs_kwargs
         if getattr(self, "_has_allene", False):
-            self.pes.H.powell_damp = True
+            rs_cls = TrustRegion
+            rs_call_kwargs = {}
 
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = self.rs(
+                s, smag = rs_cls(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **rs_kwargs
+                    **rs_call_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -7072,9 +7065,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = self.rs(
+            s, smag = rs_cls(
                 self.pes, self.ord, self.delta, method=step_method,
-                **rs_kwargs
+                **rs_call_kwargs
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
@@ -7099,6 +7092,8 @@ class Sella(Optimizer):
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
+        if getattr(self, "_has_allene", False):
+            return s, smag
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
         if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
