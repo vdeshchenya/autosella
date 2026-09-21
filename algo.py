@@ -23,7 +23,7 @@ which also use iterative Cartesian B⁺ (`iterative_stepper=1`).
 Connected 18≤n_atoms<30 molecules with both an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) and an ester (2-coordinate O between
-two carbons, one carbon also bonded to O) skip two-point GDIIS.
+two carbons, one carbon also bonded to O) use iterative Cartesian B⁺.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7137,8 +7137,6 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if getattr(self, "_has_ester_phenol", False):
-            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7425,7 +7423,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_isoxazole = False
         opt._has_benzothiazoline = False
         opt._has_isocyanide = False
-        opt._has_ester_phenol = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7511,7 +7508,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     ):
                         has_ester = True
             if has_phenol and has_ester:
-                opt._has_ester_phenol = True
+                opt.pes.iterative_stepper = 1
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
