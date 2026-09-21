@@ -20,7 +20,10 @@ and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`).
-Connected n_atoms<18 allenes skip two-point GDIIS.
+Connected 18≤n_atoms<30 molecules with both an aryl phenol
+(2-coordinate O bonded to H and a 3-coordinate C whose other two
+neighbors are 3-coordinate C) and an ester (2-coordinate O between
+two carbons, one carbon also bonded to O) skip two-point GDIIS.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7134,7 +7137,7 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if getattr(self, "_has_allene", False):
+        if getattr(self, "_has_ester_phenol", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
@@ -7422,6 +7425,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_isoxazole = False
         opt._has_benzothiazoline = False
         opt._has_isocyanide = False
+        opt._has_ester_phenol = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7469,6 +7473,45 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
+        if connected and 18 <= n_atoms < 30:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            has_phenol = False
+            has_ester = False
+            for i in range(n_atoms):
+                if int(numbers[i]) != 8:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                zs = [int(numbers[nb]) for nb in real]
+                if sorted(zs) == [1, 6]:
+                    c_idx = real[0] if int(numbers[real[0]]) == 6 else real[1]
+                    real_c = neighbors[c_idx]
+                    if (len(real_c) == 3
+                            and sum(int(numbers[nb]) == 8 for nb in real_c) == 1):
+                        carbons = [
+                            nb for nb in real_c if int(numbers[nb]) == 6
+                        ]
+                        if (len(carbons) == 2
+                                and all(len(neighbors[cn]) == 3
+                                        for cn in carbons)):
+                            has_phenol = True
+                if all(int(numbers[nb]) == 6 for nb in real):
+                    if any(
+                        any(int(numbers[nb2]) == 8 and nb2 != i
+                            for nb2 in neighbors[nb])
+                        for nb in real
+                    ):
+                        has_ester = True
+            if has_phenol and has_ester:
+                opt._has_ester_phenol = True
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
