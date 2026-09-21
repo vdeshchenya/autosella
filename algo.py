@@ -16,9 +16,10 @@ Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
 Connected 30≤n_atoms<80 nitro-CF3 molecules use MaxInternalStep `wd=0.70`
-and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
-benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
-as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N).
+and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 isocyanides
+(1-coordinate C bonded to N) also use Banerjee RFO after 20 steps.
+Connected 30≤n_atoms<80 fused
+benzothiazines use the Schlegel flowchart Hessian update after 20 steps.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -7028,15 +7029,13 @@ class Sella(Optimizer):
         step_method = self.method
         if getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
-        elif getattr(self, "_has_nitro_cf3", False) and self.nsteps >= 20:
+        elif (getattr(self, "_has_nitro_cf3", False)
+                or getattr(self, "_has_isocyanide", False)) and self.nsteps >= 20:
             step_method = 'rfo'
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
                 step_method = 'rfo'
-        if self.nsteps >= 20 and (
-            getattr(self, "_has_benzothiazoline", False)
-            or getattr(self, "_has_isocyanide", False)
-        ):
+        if getattr(self, "_has_benzothiazoline", False) and self.nsteps >= 20:
             self.pes.H.update_method = 'flowchart'
 
         if self.pes.cons.has_inequalities():
@@ -7127,13 +7126,10 @@ class Sella(Optimizer):
         and cosine ≥ 0.90. Accept only when the previous step was well
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only. Cycle 710: skip GDIIS on 30–80 isocyanides so
-        flowchart QN steps are not interpolated on dummy-linear tails.
+        connected-only.
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
-            return s_qn, smag_qn
-        if getattr(self, "_has_isocyanide", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
