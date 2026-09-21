@@ -20,7 +20,7 @@ and Banerjee RFO after 20 steps. Connected 30≤n_atoms<80 fused
 benzothiazines use the Schlegel flowchart Hessian update after 20 steps,
 as do connected 30≤n_atoms<80 isocyanides (1-coordinate C bonded to N),
 which also use iterative Cartesian B⁺ (`iterative_stepper=1`).
-Connected 18≤n_atoms<30 molecules with both an aryl phenol
+Disconnected 18≤n_atoms<30 dimers with both an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) and an ester (2-coordinate O between
 two carbons, one carbon also bonded to O) use iterative Cartesian B⁺.
@@ -7470,7 +7470,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
-        if connected and 18 <= n_atoms < 30:
+        if (not connected) and 18 <= len(atomic_numbers) < 30:
+            n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
             for bond in probe.internals.get('bonds', []):
