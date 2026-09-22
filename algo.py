@@ -7142,16 +7142,15 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        gdiis_start = 15 if getattr(self, "_has_allene", False) else 20
-        if self.nsteps < gdiis_start:
+        if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        if not getattr(self, "_has_allene", False):
-            if not (1.0 / self.rho_inc < rho < self.rho_inc):
-                return s_qn, smag_qn
+        if not (1.0 / self.rho_inc < rho < self.rho_inc):
+            return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
-        if len(xs) < 2 or len(xs) != len(gs):
+        use = 3 if getattr(self, "_has_allene", False) else 2
+        if len(xs) < use or len(xs) != len(gs):
             return s_qn, smag_qn
         s_qn = np.asarray(s_qn, dtype=np.float64)
         if xs[-1].shape != s_qn.shape:
@@ -7169,7 +7168,6 @@ class Sella(Optimizer):
         err = err / nmin
         coords = np.stack(xs)
         accepted = None
-        use = 2
         if err.shape[0] < use:
             return s_qn, smag_qn
         use_vecs = err[::-1][:use]
@@ -7184,7 +7182,7 @@ class Sella(Optimizer):
         if abs(csum) < 1e-16:
             return s_qn, smag_qn
         coeffs = coeffs / csum
-        if not getattr(self, "_has_allene", False) and np.any(coeffs < -1e-8):
+        if np.any(coeffs < -1e-8):
             return s_qn, smag_qn
         pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
         neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
@@ -7196,8 +7194,7 @@ class Sella(Optimizer):
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
             return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
-        cos_min = 0.80 if getattr(self, "_has_allene", False) else 0.90
-        if cos < cos_min or cos < 0.0:
+        if cos < 0.90 or cos < 0.0:
             return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
