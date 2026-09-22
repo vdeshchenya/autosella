@@ -7031,7 +7031,7 @@ class Sella(Optimizer):
                 ):
                     rs_kwargs['wd'] = 0.70
             if getattr(self, "_has_alkane_phenol", False):
-                rs_kwargs['wa'] = 0.70
+                rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
