@@ -7030,8 +7030,6 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
-                if getattr(self, "_has_allene", False):
-                    rs_kwargs['wo'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7097,7 +7095,9 @@ class Sella(Optimizer):
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
-        if getattr(self, "_has_sulfonamide", False):
+        if getattr(self, "_has_sulfonamide", False) or getattr(
+            self, "_has_allene", False
+        ):
             return s, smag
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
