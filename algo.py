@@ -530,8 +530,12 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        return ApproximateHessian(n, 0, Bproj, self.update_method,
+        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
+        floor = getattr(self, 'eval_floor', 0.0)
+        if floor:
+            Hproj.eval_floor = floor
+        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5455,7 +5459,11 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        floor = getattr(self.H, 'eval_floor', 0.0)
+        if floor:
+            Hproj.eval_floor = floor
+        return Hproj
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -6380,6 +6388,9 @@ class QuasiNewton(BaseStepper):
             self.H.evals, self.H.evecs = eigh(H_array)
 
         self.L = np.abs(self.H.evals)
+        floor = float(getattr(self.H, 'eval_floor', 0.0) or 0.0)
+        if floor > 0.0:
+            self.L = np.maximum(self.L, floor)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7048,6 +7059,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_thiosulfonate", False):
+            self.pes.H.eval_floor = 1e-2
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7416,34 +7429,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
-    has_thiosulfonate = False
-    if connected and 12 <= len(atomic_numbers) < 30:
-        n_atoms = len(atomic_numbers)
-        numbers = atoms.numbers
-        neighbors = [[] for _ in range(n_atoms)]
-        for bond in probe.internals.get('bonds', []):
-            i, j = int(bond.indices[0]), int(bond.indices[1])
-            if i >= n_atoms or j >= n_atoms:
-                continue
-            neighbors[i].append(j)
-            neighbors[j].append(i)
-        for i in range(n_atoms):
-            if int(numbers[i]) != 16:
-                continue
-            real = neighbors[i]
-            if len(real) != 4:
-                continue
-            n_o1 = sum(
-                int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
-                for nb in real
-            )
-            n_s = sum(int(numbers[nb]) == 16 for nb in real)
-            n_c = sum(int(numbers[nb]) == 6 for nb in real)
-            if n_o1 == 2 and n_s == 1 and n_c == 1:
-                has_thiosulfonate = True
-                break
     try:
-        opt = Sella(atoms, internal=not has_thiosulfonate, order=0, logfile=None)
+        opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
         opt._has_sulfoxide = False
@@ -7456,6 +7443,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_isocyanide = False
         opt._has_sulfonamide = False
         opt._has_alkane_phenol = False
+        opt._has_thiosulfonate = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7503,6 +7491,30 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
+        if connected and 12 <= n_atoms < 30:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 4:
+                    continue
+                n_o1 = sum(
+                    int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
+                    for nb in real
+                )
+                n_s = sum(int(numbers[nb]) == 16 for nb in real)
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                if n_o1 == 2 and n_s == 1 and n_c == 1:
+                    opt._has_thiosulfonate = True
+                    break
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
