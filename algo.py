@@ -3352,6 +3352,7 @@ class Constraints(BaseInternals):
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
     soft_dummy_angle_h0_default = False
+    soft_dummy_angle_h0_ha_default = 0.10
     soft_oxo_angle_h0_default = False
     soft_pyridine_angle_h0_default = False
     soft_medium_angle_h0_default = False
@@ -3394,6 +3395,7 @@ class Internals(BaseInternals):
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
+        self.soft_dummy_angle_h0_ha = Internals.soft_dummy_angle_h0_ha_default
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
         self.soft_pyridine_angle_h0 = Internals.soft_pyridine_angle_h0_default
         self.soft_medium_angle_h0 = Internals.soft_medium_angle_h0_default
@@ -3418,6 +3420,7 @@ class Internals(BaseInternals):
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
+        new.soft_dummy_angle_h0_ha = getattr(self, 'soft_dummy_angle_h0_ha', 0.10)
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
         new.soft_pyridine_angle_h0 = getattr(self, 'soft_pyridine_angle_h0', False)
         new.soft_medium_angle_h0 = getattr(self, 'soft_medium_angle_h0', False)
@@ -5072,7 +5075,7 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                h0[idx] = 0.10 * units.Hartree
+                h0[idx] = float(getattr(self, 'soft_dummy_angle_h0_ha', 0.10)) * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -7029,8 +7032,6 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
-                if getattr(self, "_has_allene", False):
-                    rs_kwargs['wa'] = 0.80
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7414,6 +7415,28 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
+        Internals.soft_dummy_angle_h0_ha_default = 0.10
+        if n_atoms < 18:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                if all(
+                    int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                    for nb in real
+                ):
+                    Internals.soft_dummy_angle_h0_ha_default = 0.08
+                    break
         Internals.soft_oxo_angle_h0_default = n_atoms < 12
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
@@ -7762,6 +7785,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
         Internals.soft_dummy_angle_h0_default = False
+        Internals.soft_dummy_angle_h0_ha_default = 0.10
         Internals.soft_oxo_angle_h0_default = False
         Internals.soft_pyridine_angle_h0_default = False
         Internals.soft_medium_angle_h0_default = False
