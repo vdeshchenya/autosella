@@ -7055,9 +7055,6 @@ class Sella(Optimizer):
         if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             rs_cls = TrustRegion
             step_kwargs = {}
-        elif getattr(self, "_has_allene", False) and self.nsteps >= 18:
-            rs_cls = TrustRegion
-            step_kwargs = {}
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
@@ -7099,8 +7096,6 @@ class Sella(Optimizer):
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
         if getattr(self, "_has_sulfonamide", False):
-            return s, smag
-        if getattr(self, "_has_allene", False) and self.nsteps >= 18:
             return s, smag
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
@@ -7163,6 +7158,10 @@ class Sella(Optimizer):
             if out is not None:
                 return out
         if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 20:
+            out = self._gediis_two_point(s_qn, smag_qn)
+            if out is not None:
+                return out
+        if getattr(self, "_has_allene", False) and self.nsteps >= 16:
             out = self._gediis_two_point(s_qn, smag_qn)
             if out is not None:
                 return out
