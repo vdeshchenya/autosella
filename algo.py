@@ -3357,6 +3357,7 @@ class Internals(BaseInternals):
     soft_medium_angle_h0_default = False
     soft_phenol_angle_h0_default = False
     adj_dummy_placement_default = False
+    e0_dummy_placement_default = False
 
     def __init__(
         self,
@@ -3399,6 +3400,7 @@ class Internals(BaseInternals):
         self.soft_medium_angle_h0 = Internals.soft_medium_angle_h0_default
         self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
+        self.e0_dummy_placement = Internals.e0_dummy_placement_default
         self.windowed_dummy_atoms = set()
         self.alkyne_soft_dummy_atoms = set()
 
@@ -3423,6 +3425,7 @@ class Internals(BaseInternals):
         new.soft_medium_angle_h0 = getattr(self, 'soft_medium_angle_h0', False)
         new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
+        new.e0_dummy_placement = getattr(self, 'e0_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         new.alkyne_soft_dummy_atoms = set(getattr(self, 'alkyne_soft_dummy_atoms', set()))
         return new
@@ -3898,7 +3901,12 @@ class Internals(BaseInternals):
                         if dpos is None:
                             dpos = cross
                             dpos_norm = cross_norm
-                            if dpos_norm < 1e-4:
+                            use_e0 = (
+                                getattr(self, 'e0_dummy_placement', False)
+                                and int(self.natoms) < 18
+                                and 0.04 < cross_norm < 0.10
+                            )
+                            if dpos_norm < 1e-4 or use_e0:
                                 # the aforementioned backup strategy
                                 # pick the cartesian basis vector that is maximally
                                 # orthogonal with the shorter of the two
@@ -3906,7 +3914,7 @@ class Internals(BaseInternals):
                                 # note: this is not rotationally invariant, but
                                 # there's not much we can do about that
                                 dim = np.argmin(np.abs(dx1))
-                                dpos[:] = 0.
+                                dpos = np.zeros(3, dtype=np.float64)
                                 dpos[dim] = 1.
                                 dpos -= dx1 * (dpos @ dx1)
                                 dpos /= np.linalg.norm(dpos)
@@ -7416,6 +7424,28 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
+        Internals.e0_dummy_placement_default = False
+        if n_atoms < 18:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                if all(
+                    int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                    for nb in real
+                ):
+                    Internals.e0_dummy_placement_default = True
+                    break
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -7455,8 +7485,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 ):
                     opt._has_allene = True
                     break
-        if getattr(opt, "_has_allene", False):
-            opt.rho_dec = 5.0
         if connected and n_atoms < 12:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
@@ -7767,6 +7795,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_medium_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
+        Internals.e0_dummy_placement_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
