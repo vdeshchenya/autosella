@@ -3351,8 +3351,8 @@ class Constraints(BaseInternals):
 
 class Internals(BaseInternals):
     soft_dummy_dihedral_h0_default = False
+    soft_dummy_dihedral_h0_ha_default = None
     soft_dummy_angle_h0_default = False
-    soft_dummy_angle_h0_ha_default = 0.10
     soft_oxo_angle_h0_default = False
     soft_pyridine_angle_h0_default = False
     soft_medium_angle_h0_default = False
@@ -3394,8 +3394,8 @@ class Internals(BaseInternals):
         self.allow_fragments = allow_fragments
         self.fragment_atom_groups = None
         self.soft_dummy_dihedral_h0 = Internals.soft_dummy_dihedral_h0_default
+        self.soft_dummy_dihedral_h0_ha = Internals.soft_dummy_dihedral_h0_ha_default
         self.soft_dummy_angle_h0 = Internals.soft_dummy_angle_h0_default
-        self.soft_dummy_angle_h0_ha = Internals.soft_dummy_angle_h0_ha_default
         self.soft_oxo_angle_h0 = Internals.soft_oxo_angle_h0_default
         self.soft_pyridine_angle_h0 = Internals.soft_pyridine_angle_h0_default
         self.soft_medium_angle_h0 = Internals.soft_medium_angle_h0_default
@@ -3419,8 +3419,8 @@ class Internals(BaseInternals):
             new.forbidden[name] = self.forbidden[name].copy()
             new._active[name] = self._active[name].copy()
         new.soft_dummy_dihedral_h0 = getattr(self, 'soft_dummy_dihedral_h0', False)
+        new.soft_dummy_dihedral_h0_ha = getattr(self, 'soft_dummy_dihedral_h0_ha', None)
         new.soft_dummy_angle_h0 = getattr(self, 'soft_dummy_angle_h0', False)
-        new.soft_dummy_angle_h0_ha = getattr(self, 'soft_dummy_angle_h0_ha', 0.10)
         new.soft_oxo_angle_h0 = getattr(self, 'soft_oxo_angle_h0', False)
         new.soft_pyridine_angle_h0 = getattr(self, 'soft_pyridine_angle_h0', False)
         new.soft_medium_angle_h0 = getattr(self, 'soft_medium_angle_h0', False)
@@ -5075,7 +5075,7 @@ class Internals(BaseInternals):
 
         for ia, angle in enumerate(self.internals['angles']):
             if soft_dummy_angle and any(j in dummy_set for j in angle.indices):
-                h0[idx] = float(getattr(self, 'soft_dummy_angle_h0_ha', 0.10)) * units.Hartree
+                h0[idx] = 0.10 * units.Hartree
             elif soft_pyridine_angle and ia in pyridine_ok:
                 # Isolated pyridine/imine/thiadiazole C–N–C.
                 h0[idx] = 0.10 * units.Hartree
@@ -5228,7 +5228,11 @@ class Internals(BaseInternals):
                 ):
                     scale = 0.20
                 elif getattr(self, 'soft_dummy_dihedral_h0', False):
-                    scale = 0.20 if int(self.natoms) < 30 else 0.25
+                    override = getattr(self, 'soft_dummy_dihedral_h0_ha', None)
+                    if override is not None:
+                        scale = float(override)
+                    else:
+                        scale = 0.20 if int(self.natoms) < 30 else 0.25
                 else:
                     scale = 0.5
                 h0[idx] = scale * units.Hartree
@@ -7413,9 +7417,13 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     Internals.soft_phenol_angle_h0_default = not connected
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
+        Internals.soft_dummy_dihedral_h0_ha_default = None
         n_atoms = len(atomic_numbers)
         Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
-        Internals.soft_dummy_angle_h0_ha_default = 0.10
+        Internals.soft_oxo_angle_h0_default = n_atoms < 12
+        Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
+        Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
+        Internals.adj_dummy_placement_default = n_atoms >= 30
         if n_atoms < 18:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
@@ -7435,12 +7443,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
                     for nb in real
                 ):
-                    Internals.soft_dummy_angle_h0_ha_default = 0.08
+                    Internals.soft_dummy_dihedral_h0_ha_default = 0.15
                     break
-        Internals.soft_oxo_angle_h0_default = n_atoms < 12
-        Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
-        Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
-        Internals.adj_dummy_placement_default = n_atoms >= 30
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -7784,8 +7788,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 break
     finally:
         Internals.soft_dummy_dihedral_h0_default = False
+        Internals.soft_dummy_dihedral_h0_ha_default = None
         Internals.soft_dummy_angle_h0_default = False
-        Internals.soft_dummy_angle_h0_ha_default = 0.10
         Internals.soft_oxo_angle_h0_default = False
         Internals.soft_pyridine_angle_h0_default = False
         Internals.soft_medium_angle_h0_default = False
