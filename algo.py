@@ -7142,6 +7142,8 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
+        if getattr(self, "_has_ester_phenol", False):
+            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7530,7 +7532,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
             if has_phenol and has_ester:
                 opt._has_ester_phenol = True
-                opt.pes.exact_geodesic = True
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
