@@ -7028,7 +7028,7 @@ class Sella(Optimizer):
                 ) or getattr(self, "_has_nitro_cf3", False) or getattr(
                     self, "_has_isoxazole", False
                 ) or getattr(self, "_has_ester_phenol", False):
-                    rs_kwargs['wd'] = 0.70
+                    rs_kwargs['wd'] = 2. / 3.
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
