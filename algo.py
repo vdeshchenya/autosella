@@ -7142,6 +7142,8 @@ class Sella(Optimizer):
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
+        if getattr(self, "_has_alkane_phenol", False):
+            return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
