@@ -7033,9 +7033,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_alkane_phenol", False) and self.nsteps >= 20:
-            step_method = 'rfo'
-        elif getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
+        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             step_method = 'rfo'
         elif getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
@@ -7430,7 +7428,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_benzothiazoline = False
         opt._has_isocyanide = False
         opt._has_sulfonamide = False
-        opt._has_alkane_phenol = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7533,7 +7530,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         int(numbers[k]) != 6 or len(neighbors[k]) == 4
                         for k in members
                     ):
-                        opt._has_alkane_phenol = True
+                        opt.pes.exact_geodesic = True
                         break
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
