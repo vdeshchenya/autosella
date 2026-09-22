@@ -517,12 +517,6 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        dx_u = np.asarray(dx, dtype=np.float64).reshape(-1)
-        dg_u = np.asarray(dg, dtype=np.float64).reshape(-1)
-        if getattr(self, 'skip_neg_curv', False) and dx_u.size == dg_u.size:
-            sy = float(dx_u @ dg_u)
-            if np.isfinite(sy) and sy < 0.0:
-                return
         self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
@@ -7055,8 +7049,6 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_alkane_phenol", False):
-            self.pes.H.skip_neg_curv = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7159,6 +7151,10 @@ class Sella(Optimizer):
             if out is not None:
                 return out
         if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 20:
+            out = self._gediis_two_point(s_qn, smag_qn)
+            if out is not None:
+                return out
+        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             out = self._gediis_two_point(s_qn, smag_qn)
             if out is not None:
                 return out
