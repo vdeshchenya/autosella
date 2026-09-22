@@ -6887,6 +6887,7 @@ class Sella(Optimizer):
         self.delta_min = self.eta
         self._gdiis_x = []
         self._gdiis_g = []
+        self._gdiis_e = []
         self.constraints_tol = constraints_tol
         self.diagkwargs = dict(gamma=gamma, threepoint=threepoint)
         self.rho = 1.
@@ -7138,79 +7139,106 @@ class Sella(Optimizer):
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
         connected-only.
+
+        Connected 18–30 ester–phenol also try Li–Frisch two-point GEDIIS
+        after 15 steps when GDIIS does not accept.
+        """
+        out = self._gdiis_two_point(s_qn, smag_qn)
+        if out is not None:
+            return out
+        if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 15:
+            out = self._gediis_two_point(s_qn, smag_qn)
+            if out is not None:
+                return out
+        return s_qn, smag_qn
+
+    def _gdiis_two_point(self, s_qn, smag_qn):
+        """Replace the QN step with two-point interpolation-only GDIIS.
+
+        Cycle 117's 2–4 point milder GDIIS passed train but inflated
+        seven valid jobs. Restrict to the two most recent points so the
+        interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
+        and cosine ≥ 0.90. Accept only when the previous step was well
+        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
+        share this interpolant after 20 steps; dummy-wd and wa stay
+        connected-only.
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
-            return s_qn, smag_qn
-        if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 15:
-            out = self._gdiis_newton_two_point(s_qn, smag_qn)
-            if out is not None:
-                return out
+            return None
         if self.nsteps < 20:
-            return s_qn, smag_qn
+            return None
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
-            return s_qn, smag_qn
+            return None
         xs = self._gdiis_x
         gs = self._gdiis_g
         if len(xs) < 2 or len(xs) != len(gs):
-            return s_qn, smag_qn
+            return None
         s_qn = np.asarray(s_qn, dtype=np.float64)
         if xs[-1].shape != s_qn.shape:
             self._gdiis_x = []
             self._gdiis_g = []
-            return s_qn, smag_qn
+            self._gdiis_e = []
+            return None
         nref = float(np.linalg.norm(s_qn))
         if not np.isfinite(nref) or nref < 1e-16:
-            return s_qn, smag_qn
+            return None
         err = np.stack(gs)
         norms = np.linalg.norm(err, axis=1)
         nmin = float(np.min(norms))
         if not np.isfinite(nmin) or nmin < 1e-16:
-            return s_qn, smag_qn
+            return None
         err = err / nmin
         coords = np.stack(xs)
         accepted = None
         use = 2
         if err.shape[0] < use:
-            return s_qn, smag_qn
+            return None
         use_vecs = err[::-1][:use]
         A = use_vecs @ use_vecs.T
         try:
             coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
         except np.linalg.LinAlgError:
-            return s_qn, smag_qn
+            return None
         if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-            return s_qn, smag_qn
+            return None
         csum = float(np.sum(coeffs))
         if abs(csum) < 1e-16:
-            return s_qn, smag_qn
+            return None
         coeffs = coeffs / csum
         if np.any(coeffs < -1e-8):
-            return s_qn, smag_qn
+            return None
         pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
         neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
         if pos_sum > 15.0 or neg_sum > 15.0:
-            return s_qn, smag_qn
+            return None
         diis_coords = coeffs @ coords[::-1][:use]
         diis_step = diis_coords - coords[-1]
         ndiis = float(np.linalg.norm(diis_step))
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-            return s_qn, smag_qn
+            return None
         cos = float(diis_step @ s_qn) / (ndiis * nref)
         if cos < 0.90 or cos < 0.0:
-            return s_qn, smag_qn
+            return None
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
         if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-            return s_qn, smag_qn
+            return None
         return accepted, smag
 
-    def _gdiis_newton_two_point(self, s_qn, smag_qn):
-        """Two-point GDIIS with Newton-metric residuals e = H^{-1}g."""
+    def _gediis_two_point(self, s_qn, smag_qn):
+        """Li–Frisch two-point GEDIIS on the last two connected iterates.
+
+        Minimize the quadratic energy model of convex combinations of the
+        current and previous internals (pysisyphus Eq. 6, origin at the
+        current geometry). Reject endpoints, a non-decrease in predicted
+        energy, and steps longer than the QN step or the trust radius.
+        """
         xs = self._gdiis_x
         gs = self._gdiis_g
-        if len(xs) < 2 or len(xs) != len(gs):
+        es = getattr(self, "_gdiis_e", [])
+        if len(xs) < 2 or len(xs) != len(gs) or len(es) != len(xs):
             return None
         s_qn = np.asarray(s_qn, dtype=np.float64)
         if xs[-1].shape != s_qn.shape:
@@ -7218,51 +7246,42 @@ class Sella(Optimizer):
         nref = float(np.linalg.norm(s_qn))
         if not np.isfinite(nref) or nref < 1e-16:
             return None
-        G = np.stack(gs)
-        err = G
-        try:
-            H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
-            if H.shape == (G.shape[1], G.shape[1]):
-                newton, *_ = np.linalg.lstsq(H, G.T, rcond=None)
-                newton = np.asarray(newton.T, dtype=np.float64)
-                if newton.shape == G.shape and np.isfinite(newton).all():
-                    err = newton
-        except (np.linalg.LinAlgError, AttributeError, ValueError, TypeError):
-            err = G
-        norms = np.linalg.norm(err, axis=1)
-        nmin = float(np.min(norms))
-        if not np.isfinite(nmin) or nmin < 1e-16:
+        x0 = np.asarray(xs[-1], dtype=np.float64)
+        x1 = np.asarray(xs[-2], dtype=np.float64)
+        g0 = np.asarray(gs[-1], dtype=np.float64)
+        g1 = np.asarray(gs[-2], dtype=np.float64)
+        e0 = float(es[-1])
+        e1 = float(es[-2])
+        if not np.isfinite(e0) or not np.isfinite(e1):
             return None
-        err = err / nmin
-        coords = np.stack(xs)
-        use = 2
-        if err.shape[0] < use:
+        dx = x1 - x0
+        f0 = -g0
+        f1 = -g1
+        d0 = float(dx @ f0)
+        d1 = float(dx @ f1)
+        if not np.isfinite(d0) or not np.isfinite(d1):
             return None
-        use_vecs = err[::-1][:use]
-        A = use_vecs @ use_vecs.T
-        try:
-            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
-        except np.linalg.LinAlgError:
+        A = d0 - d1
+        B = (e1 - e0) - d0 + d1
+        f_at_0 = e0
+        t_best = 0.0
+        fun_best = f_at_0
+        if A > 1e-18:
+            t_star = -B / (2.0 * A)
+            if 0.0 < t_star < 1.0:
+                f_star = (A * t_star + B) * t_star + e0
+                if np.isfinite(f_star) and f_star < fun_best:
+                    t_best, fun_best = float(t_star), float(f_star)
+        f_at_1 = A + B + e0
+        if f_at_1 < fun_best:
+            t_best, fun_best = 1.0, f_at_1
+        if (not np.isfinite(fun_best)) or fun_best >= e0:
             return None
-        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
+        if t_best < 1e-8 or t_best > 1.0 - 1e-8:
             return None
-        csum = float(np.sum(coeffs))
-        if abs(csum) < 1e-16:
-            return None
-        coeffs = coeffs / csum
-        if np.any(coeffs < -1e-8):
-            return None
-        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-        if pos_sum > 15.0 or neg_sum > 15.0:
-            return None
-        diis_coords = coeffs @ coords[::-1][:use]
-        diis_step = diis_coords - coords[-1]
+        diis_step = t_best * dx
         ndiis = float(np.linalg.norm(diis_step))
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-            return None
-        cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
             return None
         smag = float(np.max(np.abs(diis_step))) if diis_step.size else 0.0
         if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
@@ -7322,6 +7341,7 @@ class Sella(Optimizer):
             self.rho = 1
             self._gdiis_x = []
             self._gdiis_g = []
+            self._gdiis_e = []
             return
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
@@ -7357,9 +7377,11 @@ class Sella(Optimizer):
 
         self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
         self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
+        self._gdiis_e.append(float(self.pes.get_f()))
         if len(self._gdiis_x) > 6:
             self._gdiis_x = self._gdiis_x[-5:]
             self._gdiis_g = self._gdiis_g[-5:]
+            self._gdiis_e = self._gdiis_e[-5:]
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
