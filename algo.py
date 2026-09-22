@@ -7049,7 +7049,7 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
         if getattr(self, "_has_allene", False):
-            self.pes.H.update_method = 'BFGS_auto'
+            self.pes.H.update_method = 'PSB'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
