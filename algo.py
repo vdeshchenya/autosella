@@ -7060,7 +7060,7 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
         if getattr(self, "_has_alkane_phenol", False):
-            self.pes.H.eval_floor = 1e-2
+            self.pes.H.eval_floor = 5e-3
 
         if self.pes.cons.has_inequalities():
             all_valid = False
