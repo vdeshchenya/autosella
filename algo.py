@@ -530,12 +530,8 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
+        return ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
-        shift = getattr(self, 'eval_shift', 0.0)
-        if shift:
-            Hproj.eval_shift = shift
-        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5459,11 +5455,7 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
-        shift = getattr(self.H, 'eval_shift', 0.0)
-        if shift:
-            Hproj.eval_shift = shift
-        return Hproj
+        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -6387,13 +6379,7 @@ class QuasiNewton(BaseStepper):
             H_array = self.H.asarray()
             self.H.evals, self.H.evecs = eigh(H_array)
 
-        evals = self.H.evals
-        self.L = np.abs(evals)
-        shift = float(getattr(self.H, 'eval_shift', 0.0) or 0.0)
-        if shift > 0.0:
-            # ChemShell Baker hessian_shift: replace unwanted negative
-            # and zero eigenvalues; leave already-positive modes.
-            self.L = np.where(evals <= 0.0, shift, evals)
+        self.L = np.abs(self.H.evals)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7062,15 +7048,18 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_thiosulfonate", False):
-            self.pes.H.eval_shift = 1e-1
 
+        rs_cls = self.rs
+        step_kwargs = rs_kwargs
+        if getattr(self, "_has_thiosulfonate", False) and self.nsteps >= 15:
+            rs_cls = TrustRegion
+            step_kwargs = {}
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = self.rs(
+                s, smag = rs_cls(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **rs_kwargs
+                    **step_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -7078,9 +7067,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = self.rs(
+            s, smag = rs_cls(
                 self.pes, self.ord, self.delta, method=step_method,
-                **rs_kwargs
+                **step_kwargs
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
@@ -7105,6 +7094,8 @@ class Sella(Optimizer):
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
+        if getattr(self, "_has_thiosulfonate", False):
+            return s, smag
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
         if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
