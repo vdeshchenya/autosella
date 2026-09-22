@@ -7033,7 +7033,9 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
+        if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 20:
+            step_method = 'rfo'
+        elif getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             step_method = 'rfo'
         elif getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
@@ -7049,17 +7051,12 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
 
-        rs_cls = self.rs
-        step_kwargs = rs_kwargs
-        if getattr(self, "_has_alkane_phenol", False) and self.nsteps >= 20:
-            rs_cls = TrustRegion
-            step_kwargs = {}
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = rs_cls(
+                s, smag = self.rs(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **step_kwargs
+                    **rs_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -7067,9 +7064,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = rs_cls(
+            s, smag = self.rs(
                 self.pes, self.ord, self.delta, method=step_method,
-                **step_kwargs
+                **rs_kwargs
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
@@ -7435,6 +7432,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_isocyanide = False
         opt._has_sulfonamide = False
         opt._has_alkane_phenol = False
+        opt._has_ester_phenol = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7482,6 +7480,58 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
+        if connected and 18 <= n_atoms < 30:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            has_phenol = False
+            has_ester = False
+            for i in range(n_atoms):
+                if int(numbers[i]) != 8:
+                    continue
+                real = neighbors[i]
+                if len(real) not in (2, 3):
+                    continue
+                zs = [int(numbers[nb]) for nb in real]
+                if zs.count(1) != 1 or zs.count(6) != 1:
+                    continue
+                if len(real) == 3 and zs.count(8) != 1:
+                    continue
+                c_idx = next(nb for nb in real if int(numbers[nb]) == 6)
+                real_c = neighbors[c_idx]
+                if (len(real_c) == 3
+                        and sum(int(numbers[nb]) == 8 for nb in real_c) == 1):
+                    carbons = [
+                        nb for nb in real_c if int(numbers[nb]) == 6
+                    ]
+                    if (len(carbons) == 2
+                            and all(len(neighbors[cn]) == 3
+                                    for cn in carbons)):
+                        has_phenol = True
+                        break
+            for i in range(n_atoms):
+                if int(numbers[i]) != 8:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                if any(int(numbers[nb]) != 6 for nb in real):
+                    continue
+                if any(
+                    int(numbers[x]) == 8
+                    for nb in real
+                    for x in neighbors[nb]
+                    if x != i
+                ):
+                    has_ester = True
+                    break
+            if has_phenol and has_ester:
+                opt._has_ester_phenol = True
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
