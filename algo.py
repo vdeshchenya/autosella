@@ -517,6 +517,12 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
+        dx_u = np.asarray(dx, dtype=np.float64).reshape(-1)
+        dg_u = np.asarray(dg, dtype=np.float64).reshape(-1)
+        if getattr(self, 'skip_neg_curv', False) and dx_u.size == dg_u.size:
+            sy = float(dx_u @ dg_u)
+            if np.isfinite(sy) and sy < 0.0:
+                return
         self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
@@ -7048,6 +7054,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_allene", False):
+            self.pes.H.skip_neg_curv = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7149,8 +7157,7 @@ class Sella(Optimizer):
             return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
-        use = 3 if getattr(self, "_has_allene", False) else 2
-        if len(xs) < use or len(xs) != len(gs):
+        if len(xs) < 2 or len(xs) != len(gs):
             return s_qn, smag_qn
         s_qn = np.asarray(s_qn, dtype=np.float64)
         if xs[-1].shape != s_qn.shape:
@@ -7168,6 +7175,7 @@ class Sella(Optimizer):
         err = err / nmin
         coords = np.stack(xs)
         accepted = None
+        use = 2
         if err.shape[0] < use:
             return s_qn, smag_qn
         use_vecs = err[::-1][:use]
