@@ -7154,6 +7154,10 @@ class Sella(Optimizer):
             out = self._gediis_two_point(s_qn, smag_qn)
             if out is not None:
                 return out
+        if getattr(self, "_has_allene", False) and self.nsteps >= 18:
+            out = self._gediis_two_point(s_qn, smag_qn)
+            if out is not None:
+                return out
         return s_qn, smag_qn
 
     def _gdiis_two_point(self, s_qn, smag_qn):
