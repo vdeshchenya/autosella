@@ -1,0 +1,12 @@
+AutoGeomOpt is free software distributed under the GNU Lesser General Public
+License, version 3.0 only (LGPL-3.0-only).
+
+The complete GNU General Public License version 3 is provided in COPYING. The
+additional GNU Lesser General Public License version 3 permissions are provided
+in COPYING.LESSER. Both documents form the applicable license terms.
+
+The AutoSella implementations are modified derivatives of Sella 2.5.0. See
+NOTICE for upstream copyright, attribution, and a description of the changes.
+
+Dataset files and other third-party artifacts are not relicensed by this
+notice; their respective upstream terms continue to apply.

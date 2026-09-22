@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+evaluation_results/
+anchors/
+.evaluation*
+.ralph/

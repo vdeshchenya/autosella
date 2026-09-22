@@ -1,0 +1,3738 @@
+{
+  "xyz/103921822.xyz": {
+    "charge": -1,
+    "n_atoms": 28
+  },
+  "xyz/103923548.xyz": {
+    "charge": 0,
+    "n_atoms": 43
+  },
+  "xyz/103927534.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/103928880.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/103931188.xyz": {
+    "charge": 2,
+    "n_atoms": 22
+  },
+  "xyz/103931970.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/103934158.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/103938489.xyz": {
+    "charge": 0,
+    "n_atoms": 38
+  },
+  "xyz/103943741.xyz": {
+    "charge": 0,
+    "n_atoms": 40
+  },
+  "xyz/103945655.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/103952397.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/103952991.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/103954262.xyz": {
+    "charge": 2,
+    "n_atoms": 26
+  },
+  "xyz/103958198.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/103962328.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/103968470.xyz": {
+    "charge": 0,
+    "n_atoms": 33
+  },
+  "xyz/103981986.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/104000591.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/104001731.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/104006752.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/104008826.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/104039830.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/104040973.xyz": {
+    "charge": -1,
+    "n_atoms": 3
+  },
+  "xyz/104046121.xyz": {
+    "charge": 1,
+    "n_atoms": 49
+  },
+  "xyz/104059971.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/104063503.xyz": {
+    "charge": 0,
+    "n_atoms": 47
+  },
+  "xyz/104073139.xyz": {
+    "charge": 1,
+    "n_atoms": 45
+  },
+  "xyz/104079126.xyz": {
+    "charge": -1,
+    "n_atoms": 18
+  },
+  "xyz/104082455.xyz": {
+    "charge": 0,
+    "n_atoms": 36
+  },
+  "xyz/104100696.xyz": {
+    "charge": 1,
+    "n_atoms": 31
+  },
+  "xyz/104108013.xyz": {
+    "charge": 0,
+    "n_atoms": 41
+  },
+  "xyz/104110975.xyz": {
+    "charge": 1,
+    "n_atoms": 30
+  },
+  "xyz/104116250.xyz": {
+    "charge": 0,
+    "n_atoms": 36
+  },
+  "xyz/104118994.xyz": {
+    "charge": 0,
+    "n_atoms": 41
+  },
+  "xyz/104120669.xyz": {
+    "charge": -2,
+    "n_atoms": 4
+  },
+  "xyz/104125231.xyz": {
+    "charge": -4,
+    "n_atoms": 29
+  },
+  "xyz/104129249.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/104129283.xyz": {
+    "charge": -4,
+    "n_atoms": 22
+  },
+  "xyz/104130706.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/104131070.xyz": {
+    "charge": 0,
+    "n_atoms": 38
+  },
+  "xyz/104139123.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/104141078.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/104147004.xyz": {
+    "charge": 1,
+    "n_atoms": 39
+  },
+  "xyz/104161681.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/104162399.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/11109414.xyz": {
+    "charge": 0,
+    "n_atoms": 36
+  },
+  "xyz/117645250.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/123107365.xyz": {
+    "charge": 0,
+    "n_atoms": 42
+  },
+  "xyz/125084169.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/125086620.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/125089231.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/134971864.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/134976273.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/134976831.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/134978595.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/134979308.xyz": {
+    "charge": 0,
+    "n_atoms": 42
+  },
+  "xyz/134980158.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/134981733.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/134981761.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/134982070.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/134983358.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/134984031.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/134984845.xyz": {
+    "charge": 0,
+    "n_atoms": 34
+  },
+  "xyz/134985308.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/134986096.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/134987421.xyz": {
+    "charge": 0,
+    "n_atoms": 3
+  },
+  "xyz/134989033.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/134989399.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/134989437.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/134989577.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/134989941.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/134990319.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/134992081.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/134994308.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/134994477.xyz": {
+    "charge": 0,
+    "n_atoms": 37
+  },
+  "xyz/134997543.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/134999851.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135001818.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/135003646.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135004771.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/135009613.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/135011106.xyz": {
+    "charge": 0,
+    "n_atoms": 33
+  },
+  "xyz/135013374.xyz": {
+    "charge": 0,
+    "n_atoms": 34
+  },
+  "xyz/135013494.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/135014114.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/135014197.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/135015133.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/135016905.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135018434.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/135020045.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/135021635.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/135028380.xyz": {
+    "charge": -2,
+    "n_atoms": 6
+  },
+  "xyz/135028526.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135034037.xyz": {
+    "charge": 0,
+    "n_atoms": 11
+  },
+  "xyz/135038983.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/135039840.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/135041904.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/135041910.xyz": {
+    "charge": 0,
+    "n_atoms": 3
+  },
+  "xyz/135041958.xyz": {
+    "charge": -1,
+    "n_atoms": 3
+  },
+  "xyz/135041973.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135042855.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/135043047.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135043824.xyz": {
+    "charge": 0,
+    "n_atoms": 38
+  },
+  "xyz/135046932.xyz": {
+    "charge": 0,
+    "n_atoms": 41
+  },
+  "xyz/135048599.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135048724.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135049744.xyz": {
+    "charge": 0,
+    "n_atoms": 37
+  },
+  "xyz/135050336.xyz": {
+    "charge": 0,
+    "n_atoms": 42
+  },
+  "xyz/135051576.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/135052949.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/135060244.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/135061043.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135062452.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/135064751.xyz": {
+    "charge": 0,
+    "n_atoms": 43
+  },
+  "xyz/135065494.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/135069072.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/135071396.xyz": {
+    "charge": 1,
+    "n_atoms": 6
+  },
+  "xyz/135071820.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/135074609.xyz": {
+    "charge": -1,
+    "n_atoms": 4
+  },
+  "xyz/135075087.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/135076485.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/135077553.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135078057.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/135078067.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/135078483.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135078969.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/135079402.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/135080011.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/135081587.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/135083911.xyz": {
+    "charge": 0,
+    "n_atoms": 36
+  },
+  "xyz/135084788.xyz": {
+    "charge": 0,
+    "n_atoms": 34
+  },
+  "xyz/135086807.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/135087463.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135089496.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/135089763.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135091503.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/135091632.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/135091752.xyz": {
+    "charge": 0,
+    "n_atoms": 37
+  },
+  "xyz/135091854.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135091989.xyz": {
+    "charge": 0,
+    "n_atoms": 8
+  },
+  "xyz/135092053.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/135092258.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/135092350.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135092704.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/135092709.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135092859.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/135092963.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/135093102.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/135093104.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/135093107.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/135093116.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135093123.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135093552.xyz": {
+    "charge": 0,
+    "n_atoms": 7
+  },
+  "xyz/135093596.xyz": {
+    "charge": 0,
+    "n_atoms": 8
+  },
+  "xyz/135093846.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/135093932.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/135093970.xyz": {
+    "charge": 0,
+    "n_atoms": 7
+  },
+  "xyz/135094180.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/135094396.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135094473.xyz": {
+    "charge": 0,
+    "n_atoms": 11
+  },
+  "xyz/135094613.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135094844.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135094940.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/135095057.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135095125.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/135095246.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/135095297.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/135095493.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135095518.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135095649.xyz": {
+    "charge": 0,
+    "n_atoms": 3
+  },
+  "xyz/135096004.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135096479.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/135096784.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135096891.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/135097071.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/135097481.xyz": {
+    "charge": 0,
+    "n_atoms": 8
+  },
+  "xyz/135097653.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/135097864.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/135098013.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135098113.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/135098427.xyz": {
+    "charge": 0,
+    "n_atoms": 42
+  },
+  "xyz/135098920.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135098945.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135098956.xyz": {
+    "charge": 0,
+    "n_atoms": 38
+  },
+  "xyz/135099093.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/135099280.xyz": {
+    "charge": 0,
+    "n_atoms": 31
+  },
+  "xyz/135099518.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135099604.xyz": {
+    "charge": 0,
+    "n_atoms": 45
+  },
+  "xyz/135099623.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/135099703.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/135099841.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135099868.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/135099899.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/135099901.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/135100218.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/135100292.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/135100404.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135100466.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/135100494.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/135100509.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/135101049.xyz": {
+    "charge": 0,
+    "n_atoms": 31
+  },
+  "xyz/135101082.xyz": {
+    "charge": 0,
+    "n_atoms": 3
+  },
+  "xyz/135101309.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135102617.xyz": {
+    "charge": 0,
+    "n_atoms": 42
+  },
+  "xyz/135103066.xyz": {
+    "charge": 0,
+    "n_atoms": 36
+  },
+  "xyz/135103485.xyz": {
+    "charge": 1,
+    "n_atoms": 42
+  },
+  "xyz/135104646.xyz": {
+    "charge": 0,
+    "n_atoms": 41
+  },
+  "xyz/135105134.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135106724.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/135107341.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135107889.xyz": {
+    "charge": 0,
+    "n_atoms": 8
+  },
+  "xyz/135109649.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/135109948.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/135112265.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/135113134.xyz": {
+    "charge": 1,
+    "n_atoms": 4
+  },
+  "xyz/135114426.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/135114512.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/135114602.xyz": {
+    "charge": 0,
+    "n_atoms": 36
+  },
+  "xyz/135117968.xyz": {
+    "charge": 0,
+    "n_atoms": 34
+  },
+  "xyz/135121568.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/135121768.xyz": {
+    "charge": 0,
+    "n_atoms": 7
+  },
+  "xyz/135122079.xyz": {
+    "charge": 0,
+    "n_atoms": 39
+  },
+  "xyz/135124603.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135130097.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/135130267.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/135130364.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/135132759.xyz": {
+    "charge": 0,
+    "n_atoms": 39
+  },
+  "xyz/135132770.xyz": {
+    "charge": 0,
+    "n_atoms": 36
+  },
+  "xyz/135134090.xyz": {
+    "charge": 0,
+    "n_atoms": 11
+  },
+  "xyz/135135126.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/135137037.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/135140595.xyz": {
+    "charge": 0,
+    "n_atoms": 37
+  },
+  "xyz/135141611.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/135142801.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/135143919.xyz": {
+    "charge": 0,
+    "n_atoms": 38
+  },
+  "xyz/135145908.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/135146682.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/135149272.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/135149279.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/135149287.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/135149595.xyz": {
+    "charge": 0,
+    "n_atoms": 40
+  },
+  "xyz/135150142.xyz": {
+    "charge": 0,
+    "n_atoms": 36
+  },
+  "xyz/135150492.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/135150520.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/135153532.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/135155528.xyz": {
+    "charge": 0,
+    "n_atoms": 45
+  },
+  "xyz/135156363.xyz": {
+    "charge": -3,
+    "n_atoms": 5
+  },
+  "xyz/135157239.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/135158617.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135158855.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/135159584.xyz": {
+    "charge": -1,
+    "n_atoms": 4
+  },
+  "xyz/135160010.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/135161672.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/135163586.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135165461.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/135166552.xyz": {
+    "charge": 0,
+    "n_atoms": 37
+  },
+  "xyz/135167904.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/135169088.xyz": {
+    "charge": -2,
+    "n_atoms": 11
+  },
+  "xyz/135169428.xyz": {
+    "charge": 0,
+    "n_atoms": 47
+  },
+  "xyz/135169446.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/135169566.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135174241.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/135174398.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/135174531.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/135175432.xyz": {
+    "charge": 0,
+    "n_atoms": 47
+  },
+  "xyz/135181905.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/135185708.xyz": {
+    "charge": 0,
+    "n_atoms": 7
+  },
+  "xyz/135186987.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/135191382.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135191719.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/135192963.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/135194489.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/135196177.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/135197757.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/135197856.xyz": {
+    "charge": 0,
+    "n_atoms": 31
+  },
+  "xyz/135198575.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/135200247.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/135201474.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/135205152.xyz": {
+    "charge": -2,
+    "n_atoms": 11
+  },
+  "xyz/135206529.xyz": {
+    "charge": 0,
+    "n_atoms": 7
+  },
+  "xyz/135206919.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/135207293.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/135212400.xyz": {
+    "charge": 1,
+    "n_atoms": 16
+  },
+  "xyz/135217185.xyz": {
+    "charge": 0,
+    "n_atoms": 43
+  },
+  "xyz/135222102.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/135224095.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/135225351.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/135226004.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/135227471.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/135228975.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135229684.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/135230839.xyz": {
+    "charge": 1,
+    "n_atoms": 48
+  },
+  "xyz/135231613.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135234349.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/135236278.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/135236832.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/135237854.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/135238882.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/135239086.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/135239137.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/135239267.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/135239951.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/135239978.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/135240003.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/135240396.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/135241096.xyz": {
+    "charge": 0,
+    "n_atoms": 31
+  },
+  "xyz/135241456.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/135241634.xyz": {
+    "charge": 0,
+    "n_atoms": 42
+  },
+  "xyz/135241983.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/135242556.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/135242562.xyz": {
+    "charge": 0,
+    "n_atoms": 40
+  },
+  "xyz/135245411.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/135245509.xyz": {
+    "charge": 0,
+    "n_atoms": 34
+  },
+  "xyz/135247228.xyz": {
+    "charge": 0,
+    "n_atoms": 37
+  },
+  "xyz/135247419.xyz": {
+    "charge": 0,
+    "n_atoms": 7
+  },
+  "xyz/135248153.xyz": {
+    "charge": 0,
+    "n_atoms": 31
+  },
+  "xyz/135249279.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/135249644.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/135251716.xyz": {
+    "charge": 0,
+    "n_atoms": 39
+  },
+  "xyz/135253091.xyz": {
+    "charge": 0,
+    "n_atoms": 33
+  },
+  "xyz/135255884.xyz": {
+    "charge": 0,
+    "n_atoms": 41
+  },
+  "xyz/135258286.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/135258893.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/135259008.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/135259054.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/135259373.xyz": {
+    "charge": 0,
+    "n_atoms": 5
+  },
+  "xyz/135259556.xyz": {
+    "charge": 1,
+    "n_atoms": 8
+  },
+  "xyz/135262164.xyz": {
+    "charge": -2,
+    "n_atoms": 3
+  },
+  "xyz/135262583.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/135263244.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/135264107.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/135264337.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/135264879.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/135267488.xyz": {
+    "charge": 0,
+    "n_atoms": 47
+  },
+  "xyz/135268124.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/135269396.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/135274948.xyz": {
+    "charge": 0,
+    "n_atoms": 4
+  },
+  "xyz/135278208.xyz": {
+    "charge": 0,
+    "n_atoms": 33
+  },
+  "xyz/135278702.xyz": {
+    "charge": 0,
+    "n_atoms": 41
+  },
+  "xyz/135284252.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/135285780.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/135295734.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/135296936.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/135316214.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/135317687.xyz": {
+    "charge": 0,
+    "n_atoms": 47
+  },
+  "xyz/135323368.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/135336542.xyz": {
+    "charge": 0,
+    "n_atoms": 39
+  },
+  "xyz/135347311.xyz": {
+    "charge": 0,
+    "n_atoms": 40
+  },
+  "xyz/135350238.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/135350997.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/135360362.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/136351760.xyz": {
+    "charge": 1,
+    "n_atoms": 40
+  },
+  "xyz/160845249.xyz": {
+    "charge": -1,
+    "n_atoms": 37
+  },
+  "xyz/160847961.xyz": {
+    "charge": 2,
+    "n_atoms": 49
+  },
+  "xyz/160850312.xyz": {
+    "charge": 0,
+    "n_atoms": 41
+  },
+  "xyz/160853090.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/160857594.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/163343378.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/163350562.xyz": {
+    "charge": -1,
+    "n_atoms": 8
+  },
+  "xyz/163352346.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/163643126.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/164151506.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/164156386.xyz": {
+    "charge": -3,
+    "n_atoms": 48
+  },
+  "xyz/164160833.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/165224289.xyz": {
+    "charge": 0,
+    "n_atoms": 38
+  },
+  "xyz/172113611.xyz": {
+    "charge": 0,
+    "n_atoms": 37
+  },
+  "xyz/172649986.xyz": {
+    "charge": 0,
+    "n_atoms": 41
+  },
+  "xyz/175427613.xyz": {
+    "charge": 0,
+    "n_atoms": 38
+  },
+  "xyz/175444560.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/194689238.xyz": {
+    "charge": 0,
+    "n_atoms": 45
+  },
+  "xyz/196678788.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/242041958.xyz": {
+    "charge": 0,
+    "n_atoms": 39
+  },
+  "xyz/242053505.xyz": {
+    "charge": 0,
+    "n_atoms": 40
+  },
+  "xyz/242055702.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/242055707.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/249819456.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/251920090.xyz": {
+    "charge": 0,
+    "n_atoms": 42
+  },
+  "xyz/252089162.xyz": {
+    "charge": 0,
+    "n_atoms": 11
+  },
+  "xyz/252149301.xyz": {
+    "charge": 0,
+    "n_atoms": 47
+  },
+  "xyz/252618428.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/252620869.xyz": {
+    "charge": 0,
+    "n_atoms": 40
+  },
+  "xyz/252632118.xyz": {
+    "charge": 0,
+    "n_atoms": 34
+  },
+  "xyz/252632375.xyz": {
+    "charge": 0,
+    "n_atoms": 31
+  },
+  "xyz/252633479.xyz": {
+    "charge": 0,
+    "n_atoms": 45
+  },
+  "xyz/252634821.xyz": {
+    "charge": 0,
+    "n_atoms": 39
+  },
+  "xyz/252635561.xyz": {
+    "charge": 1,
+    "n_atoms": 49
+  },
+  "xyz/252637282.xyz": {
+    "charge": 0,
+    "n_atoms": 45
+  },
+  "xyz/252638725.xyz": {
+    "charge": 0,
+    "n_atoms": 37
+  },
+  "xyz/252638821.xyz": {
+    "charge": 1,
+    "n_atoms": 46
+  },
+  "xyz/252644426.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/252647476.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/252648738.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/252648739.xyz": {
+    "charge": 0,
+    "n_atoms": 38
+  },
+  "xyz/252649555.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/252651011.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/252653184.xyz": {
+    "charge": 0,
+    "n_atoms": 34
+  },
+  "xyz/252653478.xyz": {
+    "charge": 1,
+    "n_atoms": 49
+  },
+  "xyz/252656292.xyz": {
+    "charge": 0,
+    "n_atoms": 37
+  },
+  "xyz/252656935.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/252657041.xyz": {
+    "charge": 1,
+    "n_atoms": 48
+  },
+  "xyz/252658999.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/252660432.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/252661386.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/252662126.xyz": {
+    "charge": 0,
+    "n_atoms": 45
+  },
+  "xyz/252662734.xyz": {
+    "charge": 0,
+    "n_atoms": 45
+  },
+  "xyz/252664140.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/277286231.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/312525537.xyz": {
+    "charge": 0,
+    "n_atoms": 38
+  },
+  "xyz/313065814.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/313071992.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/315516336.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/315658749.xyz": {
+    "charge": 0,
+    "n_atoms": 43
+  },
+  "xyz/319495631.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/335961309.xyz": {
+    "charge": 0,
+    "n_atoms": 40
+  },
+  "xyz/336270104.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/341093675.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/350084579.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/363891963.xyz": {
+    "charge": 0,
+    "n_atoms": 39
+  },
+  "xyz/363892164.xyz": {
+    "charge": 0,
+    "n_atoms": 43
+  },
+  "xyz/374884686.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/375563688.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/375980376.xyz": {
+    "charge": 0,
+    "n_atoms": 36
+  },
+  "xyz/376225206.xyz": {
+    "charge": 0,
+    "n_atoms": 41
+  },
+  "xyz/377007876.xyz": {
+    "charge": 0,
+    "n_atoms": 42
+  },
+  "xyz/378161490.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/378166034.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/378169781.xyz": {
+    "charge": 0,
+    "n_atoms": 47
+  },
+  "xyz/381611071.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/381615095.xyz": {
+    "charge": 0,
+    "n_atoms": 45
+  },
+  "xyz/381616091.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/381616719.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/384219853.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/384220548.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/384221749.xyz": {
+    "charge": 1,
+    "n_atoms": 50
+  },
+  "xyz/384575875.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/385453368.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/385453608.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/386399742.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/401957793.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/402364965.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/402425992.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/404343235.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/404345632.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/404856341.xyz": {
+    "charge": 0,
+    "n_atoms": 40
+  },
+  "xyz/404957321.xyz": {
+    "charge": 0,
+    "n_atoms": 43
+  },
+  "xyz/405243551.xyz": {
+    "charge": 0,
+    "n_atoms": 35
+  },
+  "xyz/405257459.xyz": {
+    "charge": 0,
+    "n_atoms": 43
+  },
+  "xyz/406793986.xyz": {
+    "charge": 0,
+    "n_atoms": 47
+  },
+  "xyz/433770666.xyz": {
+    "charge": 0,
+    "n_atoms": 42
+  },
+  "xyz/433935240.xyz": {
+    "charge": 0,
+    "n_atoms": 38
+  },
+  "xyz/433937523.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/433939066.xyz": {
+    "charge": 0,
+    "n_atoms": 41
+  },
+  "xyz/433940864.xyz": {
+    "charge": 0,
+    "n_atoms": 50
+  },
+  "xyz/433943382.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/433943527.xyz": {
+    "charge": 1,
+    "n_atoms": 27
+  },
+  "xyz/433947564.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/433957183.xyz": {
+    "charge": 0,
+    "n_atoms": 45
+  },
+  "xyz/434319007.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/434319675.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/439659553.xyz": {
+    "charge": 0,
+    "n_atoms": 36
+  },
+  "xyz/440717067.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/440723624.xyz": {
+    "charge": 0,
+    "n_atoms": 40
+  },
+  "xyz/440732035.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/440742410.xyz": {
+    "charge": 0,
+    "n_atoms": 31
+  },
+  "xyz/440971005.xyz": {
+    "charge": 0,
+    "n_atoms": 43
+  },
+  "xyz/441095718.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/441095956.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/442136783.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/442142528.xyz": {
+    "charge": 0,
+    "n_atoms": 11
+  },
+  "xyz/46518609.xyz": {
+    "charge": 0,
+    "n_atoms": 34
+  },
+  "xyz/57298703.xyz": {
+    "charge": -1,
+    "n_atoms": 5
+  },
+  "xyz/58097537.xyz": {
+    "charge": 2,
+    "n_atoms": 45
+  },
+  "xyz/8030412.xyz": {
+    "charge": 0,
+    "n_atoms": 43
+  },
+  "xyz/85240538.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/85266882.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/abemaciclib.xyz": {
+    "charge": 0,
+    "n_atoms": 69
+  },
+  "xyz/acalabrutinib.xyz": {
+    "charge": 0,
+    "n_atoms": 58
+  },
+  "xyz/apalutamide.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/apixaban.xyz": {
+    "charge": 0,
+    "n_atoms": 59
+  },
+  "xyz/brexpiprazole.xyz": {
+    "charge": 0,
+    "n_atoms": 58
+  },
+  "xyz/cariprazine.xyz": {
+    "charge": 0,
+    "n_atoms": 60
+  },
+  "xyz/dapagliflozin.xyz": {
+    "charge": 0,
+    "n_atoms": 53
+  },
+  "xyz/des370k_acids__acids__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_acids__acids__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 10
+  },
+  "xyz/des370k_acids__alcohols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_acids__alcohols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/des370k_acids__alkanes__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_acids__alkanes__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_acids__alkenes__train.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_acids__alkenes__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 11
+  },
+  "xyz/des370k_acids__amides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/des370k_acids__amides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_acids__amines__train.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_acids__amines__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_acids__ammoniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 19
+  },
+  "xyz/des370k_acids__ammoniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 22
+  },
+  "xyz/des370k_acids__benzene__train.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_acids__benzene__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_acids__carboxylates__train.xyz": {
+    "charge": -1,
+    "n_atoms": 12
+  },
+  "xyz/des370k_acids__carboxylates__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 12
+  },
+  "xyz/des370k_acids__esters__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_acids__esters__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_acids__ethers__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_acids__ethers__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_acids__guanidiniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 21
+  },
+  "xyz/des370k_acids__guanidiniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 18
+  },
+  "xyz/des370k_acids__imidazolium__train.xyz": {
+    "charge": 1,
+    "n_atoms": 15
+  },
+  "xyz/des370k_acids__imidazolium__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 21
+  },
+  "xyz/des370k_acids__ketones__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_acids__ketones__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_acids__monoatomics__train.xyz": {
+    "charge": -1,
+    "n_atoms": 9
+  },
+  "xyz/des370k_acids__monoatomics__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 6
+  },
+  "xyz/des370k_acids__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_acids__phenol__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_acids__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_acids__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_acids__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_acids__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_acids__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_acids__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_acids__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_acids__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 11
+  },
+  "xyz/des370k_acids__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/des370k_acids__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/des370k_alcohols__alcohols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_alcohols__alcohols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/des370k_alcohols__alkanes__train.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/des370k_alcohols__alkanes__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_alcohols__alkenes__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_alcohols__alkenes__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/des370k_alcohols__amides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_alcohols__amides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_alcohols__amines__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_alcohols__amines__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_alcohols__ammoniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_alcohols__ammoniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 23
+  },
+  "xyz/des370k_alcohols__benzene__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_alcohols__benzene__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_alcohols__carboxylates__train.xyz": {
+    "charge": -1,
+    "n_atoms": 23
+  },
+  "xyz/des370k_alcohols__carboxylates__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_alcohols__esters__train.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_alcohols__esters__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_alcohols__ethers__train.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_alcohols__ethers__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_alcohols__guanidiniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_alcohols__guanidiniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 19
+  },
+  "xyz/des370k_alcohols__imidazolium__train.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_alcohols__imidazolium__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 16
+  },
+  "xyz/des370k_alcohols__ketones__train.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/des370k_alcohols__ketones__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_alcohols__monoatomics__train.xyz": {
+    "charge": -1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_alcohols__monoatomics__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 7
+  },
+  "xyz/des370k_alcohols__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/des370k_alcohols__phenol__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_alcohols__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_alcohols__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_alcohols__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_alcohols__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_alcohols__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_alcohols__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_alcohols__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_alcohols__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/des370k_alcohols__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/des370k_alcohols__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_alkanes__alkanes__train.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/des370k_alkanes__alkanes__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 34
+  },
+  "xyz/des370k_alkanes__alkenes__train.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_alkanes__alkenes__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/des370k_alkanes__amides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/des370k_alkanes__amides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_alkanes__amines__train.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_alkanes__amines__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 31
+  },
+  "xyz/des370k_alkanes__ammoniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 25
+  },
+  "xyz/des370k_alkanes__ammoniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 32
+  },
+  "xyz/des370k_alkanes__benzene__train.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_alkanes__benzene__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_alkanes__carboxylates__train.xyz": {
+    "charge": -1,
+    "n_atoms": 18
+  },
+  "xyz/des370k_alkanes__carboxylates__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 15
+  },
+  "xyz/des370k_alkanes__esters__train.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_alkanes__esters__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/des370k_alkanes__ethers__train.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/des370k_alkanes__ethers__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/des370k_alkanes__guanidiniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 27
+  },
+  "xyz/des370k_alkanes__guanidiniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 21
+  },
+  "xyz/des370k_alkanes__imidazolium__train.xyz": {
+    "charge": 1,
+    "n_atoms": 27
+  },
+  "xyz/des370k_alkanes__imidazolium__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 18
+  },
+  "xyz/des370k_alkanes__ketones__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_alkanes__ketones__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_alkanes__monoatomics__train.xyz": {
+    "charge": 1,
+    "n_atoms": 6
+  },
+  "xyz/des370k_alkanes__monoatomics__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 15
+  },
+  "xyz/des370k_alkanes__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/des370k_alkanes__phenol__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_alkanes__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_alkanes__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_alkanes__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_alkanes__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_alkanes__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/des370k_alkanes__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/des370k_alkanes__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/des370k_alkanes__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_alkanes__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_alkanes__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 11
+  },
+  "xyz/des370k_alkenes__alkenes__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_alkenes__alkenes__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/des370k_alkenes__amides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_alkenes__amides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_alkenes__amines__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_alkenes__amines__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_alkenes__ammoniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 14
+  },
+  "xyz/des370k_alkenes__ammoniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 20
+  },
+  "xyz/des370k_alkenes__benzene__train.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/des370k_alkenes__benzene__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_alkenes__carboxylates__train.xyz": {
+    "charge": -1,
+    "n_atoms": 22
+  },
+  "xyz/des370k_alkenes__carboxylates__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 16
+  },
+  "xyz/des370k_alkenes__esters__train.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/des370k_alkenes__esters__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_alkenes__ethers__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_alkenes__ethers__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_alkenes__guanidiniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 22
+  },
+  "xyz/des370k_alkenes__guanidiniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 31
+  },
+  "xyz/des370k_alkenes__imidazolium__train.xyz": {
+    "charge": 1,
+    "n_atoms": 22
+  },
+  "xyz/des370k_alkenes__imidazolium__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 16
+  },
+  "xyz/des370k_alkenes__ketones__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_alkenes__ketones__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/des370k_alkenes__monoatomics__train.xyz": {
+    "charge": 1,
+    "n_atoms": 10
+  },
+  "xyz/des370k_alkenes__monoatomics__valid.xyz": {
+    "charge": 2,
+    "n_atoms": 7
+  },
+  "xyz/des370k_alkenes__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_alkenes__phenol__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/des370k_alkenes__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_alkenes__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_alkenes__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_alkenes__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_alkenes__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_alkenes__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_alkenes__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/des370k_alkenes__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/des370k_alkenes__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 9
+  },
+  "xyz/des370k_alkenes__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_amides__amides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/des370k_amides__amides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_amides__amines__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_amides__amines__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_amides__ammoniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 14
+  },
+  "xyz/des370k_amides__ammoniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_amides__benzene__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_amides__benzene__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_amides__carboxylates__train.xyz": {
+    "charge": -1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_amides__carboxylates__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 16
+  },
+  "xyz/des370k_amides__esters__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_amides__esters__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_amides__ethers__train.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_amides__ethers__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_amides__guanidiniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 22
+  },
+  "xyz/des370k_amides__guanidiniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 25
+  },
+  "xyz/des370k_amides__imidazolium__train.xyz": {
+    "charge": 1,
+    "n_atoms": 25
+  },
+  "xyz/des370k_amides__imidazolium__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 19
+  },
+  "xyz/des370k_amides__ketones__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_amides__ketones__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_amides__monoatomics__train.xyz": {
+    "charge": -1,
+    "n_atoms": 7
+  },
+  "xyz/des370k_amides__monoatomics__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 10
+  },
+  "xyz/des370k_amides__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_amides__phenol__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_amides__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_amides__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_amides__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_amides__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_amides__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_amides__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/des370k_amides__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_amides__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_amides__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_amides__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_amines__amines__train.xyz": {
+    "charge": 0,
+    "n_atoms": 8
+  },
+  "xyz/des370k_amines__amines__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_amines__ammoniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 27
+  },
+  "xyz/des370k_amines__ammoniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 24
+  },
+  "xyz/des370k_amines__benzene__train.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_amines__benzene__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_amines__carboxylates__train.xyz": {
+    "charge": -1,
+    "n_atoms": 14
+  },
+  "xyz/des370k_amines__carboxylates__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 20
+  },
+  "xyz/des370k_amines__esters__train.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_amines__esters__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_amines__ethers__train.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_amines__ethers__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_amines__guanidiniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_amines__guanidiniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_amines__imidazolium__train.xyz": {
+    "charge": 1,
+    "n_atoms": 20
+  },
+  "xyz/des370k_amines__imidazolium__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_amines__ketones__train.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_amines__ketones__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_amines__monoatomics__train.xyz": {
+    "charge": 1,
+    "n_atoms": 18
+  },
+  "xyz/des370k_amines__monoatomics__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 14
+  },
+  "xyz/des370k_amines__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_amines__phenol__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_amines__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_amines__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_amines__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_amines__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_amines__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_amines__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_amines__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_amines__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_amines__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_amines__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_ammoniums__benzene__train.xyz": {
+    "charge": 1,
+    "n_atoms": 20
+  },
+  "xyz/des370k_ammoniums__benzene__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_ammoniums__carboxylates__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_ammoniums__esters__train.xyz": {
+    "charge": 1,
+    "n_atoms": 16
+  },
+  "xyz/des370k_ammoniums__esters__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 19
+  },
+  "xyz/des370k_ammoniums__ethers__train.xyz": {
+    "charge": 1,
+    "n_atoms": 20
+  },
+  "xyz/des370k_ammoniums__ethers__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 23
+  },
+  "xyz/des370k_ammoniums__ketones__train.xyz": {
+    "charge": 1,
+    "n_atoms": 15
+  },
+  "xyz/des370k_ammoniums__ketones__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 24
+  },
+  "xyz/des370k_ammoniums__monoatomics__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_ammoniums__phenol__train.xyz": {
+    "charge": 1,
+    "n_atoms": 21
+  },
+  "xyz/des370k_ammoniums__phenol__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 27
+  },
+  "xyz/des370k_ammoniums__pyridine__train.xyz": {
+    "charge": 1,
+    "n_atoms": 18
+  },
+  "xyz/des370k_ammoniums__pyridine__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 18
+  },
+  "xyz/des370k_ammoniums__pyrrole__train.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_ammoniums__pyrrole__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 23
+  },
+  "xyz/des370k_ammoniums__sulfides__train.xyz": {
+    "charge": 1,
+    "n_atoms": 20
+  },
+  "xyz/des370k_ammoniums__sulfides__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 19
+  },
+  "xyz/des370k_ammoniums__thiols__train.xyz": {
+    "charge": 1,
+    "n_atoms": 14
+  },
+  "xyz/des370k_ammoniums__thiols__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 11
+  },
+  "xyz/des370k_ammoniums__water__train.xyz": {
+    "charge": 1,
+    "n_atoms": 14
+  },
+  "xyz/des370k_ammoniums__water__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_benzene__benzene__train.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/des370k_benzene__benzene__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/des370k_benzene__carboxylates__train.xyz": {
+    "charge": -1,
+    "n_atoms": 16
+  },
+  "xyz/des370k_benzene__carboxylates__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 19
+  },
+  "xyz/des370k_benzene__esters__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_benzene__esters__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_benzene__ethers__train.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_benzene__ethers__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/des370k_benzene__guanidiniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 28
+  },
+  "xyz/des370k_benzene__guanidiniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 22
+  },
+  "xyz/des370k_benzene__imidazolium__train.xyz": {
+    "charge": 1,
+    "n_atoms": 25
+  },
+  "xyz/des370k_benzene__imidazolium__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 22
+  },
+  "xyz/des370k_benzene__ketones__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_benzene__ketones__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_benzene__monoatomics__train.xyz": {
+    "charge": -1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_benzene__monoatomics__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_benzene__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_benzene__phenol__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/des370k_benzene__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_benzene__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_benzene__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_benzene__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_benzene__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_benzene__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/des370k_benzene__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_benzene__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_benzene__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_benzene__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_carboxylates__esters__train.xyz": {
+    "charge": -1,
+    "n_atoms": 15
+  },
+  "xyz/des370k_carboxylates__esters__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 18
+  },
+  "xyz/des370k_carboxylates__ethers__train.xyz": {
+    "charge": -1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_carboxylates__ethers__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 22
+  },
+  "xyz/des370k_carboxylates__guanidiniums__train.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_carboxylates__guanidiniums__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_carboxylates__ketones__train.xyz": {
+    "charge": -1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_carboxylates__ketones__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 11
+  },
+  "xyz/des370k_carboxylates__phenol__train.xyz": {
+    "charge": -1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_carboxylates__phenol__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 20
+  },
+  "xyz/des370k_carboxylates__pyridine__train.xyz": {
+    "charge": -1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_carboxylates__pyridine__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 18
+  },
+  "xyz/des370k_carboxylates__pyrrole__train.xyz": {
+    "charge": -1,
+    "n_atoms": 16
+  },
+  "xyz/des370k_carboxylates__pyrrole__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 19
+  },
+  "xyz/des370k_carboxylates__sulfides__train.xyz": {
+    "charge": -1,
+    "n_atoms": 18
+  },
+  "xyz/des370k_carboxylates__sulfides__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 21
+  },
+  "xyz/des370k_carboxylates__thiols__train.xyz": {
+    "charge": -1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_carboxylates__thiols__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 10
+  },
+  "xyz/des370k_carboxylates__water__train.xyz": {
+    "charge": -1,
+    "n_atoms": 10
+  },
+  "xyz/des370k_carboxylates__water__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_esters__esters__train.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_esters__esters__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/des370k_esters__ethers__train.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_esters__ethers__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_esters__guanidiniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 24
+  },
+  "xyz/des370k_esters__guanidiniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 21
+  },
+  "xyz/des370k_esters__imidazolium__train.xyz": {
+    "charge": 1,
+    "n_atoms": 18
+  },
+  "xyz/des370k_esters__imidazolium__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 21
+  },
+  "xyz/des370k_esters__ketones__train.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_esters__ketones__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_esters__monoatomics__train.xyz": {
+    "charge": -1,
+    "n_atoms": 12
+  },
+  "xyz/des370k_esters__monoatomics__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 9
+  },
+  "xyz/des370k_esters__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_esters__phenol__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_esters__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_esters__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_esters__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_esters__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_esters__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_esters__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_esters__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_esters__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_ethers__ethers__train.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_ethers__ethers__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 30
+  },
+  "xyz/des370k_ethers__guanidiniums__train.xyz": {
+    "charge": 1,
+    "n_atoms": 22
+  },
+  "xyz/des370k_ethers__guanidiniums__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 28
+  },
+  "xyz/des370k_ethers__imidazolium__train.xyz": {
+    "charge": 1,
+    "n_atoms": 22
+  },
+  "xyz/des370k_ethers__imidazolium__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 25
+  },
+  "xyz/des370k_ethers__ketones__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_ethers__ketones__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_ethers__monoatomics__train.xyz": {
+    "charge": -1,
+    "n_atoms": 16
+  },
+  "xyz/des370k_ethers__monoatomics__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 16
+  },
+  "xyz/des370k_ethers__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 29
+  },
+  "xyz/des370k_ethers__phenol__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/des370k_ethers__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_ethers__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_ethers__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_ethers__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_ethers__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_ethers__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_ethers__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_ethers__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/des370k_ethers__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_ethers__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_guanidiniums__ketones__train.xyz": {
+    "charge": 1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_guanidiniums__ketones__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 20
+  },
+  "xyz/des370k_guanidiniums__monoatomics__train.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/des370k_guanidiniums__monoatomics__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/des370k_guanidiniums__phenol__train.xyz": {
+    "charge": 1,
+    "n_atoms": 23
+  },
+  "xyz/des370k_guanidiniums__phenol__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_guanidiniums__pyridine__train.xyz": {
+    "charge": 1,
+    "n_atoms": 24
+  },
+  "xyz/des370k_guanidiniums__pyridine__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 23
+  },
+  "xyz/des370k_guanidiniums__pyrrole__train.xyz": {
+    "charge": 1,
+    "n_atoms": 25
+  },
+  "xyz/des370k_guanidiniums__pyrrole__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 25
+  },
+  "xyz/des370k_guanidiniums__sulfides__train.xyz": {
+    "charge": 1,
+    "n_atoms": 27
+  },
+  "xyz/des370k_guanidiniums__sulfides__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 27
+  },
+  "xyz/des370k_guanidiniums__thiols__train.xyz": {
+    "charge": 1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_guanidiniums__thiols__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 16
+  },
+  "xyz/des370k_guanidiniums__water__train.xyz": {
+    "charge": 1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_guanidiniums__water__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 19
+  },
+  "xyz/des370k_imidazolium__ketones__train.xyz": {
+    "charge": 1,
+    "n_atoms": 23
+  },
+  "xyz/des370k_imidazolium__ketones__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_imidazolium__phenol__train.xyz": {
+    "charge": 1,
+    "n_atoms": 23
+  },
+  "xyz/des370k_imidazolium__phenol__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_imidazolium__pyridine__train.xyz": {
+    "charge": 1,
+    "n_atoms": 21
+  },
+  "xyz/des370k_imidazolium__pyridine__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 20
+  },
+  "xyz/des370k_imidazolium__pyrrole__train.xyz": {
+    "charge": 1,
+    "n_atoms": 20
+  },
+  "xyz/des370k_imidazolium__pyrrole__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_imidazolium__sulfides__train.xyz": {
+    "charge": 1,
+    "n_atoms": 26
+  },
+  "xyz/des370k_imidazolium__sulfides__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 21
+  },
+  "xyz/des370k_imidazolium__thiols__train.xyz": {
+    "charge": 1,
+    "n_atoms": 14
+  },
+  "xyz/des370k_imidazolium__thiols__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_imidazolium__water__train.xyz": {
+    "charge": 1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_imidazolium__water__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 19
+  },
+  "xyz/des370k_ketones__ketones__train.xyz": {
+    "charge": 0,
+    "n_atoms": 8
+  },
+  "xyz/des370k_ketones__ketones__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_ketones__monoatomics__train.xyz": {
+    "charge": -1,
+    "n_atoms": 11
+  },
+  "xyz/des370k_ketones__monoatomics__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 11
+  },
+  "xyz/des370k_ketones__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_ketones__phenol__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_ketones__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_ketones__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 21
+  },
+  "xyz/des370k_ketones__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_ketones__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_ketones__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_ketones__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_ketones__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_ketones__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/des370k_ketones__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_ketones__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/des370k_monoatomics__phenol__train.xyz": {
+    "charge": 2,
+    "n_atoms": 14
+  },
+  "xyz/des370k_monoatomics__phenol__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 14
+  },
+  "xyz/des370k_monoatomics__pyridine__train.xyz": {
+    "charge": -1,
+    "n_atoms": 11
+  },
+  "xyz/des370k_monoatomics__pyridine__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 11
+  },
+  "xyz/des370k_monoatomics__pyrrole__train.xyz": {
+    "charge": 1,
+    "n_atoms": 17
+  },
+  "xyz/des370k_monoatomics__pyrrole__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_monoatomics__sulfides__train.xyz": {
+    "charge": 1,
+    "n_atoms": 13
+  },
+  "xyz/des370k_monoatomics__sulfides__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 12
+  },
+  "xyz/des370k_monoatomics__thiols__train.xyz": {
+    "charge": -1,
+    "n_atoms": 11
+  },
+  "xyz/des370k_monoatomics__thiols__valid.xyz": {
+    "charge": 1,
+    "n_atoms": 4
+  },
+  "xyz/des370k_monoatomics__water__train.xyz": {
+    "charge": -1,
+    "n_atoms": 4
+  },
+  "xyz/des370k_monoatomics__water__valid.xyz": {
+    "charge": -1,
+    "n_atoms": 4
+  },
+  "xyz/des370k_phenol__phenol__train.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_phenol__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_phenol__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_phenol__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_phenol__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_phenol__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_phenol__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/des370k_phenol__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 17
+  },
+  "xyz/des370k_phenol__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_phenol__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_phenol__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_pyridine__pyridine__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_pyridine__pyridine__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_pyridine__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_pyridine__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_pyridine__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_pyridine__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_pyridine__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_pyridine__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 20
+  },
+  "xyz/des370k_pyridine__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 14
+  },
+  "xyz/des370k_pyridine__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/des370k_pyrrole__pyrrole__train.xyz": {
+    "charge": 0,
+    "n_atoms": 18
+  },
+  "xyz/des370k_pyrrole__pyrrole__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_pyrrole__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_pyrrole__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 25
+  },
+  "xyz/des370k_pyrrole__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_pyrrole__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/des370k_pyrrole__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 15
+  },
+  "xyz/des370k_pyrrole__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 22
+  },
+  "xyz/des370k_sulfides__sulfides__train.xyz": {
+    "charge": 0,
+    "n_atoms": 23
+  },
+  "xyz/des370k_sulfides__sulfides__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 28
+  },
+  "xyz/des370k_sulfides__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 24
+  },
+  "xyz/des370k_sulfides__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 12
+  },
+  "xyz/des370k_sulfides__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/des370k_sulfides__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 19
+  },
+  "xyz/des370k_thiols__thiols__train.xyz": {
+    "charge": 0,
+    "n_atoms": 26
+  },
+  "xyz/des370k_thiols__thiols__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/des370k_thiols__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 16
+  },
+  "xyz/des370k_thiols__water__valid.xyz": {
+    "charge": 0,
+    "n_atoms": 13
+  },
+  "xyz/des370k_water__water__train.xyz": {
+    "charge": 0,
+    "n_atoms": 6
+  },
+  "xyz/empagliflozin.xyz": {
+    "charge": 0,
+    "n_atoms": 58
+  },
+  "xyz/enzalutamide.xyz": {
+    "charge": 0,
+    "n_atoms": 48
+  },
+  "xyz/ibrutinib.xyz": {
+    "charge": 0,
+    "n_atoms": 57
+  },
+  "xyz/lenalidomide.xyz": {
+    "charge": 0,
+    "n_atoms": 32
+  },
+  "xyz/lenvatinib.xyz": {
+    "charge": 0,
+    "n_atoms": 49
+  },
+  "xyz/lisdexamphetamine.xyz": {
+    "charge": 0,
+    "n_atoms": 44
+  },
+  "xyz/nintedanib.xyz": {
+    "charge": 0,
+    "n_atoms": 73
+  },
+  "xyz/olaparib.xyz": {
+    "charge": 0,
+    "n_atoms": 55
+  },
+  "xyz/osimertinib.xyz": {
+    "charge": 0,
+    "n_atoms": 70
+  },
+  "xyz/palbociclib.xyz": {
+    "charge": 0,
+    "n_atoms": 62
+  },
+  "xyz/paliperidone_palmitate.xyz": {
+    "charge": 0,
+    "n_atoms": 105
+  },
+  "xyz/pomalidomide.xyz": {
+    "charge": 0,
+    "n_atoms": 31
+  },
+  "xyz/ribociclib.xyz": {
+    "charge": 0,
+    "n_atoms": 62
+  },
+  "xyz/rivaroxaban.xyz": {
+    "charge": 0,
+    "n_atoms": 47
+  },
+  "xyz/tafamidis.xyz": {
+    "charge": 0,
+    "n_atoms": 27
+  },
+  "xyz/upadacitinib.xyz": {
+    "charge": 0,
+    "n_atoms": 46
+  },
+  "xyz/venetoclax.xyz": {
+    "charge": 0,
+    "n_atoms": 111
+  },
+  "xyz/zanubrutinib.xyz": {
+    "charge": 0,
+    "n_atoms": 64
+  }
+}

@@ -1,0 +1,53 @@
+AutoSella-G is derived from Sella 2.5.0 (LGPL-3.0-only).
+
+===========
+
+Copyright 2026 AutoGeomOpt contributors.
+
+Except where otherwise noted, the software in this repository is distributed
+under the GNU Lesser General Public License version 3.0 only. See LICENSE,
+COPYING, and COPYING.LESSER.
+
+
+Sella-derived components
+========================
+
+Parts of this repository are derived from Sella 2.5.0:
+https://github.com/zadorlab/sella
+
+Sella copyright notice:
+
+  Copyright 2019 National Technology & Engineering Solutions of Sandia,
+  LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the
+  U.S. Government retains certain rights in this software.
+
+Sella is distributed under the GNU Lesser General Public License version 3.0.
+The derived code was modified in 2026 for force-call-constrained molecular
+geometry optimization. The modifications include adapting the optimizer
+interface, making selected implementations self-contained, enforcing exact
+force-call accounting, handling refused potential evaluations, and changing
+optimization mechanisms developed during the reported autoresearch runs.
+
+Derived or adapted files include:
+
+  minimizers/autosella_f.py
+  minimizers/autosella_a.py
+  minimizers/sella_baseline.py
+
+The corresponding source is included in this repository. The experiment
+branches preserve the development history of the selected modifications.
+
+
+Third-party software and data
+=============================
+
+AutoGeomOpt uses third-party scientific packages including ASE, JAX, NumPy,
+OpenFF Toolkit, OpenMM, RDKit, SciPy, Sella, xTB, and xyz2mol. Those packages
+are not redistributed under the AutoGeomOpt license merely because they appear
+in an environment specification; their own licenses apply.
+
+Molecular data derived from SPICE, RowanSci, PubChem, and other upstream sources
+retain their respective upstream licenses, terms, and citation requirements.
+The LGPL license covering AutoGeomOpt software does not relicense those data.
+
+This archive preserves Grok 4.6 (xhigh) research changes, including approximate Hessians, internal-coordinate handling, trust-radius control, and chemical-feature-dependent choices. The original research history and candidate files document those changes.
