@@ -7048,6 +7048,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_ester_phenol", False):
+            self.pes.H.update_method = 'BFGS_auto'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7259,9 +7261,7 @@ class Sella(Optimizer):
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
-        # Connected 18–30 ester–phenol leftovers finish at 35, so start at 15.
-        trust_start = 15 if getattr(self, "_has_ester_phenol", False) else 20
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= trust_start:
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
