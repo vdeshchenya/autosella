@@ -7049,6 +7049,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_allene", False) and self.nsteps >= 17:
+            self.pes.H.update_method = 'flowchart'
 
         rs_cls = self.rs
         step_kwargs = rs_kwargs
@@ -7127,10 +7129,7 @@ class Sella(Optimizer):
             return s, smag
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        if getattr(self, "_has_allene", False):
-            kw['w_index_value'] = 0.90
-        else:
-            kw['w_index_value'] = 0.8
+        kw['w_index_value'] = 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
