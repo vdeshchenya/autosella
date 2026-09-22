@@ -7060,7 +7060,7 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
         if getattr(self, "_has_ester_phenol", False):
-            self.pes.H.eval_floor = 1e-1
+            self.pes.H.eval_floor = 3e-2
 
         if self.pes.cons.has_inequalities():
             all_valid = False
