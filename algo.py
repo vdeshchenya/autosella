@@ -7146,8 +7146,9 @@ class Sella(Optimizer):
         if self.nsteps < gdiis_start:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
-        if not (1.0 / self.rho_inc < rho < self.rho_inc):
-            return s_qn, smag_qn
+        if not getattr(self, "_has_allene", False):
+            if not (1.0 / self.rho_inc < rho < self.rho_inc):
+                return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
         if len(xs) < 2 or len(xs) != len(gs):
