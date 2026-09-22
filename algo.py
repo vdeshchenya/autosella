@@ -7027,8 +7027,10 @@ class Sella(Optimizer):
                     self, "_has_allene", False
                 ) or getattr(self, "_has_nitro_cf3", False) or getattr(
                     self, "_has_isoxazole", False
-                ) or getattr(self, "_has_ester_phenol", False):
-                    rs_kwargs['wd'] = 2. / 3.
+                ):
+                    rs_kwargs['wd'] = 0.70
+                if getattr(self, "_has_ester_phenol", False):
+                    rs_kwargs['wb'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7529,7 +7531,33 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     has_ester = True
                     break
             if has_phenol and has_ester:
-                opt._has_ester_phenol = True
+                rcov = covalent_radii[numbers]
+                pos = atoms.get_positions()
+                strict = [[] for _ in range(n_atoms)]
+                for bond in probe.internals.get('bonds', []):
+                    i, j = int(bond.indices[0]), int(bond.indices[1])
+                    if i >= n_atoms or j >= n_atoms:
+                        continue
+                    rij = float(np.linalg.norm(pos[i] - pos[j]))
+                    if rij <= float(rcov[i] + rcov[j]):
+                        strict[i].append(j)
+                        strict[j].append(i)
+                seen = [False] * n_atoms
+                nfrag = 0
+                for start in range(n_atoms):
+                    if seen[start]:
+                        continue
+                    nfrag += 1
+                    stack = [start]
+                    seen[start] = True
+                    while stack:
+                        k = stack.pop()
+                        for j in strict[k]:
+                            if not seen[j]:
+                                seen[j] = True
+                                stack.append(j)
+                if nfrag >= 2:
+                    opt._has_ester_phenol = True
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
