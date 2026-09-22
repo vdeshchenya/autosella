@@ -11,7 +11,8 @@ to two CH2 carbons, and connected n_atoms<18 Si/H-only
 oligosilanes with at least four Si, and connected n_atoms<18
 allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
 and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
-a 2-coordinate N and a 3-coordinate C).
+a 2-coordinate N and a 3-coordinate C). Connected n_atoms<18
+allenes also use Banerjee RFO from the first step.
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
@@ -517,12 +518,6 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        dx_u = np.asarray(dx, dtype=np.float64).reshape(-1)
-        dg_u = np.asarray(dg, dtype=np.float64).reshape(-1)
-        if getattr(self, 'skip_neg_curv', False) and dx_u.size == dg_u.size:
-            sy = float(dx_u @ dg_u)
-            if np.isfinite(sy) and sy < 0.0:
-                return
         self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
@@ -7039,7 +7034,9 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
+        if getattr(self, "_has_allene", False):
+            step_method = 'rfo'
+        elif getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             step_method = 'rfo'
         elif getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
@@ -7054,8 +7051,6 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_allene", False):
-            self.pes.H.skip_neg_curv = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
