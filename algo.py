@@ -7030,8 +7030,6 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
-            if getattr(self, "_has_alkane_phenol", False):
-                rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7052,12 +7050,17 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
 
+        rs_cls = self.rs
+        step_kwargs = rs_kwargs
+        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
+            rs_cls = TrustRegion
+            step_kwargs = {}
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = self.rs(
+                s, smag = rs_cls(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **rs_kwargs
+                    **step_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -7065,9 +7068,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = self.rs(
+            s, smag = rs_cls(
                 self.pes, self.ord, self.delta, method=step_method,
-                **rs_kwargs
+                **step_kwargs
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
@@ -7092,6 +7095,8 @@ class Sella(Optimizer):
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
+        if getattr(self, "_has_sulfonamide", False):
+            return s, smag
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
         if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
