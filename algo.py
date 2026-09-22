@@ -7043,8 +7043,6 @@ class Sella(Optimizer):
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
                 step_method = 'rfo'
-        if getattr(self, "_has_alkane_phenol", False) and self.nsteps < 20:
-            self.pes.H.update_method = 'BFGS_auto'
         if self.nsteps >= 20 and (
             getattr(self, "_has_benzothiazoline", False)
             or getattr(self, "_has_isocyanide", False)
@@ -7713,6 +7711,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         for k in members
                     ):
                         opt._has_alkane_phenol = True
+                        opt.delta = 0.15
                         break
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
