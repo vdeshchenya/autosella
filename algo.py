@@ -7161,74 +7161,7 @@ class Sella(Optimizer):
             out = self._gediis_two_point(s_qn, smag_qn)
             if out is not None:
                 return out
-        if getattr(self, "_has_allene", False) and self.nsteps >= 16:
-            out = self._gdiis_newton_two_point(s_qn, smag_qn)
-            if out is not None:
-                return out
         return s_qn, smag_qn
-
-    def _gdiis_newton_two_point(self, s_qn, smag_qn):
-        """Two-point GDIIS with Newton-metric residuals e = H^{-1}g."""
-        xs = self._gdiis_x
-        gs = self._gdiis_g
-        if len(xs) < 2 or len(xs) != len(gs):
-            return None
-        s_qn = np.asarray(s_qn, dtype=np.float64)
-        if xs[-1].shape != s_qn.shape:
-            return None
-        nref = float(np.linalg.norm(s_qn))
-        if not np.isfinite(nref) or nref < 1e-16:
-            return None
-        G = np.stack(gs)
-        err = G
-        try:
-            H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
-            if H.shape == (G.shape[1], G.shape[1]):
-                newton, *_ = np.linalg.lstsq(H, G.T, rcond=None)
-                newton = np.asarray(newton.T, dtype=np.float64)
-                if newton.shape == G.shape and np.isfinite(newton).all():
-                    err = newton
-        except (np.linalg.LinAlgError, AttributeError, ValueError, TypeError):
-            err = G
-        norms = np.linalg.norm(err, axis=1)
-        nmin = float(np.min(norms))
-        if not np.isfinite(nmin) or nmin < 1e-16:
-            return None
-        err = err / nmin
-        coords = np.stack(xs)
-        use = 2
-        if err.shape[0] < use:
-            return None
-        use_vecs = err[::-1][:use]
-        A = use_vecs @ use_vecs.T
-        try:
-            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
-        except np.linalg.LinAlgError:
-            return None
-        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-            return None
-        csum = float(np.sum(coeffs))
-        if abs(csum) < 1e-16:
-            return None
-        coeffs = coeffs / csum
-        if np.any(coeffs < -1e-8):
-            return None
-        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-        if pos_sum > 15.0 or neg_sum > 15.0:
-            return None
-        diis_coords = coeffs @ coords[::-1][:use]
-        diis_step = diis_coords - coords[-1]
-        ndiis = float(np.linalg.norm(diis_step))
-        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-            return None
-        cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
-            return None
-        smag = float(np.max(np.abs(diis_step))) if diis_step.size else 0.0
-        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-            return None
-        return diis_step, smag
 
     def _gdiis_two_point(self, s_qn, smag_qn):
         """Replace the QN step with two-point interpolation-only GDIIS.
@@ -7778,6 +7711,9 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         for k in members
                     ):
                         opt._has_alkane_phenol = True
+                        # Saddle-style shrink: dimer packing ρ is noisier than
+                        # connected organics (Hermes et al., JCTC 2022).
+                        opt.rho_dec = 5.0
                         break
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
