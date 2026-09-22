@@ -7095,9 +7095,7 @@ class Sella(Optimizer):
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
-        if getattr(self, "_has_sulfonamide", False) or getattr(
-            self, "_has_allene", False
-        ):
+        if getattr(self, "_has_sulfonamide", False):
             return s, smag
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
@@ -7129,7 +7127,10 @@ class Sella(Optimizer):
             return s, smag
         kw = dict(rs_kwargs)
         kw['w_index'] = idx
-        kw['w_index_value'] = 0.8
+        if getattr(self, "_has_allene", False):
+            kw['w_index_value'] = 0.90
+        else:
+            kw['w_index_value'] = 0.8
         try:
             s2, smag2 = MaxInternalStep(
                 self.pes, self.ord, self.delta, method=self.method, **kw
