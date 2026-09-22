@@ -517,18 +517,7 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        dx_u = np.asarray(dx, dtype=np.float64)
-        dg_u = np.asarray(dg, dtype=np.float64)
-        if getattr(self, 'powell_damp', False):
-            Bs = B @ dx_u
-            sBs = float(dx_u @ Bs)
-            sy = float(dx_u @ dg_u)
-            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.2 * sBs:
-                denom = sBs - sy
-                if abs(denom) > 1e-14:
-                    theta = 0.8 * sBs / denom
-                    dg_u = theta * dg_u + (1.0 - theta) * Bs
-        self.set_B(update_H(B, dx_u, dg_u, method=self.update_method,
+        self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
@@ -7032,6 +7021,8 @@ class Sella(Optimizer):
                         rs_kwargs['wa'] = 0.70
                 elif getattr(self, "_has_bis_noxide", False):
                     rs_kwargs['wa'] = 0.70
+                elif getattr(self, "_has_ester_phenol", False):
+                    rs_kwargs['wa'] = 0.70
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
                 ) or getattr(self, "_has_oligosilane", False) or getattr(
@@ -7059,8 +7050,6 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 20:
-            self.pes.H.powell_damp = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
