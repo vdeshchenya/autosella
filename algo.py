@@ -3357,7 +3357,7 @@ class Internals(BaseInternals):
     soft_medium_angle_h0_default = False
     soft_phenol_angle_h0_default = False
     adj_dummy_placement_default = False
-    e0_dummy_placement_default = False
+    soft_ester_phenol_co_stretch_h0_default = False
 
     def __init__(
         self,
@@ -3400,7 +3400,7 @@ class Internals(BaseInternals):
         self.soft_medium_angle_h0 = Internals.soft_medium_angle_h0_default
         self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
-        self.e0_dummy_placement = Internals.e0_dummy_placement_default
+        self.soft_ester_phenol_co_stretch_h0 = Internals.soft_ester_phenol_co_stretch_h0_default
         self.windowed_dummy_atoms = set()
         self.alkyne_soft_dummy_atoms = set()
 
@@ -3425,7 +3425,7 @@ class Internals(BaseInternals):
         new.soft_medium_angle_h0 = getattr(self, 'soft_medium_angle_h0', False)
         new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
-        new.e0_dummy_placement = getattr(self, 'e0_dummy_placement', False)
+        new.soft_ester_phenol_co_stretch_h0 = getattr(self, 'soft_ester_phenol_co_stretch_h0', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         new.alkyne_soft_dummy_atoms = set(getattr(self, 'alkyne_soft_dummy_atoms', set()))
         return new
@@ -3901,11 +3901,7 @@ class Internals(BaseInternals):
                         if dpos is None:
                             dpos = cross
                             dpos_norm = cross_norm
-                            use_e0 = (
-                                getattr(self, 'e0_dummy_placement', False)
-                                and 0.04 < cross_norm < 0.10
-                            )
-                            if dpos_norm < 1e-4 or use_e0:
+                            if dpos_norm < 1e-4:
                                 # the aforementioned backup strategy
                                 # pick the cartesian basis vector that is maximally
                                 # orthogonal with the shorter of the two
@@ -3913,7 +3909,7 @@ class Internals(BaseInternals):
                                 # note: this is not rotationally invariant, but
                                 # there's not much we can do about that
                                 dim = np.argmin(np.abs(dx1))
-                                dpos = np.zeros(3, dtype=np.float64)
+                                dpos[:] = 0.
                                 dpos[dim] = 1.
                                 dpos -= dx1 * (dpos @ dx1)
                                 dpos /= np.linalg.norm(dpos)
@@ -4241,6 +4237,43 @@ class Internals(BaseInternals):
             i, j = bond.indices
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
+
+        if getattr(self, 'soft_ester_phenol_co_stretch_h0', False):
+            ntrans = len(self.internals['translations'])
+            cands = []
+            for bi, bond in enumerate(self.internals['bonds']):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i in dummy_set or j in dummy_set:
+                    continue
+                za, zb = int(numbers[i]), int(numbers[j])
+                if {za, zb} != {6, 8}:
+                    continue
+                o_idx = i if za == 8 else j
+                c_idx = j if o_idx == i else i
+                real_o = [nb for nb in neighbors[o_idx] if int(nb) not in dummy_set]
+                real_c = [nb for nb in neighbors[c_idx] if int(nb) not in dummy_set]
+                if len(real_o) not in (2, 3):
+                    continue
+                zs = [int(numbers[nb]) for nb in real_o]
+                if zs.count(1) != 1 or zs.count(6) != 1:
+                    continue
+                if len(real_o) == 3 and zs.count(8) != 1:
+                    continue
+                if (len(real_c) == 3
+                        and sum(int(numbers[nb]) == 8 for nb in real_c) == 1):
+                    carbons = [
+                        nb for nb in real_c if int(numbers[nb]) == 6
+                    ]
+                    if (len(carbons) == 2
+                            and all(
+                                len([x for x in neighbors[cn]
+                                     if int(x) not in dummy_set]) == 3
+                                for cn in carbons
+                            )):
+                        cands.append(ntrans + bi)
+            if 1 <= len(cands) <= 2:
+                for bidx in cands:
+                    h0[bidx] = 0.10 * units.Hartree / units.Bohr**2
 
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -7415,7 +7448,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     Internals.soft_phenol_angle_h0_default = not connected
-    Internals.e0_dummy_placement_default = False
+    Internals.soft_ester_phenol_co_stretch_h0_default = False
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
@@ -7424,7 +7457,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
-        Internals.e0_dummy_placement_default = False
+        Internals.soft_ester_phenol_co_stretch_h0_default = False
         if 18 <= n_atoms < 30:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
@@ -7476,7 +7509,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     has_ester = True
                     break
             if has_phenol and has_ester:
-                Internals.e0_dummy_placement_default = True
+                Internals.soft_ester_phenol_co_stretch_h0_default = True
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -7826,6 +7859,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_medium_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
+        Internals.soft_ester_phenol_co_stretch_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
