@@ -530,15 +530,8 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
+        return ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
-        floor = getattr(self, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
-        shift = getattr(self, 'eval_shift', 0.0)
-        if shift:
-            Hproj.eval_shift = shift
-        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5462,14 +5455,7 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
-        floor = getattr(self.H, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
-        shift = getattr(self.H, 'eval_shift', 0.0)
-        if shift:
-            Hproj.eval_shift = shift
-        return Hproj
+        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -6393,16 +6379,7 @@ class QuasiNewton(BaseStepper):
             H_array = self.H.asarray()
             self.H.evals, self.H.evecs = eigh(H_array)
 
-        evals = self.H.evals
-        self.L = np.abs(evals)
-        floor = float(getattr(self.H, 'eval_floor', 0.0) or 0.0)
-        if floor > 0.0:
-            self.L = np.maximum(self.L, floor)
-        shift = float(getattr(self.H, 'eval_shift', 0.0) or 0.0)
-        if shift > 0.0:
-            # ChemShell Baker hessian_shift: replace unwanted negative
-            # and zero eigenvalues; leave already-positive modes.
-            self.L = np.where(evals <= 0.0, shift, evals)
+        self.L = np.abs(self.H.evals)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7071,8 +7048,6 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_allene", False):
-            self.pes.H.eval_shift = 1e-1
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7441,8 +7416,62 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
+    has_ester_phenol = False
+    if connected and 18 <= len(atomic_numbers) < 30:
+        n_atoms = len(atomic_numbers)
+        numbers = atoms.numbers
+        neighbors = [[] for _ in range(n_atoms)]
+        for bond in probe.internals.get('bonds', []):
+            i, j = int(bond.indices[0]), int(bond.indices[1])
+            if i >= n_atoms or j >= n_atoms:
+                continue
+            neighbors[i].append(j)
+            neighbors[j].append(i)
+        has_phenol = False
+        has_ester = False
+        for i in range(n_atoms):
+            if int(numbers[i]) != 8:
+                continue
+            real = neighbors[i]
+            if len(real) not in (2, 3):
+                continue
+            zs = [int(numbers[nb]) for nb in real]
+            if zs.count(1) != 1 or zs.count(6) != 1:
+                continue
+            if len(real) == 3 and zs.count(8) != 1:
+                continue
+            c_idx = next(nb for nb in real if int(numbers[nb]) == 6)
+            real_c = neighbors[c_idx]
+            if (len(real_c) == 3
+                    and sum(int(numbers[nb]) == 8 for nb in real_c) == 1):
+                carbons = [
+                    nb for nb in real_c if int(numbers[nb]) == 6
+                ]
+                if (len(carbons) == 2
+                        and all(len(neighbors[cn]) == 3
+                                for cn in carbons)):
+                    has_phenol = True
+                    break
+        for i in range(n_atoms):
+            if int(numbers[i]) != 8:
+                continue
+            real = neighbors[i]
+            if len(real) != 2:
+                continue
+            if any(int(numbers[nb]) != 6 for nb in real):
+                continue
+            if any(
+                int(numbers[x]) == 8
+                for nb in real
+                for x in neighbors[nb]
+                if x != i
+            ):
+                has_ester = True
+                break
+        if has_phenol and has_ester:
+            has_ester_phenol = True
     try:
-        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt = Sella(atoms, internal=not has_ester_phenol, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
         opt._has_sulfoxide = False
