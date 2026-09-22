@@ -7259,7 +7259,9 @@ class Sella(Optimizer):
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
+        # Connected 18–30 ester–phenol leftovers finish at 35, so start at 15.
+        trust_start = 15 if getattr(self, "_has_ester_phenol", False) else 20
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= trust_start:
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
@@ -7530,7 +7532,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
             if has_phenol and has_ester:
                 opt._has_ester_phenol = True
-                opt.rho_dec = 5.0
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
