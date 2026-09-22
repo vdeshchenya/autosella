@@ -7712,6 +7712,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     ):
                         opt._has_alkane_phenol = True
                         opt.delta = 0.15
+                        opt.rho_dec = 5.0
                         break
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
