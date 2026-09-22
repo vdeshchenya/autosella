@@ -7416,8 +7416,31 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
+    has_allene = False
+    if connected and len(atomic_numbers) < 18:
+        n_atoms = len(atomic_numbers)
+        numbers = atoms.numbers
+        neighbors = [[] for _ in range(n_atoms)]
+        for bond in probe.internals.get('bonds', []):
+            i, j = int(bond.indices[0]), int(bond.indices[1])
+            if i >= n_atoms or j >= n_atoms:
+                continue
+            neighbors[i].append(j)
+            neighbors[j].append(i)
+        for i in range(n_atoms):
+            if int(numbers[i]) != 6:
+                continue
+            real = neighbors[i]
+            if len(real) != 2:
+                continue
+            if all(
+                int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                for nb in real
+            ):
+                has_allene = True
+                break
     try:
-        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt = Sella(atoms, internal=not has_allene, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
         opt._has_sulfoxide = False
@@ -7455,8 +7478,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 ):
                     opt._has_allene = True
                     break
-        if getattr(opt, "_has_allene", False):
-            opt.delta = 0.15
         if connected and n_atoms < 12:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
