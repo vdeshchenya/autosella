@@ -7184,7 +7184,7 @@ class Sella(Optimizer):
         if abs(csum) < 1e-16:
             return s_qn, smag_qn
         coeffs = coeffs / csum
-        if np.any(coeffs < -1e-8):
+        if not getattr(self, "_has_allene", False) and np.any(coeffs < -1e-8):
             return s_qn, smag_qn
         pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
         neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
