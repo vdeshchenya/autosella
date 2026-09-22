@@ -7021,8 +7021,6 @@ class Sella(Optimizer):
                         rs_kwargs['wa'] = 0.70
                 elif getattr(self, "_has_bis_noxide", False):
                     rs_kwargs['wa'] = 0.70
-                elif getattr(self, "_has_ester_phenol", False):
-                    rs_kwargs['wa'] = 0.70
                 if getattr(self, "_has_sulfoxide", False) or getattr(
                     self, "_has_pyrrolidine_noxide", False
                 ) or getattr(self, "_has_oligosilane", False) or getattr(
@@ -7532,6 +7530,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
             if has_phenol and has_ester:
                 opt._has_ester_phenol = True
+                opt.pes.iterative_stepper = 1
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
