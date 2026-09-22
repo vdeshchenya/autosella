@@ -517,12 +517,6 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        dx_u = np.asarray(dx, dtype=np.float64).reshape(-1)
-        dg_u = np.asarray(dg, dtype=np.float64).reshape(-1)
-        if getattr(self, 'skip_neg_curv', False) and dx_u.size == dg_u.size:
-            sy = float(dx_u @ dg_u)
-            if np.isfinite(sy) and sy < 0.0:
-                return
         self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
@@ -536,8 +530,12 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        return ApproximateHessian(n, 0, Bproj, self.update_method,
+        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
+        shift = getattr(self, 'eval_shift', 0.0)
+        if shift:
+            Hproj.eval_shift = shift
+        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5461,7 +5459,11 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        shift = getattr(self.H, 'eval_shift', 0.0)
+        if shift:
+            Hproj.eval_shift = shift
+        return Hproj
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -6385,7 +6387,13 @@ class QuasiNewton(BaseStepper):
             H_array = self.H.asarray()
             self.H.evals, self.H.evecs = eigh(H_array)
 
-        self.L = np.abs(self.H.evals)
+        evals = self.H.evals
+        self.L = np.abs(evals)
+        shift = float(getattr(self.H, 'eval_shift', 0.0) or 0.0)
+        if shift > 0.0:
+            # ChemShell Baker hessian_shift: replace unwanted negative
+            # and zero eigenvalues; leave already-positive modes.
+            self.L = np.where(evals <= 0.0, shift, evals)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7056,7 +7064,7 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
         if getattr(self, "_has_ester_phenol", False):
-            self.pes.H.skip_neg_curv = True
+            self.pes.H.eval_shift = 1e-1
 
         if self.pes.cons.has_inequalities():
             all_valid = False
