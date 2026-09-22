@@ -7033,9 +7033,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_allene", False) and self.nsteps >= 18:
-            step_method = 'rfo'
-        elif getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
+        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             step_method = 'rfo'
         elif getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
@@ -7051,12 +7049,17 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
 
+        rs_cls = self.rs
+        step_kwargs = rs_kwargs
+        if getattr(self, "_has_alkane_phenol", False) and self.nsteps >= 20:
+            rs_cls = TrustRegion
+            step_kwargs = {}
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = self.rs(
+                s, smag = rs_cls(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **rs_kwargs
+                    **step_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -7064,9 +7067,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = self.rs(
+            s, smag = rs_cls(
                 self.pes, self.ord, self.delta, method=step_method,
-                **rs_kwargs
+                **step_kwargs
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
