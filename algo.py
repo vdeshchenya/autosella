@@ -530,8 +530,12 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        return ApproximateHessian(n, 0, Bproj, self.update_method,
+        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
+        floor = getattr(self, 'eval_floor', 0.0)
+        if floor:
+            Hproj.eval_floor = floor
+        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5455,7 +5459,11 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
+        floor = getattr(self.H, 'eval_floor', 0.0)
+        if floor:
+            Hproj.eval_floor = floor
+        return Hproj
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -6380,6 +6388,9 @@ class QuasiNewton(BaseStepper):
             self.H.evals, self.H.evecs = eigh(H_array)
 
         self.L = np.abs(self.H.evals)
+        floor = float(getattr(self.H, 'eval_floor', 0.0) or 0.0)
+        if floor > 0.0:
+            self.L = np.maximum(self.L, floor)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7048,18 +7059,15 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_alkane_phenol", False):
+            self.pes.H.eval_floor = 1e-3
 
-        rs_cls = self.rs
-        step_kwargs = rs_kwargs
-        if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 20:
-            rs_cls = TrustRegion
-            step_kwargs = {}
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = rs_cls(
+                s, smag = self.rs(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **step_kwargs
+                    **rs_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -7067,9 +7075,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = rs_cls(
+            s, smag = self.rs(
                 self.pes, self.ord, self.delta, method=step_method,
-                **step_kwargs
+                **rs_kwargs
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
@@ -7094,8 +7102,6 @@ class Sella(Optimizer):
         dihedral was the limiter and was bit-identical to cycle 122.
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
-        if getattr(self, "_has_ester_phenol", False):
-            return s, smag
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
         if not (isinstance(self.rs, type) and issubclass(self.rs, MaxInternalStep)):
@@ -7437,7 +7443,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_isocyanide = False
         opt._has_sulfonamide = False
         opt._has_alkane_phenol = False
-        opt._has_ester_phenol = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7485,58 +7490,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
-        if connected and 18 <= n_atoms < 30:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            has_phenol = False
-            has_ester = False
-            for i in range(n_atoms):
-                if int(numbers[i]) != 8:
-                    continue
-                real = neighbors[i]
-                if len(real) not in (2, 3):
-                    continue
-                zs = [int(numbers[nb]) for nb in real]
-                if zs.count(1) != 1 or zs.count(6) != 1:
-                    continue
-                if len(real) == 3 and zs.count(8) != 1:
-                    continue
-                c_idx = next(nb for nb in real if int(numbers[nb]) == 6)
-                real_c = neighbors[c_idx]
-                if (len(real_c) == 3
-                        and sum(int(numbers[nb]) == 8 for nb in real_c) == 1):
-                    carbons = [
-                        nb for nb in real_c if int(numbers[nb]) == 6
-                    ]
-                    if (len(carbons) == 2
-                            and all(len(neighbors[cn]) == 3
-                                    for cn in carbons)):
-                        has_phenol = True
-                        break
-            for i in range(n_atoms):
-                if int(numbers[i]) != 8:
-                    continue
-                real = neighbors[i]
-                if len(real) != 2:
-                    continue
-                if any(int(numbers[nb]) != 6 for nb in real):
-                    continue
-                if any(
-                    int(numbers[x]) == 8
-                    for nb in real
-                    for x in neighbors[nb]
-                    if x != i
-                ):
-                    has_ester = True
-                    break
-            if has_phenol and has_ester:
-                opt._has_ester_phenol = True
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
