@@ -7259,7 +7259,9 @@ class Sella(Optimizer):
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
         # and do not let later shrinks (or a still-small δ) sit below 0.15.
-        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= 20:
+        # n<18 allenes finish at leftover 20, so start that growth at 15.
+        trust_start = 15 if getattr(self, "_has_allene", False) else 20
+        if getattr(self, "_allow_angle_wa", False) and self.nsteps >= trust_start:
             self.sigma_inc = 1.16
             self.delta_min = 0.15
             self.delta = max(self.delta, 0.15)
@@ -7416,27 +7418,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
-        if n_atoms < 18:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 6:
-                    continue
-                real = neighbors[i]
-                if len(real) != 2:
-                    continue
-                if all(
-                    int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
-                    for nb in real
-                ):
-                    Internals.adj_dummy_placement_default = True
-                    break
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
