@@ -7033,9 +7033,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 20:
-            step_method = 'rfo'
-        elif getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
+        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             step_method = 'rfo'
         elif getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
@@ -7048,6 +7046,7 @@ class Sella(Optimizer):
             getattr(self, "_has_benzothiazoline", False)
             or getattr(self, "_has_isocyanide", False)
             or getattr(self, "_has_alkane_phenol", False)
+            or getattr(self, "_has_ester_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
 
