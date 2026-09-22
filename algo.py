@@ -7033,7 +7033,9 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
+        if getattr(self, "_has_allene", False) and self.nsteps >= 20:
+            step_method = 'rfo'
+        elif getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             step_method = 'rfo'
         elif getattr(self, "_large", False) and self.nsteps >= 45:
             step_method = 'rfo'
@@ -7141,8 +7143,6 @@ class Sella(Optimizer):
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
-            return s_qn, smag_qn
-        if getattr(self, "_has_alkane_phenol", False):
             return s_qn, smag_qn
         if self.nsteps < 20:
             return s_qn, smag_qn
