@@ -7027,7 +7027,7 @@ class Sella(Optimizer):
                     self, "_has_allene", False
                 ) or getattr(self, "_has_nitro_cf3", False) or getattr(
                     self, "_has_isoxazole", False
-                ):
+                ) or getattr(self, "_has_ester_phenol", False):
                     rs_kwargs['wd'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
@@ -7530,7 +7530,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
             if has_phenol and has_ester:
                 opt._has_ester_phenol = True
-                opt.pes.iterative_stepper = 1
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
