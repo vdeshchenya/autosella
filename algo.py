@@ -3357,6 +3357,7 @@ class Internals(BaseInternals):
     soft_medium_angle_h0_default = False
     soft_phenol_angle_h0_default = False
     adj_dummy_placement_default = False
+    soft_allene_cc_alcohol_h0_default = False
 
     def __init__(
         self,
@@ -3399,6 +3400,7 @@ class Internals(BaseInternals):
         self.soft_medium_angle_h0 = Internals.soft_medium_angle_h0_default
         self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
+        self.soft_allene_cc_alcohol_h0 = Internals.soft_allene_cc_alcohol_h0_default
         self.windowed_dummy_atoms = set()
         self.alkyne_soft_dummy_atoms = set()
 
@@ -3423,6 +3425,7 @@ class Internals(BaseInternals):
         new.soft_medium_angle_h0 = getattr(self, 'soft_medium_angle_h0', False)
         new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
+        new.soft_allene_cc_alcohol_h0 = getattr(self, 'soft_allene_cc_alcohol_h0', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         new.alkyne_soft_dummy_atoms = set(getattr(self, 'alkyne_soft_dummy_atoms', set()))
         return new
@@ -4234,6 +4237,40 @@ class Internals(BaseInternals):
             i, j = bond.indices
             neighbors[int(i)].append(int(j))
             neighbors[int(j)].append(int(i))
+
+        if (
+            getattr(self, 'soft_allene_cc_alcohol_h0', False)
+            and int(self.natoms) < 18
+        ):
+            ntrans = len(self.internals['translations'])
+            cands = []
+            for bi, bond in enumerate(self.internals['bonds']):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i in dummy_set or j in dummy_set:
+                    continue
+                if int(numbers[i]) != 6 or int(numbers[j]) != 6:
+                    continue
+                real_i = [nb for nb in neighbors[i] if int(nb) not in dummy_set]
+                real_j = [nb for nb in neighbors[j] if int(nb) not in dummy_set]
+                pair = ((i, real_i), (j, real_j))
+                ok = False
+                for (a, ra), (b, rb) in (pair, pair[::-1]):
+                    if len(ra) != 4 or len(rb) != 3:
+                        continue
+                    if not any(int(numbers[nb]) == 8 for nb in ra):
+                        continue
+                    if any(
+                        int(numbers[nb]) == 6
+                        and len([n2 for n2 in neighbors[nb] if int(n2) not in dummy_set]) == 2
+                        for nb in rb
+                    ):
+                        ok = True
+                        break
+                if ok:
+                    cands.append(ntrans + bi)
+            if 1 <= len(cands) <= 2:
+                for bidx in cands:
+                    h0[bidx] = 0.10 * units.Hartree / units.Bohr**2
 
         def _pyridine_cnc(angle) -> bool:
             ia, icen, ic = (int(angle.indices[0]), int(angle.indices[1]),
@@ -7223,14 +7260,6 @@ class Sella(Optimizer):
         else:
             self.nsteps_since_diag += 1
 
-        if getattr(self, "_has_allene", False):
-            g0 = self.pes.get_g()
-            B0 = self.pes.H.asarray()
-            df_pred = self.pes.get_df_pred(s, g0, B0)
-            if df_pred is not None and df_pred > 0:
-                s = 0.5 * np.asarray(s, dtype=np.float64)
-                smag = 0.5 * smag
-
         rho = self.pes.kick(s, ev, **self.diagkwargs)
 
         # Check for bad internals, and if found, reset PES object.
@@ -7424,6 +7453,28 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
+        Internals.soft_allene_cc_alcohol_h0_default = False
+        if n_atoms < 18:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                if all(
+                    int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                    for nb in real
+                ):
+                    Internals.soft_allene_cc_alcohol_h0_default = True
+                    break
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
@@ -7773,6 +7824,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_medium_angle_h0_default = False
         Internals.soft_phenol_angle_h0_default = False
         Internals.adj_dummy_placement_default = False
+        Internals.soft_allene_cc_alcohol_h0_default = False
     # Return the last geometry that was actually EVALUATED, not whatever the
     # Atoms object happens to hold. distributed_validate/worker.py rejects a run
     # whose returned geometry is not the last evaluated one
