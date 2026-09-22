@@ -7154,7 +7154,7 @@ class Sella(Optimizer):
             out = self._gediis_two_point(s_qn, smag_qn)
             if out is not None:
                 return out
-        if getattr(self, "_has_allene", False) and self.nsteps >= 18:
+        if getattr(self, "_has_alkane_phenol", False) and self.nsteps >= 20:
             out = self._gediis_two_point(s_qn, smag_qn)
             if out is not None:
                 return out
