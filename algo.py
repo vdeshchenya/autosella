@@ -7045,6 +7045,7 @@ class Sella(Optimizer):
         if self.nsteps >= 20 and (
             getattr(self, "_has_benzothiazoline", False)
             or getattr(self, "_has_isocyanide", False)
+            or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
 
@@ -7428,6 +7429,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         opt._has_benzothiazoline = False
         opt._has_isocyanide = False
         opt._has_sulfonamide = False
+        opt._has_alkane_phenol = False
         opt._large = False
         if connected and n_atoms < 18:
             numbers = atoms.numbers
@@ -7530,7 +7532,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                         int(numbers[k]) != 6 or len(neighbors[k]) == 4
                         for k in members
                     ):
-                        opt.pes.exact_geodesic = True
+                        opt._has_alkane_phenol = True
                         break
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
