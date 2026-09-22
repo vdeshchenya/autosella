@@ -7444,7 +7444,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
                     for nb in real
                 ):
-                    Internals.alkyne_soft_n18_dummy_dihedral_h0_ha_default = 0.10
+                    Internals.alkyne_soft_n18_dummy_dihedral_h0_ha_default = 0.14
                     break
     try:
         opt = Sella(atoms, internal=True, order=0, logfile=None)
