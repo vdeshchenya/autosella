@@ -7416,62 +7416,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
-    has_ester_phenol = False
-    if connected and 18 <= len(atomic_numbers) < 30:
-        n_atoms = len(atomic_numbers)
-        numbers = atoms.numbers
-        neighbors = [[] for _ in range(n_atoms)]
-        for bond in probe.internals.get('bonds', []):
-            i, j = int(bond.indices[0]), int(bond.indices[1])
-            if i >= n_atoms or j >= n_atoms:
-                continue
-            neighbors[i].append(j)
-            neighbors[j].append(i)
-        has_phenol = False
-        has_ester = False
-        for i in range(n_atoms):
-            if int(numbers[i]) != 8:
-                continue
-            real = neighbors[i]
-            if len(real) not in (2, 3):
-                continue
-            zs = [int(numbers[nb]) for nb in real]
-            if zs.count(1) != 1 or zs.count(6) != 1:
-                continue
-            if len(real) == 3 and zs.count(8) != 1:
-                continue
-            c_idx = next(nb for nb in real if int(numbers[nb]) == 6)
-            real_c = neighbors[c_idx]
-            if (len(real_c) == 3
-                    and sum(int(numbers[nb]) == 8 for nb in real_c) == 1):
-                carbons = [
-                    nb for nb in real_c if int(numbers[nb]) == 6
-                ]
-                if (len(carbons) == 2
-                        and all(len(neighbors[cn]) == 3
-                                for cn in carbons)):
-                    has_phenol = True
-                    break
-        for i in range(n_atoms):
-            if int(numbers[i]) != 8:
-                continue
-            real = neighbors[i]
-            if len(real) != 2:
-                continue
-            if any(int(numbers[nb]) != 6 for nb in real):
-                continue
-            if any(
-                int(numbers[x]) == 8
-                for nb in real
-                for x in neighbors[nb]
-                if x != i
-            ):
-                has_ester = True
-                break
-        if has_phenol and has_ester:
-            has_ester_phenol = True
     try:
-        opt = Sella(atoms, internal=not has_ester_phenol, order=0, logfile=None)
+        opt = Sella(atoms, internal=True, order=0, logfile=None)
         opt._allow_angle_wa = connected
         opt._has_bis_noxide = False
         opt._has_sulfoxide = False
@@ -7531,6 +7477,30 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     break
         if connected and 18 <= n_atoms < 20:
             opt.pes.exact_geodesic = True
+        if connected and 12 <= n_atoms < 30:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 4:
+                    continue
+                n_o1 = sum(
+                    int(numbers[nb]) == 8 and len(neighbors[nb]) == 1
+                    for nb in real
+                )
+                n_s = sum(int(numbers[nb]) == 16 for nb in real)
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                if n_o1 == 2 and n_s == 1 and n_c == 1:
+                    opt.pes.iterative_stepper = 1
+                    break
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
