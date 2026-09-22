@@ -535,6 +535,9 @@ class ApproximateHessian(LinearOperator):
         floor = getattr(self, 'eval_floor', 0.0)
         if floor:
             Hproj.eval_floor = floor
+        shift = getattr(self, 'eval_shift', 0.0)
+        if shift:
+            Hproj.eval_shift = shift
         return Hproj
 
     def asarray(self):
@@ -5463,6 +5466,9 @@ class PES:
         floor = getattr(self.H, 'eval_floor', 0.0)
         if floor:
             Hproj.eval_floor = floor
+        shift = getattr(self.H, 'eval_shift', 0.0)
+        if shift:
+            Hproj.eval_shift = shift
         return Hproj
 
     # Getters for constraints and their derivatives
@@ -6387,10 +6393,16 @@ class QuasiNewton(BaseStepper):
             H_array = self.H.asarray()
             self.H.evals, self.H.evecs = eigh(H_array)
 
-        self.L = np.abs(self.H.evals)
+        evals = self.H.evals
+        self.L = np.abs(evals)
         floor = float(getattr(self.H, 'eval_floor', 0.0) or 0.0)
         if floor > 0.0:
             self.L = np.maximum(self.L, floor)
+        shift = float(getattr(self.H, 'eval_shift', 0.0) or 0.0)
+        if shift > 0.0:
+            # ChemShell Baker hessian_shift: replace unwanted negative
+            # and zero eigenvalues; leave already-positive modes.
+            self.L = np.where(evals <= 0.0, shift, evals)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7060,7 +7072,7 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
         if getattr(self, "_has_ester_phenol", False):
-            self.pes.H.eval_floor = 3e-2
+            self.pes.H.eval_shift = 1e-1
 
         if self.pes.cons.has_inequalities():
             all_valid = False
