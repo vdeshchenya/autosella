@@ -7043,6 +7043,8 @@ class Sella(Optimizer):
         elif (not getattr(self, "_allow_angle_wa", False)) and self.nsteps >= 80:
             if not getattr(self, "_hydrocarbon", False):
                 step_method = 'rfo'
+        if getattr(self, "_has_alkane_phenol", False) and self.nsteps < 20:
+            self.pes.H.update_method = 'BFGS_auto'
         if self.nsteps >= 20 and (
             getattr(self, "_has_benzothiazoline", False)
             or getattr(self, "_has_isocyanide", False)
@@ -7319,14 +7321,6 @@ class Sella(Optimizer):
             self.nsteps_since_diag = 0
         else:
             self.nsteps_since_diag += 1
-
-        if getattr(self, "_has_alkane_phenol", False):
-            g0 = self.pes.get_g()
-            B0 = self.pes.H.asarray()
-            df_pred = self.pes.get_df_pred(s, g0, B0)
-            if df_pred is not None and df_pred > 0:
-                s = 0.5 * np.asarray(s, dtype=np.float64)
-                smag = 0.5 * smag
 
         rho = self.pes.kick(s, ev, **self.diagkwargs)
 
