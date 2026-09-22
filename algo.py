@@ -517,6 +517,12 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
+        dx_u = np.asarray(dx, dtype=np.float64).reshape(-1)
+        dg_u = np.asarray(dg, dtype=np.float64).reshape(-1)
+        if getattr(self, 'skip_neg_curv', False) and dx_u.size == dg_u.size:
+            sy = float(dx_u @ dg_u)
+            if np.isfinite(sy) and sy < 0.0:
+                return
         self.set_B(update_H(B, dx, dg, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
@@ -7049,18 +7055,15 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_alkane_phenol", False):
+            self.pes.H.skip_neg_curv = True
 
-        rs_cls = self.rs
-        step_kwargs = rs_kwargs
-        if getattr(self, "_has_alkane_phenol", False) and self.nsteps >= 20:
-            rs_cls = TrustRegion
-            step_kwargs = {}
         if self.pes.cons.has_inequalities():
             all_valid = False
             while not all_valid:
-                s, smag = rs_cls(
+                s, smag = self.rs(
                     self.pes, self.ord, self.delta, method=step_method,
-                    **step_kwargs
+                    **rs_kwargs
                 ).get_s()
                 self.pes.set_x(x0 + s)
                 all_valid = self.pes.cons.validate_inequalities()
@@ -7068,9 +7071,9 @@ class Sella(Optimizer):
                 self.pes.restore()
             self.pes._update_basis()
         else:
-            s, smag = rs_cls(
+            s, smag = self.rs(
                 self.pes, self.ord, self.delta, method=step_method,
-                **step_kwargs
+                **rs_kwargs
             ).get_s()
 
         s, smag = self._maybe_dummy_limiter_wd(s, smag, rs_kwargs)
