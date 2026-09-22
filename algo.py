@@ -26,6 +26,9 @@ use Banerjee RFO after 20 steps.
 Disconnected 18≤n_atoms<30 dimers with an aryl phenol
 (2-coordinate O bonded to H and a 3-coordinate C whose other two
 neighbors are 3-coordinate C) use iterative Cartesian B⁺.
+Those dimers that also have a saturated C/H fragment (every carbon
+4-coordinate) use Schlegel flowchart Hessian updates after 20 steps
+and Powell-damped Hessian curvature (η=0.2) after 20 steps.
 Connected molecules
 also floor δ at 0.15 after 20 steps. Connected dummy-atom dihedral
 guess constants are 0.25 Ha instead of 0.5, except connected
@@ -517,7 +520,18 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        self.set_B(update_H(B, dx, dg, method=self.update_method,
+        dx_u = np.asarray(dx, dtype=np.float64)
+        dg_u = np.asarray(dg, dtype=np.float64)
+        if getattr(self, 'powell_damp', False):
+            Bs = B @ dx_u
+            sBs = float(dx_u @ Bs)
+            sy = float(dx_u @ dg_u)
+            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.2 * sBs:
+                denom = sBs - sy
+                if abs(denom) > 1e-14:
+                    theta = 0.8 * sBs / denom
+                    dg_u = theta * dg_u + (1.0 - theta) * Bs
+        self.set_B(update_H(B, dx_u, dg_u, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
@@ -530,12 +544,8 @@ class ApproximateHessian(LinearOperator):
         else:
             Bproj = U.T @ self.B @ U
 
-        Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
+        return ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
-        floor = getattr(self, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
-        return Hproj
 
     def asarray(self):
         if self.B is not None:
@@ -5459,11 +5469,7 @@ class PES:
             else:
                 Bproj = UtHU
         n = U.shape[1]
-        Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
-        floor = getattr(self.H, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
-        return Hproj
+        return ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
 
     # Getters for constraints and their derivatives
     def get_res(self):
@@ -6388,9 +6394,6 @@ class QuasiNewton(BaseStepper):
             self.H.evals, self.H.evecs = eigh(H_array)
 
         self.L = np.abs(self.H.evals)
-        floor = float(getattr(self.H, 'eval_floor', 0.0) or 0.0)
-        if floor > 0.0:
-            self.L = np.maximum(self.L, floor)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7059,8 +7062,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_alkane_phenol", False):
-            self.pes.H.eval_floor = 5e-3
+        if getattr(self, "_has_alkane_phenol", False) and self.nsteps >= 20:
+            self.pes.H.powell_damp = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
