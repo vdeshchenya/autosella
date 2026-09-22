@@ -7029,6 +7029,8 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
+                if getattr(self, "_has_ester_phenol", False):
+                    rs_kwargs['wo'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7048,8 +7050,6 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_ester_phenol", False):
-            self.pes.H.update_method = 'BFGS_auto'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
