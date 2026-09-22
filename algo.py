@@ -3357,6 +3357,7 @@ class Internals(BaseInternals):
     soft_medium_angle_h0_default = False
     soft_phenol_angle_h0_default = False
     adj_dummy_placement_default = False
+    e0_dummy_placement_default = False
 
     def __init__(
         self,
@@ -3399,6 +3400,7 @@ class Internals(BaseInternals):
         self.soft_medium_angle_h0 = Internals.soft_medium_angle_h0_default
         self.soft_phenol_angle_h0 = Internals.soft_phenol_angle_h0_default
         self.adj_dummy_placement = Internals.adj_dummy_placement_default
+        self.e0_dummy_placement = Internals.e0_dummy_placement_default
         self.windowed_dummy_atoms = set()
         self.alkyne_soft_dummy_atoms = set()
 
@@ -3423,6 +3425,7 @@ class Internals(BaseInternals):
         new.soft_medium_angle_h0 = getattr(self, 'soft_medium_angle_h0', False)
         new.soft_phenol_angle_h0 = getattr(self, 'soft_phenol_angle_h0', False)
         new.adj_dummy_placement = getattr(self, 'adj_dummy_placement', False)
+        new.e0_dummy_placement = getattr(self, 'e0_dummy_placement', False)
         new.windowed_dummy_atoms = set(getattr(self, 'windowed_dummy_atoms', set()))
         new.alkyne_soft_dummy_atoms = set(getattr(self, 'alkyne_soft_dummy_atoms', set()))
         return new
@@ -3898,7 +3901,11 @@ class Internals(BaseInternals):
                         if dpos is None:
                             dpos = cross
                             dpos_norm = cross_norm
-                            if dpos_norm < 1e-4:
+                            use_e0 = (
+                                getattr(self, 'e0_dummy_placement', False)
+                                and 0.04 < cross_norm < 0.10
+                            )
+                            if dpos_norm < 1e-4 or use_e0:
                                 # the aforementioned backup strategy
                                 # pick the cartesian basis vector that is maximally
                                 # orthogonal with the shorter of the two
@@ -3906,7 +3913,7 @@ class Internals(BaseInternals):
                                 # note: this is not rotationally invariant, but
                                 # there's not much we can do about that
                                 dim = np.argmin(np.abs(dx1))
-                                dpos[:] = 0.
+                                dpos = np.zeros(3, dtype=np.float64)
                                 dpos[dim] = 1.
                                 dpos -= dx1 * (dpos @ dx1)
                                 dpos /= np.linalg.norm(dpos)
@@ -6887,7 +6894,6 @@ class Sella(Optimizer):
         self.delta_min = self.eta
         self._gdiis_x = []
         self._gdiis_g = []
-        self._gdiis_e = []
         self.constraints_tol = constraints_tol
         self.diagkwargs = dict(gamma=gamma, threepoint=threepoint)
         self.rho = 1.
@@ -7139,154 +7145,69 @@ class Sella(Optimizer):
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
         connected-only.
-
-        Connected 18–30 ester–phenol also try Li–Frisch two-point GEDIIS
-        after 15 steps when GDIIS does not accept.
-        """
-        out = self._gdiis_two_point(s_qn, smag_qn)
-        if out is not None:
-            return out
-        if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 15:
-            out = self._gediis_two_point(s_qn, smag_qn)
-            if out is not None:
-                return out
-        return s_qn, smag_qn
-
-    def _gdiis_two_point(self, s_qn, smag_qn):
-        """Replace the QN step with two-point interpolation-only GDIIS.
-
-        Cycle 117's 2–4 point milder GDIIS passed train but inflated
-        seven valid jobs. Restrict to the two most recent points so the
-        interpolant stays on the last segment. Keep c_i≥0, ||s_DIIS||≤||s_QN||,
-        and cosine ≥ 0.90. Accept only when the previous step was well
-        predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
-        share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only.
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
-            return None
+            return s_qn, smag_qn
         if self.nsteps < 20:
-            return None
+            return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
         if not (1.0 / self.rho_inc < rho < self.rho_inc):
-            return None
+            return s_qn, smag_qn
         xs = self._gdiis_x
         gs = self._gdiis_g
         if len(xs) < 2 or len(xs) != len(gs):
-            return None
+            return s_qn, smag_qn
         s_qn = np.asarray(s_qn, dtype=np.float64)
         if xs[-1].shape != s_qn.shape:
             self._gdiis_x = []
             self._gdiis_g = []
-            self._gdiis_e = []
-            return None
+            return s_qn, smag_qn
         nref = float(np.linalg.norm(s_qn))
         if not np.isfinite(nref) or nref < 1e-16:
-            return None
+            return s_qn, smag_qn
         err = np.stack(gs)
         norms = np.linalg.norm(err, axis=1)
         nmin = float(np.min(norms))
         if not np.isfinite(nmin) or nmin < 1e-16:
-            return None
+            return s_qn, smag_qn
         err = err / nmin
         coords = np.stack(xs)
         accepted = None
         use = 2
         if err.shape[0] < use:
-            return None
+            return s_qn, smag_qn
         use_vecs = err[::-1][:use]
         A = use_vecs @ use_vecs.T
         try:
             coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
         except np.linalg.LinAlgError:
-            return None
+            return s_qn, smag_qn
         if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-            return None
+            return s_qn, smag_qn
         csum = float(np.sum(coeffs))
         if abs(csum) < 1e-16:
-            return None
+            return s_qn, smag_qn
         coeffs = coeffs / csum
         if np.any(coeffs < -1e-8):
-            return None
+            return s_qn, smag_qn
         pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
         neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
         if pos_sum > 15.0 or neg_sum > 15.0:
-            return None
+            return s_qn, smag_qn
         diis_coords = coeffs @ coords[::-1][:use]
         diis_step = diis_coords - coords[-1]
         ndiis = float(np.linalg.norm(diis_step))
         if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-            return None
+            return s_qn, smag_qn
         cos = float(diis_step @ s_qn) / (ndiis * nref)
         if cos < 0.90 or cos < 0.0:
-            return None
+            return s_qn, smag_qn
         accepted = diis_step
         smag = float(np.max(np.abs(accepted))) if accepted.size else 0.0
         if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-            return None
+            return s_qn, smag_qn
         return accepted, smag
-
-    def _gediis_two_point(self, s_qn, smag_qn):
-        """Li–Frisch two-point GEDIIS on the last two connected iterates.
-
-        Minimize the quadratic energy model of convex combinations of the
-        current and previous internals (pysisyphus Eq. 6, origin at the
-        current geometry). Reject endpoints, a non-decrease in predicted
-        energy, and steps longer than the QN step or the trust radius.
-        """
-        xs = self._gdiis_x
-        gs = self._gdiis_g
-        es = getattr(self, "_gdiis_e", [])
-        if len(xs) < 2 or len(xs) != len(gs) or len(es) != len(xs):
-            return None
-        s_qn = np.asarray(s_qn, dtype=np.float64)
-        if xs[-1].shape != s_qn.shape:
-            return None
-        nref = float(np.linalg.norm(s_qn))
-        if not np.isfinite(nref) or nref < 1e-16:
-            return None
-        x0 = np.asarray(xs[-1], dtype=np.float64)
-        x1 = np.asarray(xs[-2], dtype=np.float64)
-        g0 = np.asarray(gs[-1], dtype=np.float64)
-        g1 = np.asarray(gs[-2], dtype=np.float64)
-        e0 = float(es[-1])
-        e1 = float(es[-2])
-        if not np.isfinite(e0) or not np.isfinite(e1):
-            return None
-        dx = x1 - x0
-        f0 = -g0
-        f1 = -g1
-        d0 = float(dx @ f0)
-        d1 = float(dx @ f1)
-        if not np.isfinite(d0) or not np.isfinite(d1):
-            return None
-        A = d0 - d1
-        B = (e1 - e0) - d0 + d1
-        f_at_0 = e0
-        t_best = 0.0
-        fun_best = f_at_0
-        if A > 1e-18:
-            t_star = -B / (2.0 * A)
-            if 0.0 < t_star < 1.0:
-                f_star = (A * t_star + B) * t_star + e0
-                if np.isfinite(f_star) and f_star < fun_best:
-                    t_best, fun_best = float(t_star), float(f_star)
-        f_at_1 = A + B + e0
-        if f_at_1 < fun_best:
-            t_best, fun_best = 1.0, f_at_1
-        if (not np.isfinite(fun_best)) or fun_best >= e0:
-            return None
-        if t_best < 1e-8 or t_best > 1.0 - 1e-8:
-            return None
-        diis_step = t_best * dx
-        ndiis = float(np.linalg.norm(diis_step))
-        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-            return None
-        smag = float(np.max(np.abs(diis_step))) if diis_step.size else 0.0
-        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-            return None
-        return diis_step, smag
 
     def step(self):
         s, smag = self._predict_step()
@@ -7341,7 +7262,6 @@ class Sella(Optimizer):
             self.rho = 1
             self._gdiis_x = []
             self._gdiis_g = []
-            self._gdiis_e = []
             return
 
         # Connected molecules: after 20 steps, grow δ by 1.16 instead of 1.15
@@ -7377,11 +7297,9 @@ class Sella(Optimizer):
 
         self._gdiis_x.append(np.asarray(self.pes.get_x(), dtype=np.float64).copy())
         self._gdiis_g.append(np.asarray(self.pes.get_g(), dtype=np.float64).copy())
-        self._gdiis_e.append(float(self.pes.get_f()))
         if len(self._gdiis_x) > 6:
             self._gdiis_x = self._gdiis_x[-5:]
             self._gdiis_g = self._gdiis_g[-5:]
-            self._gdiis_e = self._gdiis_e[-5:]
 
         # Apply Niggli reduction if cell becomes too skewed
         if self.optimize_cell and self.niggli and self.pes.maybe_niggli_reduce():
@@ -7497,6 +7415,7 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     probe.find_all_bonds()
     connected = not bool(probe.internals["translations"])
     Internals.soft_phenol_angle_h0_default = not connected
+    Internals.e0_dummy_placement_default = False
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
@@ -7505,69 +7424,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
         Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
         Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
         Internals.adj_dummy_placement_default = n_atoms >= 30
-    try:
-        opt = Sella(atoms, internal=True, order=0, logfile=None)
-        opt._allow_angle_wa = connected
-        opt._has_bis_noxide = False
-        opt._has_sulfoxide = False
-        opt._has_pyrrolidine_noxide = False
-        opt._has_oligosilane = False
-        opt._has_allene = False
-        opt._has_nitro_cf3 = False
-        opt._has_isoxazole = False
-        opt._has_benzothiazoline = False
-        opt._has_isocyanide = False
-        opt._has_sulfonamide = False
-        opt._has_alkane_phenol = False
-        opt._has_ester_phenol = False
-        opt._large = False
-        if connected and n_atoms < 18:
-            numbers = atoms.numbers
-            n_si = sum(int(z) == 14 for z in numbers)
-            if n_si >= 4 and all(int(z) in (1, 14) for z in numbers):
-                opt._has_oligosilane = True
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 6:
-                    continue
-                real = neighbors[i]
-                if len(real) != 2:
-                    continue
-                if all(
-                    int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
-                    for nb in real
-                ):
-                    opt._has_allene = True
-                    break
-        if connected and n_atoms < 12:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 3:
-                    continue
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                if n_c == 2 and n_o == 1:
-                    opt._has_sulfoxide = True
-                    break
-        if connected and 18 <= n_atoms < 20:
-            opt.pes.exact_geodesic = True
-        if connected and 18 <= n_atoms < 30:
+        Internals.e0_dummy_placement_default = False
+        if 18 <= n_atoms < 30:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
             for bond in probe.internals.get('bonds', []):
@@ -7618,7 +7476,68 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     has_ester = True
                     break
             if has_phenol and has_ester:
-                opt._has_ester_phenol = True
+                Internals.e0_dummy_placement_default = True
+    try:
+        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt._allow_angle_wa = connected
+        opt._has_bis_noxide = False
+        opt._has_sulfoxide = False
+        opt._has_pyrrolidine_noxide = False
+        opt._has_oligosilane = False
+        opt._has_allene = False
+        opt._has_nitro_cf3 = False
+        opt._has_isoxazole = False
+        opt._has_benzothiazoline = False
+        opt._has_isocyanide = False
+        opt._has_sulfonamide = False
+        opt._has_alkane_phenol = False
+        opt._large = False
+        if connected and n_atoms < 18:
+            numbers = atoms.numbers
+            n_si = sum(int(z) == 14 for z in numbers)
+            if n_si >= 4 and all(int(z) in (1, 14) for z in numbers):
+                opt._has_oligosilane = True
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                if all(
+                    int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                    for nb in real
+                ):
+                    opt._has_allene = True
+                    break
+        if connected and n_atoms < 12:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 3:
+                    continue
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                n_o = sum(int(numbers[nb]) == 8 for nb in real)
+                if n_c == 2 and n_o == 1:
+                    opt._has_sulfoxide = True
+                    break
+        if connected and 18 <= n_atoms < 20:
+            opt.pes.exact_geodesic = True
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
