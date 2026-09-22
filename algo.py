@@ -532,9 +532,9 @@ class ApproximateHessian(LinearOperator):
 
         Hproj = ApproximateHessian(n, 0, Bproj, self.update_method,
                                   self.symm)
-        floor = getattr(self, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
+        shift = getattr(self, 'eval_shift', 0.0)
+        if shift:
+            Hproj.eval_shift = shift
         return Hproj
 
     def asarray(self):
@@ -5460,9 +5460,9 @@ class PES:
                 Bproj = UtHU
         n = U.shape[1]
         Hproj = ApproximateHessian(n, 0, Bproj, self.H.update_method, self.H.symm)
-        floor = getattr(self.H, 'eval_floor', 0.0)
-        if floor:
-            Hproj.eval_floor = floor
+        shift = getattr(self.H, 'eval_shift', 0.0)
+        if shift:
+            Hproj.eval_shift = shift
         return Hproj
 
     # Getters for constraints and their derivatives
@@ -6387,10 +6387,13 @@ class QuasiNewton(BaseStepper):
             H_array = self.H.asarray()
             self.H.evals, self.H.evecs = eigh(H_array)
 
-        self.L = np.abs(self.H.evals)
-        floor = float(getattr(self.H, 'eval_floor', 0.0) or 0.0)
-        if floor > 0.0:
-            self.L = np.maximum(self.L, floor)
+        evals = self.H.evals
+        self.L = np.abs(evals)
+        shift = float(getattr(self.H, 'eval_shift', 0.0) or 0.0)
+        if shift > 0.0:
+            # ChemShell Baker hessian_shift: replace unwanted negative
+            # and zero eigenvalues; leave already-positive modes.
+            self.L = np.where(evals <= 0.0, shift, evals)
         self.L[:self.order] *= -1
 
         self.V = self.H.evecs
@@ -7060,7 +7063,7 @@ class Sella(Optimizer):
         ):
             self.pes.H.update_method = 'flowchart'
         if getattr(self, "_has_thiosulfonate", False):
-            self.pes.H.eval_floor = 1e-2
+            self.pes.H.eval_shift = 1e-1
 
         if self.pes.cons.has_inequalities():
             all_valid = False
