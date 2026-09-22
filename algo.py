@@ -7030,6 +7030,8 @@ class Sella(Optimizer):
                     self, "_has_isoxazole", False
                 ):
                     rs_kwargs['wd'] = 0.70
+                if getattr(self, "_has_allene", False):
+                    rs_kwargs['wo'] = 0.70
             if self.optimize_cell:
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
@@ -7158,10 +7160,6 @@ class Sella(Optimizer):
             if out is not None:
                 return out
         if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 20:
-            out = self._gediis_two_point(s_qn, smag_qn)
-            if out is not None:
-                return out
-        if getattr(self, "_has_allene", False) and self.nsteps >= 18:
             out = self._gediis_two_point(s_qn, smag_qn)
             if out is not None:
                 return out
