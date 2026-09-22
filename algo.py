@@ -41,9 +41,7 @@ Connected
 Connected tails after 20
 steps may replace the QN step with two-point interpolation GDIIS
 when the previous ratio ρ was well predicted. Connected molecules with fewer than 18 atoms or
-at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses,
-as do connected 18≤n_atoms<30 molecules with both an aryl phenol
-and an ester.
+at least 30 atoms use 0.10 Ha dummy-involving angle Hessian guesses.
 Connected n_atoms<18 2-coordinate S–N–S uses 0.10 Ha
 when 1–3 such angles are present, and 1–3 F–C–S at
 4-coordinate CF3 carbon bonded to sulfur, and 1–2 O–N–C at
@@ -519,7 +517,18 @@ class ApproximateHessian(LinearOperator):
             return
 
         lams, vecs = self.evals, self.evecs
-        self.set_B(update_H(B, dx, dg, method=self.update_method,
+        dx_u = np.asarray(dx, dtype=np.float64)
+        dg_u = np.asarray(dg, dtype=np.float64)
+        if getattr(self, 'powell_damp', False):
+            Bs = B @ dx_u
+            sBs = float(dx_u @ Bs)
+            sy = float(dx_u @ dg_u)
+            if np.isfinite(sBs) and np.isfinite(sy) and sBs > 1e-14 and sy < 0.2 * sBs:
+                denom = sBs - sy
+                if abs(denom) > 1e-14:
+                    theta = 0.8 * sBs / denom
+                    dg_u = theta * dg_u + (1.0 - theta) * Bs
+        self.set_B(update_H(B, dx_u, dg_u, method=self.update_method,
                             symm=self.symm, lams=lams, vecs=vecs))
 
     def project(self, U):
@@ -7050,6 +7059,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_ester_phenol", False) and self.nsteps >= 20:
+            self.pes.H.powell_damp = True
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7413,8 +7424,74 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
     if connected:
         Internals.soft_dummy_dihedral_h0_default = True
         n_atoms = len(atomic_numbers)
-        has_ester_phenol = False
-        if 18 <= n_atoms < 30:
+        Internals.soft_dummy_angle_h0_default = n_atoms < 18 or n_atoms >= 30
+        Internals.soft_oxo_angle_h0_default = n_atoms < 12
+        Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
+        Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
+        Internals.adj_dummy_placement_default = n_atoms >= 30
+    try:
+        opt = Sella(atoms, internal=True, order=0, logfile=None)
+        opt._allow_angle_wa = connected
+        opt._has_bis_noxide = False
+        opt._has_sulfoxide = False
+        opt._has_pyrrolidine_noxide = False
+        opt._has_oligosilane = False
+        opt._has_allene = False
+        opt._has_nitro_cf3 = False
+        opt._has_isoxazole = False
+        opt._has_benzothiazoline = False
+        opt._has_isocyanide = False
+        opt._has_sulfonamide = False
+        opt._has_alkane_phenol = False
+        opt._has_ester_phenol = False
+        opt._large = False
+        if connected and n_atoms < 18:
+            numbers = atoms.numbers
+            n_si = sum(int(z) == 14 for z in numbers)
+            if n_si >= 4 and all(int(z) in (1, 14) for z in numbers):
+                opt._has_oligosilane = True
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 6:
+                    continue
+                real = neighbors[i]
+                if len(real) != 2:
+                    continue
+                if all(
+                    int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
+                    for nb in real
+                ):
+                    opt._has_allene = True
+                    break
+        if connected and n_atoms < 12:
+            numbers = atoms.numbers
+            neighbors = [[] for _ in range(n_atoms)]
+            for bond in probe.internals.get('bonds', []):
+                i, j = int(bond.indices[0]), int(bond.indices[1])
+                if i >= n_atoms or j >= n_atoms:
+                    continue
+                neighbors[i].append(j)
+                neighbors[j].append(i)
+            for i in range(n_atoms):
+                if int(numbers[i]) != 16:
+                    continue
+                real = neighbors[i]
+                if len(real) != 3:
+                    continue
+                n_c = sum(int(numbers[nb]) == 6 for nb in real)
+                n_o = sum(int(numbers[nb]) == 8 for nb in real)
+                if n_c == 2 and n_o == 1:
+                    opt._has_sulfoxide = True
+                    break
+        if connected and 18 <= n_atoms < 20:
+            opt.pes.exact_geodesic = True
+        if connected and 18 <= n_atoms < 30:
             numbers = atoms.numbers
             neighbors = [[] for _ in range(n_atoms)]
             for bond in probe.internals.get('bonds', []):
@@ -7464,75 +7541,8 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                 ):
                     has_ester = True
                     break
-            has_ester_phenol = has_phenol and has_ester
-        Internals.soft_dummy_angle_h0_default = (
-            n_atoms < 18 or n_atoms >= 30 or has_ester_phenol
-        )
-        Internals.soft_oxo_angle_h0_default = n_atoms < 12
-        Internals.soft_pyridine_angle_h0_default = 30 <= n_atoms < 80
-        Internals.soft_medium_angle_h0_default = 12 <= n_atoms < 30
-        Internals.adj_dummy_placement_default = n_atoms >= 30
-    try:
-        opt = Sella(atoms, internal=True, order=0, logfile=None)
-        opt._allow_angle_wa = connected
-        opt._has_bis_noxide = False
-        opt._has_sulfoxide = False
-        opt._has_pyrrolidine_noxide = False
-        opt._has_oligosilane = False
-        opt._has_allene = False
-        opt._has_nitro_cf3 = False
-        opt._has_isoxazole = False
-        opt._has_benzothiazoline = False
-        opt._has_isocyanide = False
-        opt._has_sulfonamide = False
-        opt._has_alkane_phenol = False
-        opt._large = False
-        if connected and n_atoms < 18:
-            numbers = atoms.numbers
-            n_si = sum(int(z) == 14 for z in numbers)
-            if n_si >= 4 and all(int(z) in (1, 14) for z in numbers):
-                opt._has_oligosilane = True
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 6:
-                    continue
-                real = neighbors[i]
-                if len(real) != 2:
-                    continue
-                if all(
-                    int(numbers[nb]) == 6 and len(neighbors[nb]) == 3
-                    for nb in real
-                ):
-                    opt._has_allene = True
-                    break
-        if connected and n_atoms < 12:
-            numbers = atoms.numbers
-            neighbors = [[] for _ in range(n_atoms)]
-            for bond in probe.internals.get('bonds', []):
-                i, j = int(bond.indices[0]), int(bond.indices[1])
-                if i >= n_atoms or j >= n_atoms:
-                    continue
-                neighbors[i].append(j)
-                neighbors[j].append(i)
-            for i in range(n_atoms):
-                if int(numbers[i]) != 16:
-                    continue
-                real = neighbors[i]
-                if len(real) != 3:
-                    continue
-                n_c = sum(int(numbers[nb]) == 6 for nb in real)
-                n_o = sum(int(numbers[nb]) == 8 for nb in real)
-                if n_c == 2 and n_o == 1:
-                    opt._has_sulfoxide = True
-                    break
-        if connected and 18 <= n_atoms < 20:
-            opt.pes.exact_geodesic = True
+            if has_phenol and has_ester:
+                opt._has_ester_phenol = True
         if (not connected) and 18 <= len(atomic_numbers) < 30:
             n_atoms = len(atomic_numbers)
             numbers = atoms.numbers
