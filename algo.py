@@ -7033,7 +7033,7 @@ class Sella(Optimizer):
                 rs_kwargs['wc'] = self.delta / self.delta_cell
 
         step_method = self.method
-        if getattr(self, "_has_allene", False) and self.nsteps >= 20:
+        if getattr(self, "_has_allene", False) and self.nsteps >= 18:
             step_method = 'rfo'
         elif getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
             step_method = 'rfo'
