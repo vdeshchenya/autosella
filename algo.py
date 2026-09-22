@@ -11,8 +11,7 @@ to two CH2 carbons, and connected n_atoms<18 Si/H-only
 oligosilanes with at least four Si, and connected n_atoms<18
 allenes (2-coordinate carbon with two 3-coordinate carbon neighbors),
 and connected 30≤n_atoms<80 isoxazoles (2-coordinate O bonded to
-a 2-coordinate N and a 3-coordinate C). Connected n_atoms<18
-allenes also try Newton-metric two-point GDIIS after 15 steps.
+a 2-coordinate N and a 3-coordinate C).
 Dimers floor the trust radius at `delta_min=0.02`. Hydrocarbon
 dimers skip two-point GDIIS and keep the QN stepper after 80
 steps. Connected n_atoms≥80 use Banerjee RFO after 45 steps.
@@ -7049,6 +7048,8 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
+        if getattr(self, "_has_allene", False):
+            self.pes.H.update_method = 'BFGS_auto'
 
         if self.pes.cons.has_inequalities():
             all_valid = False
@@ -7138,16 +7139,11 @@ class Sella(Optimizer):
         and cosine ≥ 0.90. Accept only when the previous step was well
         predicted (1/rho_inc < rho < rho_inc). Connected and dimer jobs
         share this interpolant after 20 steps; dummy-wd and wa stay
-        connected-only. Connected n<18 allenes also try Newton-metric
-        two-point GDIIS (e = H^{-1}g) after 15 steps without the ρ gate.
+        connected-only.
         """
         if (not getattr(self, "_allow_angle_wa", False)
                 and getattr(self, "_hydrocarbon", False)):
             return s_qn, smag_qn
-        if getattr(self, "_has_allene", False) and self.nsteps >= 15:
-            out = self._gdiis_newton_two_point(s_qn, smag_qn)
-            if out is not None:
-                return out
         if self.nsteps < 20:
             return s_qn, smag_qn
         rho = float(getattr(self, "rho", 1.0))
@@ -7207,69 +7203,6 @@ class Sella(Optimizer):
         if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
             return s_qn, smag_qn
         return accepted, smag
-
-    def _gdiis_newton_two_point(self, s_qn, smag_qn):
-        """Two-point GDIIS with Newton-metric residuals e = H^{-1}g."""
-        xs = self._gdiis_x
-        gs = self._gdiis_g
-        if len(xs) < 2 or len(xs) != len(gs):
-            return None
-        s_qn = np.asarray(s_qn, dtype=np.float64)
-        if xs[-1].shape != s_qn.shape:
-            return None
-        nref = float(np.linalg.norm(s_qn))
-        if not np.isfinite(nref) or nref < 1e-16:
-            return None
-        G = np.stack(gs)
-        err = G
-        try:
-            H = np.asarray(self.pes.get_H().asarray(), dtype=np.float64)
-            if H.shape == (G.shape[1], G.shape[1]):
-                newton, *_ = np.linalg.lstsq(H, G.T, rcond=None)
-                newton = np.asarray(newton.T, dtype=np.float64)
-                if newton.shape == G.shape and np.isfinite(newton).all():
-                    err = newton
-        except (np.linalg.LinAlgError, AttributeError, ValueError, TypeError):
-            err = G
-        norms = np.linalg.norm(err, axis=1)
-        nmin = float(np.min(norms))
-        if not np.isfinite(nmin) or nmin < 1e-16:
-            return None
-        err = err / nmin
-        coords = np.stack(xs)
-        use = 2
-        if err.shape[0] < use:
-            return None
-        use_vecs = err[::-1][:use]
-        A = use_vecs @ use_vecs.T
-        try:
-            coeffs = np.linalg.solve(A, np.ones(use, dtype=np.float64))
-        except np.linalg.LinAlgError:
-            return None
-        if (not np.isfinite(coeffs).all()) or np.linalg.norm(coeffs) > 1e8:
-            return None
-        csum = float(np.sum(coeffs))
-        if abs(csum) < 1e-16:
-            return None
-        coeffs = coeffs / csum
-        if np.any(coeffs < -1e-8):
-            return None
-        pos_sum = float(np.abs(coeffs[coeffs > 0].sum()))
-        neg_sum = float(np.abs(coeffs[coeffs < 0].sum()))
-        if pos_sum > 15.0 or neg_sum > 15.0:
-            return None
-        diis_coords = coeffs @ coords[::-1][:use]
-        diis_step = diis_coords - coords[-1]
-        ndiis = float(np.linalg.norm(diis_step))
-        if (not np.isfinite(ndiis)) or ndiis < 1e-16 or ndiis > nref:
-            return None
-        cos = float(diis_step @ s_qn) / (ndiis * nref)
-        if cos < 0.90 or cos < 0.0:
-            return None
-        smag = float(np.max(np.abs(diis_step))) if diis_step.size else 0.0
-        if (not np.isfinite(smag)) or smag < 1e-16 or smag > min(self.delta, smag_qn):
-            return None
-        return diis_step, smag
 
     def step(self):
         s, smag = self._predict_step()
