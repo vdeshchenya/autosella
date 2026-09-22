@@ -7320,6 +7320,14 @@ class Sella(Optimizer):
         else:
             self.nsteps_since_diag += 1
 
+        if getattr(self, "_has_alkane_phenol", False):
+            g0 = self.pes.get_g()
+            B0 = self.pes.H.asarray()
+            df_pred = self.pes.get_df_pred(s, g0, B0)
+            if df_pred is not None and df_pred > 0:
+                s = 0.5 * np.asarray(s, dtype=np.float64)
+                smag = 0.5 * smag
+
         rho = self.pes.kick(s, ev, **self.diagkwargs)
 
         # Check for bad internals, and if found, reset PES object.
@@ -7712,7 +7720,6 @@ def minimize_func(positions, atomic_numbers, calc, max_force_calls, converged):
                     ):
                         opt._has_alkane_phenol = True
                         opt.delta = 0.15
-                        opt.rho_dec = 5.0
                         break
         if connected and 30 <= n_atoms < 80:
             numbers = atoms.numbers
