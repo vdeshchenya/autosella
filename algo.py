@@ -7049,12 +7049,13 @@ class Sella(Optimizer):
             or getattr(self, "_has_alkane_phenol", False)
         ):
             self.pes.H.update_method = 'flowchart'
-        if getattr(self, "_has_allene", False) and self.nsteps >= 17:
-            self.pes.H.update_method = 'flowchart'
 
         rs_cls = self.rs
         step_kwargs = rs_kwargs
         if getattr(self, "_has_sulfonamide", False) and self.nsteps >= 20:
+            rs_cls = TrustRegion
+            step_kwargs = {}
+        elif getattr(self, "_has_allene", False) and self.nsteps >= 18:
             rs_cls = TrustRegion
             step_kwargs = {}
         if self.pes.cons.has_inequalities():
@@ -7098,6 +7099,8 @@ class Sella(Optimizer):
         Scale only that coordinate so other dummy dihedrals stay at wd=1.
         """
         if getattr(self, "_has_sulfonamide", False):
+            return s, smag
+        if getattr(self, "_has_allene", False) and self.nsteps >= 18:
             return s, smag
         if not getattr(self, "_allow_angle_wa", False):
             return s, smag
