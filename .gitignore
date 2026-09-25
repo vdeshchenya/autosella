@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
+
+# Molecule dataset files
+molecules/data/spice/
+molecules/data/xyz_rowansci_benchmark/
+molecules/data/tmp/
+molecules/evaluation/test/data/
+molecules/evaluation/dipeptides/data/
+molecules/evaluation/amino_acid_ligand_pairs/data/
+molecules/evaluation/solvated_pubchem/data/
+
+# Generated example outputs
+examples/*_optimized.xyz

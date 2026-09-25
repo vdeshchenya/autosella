@@ -1,0 +1,3257 @@
+{
+  "103921822": {
+    "converged": true,
+    "final_energy": -55.37268804839,
+    "force_calls": 41,
+    "initial_energy": -55.33542119647,
+    "n_atoms": 28
+  },
+  "103923548": {
+    "converged": true,
+    "final_energy": -53.70014245921,
+    "force_calls": 18,
+    "initial_energy": -53.66824805175,
+    "n_atoms": 43
+  },
+  "103928880": {
+    "converged": true,
+    "final_energy": -89.64766318979,
+    "force_calls": 27,
+    "initial_energy": -89.53444370905,
+    "n_atoms": 49
+  },
+  "103938489": {
+    "converged": true,
+    "final_energy": -66.70363266999,
+    "force_calls": 18,
+    "initial_energy": -66.67187765929,
+    "n_atoms": 38
+  },
+  "103943741": {
+    "converged": true,
+    "final_energy": -78.12446831501,
+    "force_calls": 31,
+    "initial_energy": -78.02808537511,
+    "n_atoms": 40
+  },
+  "103952397": {
+    "converged": true,
+    "final_energy": -80.95582962597,
+    "force_calls": 18,
+    "initial_energy": -80.91986508007,
+    "n_atoms": 50
+  },
+  "103952991": {
+    "converged": true,
+    "final_energy": -56.05902635083,
+    "force_calls": 17,
+    "initial_energy": -55.9822399556,
+    "n_atoms": 29
+  },
+  "103958198": {
+    "converged": true,
+    "final_energy": -73.58980822932,
+    "force_calls": 25,
+    "initial_energy": -73.56258433108,
+    "n_atoms": 44
+  },
+  "103968470": {
+    "converged": true,
+    "final_energy": -47.04630780733,
+    "force_calls": 39,
+    "initial_energy": -47.01550024651,
+    "n_atoms": 33
+  },
+  "103981986": {
+    "converged": true,
+    "final_energy": -34.91138022093,
+    "force_calls": 14,
+    "initial_energy": -34.86249721312,
+    "n_atoms": 18
+  },
+  "104001731": {
+    "converged": true,
+    "final_energy": -78.44203085607,
+    "force_calls": 33,
+    "initial_energy": -78.33364329401,
+    "n_atoms": 48
+  },
+  "104006752": {
+    "converged": true,
+    "final_energy": -80.40415162334,
+    "force_calls": 17,
+    "initial_energy": -80.36562977912,
+    "n_atoms": 50
+  },
+  "104008826": {
+    "converged": true,
+    "final_energy": -58.52117190829,
+    "force_calls": 15,
+    "initial_energy": -58.40895941379,
+    "n_atoms": 28
+  },
+  "104039830": {
+    "converged": true,
+    "final_energy": -33.69291704555,
+    "force_calls": 15,
+    "initial_energy": -33.64162557104,
+    "n_atoms": 16
+  },
+  "104059971": {
+    "converged": true,
+    "final_energy": -74.42283053767,
+    "force_calls": 19,
+    "initial_energy": -74.31369925636,
+    "n_atoms": 48
+  },
+  "104063503": {
+    "converged": true,
+    "final_energy": -79.1802054293,
+    "force_calls": 26,
+    "initial_energy": -79.12561231648,
+    "n_atoms": 47
+  },
+  "104073139": {
+    "converged": true,
+    "final_energy": -70.10772739284,
+    "force_calls": 42,
+    "initial_energy": -69.97990279968,
+    "n_atoms": 45
+  },
+  "104082455": {
+    "converged": true,
+    "final_energy": -66.38824047311,
+    "force_calls": 33,
+    "initial_energy": -66.27071066817,
+    "n_atoms": 36
+  },
+  "104100696": {
+    "converged": true,
+    "final_energy": -53.23153666369,
+    "force_calls": 14,
+    "initial_energy": -53.18571224455,
+    "n_atoms": 31
+  },
+  "104108013": {
+    "converged": true,
+    "final_energy": -67.78216702445,
+    "force_calls": 23,
+    "initial_energy": -67.72766080659,
+    "n_atoms": 41
+  },
+  "104116250": {
+    "converged": true,
+    "final_energy": -54.335527343079995,
+    "force_calls": 17,
+    "initial_energy": -54.25803650334999,
+    "n_atoms": 36
+  },
+  "104120669": {
+    "converged": true,
+    "final_energy": -12.21916702529,
+    "force_calls": 9,
+    "initial_energy": -12.20960528646,
+    "n_atoms": 4
+  },
+  "104125231": {
+    "converged": true,
+    "final_energy": -76.98359219268,
+    "force_calls": 22,
+    "initial_energy": -76.93768998954,
+    "n_atoms": 29
+  },
+  "104129249": {
+    "converged": true,
+    "final_energy": -40.81285644876,
+    "force_calls": 10,
+    "initial_energy": -40.79980756819,
+    "n_atoms": 26
+  },
+  "104129283": {
+    "converged": true,
+    "final_energy": -57.2157069611,
+    "force_calls": 53,
+    "initial_energy": -57.12116915211,
+    "n_atoms": 22
+  },
+  "104130706": {
+    "converged": true,
+    "final_energy": -83.02148301657,
+    "force_calls": 34,
+    "initial_energy": -82.95904220057,
+    "n_atoms": 49
+  },
+  "104131070": {
+    "converged": true,
+    "final_energy": -67.10623313897,
+    "force_calls": 29,
+    "initial_energy": -67.0086678358,
+    "n_atoms": 38
+  },
+  "104139123": {
+    "converged": true,
+    "final_energy": -68.21881293473,
+    "force_calls": 21,
+    "initial_energy": -68.0995008246,
+    "n_atoms": 49
+  },
+  "104141078": {
+    "converged": true,
+    "final_energy": -75.60424360796,
+    "force_calls": 27,
+    "initial_energy": -75.55813813271,
+    "n_atoms": 50
+  },
+  "104147004": {
+    "converged": true,
+    "final_energy": -69.53229440219,
+    "force_calls": 11,
+    "initial_energy": -69.48610588981,
+    "n_atoms": 39
+  },
+  "104162399": {
+    "converged": true,
+    "final_energy": -76.01819644171,
+    "force_calls": 16,
+    "initial_energy": -75.98654283641,
+    "n_atoms": 46
+  },
+  "11109414": {
+    "converged": true,
+    "final_energy": -63.702490274469994,
+    "force_calls": 41,
+    "initial_energy": -63.658386012330006,
+    "n_atoms": 36
+  },
+  "117645250": {
+    "converged": true,
+    "final_energy": -89.37264364041,
+    "force_calls": 21,
+    "initial_energy": -89.23775179336,
+    "n_atoms": 46
+  },
+  "123107365": {
+    "converged": true,
+    "final_energy": -102.25604139315001,
+    "force_calls": 32,
+    "initial_energy": -102.11055510985001,
+    "n_atoms": 42
+  },
+  "125084169": {
+    "converged": true,
+    "final_energy": -56.46898910683,
+    "force_calls": 35,
+    "initial_energy": -56.43861951508999,
+    "n_atoms": 35
+  },
+  "134981761": {
+    "converged": true,
+    "final_energy": -76.03583313236,
+    "force_calls": 10,
+    "initial_energy": -75.96941234168,
+    "n_atoms": 22
+  },
+  "134982070": {
+    "converged": true,
+    "final_energy": -11.81474281404,
+    "force_calls": 24,
+    "initial_energy": -11.78780774179,
+    "n_atoms": 9
+  },
+  "134984845": {
+    "converged": true,
+    "final_energy": -43.56291776769,
+    "force_calls": 21,
+    "initial_energy": -43.48486321133,
+    "n_atoms": 34
+  },
+  "134985308": {
+    "converged": true,
+    "final_energy": -99.09999817381,
+    "force_calls": 89,
+    "initial_energy": -98.9802617171,
+    "n_atoms": 49
+  },
+  "134986096": {
+    "converged": true,
+    "final_energy": -53.69855080732,
+    "force_calls": 30,
+    "initial_energy": -53.65937009334001,
+    "n_atoms": 19
+  },
+  "134989577": {
+    "converged": true,
+    "final_energy": -65.19458085617,
+    "force_calls": 20,
+    "initial_energy": -65.14616236601,
+    "n_atoms": 44
+  },
+  "134994308": {
+    "converged": true,
+    "final_energy": -47.84574927596,
+    "force_calls": 18,
+    "initial_energy": -47.80096109141,
+    "n_atoms": 17
+  },
+  "135001818": {
+    "converged": true,
+    "final_energy": -41.70448350095,
+    "force_calls": 17,
+    "initial_energy": -41.6643690464,
+    "n_atoms": 29
+  },
+  "135011106": {
+    "converged": true,
+    "final_energy": -87.21268453723,
+    "force_calls": 65,
+    "initial_energy": -87.11221039537,
+    "n_atoms": 33
+  },
+  "135013374": {
+    "converged": true,
+    "final_energy": -38.48176687922,
+    "force_calls": 19,
+    "initial_energy": -38.38475540509,
+    "n_atoms": 34
+  },
+  "135018434": {
+    "converged": true,
+    "final_energy": -41.44057132327,
+    "force_calls": 26,
+    "initial_energy": -41.35117935521,
+    "n_atoms": 21
+  },
+  "135021635": {
+    "converged": true,
+    "final_energy": -62.6334907422,
+    "force_calls": 30,
+    "initial_energy": -62.543664617089995,
+    "n_atoms": 35
+  },
+  "135028380": {
+    "converged": true,
+    "final_energy": -20.8502817247,
+    "force_calls": 13,
+    "initial_energy": -20.83749977595,
+    "n_atoms": 6
+  },
+  "135034037": {
+    "converged": true,
+    "final_energy": -30.40872021178,
+    "force_calls": 11,
+    "initial_energy": -30.39283596484,
+    "n_atoms": 11
+  },
+  "135041958": {
+    "converged": true,
+    "final_energy": -8.89660719036,
+    "force_calls": 7,
+    "initial_energy": -8.88072531533,
+    "n_atoms": 3
+  },
+  "135042855": {
+    "converged": true,
+    "final_energy": -44.46581063712,
+    "force_calls": 37,
+    "initial_energy": -44.3720223615,
+    "n_atoms": 32
+  },
+  "135043824": {
+    "converged": true,
+    "final_energy": -53.06949603205,
+    "force_calls": 19,
+    "initial_energy": -53.026198752330004,
+    "n_atoms": 38
+  },
+  "135046932": {
+    "converged": true,
+    "final_energy": -70.07391329048,
+    "force_calls": 40,
+    "initial_energy": -69.96051282382,
+    "n_atoms": 41
+  },
+  "135048599": {
+    "converged": true,
+    "final_energy": -35.01870011598,
+    "force_calls": 13,
+    "initial_energy": -34.99261800929,
+    "n_atoms": 12
+  },
+  "135050336": {
+    "converged": true,
+    "final_energy": -92.09374476988,
+    "force_calls": 46,
+    "initial_energy": -91.95598365682,
+    "n_atoms": 42
+  },
+  "135052949": {
+    "converged": true,
+    "final_energy": -40.79910717416,
+    "force_calls": 29,
+    "initial_energy": -40.71059458695,
+    "n_atoms": 20
+  },
+  "135060244": {
+    "converged": true,
+    "final_energy": -36.62806994041,
+    "force_calls": 21,
+    "initial_energy": -36.55921590932,
+    "n_atoms": 29
+  },
+  "135061043": {
+    "converged": true,
+    "final_energy": -32.95140391293,
+    "force_calls": 21,
+    "initial_energy": -32.91153150053,
+    "n_atoms": 12
+  },
+  "135062452": {
+    "converged": true,
+    "final_energy": -51.91658391747,
+    "force_calls": 11,
+    "initial_energy": -51.89794642412,
+    "n_atoms": 16
+  },
+  "135065494": {
+    "converged": true,
+    "final_energy": -105.96943027312,
+    "force_calls": 92,
+    "initial_energy": -105.43477397712,
+    "n_atoms": 48
+  },
+  "135071396": {
+    "converged": true,
+    "final_energy": -8.97518627617,
+    "force_calls": 9,
+    "initial_energy": -8.94580312459,
+    "n_atoms": 6
+  },
+  "135071820": {
+    "converged": true,
+    "final_energy": -45.10849209275,
+    "force_calls": 33,
+    "initial_energy": -45.00933636519,
+    "n_atoms": 26
+  },
+  "135075087": {
+    "converged": true,
+    "final_energy": -73.51553265697,
+    "force_calls": 13,
+    "initial_energy": -73.45391558687,
+    "n_atoms": 27
+  },
+  "135077553": {
+    "converged": true,
+    "final_energy": -21.10150595623,
+    "force_calls": 18,
+    "initial_energy": -21.07926486437,
+    "n_atoms": 10
+  },
+  "135079402": {
+    "converged": true,
+    "final_energy": -53.77798915969001,
+    "force_calls": 18,
+    "initial_energy": -53.74354050637,
+    "n_atoms": 44
+  },
+  "135081587": {
+    "converged": true,
+    "final_energy": -38.35708925833,
+    "force_calls": 17,
+    "initial_energy": -38.28647276949,
+    "n_atoms": 24
+  },
+  "135084788": {
+    "converged": true,
+    "final_energy": -72.4406938066,
+    "force_calls": 36,
+    "initial_energy": -72.30764652919,
+    "n_atoms": 34
+  },
+  "135087463": {
+    "converged": true,
+    "final_energy": -30.875544931890005,
+    "force_calls": 13,
+    "initial_energy": -30.83100974842,
+    "n_atoms": 18
+  },
+  "135089496": {
+    "converged": true,
+    "final_energy": -80.82645264242,
+    "force_calls": 29,
+    "initial_energy": -80.76379620272,
+    "n_atoms": 49
+  },
+  "135091503": {
+    "converged": true,
+    "final_energy": -17.334190387,
+    "force_calls": 8,
+    "initial_energy": -17.3189099901,
+    "n_atoms": 5
+  },
+  "135091632": {
+    "converged": true,
+    "final_energy": -33.15123801751,
+    "force_calls": 23,
+    "initial_energy": -33.0942918221,
+    "n_atoms": 14
+  },
+  "135091752": {
+    "converged": true,
+    "final_energy": -61.041517447530005,
+    "force_calls": 13,
+    "initial_energy": -61.01068001053001,
+    "n_atoms": 37
+  },
+  "135091989": {
+    "converged": true,
+    "final_energy": -12.08885052445,
+    "force_calls": 12,
+    "initial_energy": -12.06578317373,
+    "n_atoms": 8
+  },
+  "135092258": {
+    "converged": true,
+    "final_energy": -18.46553793038,
+    "force_calls": 16,
+    "initial_energy": -18.3355042032,
+    "n_atoms": 6
+  },
+  "135092704": {
+    "converged": true,
+    "final_energy": -26.4316642789,
+    "force_calls": 12,
+    "initial_energy": -26.355438359390003,
+    "n_atoms": 20
+  },
+  "135092859": {
+    "converged": true,
+    "final_energy": -13.1083472564,
+    "force_calls": 26,
+    "initial_energy": -13.03974684149,
+    "n_atoms": 9
+  },
+  "135092963": {
+    "converged": true,
+    "final_energy": -82.77624855744,
+    "force_calls": 15,
+    "initial_energy": -82.7578164168,
+    "n_atoms": 25
+  },
+  "135093104": {
+    "converged": true,
+    "final_energy": -8.23406676011,
+    "force_calls": 18,
+    "initial_energy": -8.13731715855,
+    "n_atoms": 6
+  },
+  "135093596": {
+    "converged": true,
+    "final_energy": -31.99760178205,
+    "force_calls": 19,
+    "initial_energy": -31.93686575197,
+    "n_atoms": 8
+  },
+  "135093932": {
+    "converged": true,
+    "final_energy": -34.24918205151,
+    "force_calls": 20,
+    "initial_energy": -34.20533356913,
+    "n_atoms": 9
+  },
+  "135094940": {
+    "converged": true,
+    "final_energy": -35.08288310248,
+    "force_calls": 36,
+    "initial_energy": -34.95614907659,
+    "n_atoms": 26
+  },
+  "135095057": {
+    "converged": true,
+    "final_energy": -30.037394176069995,
+    "force_calls": 11,
+    "initial_energy": -30.012489251639998,
+    "n_atoms": 12
+  },
+  "135095125": {
+    "converged": true,
+    "final_energy": -40.14378037847,
+    "force_calls": 11,
+    "initial_energy": -40.12255065939,
+    "n_atoms": 25
+  },
+  "135096479": {
+    "converged": true,
+    "final_energy": -22.87176253945,
+    "force_calls": 23,
+    "initial_energy": -22.78946990433,
+    "n_atoms": 13
+  },
+  "135096891": {
+    "converged": true,
+    "final_energy": -17.96971572857,
+    "force_calls": 14,
+    "initial_energy": -17.77336891072,
+    "n_atoms": 5
+  },
+  "135097864": {
+    "converged": true,
+    "final_energy": -26.92803309978,
+    "force_calls": 30,
+    "initial_energy": -26.891685610479996,
+    "n_atoms": 9
+  },
+  "135098113": {
+    "converged": true,
+    "final_energy": -44.84850799648,
+    "force_calls": 13,
+    "initial_energy": -44.80151835666,
+    "n_atoms": 26
+  },
+  "135098956": {
+    "converged": true,
+    "final_energy": -43.43623975701,
+    "force_calls": 24,
+    "initial_energy": -43.36583927235,
+    "n_atoms": 38
+  },
+  "135100218": {
+    "converged": true,
+    "final_energy": -46.16961193267,
+    "force_calls": 24,
+    "initial_energy": -45.89366418429,
+    "n_atoms": 13
+  },
+  "135100292": {
+    "converged": true,
+    "final_energy": -39.29454639272,
+    "force_calls": 25,
+    "initial_energy": -39.27384799198,
+    "n_atoms": 13
+  },
+  "135100404": {
+    "converged": true,
+    "final_energy": -39.22883062214,
+    "force_calls": 38,
+    "initial_energy": -38.76495002244,
+    "n_atoms": 10
+  },
+  "135100509": {
+    "converged": true,
+    "final_energy": -38.49660571641,
+    "force_calls": 22,
+    "initial_energy": -38.40720903922,
+    "n_atoms": 22
+  },
+  "135101049": {
+    "converged": true,
+    "final_energy": -36.88442884909,
+    "force_calls": 40,
+    "initial_energy": -36.70202057478,
+    "n_atoms": 31
+  },
+  "135102617": {
+    "converged": true,
+    "final_energy": -79.27092020985,
+    "force_calls": 30,
+    "initial_energy": -79.14792379226,
+    "n_atoms": 42
+  },
+  "135103066": {
+    "converged": true,
+    "final_energy": -58.5878092739,
+    "force_calls": 13,
+    "initial_energy": -58.504018939469994,
+    "n_atoms": 36
+  },
+  "135103485": {
+    "converged": true,
+    "final_energy": -56.83834020218,
+    "force_calls": 18,
+    "initial_energy": -56.73801138332,
+    "n_atoms": 42
+  },
+  "135106724": {
+    "converged": true,
+    "final_energy": -45.71964770934,
+    "force_calls": 27,
+    "initial_energy": -45.62719089176,
+    "n_atoms": 29
+  },
+  "135107341": {
+    "converged": true,
+    "final_energy": -44.29029500943,
+    "force_calls": 25,
+    "initial_energy": -44.24035756024,
+    "n_atoms": 18
+  },
+  "135107889": {
+    "converged": true,
+    "final_energy": -18.77153241836,
+    "force_calls": 20,
+    "initial_energy": -18.75048473853,
+    "n_atoms": 8
+  },
+  "135109649": {
+    "converged": true,
+    "final_energy": -43.19532022029,
+    "force_calls": 21,
+    "initial_energy": -43.16838649256,
+    "n_atoms": 23
+  },
+  "135109948": {
+    "converged": true,
+    "final_energy": -65.85198474735,
+    "force_calls": 14,
+    "initial_energy": -65.72564814716,
+    "n_atoms": 46
+  },
+  "135114512": {
+    "converged": true,
+    "final_energy": -47.83726094624,
+    "force_calls": 20,
+    "initial_energy": -47.75504944519,
+    "n_atoms": 24
+  },
+  "135117968": {
+    "converged": true,
+    "final_energy": -51.07748812324,
+    "force_calls": 23,
+    "initial_energy": -50.99925710295,
+    "n_atoms": 34
+  },
+  "135130364": {
+    "converged": true,
+    "final_energy": -32.53505336521,
+    "force_calls": 28,
+    "initial_energy": -32.46597884895,
+    "n_atoms": 16
+  },
+  "135134090": {
+    "converged": true,
+    "final_energy": -27.61532095273,
+    "force_calls": 17,
+    "initial_energy": -27.58395161255,
+    "n_atoms": 11
+  },
+  "135137037": {
+    "converged": true,
+    "final_energy": -81.13560582651,
+    "force_calls": 33,
+    "initial_energy": -80.99432243762,
+    "n_atoms": 50
+  },
+  "135143919": {
+    "converged": true,
+    "final_energy": -51.63344858127001,
+    "force_calls": 17,
+    "initial_energy": -51.60051623885,
+    "n_atoms": 38
+  },
+  "135145908": {
+    "converged": true,
+    "final_energy": -41.91640157943,
+    "force_calls": 28,
+    "initial_energy": -41.86762386522,
+    "n_atoms": 24
+  },
+  "135146682": {
+    "converged": true,
+    "final_energy": -27.56325276288,
+    "force_calls": 19,
+    "initial_energy": -27.50708960489,
+    "n_atoms": 16
+  },
+  "135149272": {
+    "converged": true,
+    "final_energy": -30.870969975489995,
+    "force_calls": 21,
+    "initial_energy": -30.81778611245,
+    "n_atoms": 25
+  },
+  "135149287": {
+    "converged": true,
+    "final_energy": -70.18445199488,
+    "force_calls": 18,
+    "initial_energy": -70.08015362468,
+    "n_atoms": 46
+  },
+  "135149595": {
+    "converged": true,
+    "final_energy": -69.69373567932,
+    "force_calls": 22,
+    "initial_energy": -69.56636835795,
+    "n_atoms": 40
+  },
+  "135150142": {
+    "converged": true,
+    "final_energy": -62.2030585664,
+    "force_calls": 51,
+    "initial_energy": -62.00128845535,
+    "n_atoms": 36
+  },
+  "135150492": {
+    "converged": true,
+    "final_energy": -35.67972857763,
+    "force_calls": 20,
+    "initial_energy": -35.61181819308,
+    "n_atoms": 17
+  },
+  "135153532": {
+    "converged": true,
+    "final_energy": -33.85735274773,
+    "force_calls": 12,
+    "initial_energy": -33.83693195534,
+    "n_atoms": 14
+  },
+  "135155528": {
+    "converged": true,
+    "final_energy": -73.35102790202,
+    "force_calls": 24,
+    "initial_energy": -73.23514622775,
+    "n_atoms": 45
+  },
+  "135158855": {
+    "converged": true,
+    "final_energy": -61.3543951335,
+    "force_calls": 10,
+    "initial_energy": -61.29946121061,
+    "n_atoms": 21
+  },
+  "135163586": {
+    "converged": true,
+    "final_energy": -43.9671844313,
+    "force_calls": 13,
+    "initial_energy": -43.93796837951,
+    "n_atoms": 18
+  },
+  "135166552": {
+    "converged": true,
+    "final_energy": -78.55419188017,
+    "force_calls": 22,
+    "initial_energy": -78.49103807881,
+    "n_atoms": 37
+  },
+  "135167904": {
+    "converged": true,
+    "final_energy": -53.327513591229994,
+    "force_calls": 31,
+    "initial_energy": -53.28481275891,
+    "n_atoms": 32
+  },
+  "135169088": {
+    "converged": true,
+    "final_energy": -41.16531556947,
+    "force_calls": 16,
+    "initial_energy": -41.1284246407,
+    "n_atoms": 11
+  },
+  "135169428": {
+    "converged": true,
+    "final_energy": -83.45121310412,
+    "force_calls": 18,
+    "initial_energy": -83.39667581929,
+    "n_atoms": 47
+  },
+  "135169446": {
+    "converged": true,
+    "final_energy": -27.032235237530003,
+    "force_calls": 18,
+    "initial_energy": -27.00020804254,
+    "n_atoms": 16
+  },
+  "135169566": {
+    "converged": true,
+    "final_energy": -34.12336539896,
+    "force_calls": 22,
+    "initial_energy": -34.0968249703,
+    "n_atoms": 18
+  },
+  "135174241": {
+    "converged": true,
+    "final_energy": -69.38723549302,
+    "force_calls": 29,
+    "initial_energy": -69.3346694465,
+    "n_atoms": 35
+  },
+  "135174398": {
+    "converged": true,
+    "final_energy": -67.91031954526,
+    "force_calls": 17,
+    "initial_energy": -67.75683129872,
+    "n_atoms": 49
+  },
+  "135174531": {
+    "converged": true,
+    "final_energy": -48.93413557163,
+    "force_calls": 16,
+    "initial_energy": -48.86447356915,
+    "n_atoms": 21
+  },
+  "135185708": {
+    "converged": true,
+    "final_energy": -19.79099407504,
+    "force_calls": 15,
+    "initial_energy": -19.75522648688,
+    "n_atoms": 7
+  },
+  "135192963": {
+    "converged": true,
+    "final_energy": -95.64098087216,
+    "force_calls": 32,
+    "initial_energy": -95.58311435909,
+    "n_atoms": 46
+  },
+  "135194489": {
+    "converged": true,
+    "final_energy": -36.0501837628,
+    "force_calls": 11,
+    "initial_energy": -36.03507567461,
+    "n_atoms": 20
+  },
+  "135200247": {
+    "converged": true,
+    "final_energy": -36.48037308269,
+    "force_calls": 18,
+    "initial_energy": -36.45811890455,
+    "n_atoms": 20
+  },
+  "135206529": {
+    "converged": true,
+    "final_energy": -16.49252715098,
+    "force_calls": 12,
+    "initial_energy": -16.46945673884,
+    "n_atoms": 7
+  },
+  "135206919": {
+    "converged": true,
+    "final_energy": -83.68898735914,
+    "force_calls": 32,
+    "initial_energy": -83.55034744124,
+    "n_atoms": 48
+  },
+  "135207293": {
+    "converged": true,
+    "final_energy": -27.55538065961,
+    "force_calls": 13,
+    "initial_energy": -27.54734522507,
+    "n_atoms": 16
+  },
+  "135212400": {
+    "converged": true,
+    "final_energy": -36.72144426032,
+    "force_calls": 19,
+    "initial_energy": -36.67942541753,
+    "n_atoms": 16
+  },
+  "135217185": {
+    "converged": true,
+    "final_energy": -75.09732021189,
+    "force_calls": 17,
+    "initial_energy": -75.058085477,
+    "n_atoms": 43
+  },
+  "135222102": {
+    "converged": true,
+    "final_energy": -47.44582656975,
+    "force_calls": 16,
+    "initial_energy": -47.40498911235,
+    "n_atoms": 29
+  },
+  "135225351": {
+    "converged": true,
+    "final_energy": -67.83013948582,
+    "force_calls": 31,
+    "initial_energy": -67.78768613496,
+    "n_atoms": 49
+  },
+  "135229684": {
+    "converged": true,
+    "final_energy": -74.85707298545,
+    "force_calls": 20,
+    "initial_energy": -74.72516560946,
+    "n_atoms": 50
+  },
+  "135230839": {
+    "converged": true,
+    "final_energy": -71.88683930847,
+    "force_calls": 16,
+    "initial_energy": -71.83832339665,
+    "n_atoms": 48
+  },
+  "135234349": {
+    "converged": true,
+    "final_energy": -62.383811625759996,
+    "force_calls": 25,
+    "initial_energy": -62.34506933573,
+    "n_atoms": 50
+  },
+  "135236278": {
+    "converged": true,
+    "final_energy": -53.42807284266,
+    "force_calls": 20,
+    "initial_energy": -53.35282626394001,
+    "n_atoms": 26
+  },
+  "135239086": {
+    "converged": true,
+    "final_energy": -27.28112717298,
+    "force_calls": 8,
+    "initial_energy": -27.266858361729998,
+    "n_atoms": 16
+  },
+  "135239978": {
+    "converged": true,
+    "final_energy": -39.82955800296,
+    "force_calls": 25,
+    "initial_energy": -39.74667779805,
+    "n_atoms": 13
+  },
+  "135240003": {
+    "converged": true,
+    "final_energy": -39.09012430824,
+    "force_calls": 20,
+    "initial_energy": -39.06880244928,
+    "n_atoms": 18
+  },
+  "135240396": {
+    "converged": true,
+    "final_energy": -62.76081592244001,
+    "force_calls": 23,
+    "initial_energy": -62.729087298900005,
+    "n_atoms": 44
+  },
+  "135241096": {
+    "converged": true,
+    "final_energy": -58.2146270693,
+    "force_calls": 17,
+    "initial_energy": -58.18287750236,
+    "n_atoms": 31
+  },
+  "135241456": {
+    "converged": true,
+    "final_energy": -39.48705294657,
+    "force_calls": 25,
+    "initial_energy": -39.44518370635,
+    "n_atoms": 25
+  },
+  "135241634": {
+    "converged": true,
+    "final_energy": -56.16604763235,
+    "force_calls": 38,
+    "initial_energy": -56.0636741679,
+    "n_atoms": 42
+  },
+  "135242556": {
+    "converged": true,
+    "final_energy": -48.0399549988,
+    "force_calls": 13,
+    "initial_energy": -47.97954557155,
+    "n_atoms": 21
+  },
+  "135242562": {
+    "converged": true,
+    "final_energy": -60.21527440940999,
+    "force_calls": 19,
+    "initial_energy": -60.17701606998,
+    "n_atoms": 40
+  },
+  "135245509": {
+    "converged": true,
+    "final_energy": -62.06974933754999,
+    "force_calls": 14,
+    "initial_energy": -62.03159964779,
+    "n_atoms": 34
+  },
+  "135247228": {
+    "converged": true,
+    "final_energy": -68.39295560092,
+    "force_calls": 13,
+    "initial_energy": -68.35979682769,
+    "n_atoms": 37
+  },
+  "135249279": {
+    "converged": true,
+    "final_energy": -55.40062175898,
+    "force_calls": 41,
+    "initial_energy": -55.25916668874,
+    "n_atoms": 35
+  },
+  "135253091": {
+    "converged": true,
+    "final_energy": -109.40348826382001,
+    "force_calls": 23,
+    "initial_energy": -109.33491660817998,
+    "n_atoms": 33
+  },
+  "135255884": {
+    "converged": true,
+    "final_energy": -49.32928698603,
+    "force_calls": 37,
+    "initial_energy": -49.23335352553,
+    "n_atoms": 41
+  },
+  "135258286": {
+    "converged": true,
+    "final_energy": -43.81352566998,
+    "force_calls": 19,
+    "initial_energy": -43.6910233538,
+    "n_atoms": 23
+  },
+  "135259008": {
+    "converged": true,
+    "final_energy": -35.52187952169,
+    "force_calls": 19,
+    "initial_energy": -35.42726256013,
+    "n_atoms": 10
+  },
+  "135259054": {
+    "converged": true,
+    "final_energy": -77.19234442526,
+    "force_calls": 15,
+    "initial_energy": -77.13453712628,
+    "n_atoms": 20
+  },
+  "135259556": {
+    "converged": true,
+    "final_energy": -19.56097104024,
+    "force_calls": 12,
+    "initial_energy": -19.53661453292,
+    "n_atoms": 8
+  },
+  "135262583": {
+    "converged": true,
+    "final_energy": -28.906239061190004,
+    "force_calls": 15,
+    "initial_energy": -28.875319375520004,
+    "n_atoms": 12
+  },
+  "135263244": {
+    "converged": true,
+    "final_energy": -34.08408920342,
+    "force_calls": 24,
+    "initial_energy": -34.02216999717,
+    "n_atoms": 14
+  },
+  "135269396": {
+    "converged": true,
+    "final_energy": -34.29383404099,
+    "force_calls": 21,
+    "initial_energy": -34.26481289321,
+    "n_atoms": 20
+  },
+  "135278208": {
+    "converged": true,
+    "final_energy": -96.22366670213,
+    "force_calls": 64,
+    "initial_energy": -96.17510519737,
+    "n_atoms": 33
+  },
+  "135278702": {
+    "converged": true,
+    "final_energy": -64.37275757986,
+    "force_calls": 15,
+    "initial_energy": -64.32240838081,
+    "n_atoms": 41
+  },
+  "135284252": {
+    "converged": true,
+    "final_energy": -25.32277532249,
+    "force_calls": 27,
+    "initial_energy": -25.273404115629997,
+    "n_atoms": 21
+  },
+  "135347311": {
+    "converged": true,
+    "final_energy": -62.66464454894,
+    "force_calls": 27,
+    "initial_energy": -62.53661907915,
+    "n_atoms": 40
+  },
+  "135350238": {
+    "converged": true,
+    "final_energy": -65.6786464077,
+    "force_calls": 24,
+    "initial_energy": -65.55369763009,
+    "n_atoms": 46
+  },
+  "135360362": {
+    "converged": true,
+    "final_energy": -61.63717279063,
+    "force_calls": 17,
+    "initial_energy": -61.60562569788,
+    "n_atoms": 49
+  },
+  "136351760": {
+    "converged": true,
+    "final_energy": -64.44779236469,
+    "force_calls": 19,
+    "initial_energy": -64.40442204602,
+    "n_atoms": 40
+  },
+  "160845249": {
+    "converged": true,
+    "final_energy": -68.46957754854,
+    "force_calls": 18,
+    "initial_energy": -68.36825891156,
+    "n_atoms": 37
+  },
+  "160847961": {
+    "converged": true,
+    "final_energy": -81.17850491556,
+    "force_calls": 18,
+    "initial_energy": -81.13917262434,
+    "n_atoms": 49
+  },
+  "160857594": {
+    "converged": true,
+    "final_energy": -52.7218745631,
+    "force_calls": 18,
+    "initial_energy": -52.664126881239994,
+    "n_atoms": 28
+  },
+  "163343378": {
+    "converged": true,
+    "final_energy": -93.23931652357,
+    "force_calls": 32,
+    "initial_energy": -93.11406496091,
+    "n_atoms": 50
+  },
+  "163352346": {
+    "converged": true,
+    "final_energy": -30.349110160970003,
+    "force_calls": 13,
+    "initial_energy": -30.33493899479,
+    "n_atoms": 23
+  },
+  "163643126": {
+    "converged": true,
+    "final_energy": -59.24669784131001,
+    "force_calls": 26,
+    "initial_energy": -59.21361611788,
+    "n_atoms": 30
+  },
+  "164151506": {
+    "converged": true,
+    "final_energy": -43.90553232996,
+    "force_calls": 13,
+    "initial_energy": -43.88885315617,
+    "n_atoms": 35
+  },
+  "164156386": {
+    "converged": true,
+    "final_energy": -105.41458540318,
+    "force_calls": 37,
+    "initial_energy": -105.36398899822,
+    "n_atoms": 48
+  },
+  "172649986": {
+    "converged": true,
+    "final_energy": -67.3024693576,
+    "force_calls": 30,
+    "initial_energy": -67.26192635167,
+    "n_atoms": 41
+  },
+  "175427613": {
+    "converged": true,
+    "final_energy": -60.12397337957999,
+    "force_calls": 25,
+    "initial_energy": -60.08674767944999,
+    "n_atoms": 38
+  },
+  "175444560": {
+    "converged": true,
+    "final_energy": -92.84854389846,
+    "force_calls": 37,
+    "initial_energy": -92.77829772706,
+    "n_atoms": 49
+  },
+  "194689238": {
+    "converged": true,
+    "final_energy": -65.79558811517,
+    "force_calls": 30,
+    "initial_energy": -65.75963101523,
+    "n_atoms": 45
+  },
+  "242041958": {
+    "converged": true,
+    "final_energy": -65.60389229206,
+    "force_calls": 37,
+    "initial_energy": -65.5704236831,
+    "n_atoms": 39
+  },
+  "242053505": {
+    "converged": true,
+    "final_energy": -65.20110613644,
+    "force_calls": 25,
+    "initial_energy": -65.11094498306,
+    "n_atoms": 40
+  },
+  "242055702": {
+    "converged": true,
+    "final_energy": -42.09636269148,
+    "force_calls": 18,
+    "initial_energy": -42.03589688208,
+    "n_atoms": 24
+  },
+  "242055707": {
+    "converged": true,
+    "final_energy": -21.73775783763,
+    "force_calls": 16,
+    "initial_energy": -21.70216215482,
+    "n_atoms": 15
+  },
+  "249819456": {
+    "converged": true,
+    "final_energy": -56.67238027834,
+    "force_calls": 10,
+    "initial_energy": -56.643966525699994,
+    "n_atoms": 19
+  },
+  "251920090": {
+    "converged": true,
+    "final_energy": -81.48918627035,
+    "force_calls": 64,
+    "initial_energy": -81.43685620417,
+    "n_atoms": 42
+  },
+  "252149301": {
+    "converged": true,
+    "final_energy": -89.15627206087,
+    "force_calls": 19,
+    "initial_energy": -89.11299626176,
+    "n_atoms": 47
+  },
+  "252632118": {
+    "converged": true,
+    "final_energy": -54.18341237644999,
+    "force_calls": 21,
+    "initial_energy": -54.15202625185,
+    "n_atoms": 34
+  },
+  "252632375": {
+    "converged": true,
+    "final_energy": -58.63986708185001,
+    "force_calls": 26,
+    "initial_energy": -58.55149534371001,
+    "n_atoms": 31
+  },
+  "252633479": {
+    "converged": true,
+    "final_energy": -82.60573641277,
+    "force_calls": 36,
+    "initial_energy": -82.4920077838,
+    "n_atoms": 45
+  },
+  "252634821": {
+    "converged": true,
+    "final_energy": -71.95241636567,
+    "force_calls": 35,
+    "initial_energy": -71.82342831105,
+    "n_atoms": 39
+  },
+  "252638725": {
+    "converged": true,
+    "final_energy": -75.6745862159,
+    "force_calls": 24,
+    "initial_energy": -75.5414715085,
+    "n_atoms": 37
+  },
+  "252647476": {
+    "converged": true,
+    "final_energy": -51.24872340214,
+    "force_calls": 27,
+    "initial_energy": -51.16286671892,
+    "n_atoms": 25
+  },
+  "252648738": {
+    "converged": true,
+    "final_energy": -85.06990404157,
+    "force_calls": 35,
+    "initial_energy": -85.0012317664,
+    "n_atoms": 49
+  },
+  "252648739": {
+    "converged": true,
+    "final_energy": -70.55142279769,
+    "force_calls": 39,
+    "initial_energy": -70.46259213548,
+    "n_atoms": 38
+  },
+  "252649555": {
+    "converged": true,
+    "final_energy": -79.96726993688,
+    "force_calls": 18,
+    "initial_energy": -79.81523709673,
+    "n_atoms": 50
+  },
+  "252651011": {
+    "converged": true,
+    "final_energy": -28.54153529929,
+    "force_calls": 11,
+    "initial_energy": -28.51991898052,
+    "n_atoms": 18
+  },
+  "252653478": {
+    "converged": true,
+    "final_energy": -70.19311193006,
+    "force_calls": 30,
+    "initial_energy": -70.03875581254,
+    "n_atoms": 49
+  },
+  "252656292": {
+    "converged": true,
+    "final_energy": -61.88574474495,
+    "force_calls": 17,
+    "initial_energy": -61.76932406137,
+    "n_atoms": 37
+  },
+  "252656935": {
+    "converged": true,
+    "final_energy": -47.75678115496,
+    "force_calls": 30,
+    "initial_energy": -47.72116862574,
+    "n_atoms": 21
+  },
+  "252658999": {
+    "converged": true,
+    "final_energy": -38.91839577126,
+    "force_calls": 12,
+    "initial_energy": -38.8499031498,
+    "n_atoms": 26
+  },
+  "252661386": {
+    "converged": true,
+    "final_energy": -63.60028262924,
+    "force_calls": 18,
+    "initial_energy": -63.56665685732,
+    "n_atoms": 46
+  },
+  "252662126": {
+    "converged": true,
+    "final_energy": -76.93029655259,
+    "force_calls": 32,
+    "initial_energy": -76.8911679965,
+    "n_atoms": 45
+  },
+  "252662734": {
+    "converged": true,
+    "final_energy": -87.73046425495,
+    "force_calls": 34,
+    "initial_energy": -87.59956720918,
+    "n_atoms": 45
+  },
+  "277286231": {
+    "converged": true,
+    "final_energy": -90.28000369886,
+    "force_calls": 22,
+    "initial_energy": -90.15862815575,
+    "n_atoms": 49
+  },
+  "312525537": {
+    "converged": true,
+    "final_energy": -75.32763645853,
+    "force_calls": 21,
+    "initial_energy": -75.28371446091,
+    "n_atoms": 38
+  },
+  "313065814": {
+    "converged": true,
+    "final_energy": -80.69977929164,
+    "force_calls": 29,
+    "initial_energy": -80.57893408016,
+    "n_atoms": 50
+  },
+  "341093675": {
+    "converged": true,
+    "final_energy": -87.89454025115,
+    "force_calls": 23,
+    "initial_energy": -87.85894198088,
+    "n_atoms": 49
+  },
+  "350084579": {
+    "converged": true,
+    "final_energy": -50.29310304826,
+    "force_calls": 20,
+    "initial_energy": -50.26958781702001,
+    "n_atoms": 27
+  },
+  "363891963": {
+    "converged": true,
+    "final_energy": -67.00025702378,
+    "force_calls": 23,
+    "initial_energy": -66.90733142628,
+    "n_atoms": 39
+  },
+  "375563688": {
+    "converged": true,
+    "final_energy": -75.77288319736,
+    "force_calls": 17,
+    "initial_energy": -75.75287801783,
+    "n_atoms": 20
+  },
+  "375980376": {
+    "converged": true,
+    "final_energy": -67.6173783146,
+    "force_calls": 27,
+    "initial_energy": -67.50106182064,
+    "n_atoms": 36
+  },
+  "376225206": {
+    "converged": true,
+    "final_energy": -66.57605718244,
+    "force_calls": 33,
+    "initial_energy": -66.5342878433,
+    "n_atoms": 41
+  },
+  "377007876": {
+    "converged": true,
+    "final_energy": -62.96496542809,
+    "force_calls": 28,
+    "initial_energy": -62.85584415415,
+    "n_atoms": 42
+  },
+  "378161490": {
+    "converged": true,
+    "final_energy": -78.48054781461,
+    "force_calls": 39,
+    "initial_energy": -78.42424586737,
+    "n_atoms": 46
+  },
+  "378169781": {
+    "converged": true,
+    "final_energy": -87.8874400765,
+    "force_calls": 27,
+    "initial_energy": -87.84204737332,
+    "n_atoms": 47
+  },
+  "381615095": {
+    "converged": true,
+    "final_energy": -94.97516522775,
+    "force_calls": 35,
+    "initial_energy": -94.83139855082,
+    "n_atoms": 45
+  },
+  "381616091": {
+    "converged": true,
+    "final_energy": -42.42942040512,
+    "force_calls": 20,
+    "initial_energy": -42.38805889924,
+    "n_atoms": 26
+  },
+  "381616719": {
+    "converged": true,
+    "final_energy": -74.61138977846,
+    "force_calls": 16,
+    "initial_energy": -74.5636235185,
+    "n_atoms": 50
+  },
+  "384220548": {
+    "converged": true,
+    "final_energy": -76.54066061379,
+    "force_calls": 24,
+    "initial_energy": -76.50019787605,
+    "n_atoms": 44
+  },
+  "384575875": {
+    "converged": true,
+    "final_energy": -83.21286978854,
+    "force_calls": 19,
+    "initial_energy": -83.15354550301,
+    "n_atoms": 49
+  },
+  "385453608": {
+    "converged": true,
+    "final_energy": -78.68962438036,
+    "force_calls": 20,
+    "initial_energy": -78.57329903681,
+    "n_atoms": 35
+  },
+  "386399742": {
+    "converged": true,
+    "final_energy": -40.55484187816,
+    "force_calls": 20,
+    "initial_energy": -40.49901498512,
+    "n_atoms": 32
+  },
+  "401957793": {
+    "converged": true,
+    "final_energy": -75.52484028464,
+    "force_calls": 32,
+    "initial_energy": -75.39339415986,
+    "n_atoms": 44
+  },
+  "402425992": {
+    "converged": true,
+    "final_energy": -35.98271607285,
+    "force_calls": 16,
+    "initial_energy": -35.96193443089,
+    "n_atoms": 16
+  },
+  "404343235": {
+    "converged": true,
+    "final_energy": -71.27508108711,
+    "force_calls": 28,
+    "initial_energy": -71.13439039686,
+    "n_atoms": 49
+  },
+  "404856341": {
+    "converged": true,
+    "final_energy": -60.87215269567,
+    "force_calls": 18,
+    "initial_energy": -60.83845087531999,
+    "n_atoms": 40
+  },
+  "404957321": {
+    "converged": true,
+    "final_energy": -70.6642656235,
+    "force_calls": 22,
+    "initial_energy": -70.58140740128,
+    "n_atoms": 43
+  },
+  "405243551": {
+    "converged": true,
+    "final_energy": -40.98019306118,
+    "force_calls": 18,
+    "initial_energy": -40.88932078783,
+    "n_atoms": 35
+  },
+  "405257459": {
+    "converged": true,
+    "final_energy": -81.08906966048,
+    "force_calls": 16,
+    "initial_energy": -80.97699541351,
+    "n_atoms": 43
+  },
+  "406793986": {
+    "converged": true,
+    "final_energy": -71.30532185945,
+    "force_calls": 41,
+    "initial_energy": -71.26710315789,
+    "n_atoms": 47
+  },
+  "433770666": {
+    "converged": true,
+    "final_energy": -59.48289296562999,
+    "force_calls": 27,
+    "initial_energy": -59.44940090524,
+    "n_atoms": 42
+  },
+  "433935240": {
+    "converged": true,
+    "final_energy": -62.14475545313,
+    "force_calls": 28,
+    "initial_energy": -62.043762922570004,
+    "n_atoms": 38
+  },
+  "433937523": {
+    "converged": true,
+    "final_energy": -67.34932985042,
+    "force_calls": 19,
+    "initial_energy": -67.28139944706,
+    "n_atoms": 32
+  },
+  "433939066": {
+    "converged": true,
+    "final_energy": -67.97797064784,
+    "force_calls": 25,
+    "initial_energy": -67.87565683608,
+    "n_atoms": 41
+  },
+  "433943382": {
+    "converged": true,
+    "final_energy": -71.81521219383,
+    "force_calls": 28,
+    "initial_energy": -71.78347823142,
+    "n_atoms": 48
+  },
+  "433947564": {
+    "converged": true,
+    "final_energy": -44.24650571664,
+    "force_calls": 22,
+    "initial_energy": -44.17009764223,
+    "n_atoms": 32
+  },
+  "433957183": {
+    "converged": true,
+    "final_energy": -110.83280093831999,
+    "force_calls": 31,
+    "initial_energy": -110.78197213397,
+    "n_atoms": 45
+  },
+  "434319007": {
+    "converged": true,
+    "final_energy": -28.69843807686,
+    "force_calls": 19,
+    "initial_energy": -28.57892063654,
+    "n_atoms": 16
+  },
+  "434319675": {
+    "converged": true,
+    "final_energy": -80.03892036108,
+    "force_calls": 46,
+    "initial_energy": -79.90741825105,
+    "n_atoms": 49
+  },
+  "439659553": {
+    "converged": true,
+    "final_energy": -86.49971948621,
+    "force_calls": 21,
+    "initial_energy": -86.45431581595,
+    "n_atoms": 36
+  },
+  "440732035": {
+    "converged": true,
+    "final_energy": -76.16558756785,
+    "force_calls": 22,
+    "initial_energy": -76.11859161576,
+    "n_atoms": 46
+  },
+  "440742410": {
+    "converged": true,
+    "final_energy": -58.13645330485,
+    "force_calls": 14,
+    "initial_energy": -58.11609241766,
+    "n_atoms": 31
+  },
+  "440971005": {
+    "converged": true,
+    "final_energy": -89.17300809335,
+    "force_calls": 34,
+    "initial_energy": -88.97769791486,
+    "n_atoms": 43
+  },
+  "441095718": {
+    "converged": true,
+    "final_energy": -67.71559486396,
+    "force_calls": 14,
+    "initial_energy": -67.63675781535,
+    "n_atoms": 30
+  },
+  "442142528": {
+    "converged": true,
+    "final_energy": -17.89012218752,
+    "force_calls": 16,
+    "initial_energy": -17.86134749634,
+    "n_atoms": 11
+  },
+  "46518609": {
+    "converged": true,
+    "final_energy": -62.91435021251,
+    "force_calls": 18,
+    "initial_energy": -62.88499241705,
+    "n_atoms": 34
+  },
+  "85240538": {
+    "converged": true,
+    "final_energy": -36.20636777538,
+    "force_calls": 18,
+    "initial_energy": -36.14393196373,
+    "n_atoms": 16
+  },
+  "des370k_acids__acids__valid": {
+    "converged": true,
+    "final_energy": -22.59255782508,
+    "force_calls": 32,
+    "initial_energy": -22.56833518352,
+    "n_atoms": 10
+  },
+  "des370k_acids__alcohols__valid": {
+    "converged": true,
+    "final_energy": -22.70210760429,
+    "force_calls": 36,
+    "initial_energy": -22.59972315429,
+    "n_atoms": 14
+  },
+  "des370k_acids__alkanes__valid": {
+    "converged": true,
+    "final_energy": -21.8000361209,
+    "force_calls": 63,
+    "initial_energy": -21.79498248104,
+    "n_atoms": 16
+  },
+  "des370k_acids__alkenes__valid": {
+    "converged": true,
+    "final_energy": -17.55989082615,
+    "force_calls": 37,
+    "initial_energy": -17.55210595417,
+    "n_atoms": 11
+  },
+  "des370k_acids__amides__valid": {
+    "converged": true,
+    "final_energy": -28.288561736279995,
+    "force_calls": 35,
+    "initial_energy": -28.280474860640002,
+    "n_atoms": 17
+  },
+  "des370k_acids__amines__valid": {
+    "converged": true,
+    "final_energy": -28.39781210544,
+    "force_calls": 23,
+    "initial_energy": -28.379434398530005,
+    "n_atoms": 21
+  },
+  "des370k_acids__ammoniums__valid": {
+    "converged": true,
+    "final_energy": -28.50972403958,
+    "force_calls": 11,
+    "initial_energy": -28.49807671537,
+    "n_atoms": 22
+  },
+  "des370k_acids__benzene__valid": {
+    "converged": true,
+    "final_energy": -30.3455968853,
+    "force_calls": 25,
+    "initial_energy": -30.33595406593,
+    "n_atoms": 20
+  },
+  "des370k_acids__carboxylates__valid": {
+    "converged": true,
+    "final_energy": -25.49585340187,
+    "force_calls": 39,
+    "initial_energy": -25.45829319999,
+    "n_atoms": 12
+  },
+  "des370k_acids__esters__valid": {
+    "converged": true,
+    "final_energy": -28.91700140372,
+    "force_calls": 14,
+    "initial_energy": -28.91101125635,
+    "n_atoms": 16
+  },
+  "des370k_acids__ethers__valid": {
+    "converged": true,
+    "final_energy": -32.19650740002,
+    "force_calls": 30,
+    "initial_energy": -32.17858709891,
+    "n_atoms": 23
+  },
+  "des370k_acids__guanidiniums__valid": {
+    "converged": true,
+    "final_energy": -28.05020515877,
+    "force_calls": 15,
+    "initial_energy": -28.032929773369997,
+    "n_atoms": 18
+  },
+  "des370k_acids__imidazolium__valid": {
+    "converged": true,
+    "final_energy": -32.06869094477,
+    "force_calls": 62,
+    "initial_energy": -32.04221436794,
+    "n_atoms": 21
+  },
+  "des370k_acids__ketones__valid": {
+    "converged": true,
+    "final_energy": -24.83086924647,
+    "force_calls": 34,
+    "initial_energy": -24.81035581886,
+    "n_atoms": 15
+  },
+  "des370k_acids__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -16.10561980677,
+    "force_calls": 16,
+    "initial_energy": -16.08755276569,
+    "n_atoms": 6
+  },
+  "des370k_acids__phenol__valid": {
+    "converged": true,
+    "final_energy": -34.42987311472,
+    "force_calls": 25,
+    "initial_energy": -34.41985483904,
+    "n_atoms": 21
+  },
+  "des370k_acids__pyridine__valid": {
+    "converged": true,
+    "final_energy": -30.8976302215,
+    "force_calls": 27,
+    "initial_energy": -30.8797815281,
+    "n_atoms": 18
+  },
+  "des370k_acids__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -28.775993648380002,
+    "force_calls": 18,
+    "initial_energy": -28.734556020649997,
+    "n_atoms": 17
+  },
+  "des370k_acids__sulfides__valid": {
+    "converged": true,
+    "final_energy": -33.62916524631,
+    "force_calls": 40,
+    "initial_energy": -33.61950506054,
+    "n_atoms": 22
+  },
+  "des370k_acids__thiols__valid": {
+    "converged": true,
+    "final_energy": -18.72561703839,
+    "force_calls": 47,
+    "initial_energy": -18.71900618717,
+    "n_atoms": 11
+  },
+  "des370k_acids__water__valid": {
+    "converged": true,
+    "final_energy": -22.69693192571,
+    "force_calls": 55,
+    "initial_energy": -22.66818943316,
+    "n_atoms": 14
+  },
+  "des370k_alcohols__alcohols__valid": {
+    "converged": true,
+    "final_energy": -16.45999142121,
+    "force_calls": 98,
+    "initial_energy": -16.44540173257,
+    "n_atoms": 12
+  },
+  "des370k_alcohols__alkanes__valid": {
+    "converged": true,
+    "final_energy": -18.73070574903,
+    "force_calls": 23,
+    "initial_energy": -18.72061787247,
+    "n_atoms": 17
+  },
+  "des370k_alcohols__alkenes__valid": {
+    "converged": true,
+    "final_energy": -14.5006525371,
+    "force_calls": 38,
+    "initial_energy": -14.47686206842,
+    "n_atoms": 12
+  },
+  "des370k_alcohols__amides__valid": {
+    "converged": true,
+    "final_energy": -28.38951726595,
+    "force_calls": 35,
+    "initial_energy": -28.37651362758,
+    "n_atoms": 21
+  },
+  "des370k_alcohols__amines__valid": {
+    "converged": true,
+    "final_energy": -18.98940379917,
+    "force_calls": 28,
+    "initial_energy": -18.97834962378,
+    "n_atoms": 16
+  },
+  "des370k_alcohols__ammoniums__valid": {
+    "converged": true,
+    "final_energy": -25.4400518537,
+    "force_calls": 23,
+    "initial_energy": -25.4242610066,
+    "n_atoms": 23
+  },
+  "des370k_alcohols__benzene__valid": {
+    "converged": true,
+    "final_energy": -24.11086937743,
+    "force_calls": 54,
+    "initial_energy": -24.10381564539,
+    "n_atoms": 18
+  },
+  "des370k_alcohols__carboxylates__valid": {
+    "converged": true,
+    "final_energy": -22.41900798204,
+    "force_calls": 55,
+    "initial_energy": -22.40143165508,
+    "n_atoms": 13
+  },
+  "des370k_alcohols__esters__valid": {
+    "converged": true,
+    "final_energy": -29.021330056530005,
+    "force_calls": 18,
+    "initial_energy": -28.98970918991,
+    "n_atoms": 20
+  },
+  "des370k_alcohols__ethers__valid": {
+    "converged": true,
+    "final_energy": -19.62250809202,
+    "force_calls": 25,
+    "initial_energy": -19.61399613926,
+    "n_atoms": 15
+  },
+  "des370k_alcohols__guanidiniums__valid": {
+    "converged": true,
+    "final_energy": -24.982561261090005,
+    "force_calls": 15,
+    "initial_energy": -24.97556294813,
+    "n_atoms": 19
+  },
+  "des370k_alcohols__imidazolium__valid": {
+    "converged": true,
+    "final_energy": -22.65305314729,
+    "force_calls": 32,
+    "initial_energy": -22.64496261112,
+    "n_atoms": 16
+  },
+  "des370k_alcohols__ketones__valid": {
+    "converged": true,
+    "final_energy": -21.77000375614,
+    "force_calls": 19,
+    "initial_energy": -21.76221655834,
+    "n_atoms": 16
+  },
+  "des370k_alcohols__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -13.031492721959998,
+    "force_calls": 16,
+    "initial_energy": -13.02047188209,
+    "n_atoms": 7
+  },
+  "des370k_alcohols__phenol__valid": {
+    "converged": true,
+    "final_energy": -28.190402129339997,
+    "force_calls": 35,
+    "initial_energy": -28.17487375665,
+    "n_atoms": 19
+  },
+  "des370k_alcohols__pyridine__valid": {
+    "converged": true,
+    "final_energy": -27.81703599767,
+    "force_calls": 28,
+    "initial_energy": -27.8084293599,
+    "n_atoms": 19
+  },
+  "des370k_alcohols__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -22.53356722453,
+    "force_calls": 19,
+    "initial_energy": -22.52168782799,
+    "n_atoms": 15
+  },
+  "des370k_alcohols__sulfides__valid": {
+    "converged": true,
+    "final_energy": -30.56132679859,
+    "force_calls": 52,
+    "initial_energy": -30.552723481100003,
+    "n_atoms": 23
+  },
+  "des370k_alcohols__thiols__valid": {
+    "converged": true,
+    "final_energy": -15.6583878996,
+    "force_calls": 24,
+    "initial_energy": -15.646734459929998,
+    "n_atoms": 12
+  },
+  "des370k_alcohols__water__valid": {
+    "converged": true,
+    "final_energy": -22.79825601058,
+    "force_calls": 81,
+    "initial_energy": -22.78408906281,
+    "n_atoms": 18
+  },
+  "des370k_alkanes__alkanes__valid": {
+    "converged": true,
+    "final_energy": -33.66351530436,
+    "force_calls": 51,
+    "initial_energy": -33.63003540645,
+    "n_atoms": 34
+  },
+  "des370k_alkanes__alkenes__valid": {
+    "converged": true,
+    "final_energy": -13.60922282037,
+    "force_calls": 25,
+    "initial_energy": -13.58375228598,
+    "n_atoms": 14
+  },
+  "des370k_alkanes__amides__valid": {
+    "converged": true,
+    "final_energy": -21.15909856393,
+    "force_calls": 84,
+    "initial_energy": -21.12329347128,
+    "n_atoms": 17
+  },
+  "des370k_alkanes__amines__valid": {
+    "converged": true,
+    "final_energy": -32.91198206155,
+    "force_calls": 26,
+    "initial_energy": -32.90627874235,
+    "n_atoms": 31
+  },
+  "des370k_alkanes__ammoniums__valid": {
+    "converged": true,
+    "final_energy": -33.01431780221,
+    "force_calls": 23,
+    "initial_energy": -33.00488301386,
+    "n_atoms": 32
+  },
+  "des370k_alkanes__benzene__valid": {
+    "converged": true,
+    "final_energy": -23.21929062055,
+    "force_calls": 19,
+    "initial_energy": -23.21388709362,
+    "n_atoms": 20
+  },
+  "des370k_alkanes__carboxylates__valid": {
+    "converged": true,
+    "final_energy": -21.50829473352,
+    "force_calls": 67,
+    "initial_energy": -21.50083348851,
+    "n_atoms": 15
+  },
+  "des370k_alkanes__esters__valid": {
+    "converged": true,
+    "final_energy": -36.61142155358,
+    "force_calls": 39,
+    "initial_energy": -36.60599846174,
+    "n_atoms": 29
+  },
+  "des370k_alkanes__ethers__valid": {
+    "converged": true,
+    "final_energy": -31.39059493898,
+    "force_calls": 64,
+    "initial_energy": -31.34874949088,
+    "n_atoms": 29
+  },
+  "des370k_alkanes__guanidiniums__valid": {
+    "converged": true,
+    "final_energy": -24.07448601798,
+    "force_calls": 55,
+    "initial_energy": -24.06903361955,
+    "n_atoms": 21
+  },
+  "des370k_alkanes__imidazolium__valid": {
+    "converged": true,
+    "final_energy": -21.74424539806,
+    "force_calls": 19,
+    "initial_energy": -21.69083422562,
+    "n_atoms": 18
+  },
+  "des370k_alkanes__ketones__valid": {
+    "converged": true,
+    "final_energy": -20.8731929332,
+    "force_calls": 31,
+    "initial_energy": -20.8595146792,
+    "n_atoms": 18
+  },
+  "des370k_alkanes__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -13.548216264,
+    "force_calls": 37,
+    "initial_energy": -13.46560358313,
+    "n_atoms": 15
+  },
+  "des370k_alkanes__phenol__valid": {
+    "converged": true,
+    "final_energy": -27.29433774165,
+    "force_calls": 34,
+    "initial_energy": -27.288125980990003,
+    "n_atoms": 21
+  },
+  "des370k_alkanes__pyridine__valid": {
+    "converged": true,
+    "final_energy": -30.09340168472,
+    "force_calls": 29,
+    "initial_energy": -30.08195401545,
+    "n_atoms": 24
+  },
+  "des370k_alkanes__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -21.63742723349,
+    "force_calls": 54,
+    "initial_energy": -21.63095675319,
+    "n_atoms": 17
+  },
+  "des370k_alkanes__sulfides__valid": {
+    "converged": true,
+    "final_energy": -33.84191832941,
+    "force_calls": 25,
+    "initial_energy": -33.83451693117,
+    "n_atoms": 30
+  },
+  "des370k_alkanes__thiols__valid": {
+    "converged": true,
+    "final_energy": -17.9172636019,
+    "force_calls": 29,
+    "initial_energy": -17.90338010673,
+    "n_atoms": 17
+  },
+  "des370k_alkanes__water__valid": {
+    "converged": true,
+    "final_energy": -12.40866516792,
+    "force_calls": 123,
+    "initial_energy": -12.40214420827,
+    "n_atoms": 11
+  },
+  "des370k_alkenes__alkenes__valid": {
+    "converged": true,
+    "final_energy": -31.55701395202,
+    "force_calls": 155,
+    "initial_energy": -31.53047753287,
+    "n_atoms": 30
+  },
+  "des370k_alkenes__amides__valid": {
+    "converged": true,
+    "final_energy": -20.08667798796,
+    "force_calls": 51,
+    "initial_energy": -20.07923124442,
+    "n_atoms": 15
+  },
+  "des370k_alkenes__amines__valid": {
+    "converged": true,
+    "final_energy": -20.19514646958,
+    "force_calls": 49,
+    "initial_energy": -20.18594728418,
+    "n_atoms": 19
+  },
+  "des370k_alkenes__ammoniums__valid": {
+    "converged": true,
+    "final_energy": -20.30199461781,
+    "force_calls": 10,
+    "initial_energy": -20.27360696626,
+    "n_atoms": 20
+  },
+  "des370k_alkenes__benzene__valid": {
+    "converged": true,
+    "final_energy": -28.49685989515,
+    "force_calls": 67,
+    "initial_energy": -28.488607086609996,
+    "n_atoms": 24
+  },
+  "des370k_alkenes__carboxylates__valid": {
+    "converged": true,
+    "final_energy": -23.61836934892,
+    "force_calls": 68,
+    "initial_energy": -23.60608879165,
+    "n_atoms": 16
+  },
+  "des370k_alkenes__esters__valid": {
+    "converged": true,
+    "final_energy": -23.89485848159,
+    "force_calls": 33,
+    "initial_energy": -23.88908630486,
+    "n_atoms": 17
+  },
+  "des370k_alkenes__ethers__valid": {
+    "converged": true,
+    "final_energy": -23.99537560384,
+    "force_calls": 40,
+    "initial_energy": -23.98922261258,
+    "n_atoms": 21
+  },
+  "des370k_alkenes__guanidiniums__valid": {
+    "converged": true,
+    "final_energy": -35.69683861512,
+    "force_calls": 33,
+    "initial_energy": -35.68930390239,
+    "n_atoms": 31
+  },
+  "des370k_alkenes__imidazolium__valid": {
+    "converged": true,
+    "final_energy": -20.68405745226,
+    "force_calls": 25,
+    "initial_energy": -20.67331691028,
+    "n_atoms": 16
+  },
+  "des370k_alkenes__ketones__valid": {
+    "converged": true,
+    "final_energy": -32.48827555688,
+    "force_calls": 80,
+    "initial_energy": -32.480189039,
+    "n_atoms": 28
+  },
+  "des370k_alkenes__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -5.64402267892,
+    "force_calls": 9,
+    "initial_energy": -5.63095650987,
+    "n_atoms": 7
+  },
+  "des370k_alkenes__phenol__valid": {
+    "converged": true,
+    "final_energy": -35.74216161988,
+    "force_calls": 56,
+    "initial_energy": -35.73113682104,
+    "n_atoms": 28
+  },
+  "des370k_alkenes__pyridine__valid": {
+    "converged": true,
+    "final_energy": -22.69838190228,
+    "force_calls": 15,
+    "initial_energy": -22.67815814339,
+    "n_atoms": 16
+  },
+  "des370k_alkenes__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -26.91630047486,
+    "force_calls": 36,
+    "initial_energy": -26.90903392281,
+    "n_atoms": 21
+  },
+  "des370k_alkenes__sulfides__valid": {
+    "converged": true,
+    "final_energy": -22.23705085022,
+    "force_calls": 56,
+    "initial_energy": -22.19625744508,
+    "n_atoms": 17
+  },
+  "des370k_alkenes__thiols__valid": {
+    "converged": true,
+    "final_energy": -10.52962602299,
+    "force_calls": 14,
+    "initial_energy": -10.50140773044,
+    "n_atoms": 9
+  },
+  "des370k_alkenes__water__valid": {
+    "converged": true,
+    "final_energy": -24.01661842778,
+    "force_calls": 52,
+    "initial_energy": -23.99132185872,
+    "n_atoms": 21
+  },
+  "des370k_amides__amides__valid": {
+    "converged": true,
+    "final_energy": -27.63481342315,
+    "force_calls": 117,
+    "initial_energy": -27.598071909479998,
+    "n_atoms": 18
+  },
+  "des370k_amides__amines__valid": {
+    "converged": true,
+    "final_energy": -30.91833123704,
+    "force_calls": 50,
+    "initial_energy": -30.911612831849997,
+    "n_atoms": 25
+  },
+  "des370k_amides__ammoniums__valid": {
+    "converged": true,
+    "final_energy": -31.048089060619997,
+    "force_calls": 10,
+    "initial_energy": -31.04296171155,
+    "n_atoms": 26
+  },
+  "des370k_amides__benzene__valid": {
+    "converged": true,
+    "final_energy": -29.69747250892,
+    "force_calls": 88,
+    "initial_energy": -29.687059985650002,
+    "n_atoms": 21
+  },
+  "des370k_amides__carboxylates__valid": {
+    "converged": true,
+    "final_energy": -28.01806748806,
+    "force_calls": 37,
+    "initial_energy": -28.0015321249,
+    "n_atoms": 16
+  },
+  "des370k_amides__esters__valid": {
+    "converged": true,
+    "final_energy": -34.61605946871,
+    "force_calls": 70,
+    "initial_energy": -34.60971436737,
+    "n_atoms": 23
+  },
+  "des370k_amides__ethers__valid": {
+    "converged": true,
+    "final_energy": -25.20681735185,
+    "force_calls": 12,
+    "initial_energy": -25.200722466619997,
+    "n_atoms": 18
+  },
+  "des370k_amides__guanidiniums__valid": {
+    "converged": true,
+    "final_energy": -33.75344478927,
+    "force_calls": 12,
+    "initial_energy": -33.72705487009,
+    "n_atoms": 25
+  },
+  "des370k_amides__imidazolium__valid": {
+    "converged": true,
+    "final_energy": -28.25135998963,
+    "force_calls": 50,
+    "initial_energy": -28.22249387598,
+    "n_atoms": 19
+  },
+  "des370k_amides__ketones__valid": {
+    "converged": true,
+    "final_energy": -30.52999788571,
+    "force_calls": 27,
+    "initial_energy": -30.52400006065,
+    "n_atoms": 22
+  },
+  "des370k_amides__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -18.62839294964,
+    "force_calls": 14,
+    "initial_energy": -18.61078482051,
+    "n_atoms": 10
+  },
+  "des370k_amides__phenol__valid": {
+    "converged": true,
+    "final_energy": -36.95141622663,
+    "force_calls": 43,
+    "initial_energy": -36.91618756997,
+    "n_atoms": 25
+  },
+  "des370k_amides__pyridine__valid": {
+    "converged": true,
+    "final_energy": -30.24587286237,
+    "force_calls": 15,
+    "initial_energy": -30.226123319499997,
+    "n_atoms": 19
+  },
+  "des370k_amides__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -31.293467262730005,
+    "force_calls": 29,
+    "initial_energy": -31.287162144059998,
+    "n_atoms": 21
+  },
+  "des370k_amides__sulfides__valid": {
+    "converged": true,
+    "final_energy": -37.16848219957,
+    "force_calls": 46,
+    "initial_energy": -37.15710211854,
+    "n_atoms": 28
+  },
+  "des370k_amides__thiols__valid": {
+    "converged": true,
+    "final_energy": -21.25326359847,
+    "force_calls": 40,
+    "initial_energy": -21.24683703469,
+    "n_atoms": 15
+  },
+  "des370k_amides__water__valid": {
+    "converged": true,
+    "final_energy": -28.56132845143,
+    "force_calls": 51,
+    "initial_energy": -28.515330785520003,
+    "n_atoms": 16
+  },
+  "des370k_amines__amines__valid": {
+    "converged": true,
+    "final_energy": -27.84562207051,
+    "force_calls": 54,
+    "initial_energy": -27.82508122136,
+    "n_atoms": 26
+  },
+  "des370k_amines__ammoniums__valid": {
+    "converged": true,
+    "final_energy": -24.81160123684,
+    "force_calls": 12,
+    "initial_energy": -24.80567182911,
+    "n_atoms": 24
+  },
+  "des370k_amines__benzene__valid": {
+    "converged": true,
+    "final_energy": -29.80603848845,
+    "force_calls": 20,
+    "initial_energy": -29.80085798063,
+    "n_atoms": 25
+  },
+  "des370k_amines__carboxylates__valid": {
+    "converged": true,
+    "final_energy": -28.10274212817,
+    "force_calls": 37,
+    "initial_energy": -28.09176982575,
+    "n_atoms": 20
+  },
+  "des370k_amines__esters__valid": {
+    "converged": true,
+    "final_energy": -25.206195630850004,
+    "force_calls": 36,
+    "initial_energy": -25.1969326171,
+    "n_atoms": 18
+  },
+  "des370k_amines__ethers__valid": {
+    "converged": true,
+    "final_energy": -25.31381084483,
+    "force_calls": 23,
+    "initial_energy": -25.304350770200003,
+    "n_atoms": 22
+  },
+  "des370k_amines__guanidiniums__valid": {
+    "converged": true,
+    "final_energy": -30.681145435319998,
+    "force_calls": 32,
+    "initial_energy": -30.665145150629996,
+    "n_atoms": 26
+  },
+  "des370k_amines__imidazolium__valid": {
+    "converged": true,
+    "final_energy": -22.02411841099,
+    "force_calls": 38,
+    "initial_energy": -21.99065930311,
+    "n_atoms": 17
+  },
+  "des370k_amines__ketones__valid": {
+    "converged": true,
+    "final_energy": -27.462125351020003,
+    "force_calls": 45,
+    "initial_energy": -27.44076669852,
+    "n_atoms": 23
+  },
+  "des370k_amines__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -18.71720882712,
+    "force_calls": 21,
+    "initial_energy": -18.71033887497,
+    "n_atoms": 14
+  },
+  "des370k_amines__phenol__valid": {
+    "converged": true,
+    "final_energy": -33.88749255868,
+    "force_calls": 27,
+    "initial_energy": -33.87629054948,
+    "n_atoms": 26
+  },
+  "des370k_amines__pyridine__valid": {
+    "converged": true,
+    "final_energy": -27.18335802251,
+    "force_calls": 74,
+    "initial_energy": -27.177469766329995,
+    "n_atoms": 20
+  },
+  "des370k_amines__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -28.23060478753,
+    "force_calls": 36,
+    "initial_energy": -28.2076006941,
+    "n_atoms": 22
+  },
+  "des370k_amines__sulfides__valid": {
+    "converged": true,
+    "final_energy": -30.933271680440004,
+    "force_calls": 41,
+    "initial_energy": -30.92451763845,
+    "n_atoms": 26
+  },
+  "des370k_amines__thiols__valid": {
+    "converged": true,
+    "final_energy": -24.5079197731,
+    "force_calls": 34,
+    "initial_energy": -24.4964852206,
+    "n_atoms": 22
+  },
+  "des370k_amines__water__valid": {
+    "converged": true,
+    "final_energy": -18.9979615526,
+    "force_calls": 33,
+    "initial_energy": -18.98143588158,
+    "n_atoms": 16
+  },
+  "des370k_ammoniums__benzene__valid": {
+    "converged": true,
+    "final_energy": -29.91312919973,
+    "force_calls": 11,
+    "initial_energy": -29.86862857065,
+    "n_atoms": 26
+  },
+  "des370k_ammoniums__esters__valid": {
+    "converged": true,
+    "final_energy": -25.32635939876,
+    "force_calls": 21,
+    "initial_energy": -25.30398300728,
+    "n_atoms": 19
+  },
+  "des370k_ammoniums__ethers__valid": {
+    "converged": true,
+    "final_energy": -25.433808352759996,
+    "force_calls": 24,
+    "initial_energy": -25.409050838919995,
+    "n_atoms": 23
+  },
+  "des370k_ammoniums__ketones__valid": {
+    "converged": true,
+    "final_energy": -27.58778164495,
+    "force_calls": 32,
+    "initial_energy": -27.554335982530002,
+    "n_atoms": 24
+  },
+  "des370k_ammoniums__phenol__valid": {
+    "converged": true,
+    "final_energy": -33.99806450794,
+    "force_calls": 20,
+    "initial_energy": -33.98448287417,
+    "n_atoms": 27
+  },
+  "des370k_ammoniums__pyridine__valid": {
+    "converged": true,
+    "final_energy": -24.12957714487,
+    "force_calls": 11,
+    "initial_energy": -24.11836847485,
+    "n_atoms": 18
+  },
+  "des370k_ammoniums__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -28.364907504899996,
+    "force_calls": 17,
+    "initial_energy": -28.33878925657,
+    "n_atoms": 23
+  },
+  "des370k_ammoniums__sulfides__valid": {
+    "converged": true,
+    "final_energy": -23.65874341086,
+    "force_calls": 24,
+    "initial_energy": -23.63187128879,
+    "n_atoms": 19
+  },
+  "des370k_ammoniums__thiols__valid": {
+    "converged": true,
+    "final_energy": -11.94160040199,
+    "force_calls": 17,
+    "initial_energy": -11.92889266352,
+    "n_atoms": 11
+  },
+  "des370k_ammoniums__water__valid": {
+    "converged": true,
+    "final_energy": -19.11607924422,
+    "force_calls": 23,
+    "initial_energy": -19.09797120626,
+    "n_atoms": 17
+  },
+  "des370k_benzene__benzene__valid": {
+    "converged": true,
+    "final_energy": -34.93746669881,
+    "force_calls": 27,
+    "initial_energy": -34.92694134434,
+    "n_atoms": 27
+  },
+  "des370k_benzene__carboxylates__valid": {
+    "converged": true,
+    "final_energy": -30.05704900533,
+    "force_calls": 17,
+    "initial_energy": -30.048783048910003,
+    "n_atoms": 19
+  },
+  "des370k_benzene__esters__valid": {
+    "converged": true,
+    "final_energy": -33.50575800994,
+    "force_calls": 57,
+    "initial_energy": -33.49796536976,
+    "n_atoms": 23
+  },
+  "des370k_benzene__ethers__valid": {
+    "converged": true,
+    "final_energy": -33.60601160227,
+    "force_calls": 52,
+    "initial_energy": -33.57942382765,
+    "n_atoms": 27
+  },
+  "des370k_benzene__guanidiniums__valid": {
+    "converged": true,
+    "final_energy": -29.45635316171,
+    "force_calls": 13,
+    "initial_energy": -29.44601527727,
+    "n_atoms": 22
+  },
+  "des370k_benzene__imidazolium__valid": {
+    "converged": true,
+    "final_energy": -30.2953621705,
+    "force_calls": 68,
+    "initial_energy": -30.278643473609996,
+    "n_atoms": 22
+  },
+  "des370k_benzene__ketones__valid": {
+    "converged": true,
+    "final_energy": -23.05834985539,
+    "force_calls": 13,
+    "initial_energy": -23.02969942727,
+    "n_atoms": 16
+  },
+  "des370k_benzene__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -15.771431946919998,
+    "force_calls": 13,
+    "initial_energy": -15.74213739588,
+    "n_atoms": 13
+  },
+  "des370k_benzene__phenol__valid": {
+    "converged": true,
+    "final_energy": -39.01342687689,
+    "force_calls": 34,
+    "initial_energy": -39.0071488922,
+    "n_atoms": 28
+  },
+  "des370k_benzene__pyridine__valid": {
+    "converged": true,
+    "final_energy": -32.0370528558,
+    "force_calls": 29,
+    "initial_energy": -32.02960762456,
+    "n_atoms": 23
+  },
+  "des370k_benzene__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -30.184435817320004,
+    "force_calls": 128,
+    "initial_energy": -30.177076989450004,
+    "n_atoms": 21
+  },
+  "des370k_benzene__sulfides__valid": {
+    "converged": true,
+    "final_energy": -36.05736929902,
+    "force_calls": 25,
+    "initial_energy": -36.04967829037,
+    "n_atoms": 28
+  },
+  "des370k_benzene__thiols__valid": {
+    "converged": true,
+    "final_energy": -20.14027406503,
+    "force_calls": 28,
+    "initial_energy": -20.13393286128,
+    "n_atoms": 15
+  },
+  "des370k_benzene__water__valid": {
+    "converged": true,
+    "final_energy": -27.28724591964,
+    "force_calls": 47,
+    "initial_energy": -27.26277983606,
+    "n_atoms": 21
+  },
+  "des370k_carboxylates__esters__valid": {
+    "converged": true,
+    "final_energy": -31.80904847452,
+    "force_calls": 31,
+    "initial_energy": -31.7855007029,
+    "n_atoms": 18
+  },
+  "des370k_carboxylates__ethers__valid": {
+    "converged": true,
+    "final_energy": -31.90460650799,
+    "force_calls": 26,
+    "initial_energy": -31.88747585665,
+    "n_atoms": 22
+  },
+  "des370k_carboxylates__guanidiniums__valid": {
+    "converged": true,
+    "final_energy": -31.089398340939997,
+    "force_calls": 14,
+    "initial_energy": -31.06517066159,
+    "n_atoms": 20
+  },
+  "des370k_carboxylates__ketones__valid": {
+    "converged": true,
+    "final_energy": -21.35892384058,
+    "force_calls": 13,
+    "initial_energy": -21.35255562772,
+    "n_atoms": 11
+  },
+  "des370k_carboxylates__phenol__valid": {
+    "converged": true,
+    "final_energy": -34.15824093902,
+    "force_calls": 27,
+    "initial_energy": -34.15100439569,
+    "n_atoms": 20
+  },
+  "des370k_carboxylates__pyridine__valid": {
+    "converged": true,
+    "final_energy": -30.33425039994,
+    "force_calls": 23,
+    "initial_energy": -30.32400170411,
+    "n_atoms": 18
+  },
+  "des370k_carboxylates__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -31.67311733421,
+    "force_calls": 28,
+    "initial_energy": -31.667182057380003,
+    "n_atoms": 19
+  },
+  "des370k_carboxylates__sulfides__valid": {
+    "converged": true,
+    "final_energy": -33.32176321309,
+    "force_calls": 21,
+    "initial_energy": -33.30231230972,
+    "n_atoms": 21
+  },
+  "des370k_carboxylates__thiols__valid": {
+    "converged": true,
+    "final_energy": -18.45668763339,
+    "force_calls": 13,
+    "initial_energy": -18.44040594843,
+    "n_atoms": 10
+  },
+  "des370k_carboxylates__water__valid": {
+    "converged": true,
+    "final_energy": -22.42771887131,
+    "force_calls": 29,
+    "initial_energy": -22.37772320179,
+    "n_atoms": 13
+  },
+  "des370k_esters__esters__valid": {
+    "converged": true,
+    "final_energy": -41.56990479156,
+    "force_calls": 91,
+    "initial_energy": -41.53844851402,
+    "n_atoms": 28
+  },
+  "des370k_esters__ethers__valid": {
+    "converged": true,
+    "final_energy": -29.01536216849,
+    "force_calls": 51,
+    "initial_energy": -29.00927076005,
+    "n_atoms": 20
+  },
+  "des370k_esters__guanidiniums__valid": {
+    "converged": true,
+    "final_energy": -31.201920885620005,
+    "force_calls": 17,
+    "initial_energy": -31.18987831143,
+    "n_atoms": 21
+  },
+  "des370k_esters__imidazolium__valid": {
+    "converged": true,
+    "final_energy": -32.05341143543,
+    "force_calls": 44,
+    "initial_energy": -32.04543875779,
+    "n_atoms": 21
+  },
+  "des370k_esters__ketones__valid": {
+    "converged": true,
+    "final_energy": -27.98741685927,
+    "force_calls": 43,
+    "initial_energy": -27.97253364612,
+    "n_atoms": 18
+  },
+  "des370k_esters__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -19.24695465831,
+    "force_calls": 32,
+    "initial_energy": -19.24108057124,
+    "n_atoms": 9
+  },
+  "des370k_esters__phenol__valid": {
+    "converged": true,
+    "final_energy": -37.58638422173,
+    "force_calls": 33,
+    "initial_energy": -37.52812573825,
+    "n_atoms": 24
+  },
+  "des370k_esters__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -31.92797807478,
+    "force_calls": 68,
+    "initial_energy": -31.91452264622,
+    "n_atoms": 20
+  },
+  "des370k_esters__sulfides__valid": {
+    "converged": true,
+    "final_energy": -28.28849465089,
+    "force_calls": 22,
+    "initial_energy": -28.280116224030003,
+    "n_atoms": 18
+  },
+  "des370k_esters__thiols__valid": {
+    "converged": true,
+    "final_energy": -25.030056593499996,
+    "force_calls": 64,
+    "initial_energy": -25.0248690866,
+    "n_atoms": 17
+  },
+  "des370k_esters__water__valid": {
+    "converged": true,
+    "final_energy": -25.86394597119,
+    "force_calls": 96,
+    "initial_energy": -25.84575559162,
+    "n_atoms": 17
+  },
+  "des370k_ethers__ethers__valid": {
+    "converged": true,
+    "final_energy": -35.44752944766,
+    "force_calls": 103,
+    "initial_energy": -35.41311048756,
+    "n_atoms": 30
+  },
+  "des370k_ethers__guanidiniums__valid": {
+    "converged": true,
+    "final_energy": -34.48168965201,
+    "force_calls": 14,
+    "initial_energy": -34.46456437259,
+    "n_atoms": 28
+  },
+  "des370k_ethers__imidazolium__valid": {
+    "converged": true,
+    "final_energy": -32.15213766441,
+    "force_calls": 34,
+    "initial_energy": -32.13327973826,
+    "n_atoms": 25
+  },
+  "des370k_ethers__ketones__valid": {
+    "converged": true,
+    "final_energy": -31.262822926830005,
+    "force_calls": 83,
+    "initial_energy": -31.25516365008,
+    "n_atoms": 25
+  },
+  "des370k_ethers__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -17.58245708281,
+    "force_calls": 9,
+    "initial_energy": -17.57593683364,
+    "n_atoms": 16
+  },
+  "des370k_ethers__phenol__valid": {
+    "converged": true,
+    "final_energy": -37.68858811441,
+    "force_calls": 25,
+    "initial_energy": -37.67627196398,
+    "n_atoms": 28
+  },
+  "des370k_ethers__pyridine__valid": {
+    "converged": true,
+    "final_energy": -27.80922996281,
+    "force_calls": 69,
+    "initial_energy": -27.8020275836,
+    "n_atoms": 19
+  },
+  "des370k_ethers__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -32.02954626534,
+    "force_calls": 9,
+    "initial_energy": -32.02345227781,
+    "n_atoms": 24
+  },
+  "des370k_ethers__sulfides__valid": {
+    "converged": true,
+    "final_energy": -31.567835000019997,
+    "force_calls": 26,
+    "initial_energy": -31.56126168418,
+    "n_atoms": 25
+  },
+  "des370k_ethers__thiols__valid": {
+    "converged": true,
+    "final_energy": -15.6501201641,
+    "force_calls": 22,
+    "initial_energy": -15.64506475952,
+    "n_atoms": 12
+  },
+  "des370k_ethers__water__valid": {
+    "converged": true,
+    "final_energy": -22.80091456178,
+    "force_calls": 136,
+    "initial_energy": -22.78231283643,
+    "n_atoms": 18
+  },
+  "des370k_guanidiniums__ketones__valid": {
+    "converged": true,
+    "final_energy": -27.114439215819996,
+    "force_calls": 19,
+    "initial_energy": -27.09931239057,
+    "n_atoms": 20
+  },
+  "des370k_guanidiniums__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -20.94622475796,
+    "force_calls": 13,
+    "initial_energy": -20.94033577953,
+    "n_atoms": 14
+  },
+  "des370k_guanidiniums__phenol__valid": {
+    "converged": true,
+    "final_energy": -36.70896264273,
+    "force_calls": 24,
+    "initial_energy": -36.6784874261,
+    "n_atoms": 26
+  },
+  "des370k_guanidiniums__pyridine__valid": {
+    "converged": true,
+    "final_energy": -33.16956637703,
+    "force_calls": 21,
+    "initial_energy": -33.14318376324,
+    "n_atoms": 23
+  },
+  "des370k_guanidiniums__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -34.2395991037,
+    "force_calls": 61,
+    "initial_energy": -34.20386934718,
+    "n_atoms": 25
+  },
+  "des370k_guanidiniums__sulfides__valid": {
+    "converged": true,
+    "final_energy": -35.87958616573,
+    "force_calls": 22,
+    "initial_energy": -35.86988878714,
+    "n_atoms": 27
+  },
+  "des370k_guanidiniums__thiols__valid": {
+    "converged": true,
+    "final_energy": -21.00209343513,
+    "force_calls": 34,
+    "initial_energy": -20.98922344868,
+    "n_atoms": 16
+  },
+  "des370k_guanidiniums__water__valid": {
+    "converged": true,
+    "final_energy": -24.99481989415,
+    "force_calls": 42,
+    "initial_energy": -24.971822755050002,
+    "n_atoms": 19
+  },
+  "des370k_imidazolium__ketones__valid": {
+    "converged": true,
+    "final_energy": -24.78614680894,
+    "force_calls": 34,
+    "initial_energy": -24.7792383445,
+    "n_atoms": 17
+  },
+  "des370k_imidazolium__phenol__valid": {
+    "converged": true,
+    "final_energy": -37.55819621075,
+    "force_calls": 58,
+    "initial_energy": -37.53847526877,
+    "n_atoms": 26
+  },
+  "des370k_imidazolium__pyridine__valid": {
+    "converged": true,
+    "final_energy": -30.85558933534,
+    "force_calls": 18,
+    "initial_energy": -30.801153010579995,
+    "n_atoms": 20
+  },
+  "des370k_imidazolium__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -38.04149429642,
+    "force_calls": 28,
+    "initial_energy": -38.02508357743,
+    "n_atoms": 26
+  },
+  "des370k_imidazolium__sulfides__valid": {
+    "converged": true,
+    "final_energy": -30.38742512528,
+    "force_calls": 29,
+    "initial_energy": -30.37031767934,
+    "n_atoms": 21
+  },
+  "des370k_imidazolium__thiols__valid": {
+    "converged": true,
+    "final_energy": -18.67267236677,
+    "force_calls": 21,
+    "initial_energy": -18.66435295872,
+    "n_atoms": 13
+  },
+  "des370k_imidazolium__water__valid": {
+    "converged": true,
+    "final_energy": -25.839925357019997,
+    "force_calls": 86,
+    "initial_energy": -25.74701191415,
+    "n_atoms": 19
+  },
+  "des370k_ketones__ketones__valid": {
+    "converged": true,
+    "final_energy": -27.04923172347,
+    "force_calls": 64,
+    "initial_energy": -27.01343861052,
+    "n_atoms": 20
+  },
+  "des370k_ketones__monoatomics__valid": {
+    "converged": true,
+    "final_energy": -18.48009846868,
+    "force_calls": 45,
+    "initial_energy": -18.46150372041,
+    "n_atoms": 11
+  },
+  "des370k_ketones__phenol__valid": {
+    "converged": true,
+    "final_energy": -27.13753263347,
+    "force_calls": 29,
+    "initial_energy": -27.128590191629996,
+    "n_atoms": 17
+  },
+  "des370k_ketones__pyridine__valid": {
+    "converged": true,
+    "final_energy": -29.69225988774,
+    "force_calls": 37,
+    "initial_energy": -29.676052428590005,
+    "n_atoms": 21
+  },
+  "des370k_ketones__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -27.56023760097,
+    "force_calls": 55,
+    "initial_energy": -27.54976273566,
+    "n_atoms": 20
+  },
+  "des370k_ketones__sulfides__valid": {
+    "converged": true,
+    "final_energy": -32.70260066827,
+    "force_calls": 31,
+    "initial_energy": -32.69537495735,
+    "n_atoms": 24
+  },
+  "des370k_ketones__thiols__valid": {
+    "converged": true,
+    "final_energy": -17.79895403527,
+    "force_calls": 41,
+    "initial_energy": -17.79204292773,
+    "n_atoms": 13
+  },
+  "des370k_ketones__water__valid": {
+    "converged": true,
+    "final_energy": -18.59491083166,
+    "force_calls": 45,
+    "initial_energy": -18.58413479875,
+    "n_atoms": 13
+  },
+  "des370k_monoatomics__phenol__valid": {
+    "converged": true,
+    "final_energy": -19.84533080118,
+    "force_calls": 22,
+    "initial_energy": -19.8191842052,
+    "n_atoms": 14
+  },
+  "des370k_monoatomics__pyridine__valid": {
+    "converged": true,
+    "final_energy": -16.26864084003,
+    "force_calls": 14,
+    "initial_energy": -16.25628229824,
+    "n_atoms": 11
+  },
+  "des370k_monoatomics__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -22.28789725879,
+    "force_calls": 18,
+    "initial_energy": -22.27154929961,
+    "n_atoms": 13
+  },
+  "des370k_monoatomics__sulfides__valid": {
+    "converged": true,
+    "final_energy": -15.816402281120002,
+    "force_calls": 40,
+    "initial_energy": -15.80538575252,
+    "n_atoms": 12
+  },
+  "des370k_monoatomics__thiols__valid": {
+    "converged": true,
+    "final_energy": -4.095852902,
+    "force_calls": 22,
+    "initial_energy": -4.08716718491,
+    "n_atoms": 4
+  },
+  "des370k_monoatomics__water__valid": {
+    "converged": true,
+    "final_energy": -9.87531426916,
+    "force_calls": 17,
+    "initial_energy": -9.86296740215,
+    "n_atoms": 4
+  },
+  "des370k_phenol__pyridine__valid": {
+    "converged": true,
+    "final_energy": -36.38750729592,
+    "force_calls": 46,
+    "initial_energy": -36.37714124297,
+    "n_atoms": 23
+  },
+  "des370k_phenol__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -37.43824024075,
+    "force_calls": 38,
+    "initial_energy": -37.4194822834,
+    "n_atoms": 25
+  },
+  "des370k_phenol__sulfides__valid": {
+    "converged": true,
+    "final_energy": -39.12279549296,
+    "force_calls": 34,
+    "initial_energy": -39.11541402469,
+    "n_atoms": 27
+  },
+  "des370k_phenol__thiols__valid": {
+    "converged": true,
+    "final_energy": -24.21515470643,
+    "force_calls": 13,
+    "initial_energy": -24.2099486015,
+    "n_atoms": 16
+  },
+  "des370k_phenol__water__valid": {
+    "converged": true,
+    "final_energy": -31.364887437350003,
+    "force_calls": 75,
+    "initial_energy": -31.33511815694,
+    "n_atoms": 22
+  },
+  "des370k_pyridine__pyridine__valid": {
+    "converged": true,
+    "final_energy": -32.30840777173,
+    "force_calls": 24,
+    "initial_energy": -32.28059039712,
+    "n_atoms": 22
+  },
+  "des370k_pyridine__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -30.45937427307,
+    "force_calls": 15,
+    "initial_energy": -30.44720569184,
+    "n_atoms": 20
+  },
+  "des370k_pyridine__sulfides__valid": {
+    "converged": true,
+    "final_energy": -26.99300825577,
+    "force_calls": 51,
+    "initial_energy": -26.98295237159,
+    "n_atoms": 19
+  },
+  "des370k_pyridine__thiols__valid": {
+    "converged": true,
+    "final_energy": -26.73705855811,
+    "force_calls": 59,
+    "initial_energy": -26.728937708629996,
+    "n_atoms": 20
+  },
+  "des370k_pyridine__water__valid": {
+    "converged": true,
+    "final_energy": -21.49214107968,
+    "force_calls": 44,
+    "initial_energy": -21.4758154068,
+    "n_atoms": 13
+  },
+  "des370k_pyrrole__pyrrole__valid": {
+    "converged": true,
+    "final_energy": -34.95127923826,
+    "force_calls": 81,
+    "initial_energy": -34.90657305525,
+    "n_atoms": 24
+  },
+  "des370k_pyrrole__sulfides__valid": {
+    "converged": true,
+    "final_energy": -34.47852561718,
+    "force_calls": 37,
+    "initial_energy": -34.47131318968,
+    "n_atoms": 25
+  },
+  "des370k_pyrrole__thiols__valid": {
+    "converged": true,
+    "final_energy": -18.56433428166,
+    "force_calls": 72,
+    "initial_energy": -18.55198168459,
+    "n_atoms": 12
+  },
+  "des370k_pyrrole__water__valid": {
+    "converged": true,
+    "final_energy": -31.86328553411,
+    "force_calls": 49,
+    "initial_energy": -31.83382474594,
+    "n_atoms": 22
+  },
+  "des370k_sulfides__sulfides__valid": {
+    "converged": true,
+    "final_energy": -38.32681988519,
+    "force_calls": 24,
+    "initial_energy": -38.31368028112,
+    "n_atoms": 28
+  },
+  "des370k_sulfides__thiols__valid": {
+    "converged": true,
+    "final_energy": -14.834062587369997,
+    "force_calls": 24,
+    "initial_energy": -14.826542870140003,
+    "n_atoms": 12
+  },
+  "des370k_sulfides__water__valid": {
+    "converged": true,
+    "final_energy": -25.242811782550003,
+    "force_calls": 69,
+    "initial_energy": -25.21817691356,
+    "n_atoms": 19
+  },
+  "des370k_thiols__thiols__valid": {
+    "converged": true,
+    "final_energy": -8.51598628392,
+    "force_calls": 52,
+    "initial_energy": -8.50641306509,
+    "n_atoms": 6
+  },
+  "des370k_thiols__water__valid": {
+    "converged": true,
+    "final_energy": -18.89095934284,
+    "force_calls": 53,
+    "initial_energy": -18.86632861705,
+    "n_atoms": 13
+  }
+}

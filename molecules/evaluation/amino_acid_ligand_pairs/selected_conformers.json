@@ -1,0 +1,2390 @@
+{
+  "selected_conformer_count": 475,
+  "selected_conformers": [
+    {
+      "conformer_index": 0,
+      "hdf5_group": "05R LEU",
+      "xyz_file": "05R_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "0FO ALA",
+      "xyz_file": "0FO_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "0HO VAL",
+      "xyz_file": "0HO_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "0LV ASN",
+      "xyz_file": "0LV_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "0OM HIS",
+      "xyz_file": "0OM_HIS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "0RN THR",
+      "xyz_file": "0RN_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "0TK GLN",
+      "xyz_file": "0TK_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "124 TYR",
+      "xyz_file": "124_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "12T ARG",
+      "xyz_file": "12T_ARG.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "135 HIS",
+      "xyz_file": "135_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "174 ILE",
+      "xyz_file": "174_ILE.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "17E ASP",
+      "xyz_file": "17E_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "1CN GLN",
+      "xyz_file": "1CN_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "1FK TYR",
+      "xyz_file": "1FK_TYR.xyz"
+    },
+    {
+      "conformer_index": 4,
+      "hdf5_group": "1KN TRP",
+      "xyz_file": "1KN_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "1LK ILE",
+      "xyz_file": "1LK_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "1M4 SER",
+      "xyz_file": "1M4_SER.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "1MU TYR",
+      "xyz_file": "1MU_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "1U5 LEU",
+      "xyz_file": "1U5_LEU.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "1VK LEU",
+      "xyz_file": "1VK_LEU.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "1XY ILE",
+      "xyz_file": "1XY_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "21D CYS",
+      "xyz_file": "21D_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "22W SER",
+      "xyz_file": "22W_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "231 ASP",
+      "xyz_file": "231_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "25O ASN",
+      "xyz_file": "25O_ASN.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "272 ARG",
+      "xyz_file": "272_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "284 HIS",
+      "xyz_file": "284_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "2A1 ASN",
+      "xyz_file": "2A1_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "2AN GLY",
+      "xyz_file": "2AN_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "2CH LEU",
+      "xyz_file": "2CH_LEU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "2D2 ILE",
+      "xyz_file": "2D2_ILE.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "2NA GLN",
+      "xyz_file": "2NA_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "2PV ASN",
+      "xyz_file": "2PV_ASN.xyz"
+    },
+    {
+      "conformer_index": 6,
+      "hdf5_group": "2SU PRO",
+      "xyz_file": "2SU_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "2SY VAL",
+      "xyz_file": "2SY_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "2VQ GLN",
+      "xyz_file": "2VQ_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "34L ALA",
+      "xyz_file": "34L_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "372 GLN",
+      "xyz_file": "372_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "388 VAL",
+      "xyz_file": "388_VAL.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "39J ASP",
+      "xyz_file": "39J_ASP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "3AB ILE",
+      "xyz_file": "3AB_ILE.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "3BH GLU",
+      "xyz_file": "3BH_GLU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "3BT GLN",
+      "xyz_file": "3BT_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "3GX PHE",
+      "xyz_file": "3GX_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "3N8 ASN",
+      "xyz_file": "3N8_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "3TV ASP",
+      "xyz_file": "3TV_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "3V4 THR",
+      "xyz_file": "3V4_THR.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "3VR PHE",
+      "xyz_file": "3VR_PHE.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "3WC ASN",
+      "xyz_file": "3WC_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "3X1 LEU",
+      "xyz_file": "3X1_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "46J SER",
+      "xyz_file": "46J_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "4E3 ALA",
+      "xyz_file": "4E3_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "4GO THR",
+      "xyz_file": "4GO_THR.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "4GU CYS",
+      "xyz_file": "4GU_CYS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "4HM ILE",
+      "xyz_file": "4HM_ILE.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "4HP CYS",
+      "xyz_file": "4HP_CYS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "4HR TRP",
+      "xyz_file": "4HR_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "4JN CYS",
+      "xyz_file": "4JN_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "4JU TRP",
+      "xyz_file": "4JU_TRP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "4NA GLU",
+      "xyz_file": "4NA_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "4NF SER",
+      "xyz_file": "4NF_SER.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "4RW TYR",
+      "xyz_file": "4RW_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "4SW ASN",
+      "xyz_file": "4SW_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "4UB VAL",
+      "xyz_file": "4UB_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "4XD PRO",
+      "xyz_file": "4XD_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "4ZD PRO",
+      "xyz_file": "4ZD_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "521 CYS",
+      "xyz_file": "521_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "54U PRO",
+      "xyz_file": "54U_PRO.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "56J VAL",
+      "xyz_file": "56J_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "56Q VAL",
+      "xyz_file": "56Q_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "58L PHE",
+      "xyz_file": "58L_PHE.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "5B2 LEU",
+      "xyz_file": "5B2_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "5BK SER",
+      "xyz_file": "5BK_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "5E2 ARG",
+      "xyz_file": "5E2_ARG.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "5F8 LEU",
+      "xyz_file": "5F8_LEU.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "5FX TRP",
+      "xyz_file": "5FX_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "5G9 ALA",
+      "xyz_file": "5G9_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "5M2 ARG",
+      "xyz_file": "5M2_ARG.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "5NB ASP",
+      "xyz_file": "5NB_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "5OY TYR",
+      "xyz_file": "5OY_TYR.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "5P1 MET",
+      "xyz_file": "5P1_MET.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "5Q0 ILE",
+      "xyz_file": "5Q0_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "5RZ ARG",
+      "xyz_file": "5RZ_ARG.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "5TX LEU",
+      "xyz_file": "5TX_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "5U1 PRO",
+      "xyz_file": "5U1_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "5UH ALA",
+      "xyz_file": "5UH_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "5WZ ALA",
+      "xyz_file": "5WZ_ALA.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "617 ARG",
+      "xyz_file": "617_ARG.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "64X MET",
+      "xyz_file": "64X_MET.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "64Z ASP",
+      "xyz_file": "64Z_ASP.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "6C5 LEU",
+      "xyz_file": "6C5_LEU.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "6CC GLN",
+      "xyz_file": "6CC_GLN.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "6DQ HIS",
+      "xyz_file": "6DQ_HIS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "6J1 ALA",
+      "xyz_file": "6J1_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "6JD THR",
+      "xyz_file": "6JD_THR.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "6LH TRP",
+      "xyz_file": "6LH_TRP.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "6PR GLN",
+      "xyz_file": "6PR_GLN.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "76Y THR",
+      "xyz_file": "76Y_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "79X MET",
+      "xyz_file": "79X_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "7AC GLU",
+      "xyz_file": "7AC_GLU.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "7BI GLU",
+      "xyz_file": "7BI_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "7G3 GLY",
+      "xyz_file": "7G3_GLY.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "7I3 SER",
+      "xyz_file": "7I3_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "7JH ASN",
+      "xyz_file": "7JH_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "7JQ PRO",
+      "xyz_file": "7JQ_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "7ME ILE",
+      "xyz_file": "7ME_ILE.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "7NI TYR",
+      "xyz_file": "7NI_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "7PA SER",
+      "xyz_file": "7PA_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "7QE TYR",
+      "xyz_file": "7QE_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "7RN PRO",
+      "xyz_file": "7RN_PRO.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "7UM VAL",
+      "xyz_file": "7UM_VAL.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "7WH ASN",
+      "xyz_file": "7WH_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "7XA ASP",
+      "xyz_file": "7XA_ASP.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "7XM GLY",
+      "xyz_file": "7XM_GLY.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "83I SER",
+      "xyz_file": "83I_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "848 GLN",
+      "xyz_file": "848_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "84W GLN",
+      "xyz_file": "84W_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "8BJ CYS",
+      "xyz_file": "8BJ_CYS.xyz"
+    },
+    {
+      "conformer_index": 7,
+      "hdf5_group": "8EQ ARG",
+      "xyz_file": "8EQ_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "8EZ ALA",
+      "xyz_file": "8EZ_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "8G0 SER",
+      "xyz_file": "8G0_SER.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "8HK HIS",
+      "xyz_file": "8HK_HIS.xyz"
+    },
+    {
+      "conformer_index": 5,
+      "hdf5_group": "8IB SER",
+      "xyz_file": "8IB_SER.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "8O9 TYR",
+      "xyz_file": "8O9_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "8P1 ASP",
+      "xyz_file": "8P1_ASP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "8PO TRP",
+      "xyz_file": "8PO_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "8S6 HIS",
+      "xyz_file": "8S6_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "8TG VAL",
+      "xyz_file": "8TG_VAL.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "91L ALA",
+      "xyz_file": "91L_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "96Z GLY",
+      "xyz_file": "96Z_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "982 CYS",
+      "xyz_file": "982_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "9CG ASN",
+      "xyz_file": "9CG_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "9DU ASP",
+      "xyz_file": "9DU_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "9EX CYS",
+      "xyz_file": "9EX_CYS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "9FE HIS",
+      "xyz_file": "9FE_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "9HB ALA",
+      "xyz_file": "9HB_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "9NO ALA",
+      "xyz_file": "9NO_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "9RH ILE",
+      "xyz_file": "9RH_ILE.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "9VZ PHE",
+      "xyz_file": "9VZ_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "A29 HIS",
+      "xyz_file": "A29_HIS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "A4V GLN",
+      "xyz_file": "A4V_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "A4Z GLY",
+      "xyz_file": "A4Z_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "A73 GLU",
+      "xyz_file": "A73_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "ADB PHE",
+      "xyz_file": "ADB_PHE.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "ALR TRP",
+      "xyz_file": "ALR_TRP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "AOJ LEU",
+      "xyz_file": "AOJ_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "APQ TYR",
+      "xyz_file": "APQ_TYR.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "AS2 CYS",
+      "xyz_file": "AS2_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "AWQ ASN",
+      "xyz_file": "AWQ_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "AZA ASP",
+      "xyz_file": "AZA_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "B0A ASN",
+      "xyz_file": "B0A_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "B21 TRP",
+      "xyz_file": "B21_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "B2L ALA",
+      "xyz_file": "B2L_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "B5C GLU",
+      "xyz_file": "B5C_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "B7S MET",
+      "xyz_file": "B7S_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "B8E LEU",
+      "xyz_file": "B8E_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "BBL HIS",
+      "xyz_file": "BBL_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "BQV TRP",
+      "xyz_file": "BQV_TRP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "BT9 ASN",
+      "xyz_file": "BT9_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "BWM TYR",
+      "xyz_file": "BWM_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "BX4 PRO",
+      "xyz_file": "BX4_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "BXZ MET",
+      "xyz_file": "BXZ_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "C2N ALA",
+      "xyz_file": "C2N_ALA.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "C2Z THR",
+      "xyz_file": "C2Z_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "C9H ASP",
+      "xyz_file": "C9H_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "CAH LEU",
+      "xyz_file": "CAH_LEU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "CBQ HIS",
+      "xyz_file": "CBQ_HIS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "CCB MET",
+      "xyz_file": "CCB_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "CCE LEU",
+      "xyz_file": "CCE_LEU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "CCW VAL",
+      "xyz_file": "CCW_VAL.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "CFA SER",
+      "xyz_file": "CFA_SER.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "CIU LEU",
+      "xyz_file": "CIU_LEU.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "CKX GLU",
+      "xyz_file": "CKX_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "CN9 VAL",
+      "xyz_file": "CN9_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "CTS MET",
+      "xyz_file": "CTS_MET.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "CUH TRP",
+      "xyz_file": "CUH_TRP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "CV2 GLN",
+      "xyz_file": "CV2_GLN.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "D1X ASP",
+      "xyz_file": "D1X_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "D4V VAL",
+      "xyz_file": "D4V_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "D9L ASN",
+      "xyz_file": "D9L_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "DDN PHE",
+      "xyz_file": "DDN_PHE.xyz"
+    },
+    {
+      "conformer_index": 4,
+      "hdf5_group": "DER GLY",
+      "xyz_file": "DER_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "DFR ASP",
+      "xyz_file": "DFR_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "DJP TYR",
+      "xyz_file": "DJP_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "DK4 SER",
+      "xyz_file": "DK4_SER.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "DN6 GLY",
+      "xyz_file": "DN6_GLY.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "DW3 SER",
+      "xyz_file": "DW3_SER.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "E0Q PRO",
+      "xyz_file": "E0Q_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "E5E MET",
+      "xyz_file": "E5E_MET.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "EAJ ARG",
+      "xyz_file": "EAJ_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "EAX THR",
+      "xyz_file": "EAX_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "EBM PRO",
+      "xyz_file": "EBM_PRO.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "ECZ ALA",
+      "xyz_file": "ECZ_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "EDP ALA",
+      "xyz_file": "EDP_ALA.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "EDU ILE",
+      "xyz_file": "EDU_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "EF0 ASN",
+      "xyz_file": "EF0_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "EI3 CYS",
+      "xyz_file": "EI3_CYS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "EQR ASN",
+      "xyz_file": "EQR_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "ES5 ASN",
+      "xyz_file": "ES5_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "EY7 ARG",
+      "xyz_file": "EY7_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "EZL TRP",
+      "xyz_file": "EZL_TRP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "F02 ASP",
+      "xyz_file": "F02_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "F05 GLU",
+      "xyz_file": "F05_GLU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "F07 GLN",
+      "xyz_file": "F07_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "F2L VAL",
+      "xyz_file": "F2L_VAL.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "F34 VAL",
+      "xyz_file": "F34_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "F69 ASP",
+      "xyz_file": "F69_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FBB SER",
+      "xyz_file": "FBB_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FBU VAL",
+      "xyz_file": "FBU_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FBZ ILE",
+      "xyz_file": "FBZ_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FCB LEU",
+      "xyz_file": "FCB_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FDM PRO",
+      "xyz_file": "FDM_PRO.xyz"
+    },
+    {
+      "conformer_index": 11,
+      "hdf5_group": "FDP ARG",
+      "xyz_file": "FDP_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FHB GLY",
+      "xyz_file": "FHB_GLY.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "FHW HIS",
+      "xyz_file": "FHW_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FHZ GLU",
+      "xyz_file": "FHZ_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FJ3 MET",
+      "xyz_file": "FJ3_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FKO ILE",
+      "xyz_file": "FKO_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FPZ VAL",
+      "xyz_file": "FPZ_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FT6 ARG",
+      "xyz_file": "FT6_ARG.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "FUY TRP",
+      "xyz_file": "FUY_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "FWL ASP",
+      "xyz_file": "FWL_ASP.xyz"
+    },
+    {
+      "conformer_index": 4,
+      "hdf5_group": "FWO THR",
+      "xyz_file": "FWO_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "G4D TRP",
+      "xyz_file": "G4D_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "G7P ASP",
+      "xyz_file": "G7P_ASP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "GA2 MET",
+      "xyz_file": "GA2_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "GC2 ARG",
+      "xyz_file": "GC2_ARG.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "GC7 SER",
+      "xyz_file": "GC7_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "GEH CYS",
+      "xyz_file": "GEH_CYS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "GEM GLY",
+      "xyz_file": "GEM_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "GEN GLY",
+      "xyz_file": "GEN_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "GHQ ASN",
+      "xyz_file": "GHQ_ASN.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "GKU MET",
+      "xyz_file": "GKU_MET.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "GNG GLU",
+      "xyz_file": "GNG_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "GQP HIS",
+      "xyz_file": "GQP_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "H0G CYS",
+      "xyz_file": "H0G_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "H0P CYS",
+      "xyz_file": "H0P_CYS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "H2B SER",
+      "xyz_file": "H2B_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "H3V PHE",
+      "xyz_file": "H3V_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "H4K TYR",
+      "xyz_file": "H4K_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "H75 GLY",
+      "xyz_file": "H75_GLY.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "H76 ASP",
+      "xyz_file": "H76_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "HAV MET",
+      "xyz_file": "HAV_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "HJK GLN",
+      "xyz_file": "HJK_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "HN9 CYS",
+      "xyz_file": "HN9_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "HPF TYR",
+      "xyz_file": "HPF_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "HPK ILE",
+      "xyz_file": "HPK_ILE.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "HRJ ARG",
+      "xyz_file": "HRJ_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "HRS ARG",
+      "xyz_file": "HRS_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "HU0 HIS",
+      "xyz_file": "HU0_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "I06 TYR",
+      "xyz_file": "I06_TYR.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "I2B GLU",
+      "xyz_file": "I2B_GLU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "I4H TRP",
+      "xyz_file": "I4H_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "I4X SER",
+      "xyz_file": "I4X_SER.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "I8J ARG",
+      "xyz_file": "I8J_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "I93 ALA",
+      "xyz_file": "I93_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "IBN MET",
+      "xyz_file": "IBN_MET.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "ICF LEU",
+      "xyz_file": "ICF_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "IGX TYR",
+      "xyz_file": "IGX_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "IKF THR",
+      "xyz_file": "IKF_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "ILO CYS",
+      "xyz_file": "ILO_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "INW TRP",
+      "xyz_file": "INW_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "IO2 GLN",
+      "xyz_file": "IO2_GLN.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "IOE HIS",
+      "xyz_file": "IOE_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "IPB VAL",
+      "xyz_file": "IPB_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "IQ5 LEU",
+      "xyz_file": "IQ5_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "ITE ALA",
+      "xyz_file": "ITE_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "IXE GLU",
+      "xyz_file": "IXE_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "J03 VAL",
+      "xyz_file": "J03_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "J27 GLN",
+      "xyz_file": "J27_GLN.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "J86 ARG",
+      "xyz_file": "J86_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "JAX PHE",
+      "xyz_file": "JAX_PHE.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "JBU GLN",
+      "xyz_file": "JBU_GLN.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "JCX VAL",
+      "xyz_file": "JCX_VAL.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "JFQ GLY",
+      "xyz_file": "JFQ_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "JH1 GLU",
+      "xyz_file": "JH1_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "JHD GLN",
+      "xyz_file": "JHD_GLN.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "JJM TRP",
+      "xyz_file": "JJM_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "JKA GLY",
+      "xyz_file": "JKA_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "JKJ SER",
+      "xyz_file": "JKJ_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "JRP ILE",
+      "xyz_file": "JRP_ILE.xyz"
+    },
+    {
+      "conformer_index": 5,
+      "hdf5_group": "JXO PHE",
+      "xyz_file": "JXO_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "JY5 GLY",
+      "xyz_file": "JY5_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "K1V LEU",
+      "xyz_file": "K1V_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "K75 MET",
+      "xyz_file": "K75_MET.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "K7U TYR",
+      "xyz_file": "K7U_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "K9S TRP",
+      "xyz_file": "K9S_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "KCQ MET",
+      "xyz_file": "KCQ_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "KDF ILE",
+      "xyz_file": "KDF_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "KI5 MET",
+      "xyz_file": "KI5_MET.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "KIV GLY",
+      "xyz_file": "KIV_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "KJY GLN",
+      "xyz_file": "KJY_GLN.xyz"
+    },
+    {
+      "conformer_index": 5,
+      "hdf5_group": "KMY GLY",
+      "xyz_file": "KMY_GLY.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "KQC THR",
+      "xyz_file": "KQC_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "KVD SER",
+      "xyz_file": "KVD_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "L02 VAL",
+      "xyz_file": "L02_VAL.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "L4O GLU",
+      "xyz_file": "L4O_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "LE4 GLU",
+      "xyz_file": "LE4_GLU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "LFK ARG",
+      "xyz_file": "LFK_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "LFO PHE",
+      "xyz_file": "LFO_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "LGC TRP",
+      "xyz_file": "LGC_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "LJM ILE",
+      "xyz_file": "LJM_ILE.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "LMZ ASN",
+      "xyz_file": "LMZ_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "LN5 ASP",
+      "xyz_file": "LN5_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "LR9 THR",
+      "xyz_file": "LR9_THR.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "LRI PHE",
+      "xyz_file": "LRI_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "LT5 ARG",
+      "xyz_file": "LT5_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "LW3 PHE",
+      "xyz_file": "LW3_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "LW8 ARG",
+      "xyz_file": "LW8_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "MBE TRP",
+      "xyz_file": "MBE_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "MBN PHE",
+      "xyz_file": "MBN_PHE.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "MD5 ILE",
+      "xyz_file": "MD5_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "MFY SER",
+      "xyz_file": "MFY_SER.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "MIL SER",
+      "xyz_file": "MIL_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "MMU GLN",
+      "xyz_file": "MMU_GLN.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "MO8 THR",
+      "xyz_file": "MO8_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "MPD SER",
+      "xyz_file": "MPD_SER.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "MPU LEU",
+      "xyz_file": "MPU_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "MSG MET",
+      "xyz_file": "MSG_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "MTH GLY",
+      "xyz_file": "MTH_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "MX4 HIS",
+      "xyz_file": "MX4_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "MZT THR",
+      "xyz_file": "MZT_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "N3U CYS",
+      "xyz_file": "N3U_CYS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "N6D LEU",
+      "xyz_file": "N6D_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "N6U ILE",
+      "xyz_file": "N6U_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "N7D HIS",
+      "xyz_file": "N7D_HIS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "N8P GLU",
+      "xyz_file": "N8P_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "N9N GLU",
+      "xyz_file": "N9N_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "NCA MET",
+      "xyz_file": "NCA_MET.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "NRN GLU",
+      "xyz_file": "NRN_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "NSG HIS",
+      "xyz_file": "NSG_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "NSJ TYR",
+      "xyz_file": "NSJ_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "NSV CYS",
+      "xyz_file": "NSV_CYS.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "NUG TYR",
+      "xyz_file": "NUG_TYR.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "NWG HIS",
+      "xyz_file": "NWG_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "NXL THR",
+      "xyz_file": "NXL_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "O68 SER",
+      "xyz_file": "O68_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "O6M MET",
+      "xyz_file": "O6M_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "OA4 PRO",
+      "xyz_file": "OA4_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "OCH ASP",
+      "xyz_file": "OCH_ASP.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "OCZ PHE",
+      "xyz_file": "OCZ_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "ODM TRP",
+      "xyz_file": "ODM_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "OJM VAL",
+      "xyz_file": "OJM_VAL.xyz"
+    },
+    {
+      "conformer_index": 6,
+      "hdf5_group": "OMD TRP",
+      "xyz_file": "OMD_TRP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "OMW GLY",
+      "xyz_file": "OMW_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "OTW CYS",
+      "xyz_file": "OTW_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "OUQ PRO",
+      "xyz_file": "OUQ_PRO.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "OWH MET",
+      "xyz_file": "OWH_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "OX6 SER",
+      "xyz_file": "OX6_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "P4T HIS",
+      "xyz_file": "P4T_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "P5Q PRO",
+      "xyz_file": "P5Q_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "PF0 ASP",
+      "xyz_file": "PF0_ASP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "PHH MET",
+      "xyz_file": "PHH_MET.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "PNW THR",
+      "xyz_file": "PNW_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "PUW LEU",
+      "xyz_file": "PUW_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "PVK THR",
+      "xyz_file": "PVK_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "PW8 ALA",
+      "xyz_file": "PW8_ALA.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "PXK MET",
+      "xyz_file": "PXK_MET.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "PYU GLY",
+      "xyz_file": "PYU_GLY.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "PZ4 CYS",
+      "xyz_file": "PZ4_CYS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "Q0Q ARG",
+      "xyz_file": "Q0Q_ARG.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "Q0T ARG",
+      "xyz_file": "Q0T_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "QEN PHE",
+      "xyz_file": "QEN_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "QFJ GLY",
+      "xyz_file": "QFJ_GLY.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "QKV PHE",
+      "xyz_file": "QKV_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "QLA ILE",
+      "xyz_file": "QLA_ILE.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "QSB ARG",
+      "xyz_file": "QSB_ARG.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "QXC ILE",
+      "xyz_file": "QXC_ILE.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "QYA HIS",
+      "xyz_file": "QYA_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "QYB PHE",
+      "xyz_file": "QYB_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "R4E PHE",
+      "xyz_file": "R4E_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "R97 SER",
+      "xyz_file": "R97_SER.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "R9W GLN",
+      "xyz_file": "R9W_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "RCQ TYR",
+      "xyz_file": "RCQ_TYR.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "RCT ARG",
+      "xyz_file": "RCT_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "RD2 ALA",
+      "xyz_file": "RD2_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "RNK ASN",
+      "xyz_file": "RNK_ASN.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "RRT GLU",
+      "xyz_file": "RRT_GLU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "RVN MET",
+      "xyz_file": "RVN_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "RVW CYS",
+      "xyz_file": "RVW_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "RVZ TRP",
+      "xyz_file": "RVZ_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "RXH THR",
+      "xyz_file": "RXH_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "S16 GLU",
+      "xyz_file": "S16_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "S4I ASP",
+      "xyz_file": "S4I_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "S4Y PRO",
+      "xyz_file": "S4Y_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "S5J PRO",
+      "xyz_file": "S5J_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "S95 ILE",
+      "xyz_file": "S95_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "S9N ASP",
+      "xyz_file": "S9N_ASP.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "SBK ALA",
+      "xyz_file": "SBK_ALA.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "SEJ CYS",
+      "xyz_file": "SEJ_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "SFQ GLN",
+      "xyz_file": "SFQ_GLN.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "SJY ALA",
+      "xyz_file": "SJY_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "SQH ILE",
+      "xyz_file": "SQH_ILE.xyz"
+    },
+    {
+      "conformer_index": 3,
+      "hdf5_group": "ST4 GLU",
+      "xyz_file": "ST4_GLU.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "STL GLU",
+      "xyz_file": "STL_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "SYZ THR",
+      "xyz_file": "SYZ_THR.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "T1D GLY",
+      "xyz_file": "T1D_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "T3N ILE",
+      "xyz_file": "T3N_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "T47 CYS",
+      "xyz_file": "T47_CYS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "T4A THR",
+      "xyz_file": "T4A_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TCZ VAL",
+      "xyz_file": "TCZ_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TF7 TRP",
+      "xyz_file": "TF7_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TFM GLY",
+      "xyz_file": "TFM_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TGJ LEU",
+      "xyz_file": "TGJ_LEU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "TGR PHE",
+      "xyz_file": "TGR_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TH7 HIS",
+      "xyz_file": "TH7_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TLD CYS",
+      "xyz_file": "TLD_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TMZ THR",
+      "xyz_file": "TMZ_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TO8 TYR",
+      "xyz_file": "TO8_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TOM PHE",
+      "xyz_file": "TOM_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TPD PHE",
+      "xyz_file": "TPD_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TU0 LEU",
+      "xyz_file": "TU0_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TU5 PHE",
+      "xyz_file": "TU5_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TVO TYR",
+      "xyz_file": "TVO_TYR.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "TVZ TRP",
+      "xyz_file": "TVZ_TRP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TYU ASN",
+      "xyz_file": "TYU_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "TZE ASN",
+      "xyz_file": "TZE_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "U2W PHE",
+      "xyz_file": "U2W_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "U5B VAL",
+      "xyz_file": "U5B_VAL.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "UFP CYS",
+      "xyz_file": "UFP_CYS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "UHK VAL",
+      "xyz_file": "UHK_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "UJ6 MET",
+      "xyz_file": "UJ6_MET.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "UJD TYR",
+      "xyz_file": "UJD_TYR.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "UJQ ALA",
+      "xyz_file": "UJQ_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "UKJ CYS",
+      "xyz_file": "UKJ_CYS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "UL1 PRO",
+      "xyz_file": "UL1_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "ULS THR",
+      "xyz_file": "ULS_THR.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "UMZ VAL",
+      "xyz_file": "UMZ_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "UOR ARG",
+      "xyz_file": "UOR_ARG.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "UQA ALA",
+      "xyz_file": "UQA_ALA.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "UR8 PRO",
+      "xyz_file": "UR8_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "UU3 TRP",
+      "xyz_file": "UU3_TRP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "UUP PRO",
+      "xyz_file": "UUP_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "UUV PRO",
+      "xyz_file": "UUV_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "UYR PRO",
+      "xyz_file": "UYR_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "UZ8 GLY",
+      "xyz_file": "UZ8_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "V0Z HIS",
+      "xyz_file": "V0Z_HIS.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "V31 HIS",
+      "xyz_file": "V31_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "V9I ASN",
+      "xyz_file": "V9I_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "V9P TYR",
+      "xyz_file": "V9P_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "VCO ARG",
+      "xyz_file": "VCO_ARG.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "VFJ THR",
+      "xyz_file": "VFJ_THR.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "VII ILE",
+      "xyz_file": "VII_ILE.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "VJ0 TYR",
+      "xyz_file": "VJ0_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "VNN VAL",
+      "xyz_file": "VNN_VAL.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "VPK GLN",
+      "xyz_file": "VPK_GLN.xyz"
+    },
+    {
+      "conformer_index": 2,
+      "hdf5_group": "VTL LEU",
+      "xyz_file": "VTL_LEU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "VUI GLU",
+      "xyz_file": "VUI_GLU.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "VWS ILE",
+      "xyz_file": "VWS_ILE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "W00 GLY",
+      "xyz_file": "W00_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "W2B PRO",
+      "xyz_file": "W2B_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "W2G TYR",
+      "xyz_file": "W2G_TYR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "W6P ASN",
+      "xyz_file": "W6P_ASN.xyz"
+    },
+    {
+      "conformer_index": 4,
+      "hdf5_group": "W8K PHE",
+      "xyz_file": "W8K_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "WF4 HIS",
+      "xyz_file": "WF4_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "WHX LEU",
+      "xyz_file": "WHX_LEU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "WYG ASP",
+      "xyz_file": "WYG_ASP.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "X02 ASP",
+      "xyz_file": "X02_ASP.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "X0S PRO",
+      "xyz_file": "X0S_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "X66 GLN",
+      "xyz_file": "X66_GLN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "XK4 ASN",
+      "xyz_file": "XK4_ASN.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "XQ1 PRO",
+      "xyz_file": "XQ1_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "XXD GLY",
+      "xyz_file": "XXD_GLY.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "XXE HIS",
+      "xyz_file": "XXE_HIS.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "Y7V ALA",
+      "xyz_file": "Y7V_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "Y84 ALA",
+      "xyz_file": "Y84_ALA.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "YHX PHE",
+      "xyz_file": "YHX_PHE.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "Z02 GLU",
+      "xyz_file": "Z02_GLU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "Z5P GLU",
+      "xyz_file": "Z5P_GLU.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "ZEA THR",
+      "xyz_file": "ZEA_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "ZIP GLN",
+      "xyz_file": "ZIP_GLN.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "ZJR PRO",
+      "xyz_file": "ZJR_PRO.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "ZXZ MET",
+      "xyz_file": "ZXZ_MET.xyz"
+    },
+    {
+      "conformer_index": 1,
+      "hdf5_group": "ZYI THR",
+      "xyz_file": "ZYI_THR.xyz"
+    },
+    {
+      "conformer_index": 0,
+      "hdf5_group": "ZZM THR",
+      "xyz_file": "ZZM_THR.xyz"
+    }
+  ],
+  "selection": {
+    "amino_acid_count": 19,
+    "method": "globally_unique_stratified_random",
+    "seed": 42,
+    "systems_per_amino_acid": 25,
+    "unique_ligands_across_amino_acids": true
+  },
+  "source_conformation_count": 194174,
+  "source_system_count": 79967,
+  "subset": "SPICE Amino Acid Ligand v1.0"
+}
