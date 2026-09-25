@@ -1,0 +1,9 @@
+{
+  "12345_0": {
+    "n_atoms": 3,
+    "initial_energy": 120.5,
+    "final_energy": 100.0,
+    "n_steps": 50,
+    "converged": true
+  }
+}

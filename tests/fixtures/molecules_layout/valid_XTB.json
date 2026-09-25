@@ -1,0 +1,9 @@
+{
+  "99999_1": {
+    "n_atoms": 5,
+    "initial_energy": -8.0,
+    "final_energy": -8.05,
+    "force_calls": 9,
+    "converged": true
+  }
+}

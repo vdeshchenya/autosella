@@ -1,0 +1,139 @@
+{
+  "noise": {
+    "mean_displacement_angstrom": 0.02,
+    "seed": 42
+  },
+  "selected_inputs": [
+    {
+      "baseline_key": "abemaciclib",
+      "charge": 0,
+      "xyz_file": "abemaciclib.xyz"
+    },
+    {
+      "baseline_key": "acalabrutinib",
+      "charge": 0,
+      "xyz_file": "acalabrutinib.xyz"
+    },
+    {
+      "baseline_key": "apalutamide",
+      "charge": 0,
+      "xyz_file": "apalutamide.xyz"
+    },
+    {
+      "baseline_key": "apixaban",
+      "charge": 0,
+      "xyz_file": "apixaban.xyz"
+    },
+    {
+      "baseline_key": "brexpiprazole",
+      "charge": 0,
+      "xyz_file": "brexpiprazole.xyz"
+    },
+    {
+      "baseline_key": "cariprazine",
+      "charge": 0,
+      "xyz_file": "cariprazine.xyz"
+    },
+    {
+      "baseline_key": "dapagliflozin",
+      "charge": 0,
+      "xyz_file": "dapagliflozin.xyz"
+    },
+    {
+      "baseline_key": "empagliflozin",
+      "charge": 0,
+      "xyz_file": "empagliflozin.xyz"
+    },
+    {
+      "baseline_key": "enzalutamide",
+      "charge": 0,
+      "xyz_file": "enzalutamide.xyz"
+    },
+    {
+      "baseline_key": "ibrutinib",
+      "charge": 0,
+      "xyz_file": "ibrutinib.xyz"
+    },
+    {
+      "baseline_key": "lenalidomide",
+      "charge": 0,
+      "xyz_file": "lenalidomide.xyz"
+    },
+    {
+      "baseline_key": "lenvatinib",
+      "charge": 0,
+      "xyz_file": "lenvatinib.xyz"
+    },
+    {
+      "baseline_key": "lisdexamphetamine",
+      "charge": 0,
+      "xyz_file": "lisdexamphetamine.xyz"
+    },
+    {
+      "baseline_key": "nintedanib",
+      "charge": 0,
+      "xyz_file": "nintedanib.xyz"
+    },
+    {
+      "baseline_key": "olaparib",
+      "charge": 0,
+      "xyz_file": "olaparib.xyz"
+    },
+    {
+      "baseline_key": "osimertinib",
+      "charge": 0,
+      "xyz_file": "osimertinib.xyz"
+    },
+    {
+      "baseline_key": "palbociclib",
+      "charge": 0,
+      "xyz_file": "palbociclib.xyz"
+    },
+    {
+      "baseline_key": "paliperidone_palmitate",
+      "charge": 0,
+      "xyz_file": "paliperidone_palmitate.xyz"
+    },
+    {
+      "baseline_key": "pomalidomide",
+      "charge": 0,
+      "xyz_file": "pomalidomide.xyz"
+    },
+    {
+      "baseline_key": "ribociclib",
+      "charge": 0,
+      "xyz_file": "ribociclib.xyz"
+    },
+    {
+      "baseline_key": "rivaroxaban",
+      "charge": 0,
+      "xyz_file": "rivaroxaban.xyz"
+    },
+    {
+      "baseline_key": "tafamidis",
+      "charge": 0,
+      "xyz_file": "tafamidis.xyz"
+    },
+    {
+      "baseline_key": "upadacitinib",
+      "charge": 0,
+      "xyz_file": "upadacitinib.xyz"
+    },
+    {
+      "baseline_key": "venetoclax",
+      "charge": 0,
+      "xyz_file": "venetoclax.xyz"
+    },
+    {
+      "baseline_key": "zanubrutinib",
+      "charge": 0,
+      "xyz_file": "zanubrutinib.xyz"
+    }
+  ],
+  "source": {
+    "archive_sha256": "06b0ea7900876278e4087f4d2ffee930cbaf8275b71255117fc29374e6d29412",
+    "archive_url": "https://codeload.github.com/rowansci/benchmark-structures/tar.gz/83c604e3e626ff3df2094eff8a2340064e76601c",
+    "commit": "83c604e3e626ff3df2094eff8a2340064e76601c",
+    "repository": "https://github.com/rowansci/benchmark-structures"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "name": "astra-disposable-check",
+  "purpose": "verification",
+  "provider": "codex",
+  "model": "gpt-6-astra",
+  "effort": "high",
+  "image": "REPLACE_WITH_BUILT_IMMUTABLE_IMAGE_ID",
+  "snapshot": {
+    "source": "/absolute/approved/snapshot",
+    "files": {
+      "algo.py": "REPLACE_WITH_APPROVED_SHA256",
+      "program.md": "REPLACE_WITH_APPROVED_SHA256",
+      "ralph_autoresearch_prompt.md": "REPLACE_WITH_APPROVED_SHA256",
+      "ralph_autoresearch_template.md": "REPLACE_WITH_APPROVED_SHA256",
+      "scripts/run_remote_experiment.sh": "REPLACE_WITH_APPROVED_SHA256",
+      "scripts/score_log.py": "REPLACE_WITH_APPROVED_SHA256",
+      "scripts/record_decision.py": "REPLACE_WITH_APPROVED_SHA256",
+      "scripts/cycle.py": "REPLACE_WITH_APPROVED_SHA256"
+    }
+  },
+  "dataset": {
+    "source": "/absolute/approved/dataset",
+    "files": {
+      "release.json": "REPLACE_WITH_APPROVED_SHA256",
+      "train_XTB.json": "REPLACE_WITH_APPROVED_SHA256",
+      "valid_XTB.json": "REPLACE_WITH_APPROVED_SHA256"
+    }
+  },
+  "auth": {"kind": "interactive"},
+  "evaluation": {
+    "host": "REPLACE_WITH_PINNED_GATEWAY_IPV4",
+    "port": 22,
+    "user": "evaluation",
+    "host_key": "REPLACE_WITH_PINNED_SSH_PUBLIC_HOST_KEY",
+    "admin_command": [
+      "python3", "-m", "isolated_runs.admin_ssh", "--host", "OPERATOR_SSH_ALIAS",
+      "--python", "/absolute/trusted/python", "--server", "/absolute/trusted/evaluation_access/server.py",
+      "--config", "/absolute/trusted/gateway-config.json"
+    ]
+  },
+  "resources": {"cpus": 4, "memory": "8g", "pids": 512, "uid": 1000, "gid": 1000}
+}

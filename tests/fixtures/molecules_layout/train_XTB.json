@@ -1,0 +1,16 @@
+{
+  "12345_0": {
+    "n_atoms": 3,
+    "initial_energy": -10.351,
+    "final_energy": -10.377,
+    "converged": true,
+    "force_calls": 12
+  },
+  "abemaciclib": {
+    "n_atoms": 69,
+    "initial_energy": -15.8889,
+    "final_energy": -15.92,
+    "converged": true,
+    "force_calls": 24
+  }
+}

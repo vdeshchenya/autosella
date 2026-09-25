@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+.jupyter/
+.virtual_documents/
+
+# macOS
+.DS_Store
+
+# Local
+ignore/
+
+# Local credentials
+.env
+.env.*
+!.env.example
+
+# Autoresearch runtime state and outputs
+/.evaluation_state/
+/.evaluation_access/
+/cycle.json
+/.isolated-runs/
+/logs_autoresearch/
+/logs_validate/
+/anchors/
+/run.log
+/results.tsv
+/full_log.md
+/backlog.md
+/ideas/
+/validate_debug.log
+/evaluation.json
+/evaluation_results/
+/generalizable.tsv
+/non_generalizable.tsv
