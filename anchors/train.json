@@ -38,7 +38,7 @@
     "updated_at": "2026-09-16T13:53:37Z"
   },
   "recovery_events": [],
-  "recovery_state_path": "/home/tsypin/ar_services/ar-f59f2b89a-20260916-01/state-isolated/jobs/ee46bb9e3c2e47fda01c290fbaad87da/evaluation-state.json",
+  "recovery_state_path": "state-isolated/jobs/ee46bb9e3c2e47fda01c290fbaad87da/evaluation-state.json",
   "release_id": "main-f59f2b89a-gfn2-v1",
   "results": [
     {
