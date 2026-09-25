@@ -1,0 +1,129 @@
+molecule: solvated_135101551
+input_xyz: inputs/solvated_pubchem/solvated_135101551.xyz
+potential: xtb
+minimizer: minimizers/autosella_g.py
+status: failed
+error: Traceback (most recent call last):
+  File "minimize_folder.py", line 253, in _work
+    info = run_one(
+           ^^^^^^^^
+  File "minimize_folder.py", line 169, in run_one
+    returned_pos, returned_calls = minimize_func(
+                                   ^^^^^^^^^^^^^^
+  File "minimizers/autosella_g.py", line 7936, in minimize_func
+    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "ase/optimize/optimize.py", line 344, in irun
+    self.step()
+  File "minimizers/autosella_g.py", line 7323, in step
+    rho = self.pes.kick(s, ev, **self.diagkwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "minimizers/autosella_g.py", line 6252, in kick
+    ratio = PES.kick(self, dx, diag=diag, **diag_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "minimizers/autosella_g.py", line 5659, in kick
+    dg_actual = self.get_g() - g_par
+                ^^^^^^^^^^^^
+  File "minimizers/autosella_g.py", line 5565, in get_g
+    self._update()
+  File "minimizers/autosella_g.py", line 6267, in _update
+    if not PES._update(self, feval=feval):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "minimizers/autosella_g.py", line 5524, in _update
+    f, g = self.eval()
+           ^^^^^^^^^^^
+  File "minimizers/autosella_g.py", line 6196, in eval
+    f, g_cart = PES.eval(self)
+                ^^^^^^^^^^^^^^
+  File "minimizers/autosella_g.py", line 5487, in eval
+    f = self.atoms.get_potential_energy()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "ase/atoms.py", line 1971, in get_potential_energy
+    energy = self._calc.get_potential_energy(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "ase/calculators/abc.py", line 25, in get_potential_energy
+    return self.get_property(name, atoms)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "ase/calculators/calculator.py", line 517, in get_property
+    self.calculate(atoms, [name], system_changes)
+  File "minimizers/autosella_g.py", line 7496, in calculate
+    energy_kj, forces_kj_nm = self.calc_func(pos_nm)
+                              ^^^^^^^^^^^^^^^^^^^^^^
+  File "minimize_folder.py", line 157, in calc
+    energy, forces = system.compute(pos_arr)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+  File "xtb_molecular_system.py", line 244, in compute
+    raise RuntimeError(
+RuntimeError: xtb exited with status 1: 81098 -0.674338E+01  0.936E+02    0.59       1.0  T
+ 232    160.8453859  0.486728E+01  0.957E+02    0.14       1.0  T
+ 233    157.5453638 -0.330002E+01  0.936E+02    0.16       1.0  T
+ 234    120.8051996 -0.367402E+02  0.736E+02    0.23       1.0  T
+ 235    155.6520286  0.348468E+02  0.862E+02    0.76       1.0  T
+ 236    151.7231387 -0.392889E+01  0.902E+02    0.06       1.0  T
+ 237    158.1271832  0.640404E+01  0.923E+02    0.33       1.0  T
+ 238    149.2606129 -0.886657E+01  0.844E+02    0.35       1.0  T
+ 239    149.0070772 -0.253536E+00  0.860E+02    0.51       1.0  T
+ 240    145.1063380 -0.390074E+01  0.842E+02    0.75       1.0  T
+ 241    150.5513010  0.544496E+01  0.901E+02    0.14       1.0  T
+ 242    121.0996371 -0.294517E+02  0.801E+02    0.03       1.0  T
+ 243    135.7121484  0.146125E+02  0.822E+02    0.03       1.0  T
+ 244    136.2580267  0.545878E+00  0.826E+02    0.15       1.0  T
+ 245    149.4467808  0.131888E+02  0.868E+02    0.69       1.0  T
+ 246    155.4465817  0.599980E+01  0.890E+02    0.25       1.0  T
+ 247    152.7312489 -0.271533E+01  0.895E+02    0.02       1.0  T
+ 248    152.7565296  0.252807E-01  0.895E+02    0.02       1.0  T
+ 249    141.3994983 -0.113570E+02  0.857E+02    0.13       1.0  T
+ 250    131.7848059 -0.961469E+01  0.830E+02    0.35       1.0  T
+
+   *** convergence criteria cannot be satisfied within 250 iterations ***
+
+         #    Occupation            Energy/Eh            Energy/eV
+      -------------------------------------------------------------
+         1        2.0000       -12994.4160620         -353596.0590
+       ...           ...                  ...                  ...
+       119        2.0000           -6.1144449            -166.3825
+       120        2.0000           -6.1127885            -166.3374
+       121        2.0000           -6.0812719            -165.4798
+       122        2.0000           -6.0796245            -165.4350
+       123        2.0000           -6.0549102            -164.7625
+       124        2.0000           -6.0540157            -164.7382
+       125        1.9979           -6.0491533            -164.6058 (HOMO)
+       126        0.0021           -6.0361243            -164.2513 (LUMO)
+       127        0.0000           -6.0274781            -164.0160
+       128                         -6.0178595            -163.7543
+       129                         -6.0152608            -163.6836
+       130                         -5.9402729            -161.6431
+       ...                                ...                  ...
+       205                       1939.5035085           52776.5768
+      -------------------------------------------------------------
+                  HL-Gap            0.0130289 Eh            0.3545 eV
+             Fermi-level           -6.0426349 Eh         -164.4285 eV
+
+ SCC (total)                   0 d,  0 h,  0 min,  3.346 sec
+ SCC setup                      ...        0 min,  0.001 sec (  0.032%)
+ Dispersion                     ...        0 min,  0.002 sec (  0.054%)
+ classical contributions        ...        0 min,  0.001 sec (  0.019%)
+ integral evaluation            ...        0 min,  0.045 sec (  1.339%)
+ iterations                     ...        0 min,  3.165 sec ( 94.590%)
+ molecular gradient             ...        0 min,  0.131 sec (  3.915%)
+ printout                       ...        0 min,  0.002 sec (  0.050%)
+
+########################################################################
+[ERROR] Program stopped due to fatal error
+-3- Single point calculation terminated
+-2- xtb_calculator_singlepoint: Electronic structure method terminated
+-1- scf: Self consistent charge iterator did not converge
+########################################################################
+stderr:
+abnormal termination of xtb
+ERROR STOP 
+
+Error termination. Backtrace:
+#0  0x7fb6652a9286 in ???
+#1  0x55aa1e86eb63 in ???
+#2  0x55aa1e85b262 in ???
+#3  0x7fb664905d8f in ???
+#4  0x7fb664905e3f in ???
+#5  0x55aa1e85b306 in ???
+#6  0xffffffffffffffff in ???
+

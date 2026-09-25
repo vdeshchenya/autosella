@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+.jupyter/
+.virtual_documents/
+
+# macOS
+.DS_Store
+
+# Local
+ignore/
+
+# Molecule dataset files
+molecules/SPICE-2.0.1.hdf5
+molecules/sorted.txt
+molecules/openmm/
+molecules/xyz_rowansci_benchmark/

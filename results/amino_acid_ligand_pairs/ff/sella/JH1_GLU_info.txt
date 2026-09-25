@@ -1,0 +1,33 @@
+molecule: JH1_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/JH1_GLU.xyz
+potential: ff
+minimizer: minimizers/sella_baseline.py
+status: failed
+error: Traceback (most recent call last):
+  File "minimize_folder.py", line 253, in _work
+    info = run_one(
+           ^^^^^^^^
+  File "minimize_folder.py", line 169, in run_one
+    returned_pos, returned_calls = minimize_func(
+                                   ^^^^^^^^^^^^^^
+  File "minimizers/sella_baseline.py", line 68, in minimize_func
+    for _ in opt.irun(fmax=0, steps=max_force_calls - 1):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "ase/optimize/optimize.py", line 344, in irun
+    self.step()
+  File "sella/optimize/optimize.py", line 376, in step
+    rho = self.pes.kick(s, ev, **self.diagkwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "sella/peswrapper.py", line 1210, in kick
+    ratio = PES.kick(self, dx, diag=diag, **diag_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "sella/peswrapper.py", line 571, in kick
+    dx_initial, dx_final, g_par = self.set_x(x0 + dx)
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "sella/peswrapper.py", line 884, in set_x
+    res = self._set_x_ode(target)
+          ^^^^^^^^^^^^^^^^^^^^^^^
+  File "sella/peswrapper.py", line 851, in _set_x_ode
+    raise RuntimeError("Geometry update ODE is taking too long "
+RuntimeError: Geometry update ODE is taking too long to converge!
+
