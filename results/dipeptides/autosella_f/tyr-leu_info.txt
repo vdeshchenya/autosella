@@ -1,0 +1,23 @@
+molecule: tyr-leu
+input_xyz: inputs/dipeptides/tyr-leu.xyz
+final_xyz: results/dipeptides/autosella_f/tyr-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -3064065.553198521957
+final_energy_kj_mol: -3064390.752420791890
+delta_energy_kj_mol: -325.199222269934
+initial_energy_hartree: -1167.040934656346
+final_energy_hartree: -1167.164796498633
+delta_energy_hartree: -0.123861842287
+elapsed_seconds: 693.2
+elapsed_seconds_per_step: 23.9

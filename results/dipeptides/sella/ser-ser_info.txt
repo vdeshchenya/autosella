@@ -1,0 +1,23 @@
+molecule: ser-ser
+input_xyz: inputs/dipeptides/ser-ser.xyz
+final_xyz: results/dipeptides/sella/ser-ser_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -2345732.052210815717
+final_energy_kj_mol: -2345804.971142063383
+delta_energy_kj_mol: -72.918931247666
+initial_energy_hartree: -893.442153614424
+final_energy_hartree: -893.469926968551
+delta_energy_hartree: -0.027773354127
+elapsed_seconds: 487.4
+elapsed_seconds_per_step: 16.2

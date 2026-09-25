@@ -1,0 +1,23 @@
+molecule: ALR_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/ALR_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/ALR_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -4601845.686134342104
+final_energy_kj_mol: -4601997.567191081122
+delta_energy_kj_mol: -151.881056739017
+initial_energy_hartree: -1752.750454403394
+final_energy_hartree: -1752.808302842775
+delta_energy_hartree: -0.057848439381
+elapsed_seconds: 2510.2
+elapsed_seconds_per_step: 38.0

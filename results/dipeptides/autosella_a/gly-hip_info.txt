@@ -1,0 +1,23 @@
+molecule: gly-hip
+input_xyz: inputs/dipeptides/gly-hip.xyz
+final_xyz: results/dipeptides/autosella_a/gly-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 24
+converged: True
+status: ok
+initial_energy_kj_mol: -2439344.803738762159
+final_energy_kj_mol: -2439408.566701401025
+delta_energy_kj_mol: -63.762962638866
+initial_energy_hartree: -929.097367624086
+final_energy_hartree: -929.121653653945
+delta_energy_hartree: -0.024286029859
+elapsed_seconds: 404.6
+elapsed_seconds_per_step: 16.9

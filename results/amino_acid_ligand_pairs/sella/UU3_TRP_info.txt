@@ -1,0 +1,23 @@
+molecule: UU3_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/UU3_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/UU3_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 65
+converged: True
+status: ok
+initial_energy_kj_mol: -4047820.645997100044
+final_energy_kj_mol: -4047975.661325224675
+delta_energy_kj_mol: -155.015328124631
+initial_energy_hartree: -1541.733460987622
+final_energy_hartree: -1541.792503207927
+delta_energy_hartree: -0.059042220305
+elapsed_seconds: 2210.3
+elapsed_seconds_per_step: 34.0

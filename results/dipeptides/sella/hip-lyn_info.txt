@@ -1,0 +1,23 @@
+molecule: hip-lyn
+input_xyz: inputs/dipeptides/hip-lyn.xyz
+final_xyz: results/dipeptides/sella/hip-lyn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -2997118.473673278932
+final_energy_kj_mol: -2997443.427320568822
+delta_energy_kj_mol: -324.953647289891
+initial_energy_hartree: -1141.542138724877
+final_energy_hartree: -1141.665907032594
+delta_energy_hartree: -0.123768307717
+elapsed_seconds: 712.7
+elapsed_seconds_per_step: 21.6

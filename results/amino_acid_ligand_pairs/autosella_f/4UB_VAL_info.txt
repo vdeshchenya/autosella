@@ -1,0 +1,23 @@
+molecule: 4UB_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/4UB_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/4UB_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -3744258.637984598987
+final_energy_kj_mol: -3744340.777669380885
+delta_energy_kj_mol: -82.139684781898
+initial_energy_hartree: -1426.112798372473
+final_energy_hartree: -1426.144083726143
+delta_energy_hartree: -0.031285353670
+elapsed_seconds: 2086.9
+elapsed_seconds_per_step: 41.7

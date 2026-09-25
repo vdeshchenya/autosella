@@ -1,0 +1,23 @@
+molecule: ala-glh
+input_xyz: inputs/dipeptides/ala-glh.xyz
+final_xyz: results/dipeptides/sella/ala-glh_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 43
+converged: True
+status: ok
+initial_energy_kj_mol: -2548765.959789721295
+final_energy_kj_mol: -2549089.012934383005
+delta_energy_kj_mol: -323.053144661710
+initial_energy_hartree: -970.773684925975
+final_energy_hartree: -970.896729370470
+delta_energy_hartree: -0.123044444495
+elapsed_seconds: 722.6
+elapsed_seconds_per_step: 16.8

@@ -1,0 +1,23 @@
+molecule: 5G9_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/5G9_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/5G9_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -5847939.374384591356
+final_energy_kj_mol: -5848001.204792535864
+delta_energy_kj_mol: -61.830407944508
+initial_energy_hartree: -2227.362474726160
+final_energy_hartree: -2227.386024684810
+delta_energy_hartree: -0.023549958650
+elapsed_seconds: 928.1
+elapsed_seconds_per_step: 33.1

@@ -1,0 +1,23 @@
+molecule: 231_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/231_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/231_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 57
+converged: True
+status: ok
+initial_energy_kj_mol: -2995509.915158816613
+final_energy_kj_mol: -2995646.576669114176
+delta_energy_kj_mol: -136.661510297563
+initial_energy_hartree: -1140.929471143334
+final_energy_hartree: -1140.981522763621
+delta_energy_hartree: -0.052051620287
+elapsed_seconds: 1321.9
+elapsed_seconds_per_step: 23.2

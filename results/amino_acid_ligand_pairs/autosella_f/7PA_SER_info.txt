@@ -1,0 +1,23 @@
+molecule: 7PA_SER
+input_xyz: inputs/amino_acid_ligand_pairs/7PA_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/7PA_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 59
+converged: True
+status: ok
+initial_energy_kj_mol: -4792638.661632833071
+final_energy_kj_mol: -4792816.120988655835
+delta_energy_kj_mol: -177.459355822764
+initial_energy_hartree: -1825.419660915373
+final_energy_hartree: -1825.487251614360
+delta_energy_hartree: -0.067590698987
+elapsed_seconds: 1387.1
+elapsed_seconds_per_step: 23.5

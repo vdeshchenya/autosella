@@ -1,0 +1,23 @@
+molecule: leu-hid
+input_xyz: inputs/dipeptides/leu-hid.xyz
+final_xyz: results/dipeptides/autosella_f/leu-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -2850776.316561832558
+final_energy_kj_mol: -2851123.429886145517
+delta_energy_kj_mol: -347.113324312959
+initial_energy_hartree: -1085.803354795569
+final_energy_hartree: -1085.935563278516
+delta_energy_hartree: -0.132208482947
+elapsed_seconds: 735.4
+elapsed_seconds_per_step: 21.6

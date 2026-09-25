@@ -1,0 +1,23 @@
+molecule: FHW_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/FHW_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/FHW_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 63
+converged: True
+status: ok
+initial_energy_kj_mol: -3972138.126313891262
+final_energy_kj_mol: -3972268.031602471601
+delta_energy_kj_mol: -129.905288580339
+initial_energy_hartree: -1512.907511615867
+final_energy_hartree: -1512.956989927205
+delta_energy_hartree: -0.049478311338
+elapsed_seconds: 2117.0
+elapsed_seconds_per_step: 33.6

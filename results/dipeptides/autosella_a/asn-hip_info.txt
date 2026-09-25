@@ -1,0 +1,23 @@
+molecule: asn-hip
+input_xyz: inputs/dipeptides/asn-hip.xyz
+final_xyz: results/dipeptides/autosella_a/asn-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 20
+converged: True
+status: ok
+initial_energy_kj_mol: -2985429.495768527966
+final_energy_kj_mol: -2985529.864404119551
+delta_energy_kj_mol: -100.368635591585
+initial_energy_hartree: -1137.090042168099
+final_energy_hartree: -1137.128270562452
+delta_energy_hartree: -0.038228394353
+elapsed_seconds: 420.2
+elapsed_seconds_per_step: 21.0

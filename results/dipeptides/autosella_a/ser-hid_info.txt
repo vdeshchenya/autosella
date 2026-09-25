@@ -1,0 +1,23 @@
+molecule: ser-hid
+input_xyz: inputs/dipeptides/ser-hid.xyz
+final_xyz: results/dipeptides/autosella_a/ser-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -2738761.162370919716
+final_energy_kj_mol: -2739021.987408400513
+delta_energy_kj_mol: -260.825037480798
+initial_energy_hartree: -1043.139035781188
+final_energy_hartree: -1043.238378791394
+delta_energy_hartree: -0.099343010206
+elapsed_seconds: 639.6
+elapsed_seconds_per_step: 20.6

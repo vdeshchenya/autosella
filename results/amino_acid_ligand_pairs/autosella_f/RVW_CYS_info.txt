@@ -1,0 +1,23 @@
+molecule: RVW_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/RVW_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/RVW_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -4998829.342098080553
+final_energy_kj_mol: -4998884.302378042601
+delta_energy_kj_mol: -54.960279962048
+initial_energy_hartree: -1903.953543519940
+final_energy_hartree: -1903.974476785036
+delta_energy_hartree: -0.020933265096
+elapsed_seconds: 820.8
+elapsed_seconds_per_step: 24.1

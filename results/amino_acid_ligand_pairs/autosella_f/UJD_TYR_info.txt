@@ -1,0 +1,23 @@
+molecule: UJD_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/UJD_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/UJD_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -5000904.433099073358
+final_energy_kj_mol: -5000974.261274289340
+delta_energy_kj_mol: -69.828175215982
+initial_energy_hartree: -1904.743903941168
+final_energy_hartree: -1904.770500088494
+delta_energy_hartree: -0.026596147326
+elapsed_seconds: 926.5
+elapsed_seconds_per_step: 25.0

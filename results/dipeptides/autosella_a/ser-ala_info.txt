@@ -1,0 +1,23 @@
+molecule: ser-ala
+input_xyz: inputs/dipeptides/ser-ala.xyz
+final_xyz: results/dipeptides/autosella_a/ser-ala_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -2148089.299920201302
+final_energy_kj_mol: -2148322.362935093231
+delta_energy_kj_mol: -233.063014891930
+initial_energy_hartree: -818.164004907549
+final_energy_hartree: -818.252773921792
+delta_energy_hartree: -0.088769014243
+elapsed_seconds: 419.7
+elapsed_seconds_per_step: 15.5

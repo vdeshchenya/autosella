@@ -1,0 +1,23 @@
+molecule: 272_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/272_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/272_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 101
+converged: True
+status: ok
+initial_energy_kj_mol: -4293118.261226357892
+final_energy_kj_mol: -4293244.997874147259
+delta_energy_kj_mol: -126.736647789367
+initial_energy_hartree: -1635.162388396597
+final_energy_hartree: -1635.210659836396
+delta_energy_hartree: -0.048271439799
+elapsed_seconds: 3712.5
+elapsed_seconds_per_step: 36.8

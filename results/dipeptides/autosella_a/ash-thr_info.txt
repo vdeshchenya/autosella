@@ -1,0 +1,23 @@
+molecule: ash-thr
+input_xyz: inputs/dipeptides/ash-thr.xyz
+final_xyz: results/dipeptides/autosella_a/ash-thr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2746302.665022546425
+final_energy_kj_mol: -2746564.078664574306
+delta_energy_kj_mol: -261.413642027881
+initial_energy_hartree: -1046.011442441705
+final_energy_hartree: -1046.111009639543
+delta_energy_hartree: -0.099567197838
+elapsed_seconds: 495.3
+elapsed_seconds_per_step: 17.1

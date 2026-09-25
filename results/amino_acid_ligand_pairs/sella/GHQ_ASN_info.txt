@@ -1,0 +1,23 @@
+molecule: GHQ_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/GHQ_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/GHQ_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 112
+converged: True
+status: ok
+initial_energy_kj_mol: -3888217.452699703630
+final_energy_kj_mol: -3888333.660990583245
+delta_energy_kj_mol: -116.208290879615
+initial_energy_hartree: -1480.943815124630
+final_energy_hartree: -1480.988076525063
+delta_energy_hartree: -0.044261400433
+elapsed_seconds: 3022.0
+elapsed_seconds_per_step: 27.0

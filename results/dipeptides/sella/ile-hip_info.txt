@@ -1,0 +1,23 @@
+molecule: ile-hip
+input_xyz: inputs/dipeptides/ile-hip.xyz
+final_xyz: results/dipeptides/sella/ile-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 43
+converged: True
+status: ok
+initial_energy_kj_mol: -2852028.800156357232
+final_energy_kj_mol: -2852164.997115217149
+delta_energy_kj_mol: -136.196958859917
+initial_energy_hartree: -1086.280400602657
+final_energy_hartree: -1086.332275284646
+delta_energy_hartree: -0.051874681989
+elapsed_seconds: 964.3
+elapsed_seconds_per_step: 22.4

@@ -1,0 +1,23 @@
+molecule: arg-leu
+input_xyz: inputs/dipeptides/arg-leu.xyz
+final_xyz: results/dipeptides/autosella_f/arg-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -3003445.222503888886
+final_energy_kj_mol: -3003867.170149664395
+delta_energy_kj_mol: -421.947645775508
+initial_energy_hartree: -1143.951870090090
+final_energy_hartree: -1144.112581460768
+delta_energy_hartree: -0.160711370678
+elapsed_seconds: 698.7
+elapsed_seconds_per_step: 25.0

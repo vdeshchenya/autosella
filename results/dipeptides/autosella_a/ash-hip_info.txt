@@ -1,0 +1,23 @@
+molecule: ash-hip
+input_xyz: inputs/dipeptides/ash-hip.xyz
+final_xyz: results/dipeptides/autosella_a/ash-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 40
+converged: True
+status: ok
+initial_energy_kj_mol: -3037583.035350054502
+final_energy_kj_mol: -3037686.320409021806
+delta_energy_kj_mol: -103.285058967303
+initial_energy_hartree: -1156.954276311303
+final_energy_hartree: -1156.993615512655
+delta_energy_hartree: -0.039339201352
+elapsed_seconds: 849.1
+elapsed_seconds_per_step: 21.2

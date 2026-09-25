@@ -1,0 +1,23 @@
+molecule: Y7V_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/Y7V_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/Y7V_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -2951864.127916954458
+final_energy_kj_mol: -2951906.128584028222
+delta_energy_kj_mol: -42.000667073764
+initial_energy_hartree: -1124.305668730431
+final_energy_hartree: -1124.321665939664
+delta_energy_hartree: -0.015997209233
+elapsed_seconds: 750.9
+elapsed_seconds_per_step: 21.5

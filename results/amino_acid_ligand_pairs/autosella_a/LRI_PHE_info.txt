@@ -1,0 +1,23 @@
+molecule: LRI_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/LRI_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/LRI_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 45
+converged: True
+status: ok
+initial_energy_kj_mol: -5957297.282397688366
+final_energy_kj_mol: -5957406.850353863090
+delta_energy_kj_mol: -109.567956174724
+initial_energy_hartree: -2269.014702122680
+final_energy_hartree: -2269.056434353196
+delta_energy_hartree: -0.041732230516
+elapsed_seconds: 1507.5
+elapsed_seconds_per_step: 33.5

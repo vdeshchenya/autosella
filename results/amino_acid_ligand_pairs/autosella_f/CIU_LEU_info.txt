@@ -1,0 +1,23 @@
+molecule: CIU_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/CIU_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/CIU_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 48
+converged: True
+status: ok
+initial_energy_kj_mol: -4205002.147507466376
+final_energy_kj_mol: -4205089.289692528546
+delta_energy_kj_mol: -87.142185062170
+initial_energy_hartree: -1601.600733161959
+final_energy_hartree: -1601.633923867359
+delta_energy_hartree: -0.033190705400
+elapsed_seconds: 1971.1
+elapsed_seconds_per_step: 41.1

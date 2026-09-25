@@ -1,0 +1,23 @@
+molecule: Z02_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/Z02_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/Z02_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 41
+converged: True
+status: ok
+initial_energy_kj_mol: -4384891.287894185632
+final_energy_kj_mol: -4384968.818712536246
+delta_energy_kj_mol: -77.530818350613
+initial_energy_hartree: -1670.116888213633
+final_energy_hartree: -1670.146418142788
+delta_energy_hartree: -0.029529929155
+elapsed_seconds: 2137.1
+elapsed_seconds_per_step: 52.1

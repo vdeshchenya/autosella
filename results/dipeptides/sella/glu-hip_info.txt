@@ -1,0 +1,23 @@
+molecule: glu-hip
+input_xyz: inputs/dipeptides/glu-hip.xyz
+final_xyz: results/dipeptides/sella/glu-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -3139696.474292671774
+final_energy_kj_mol: -3139790.347985074855
+delta_energy_kj_mol: -93.873692403082
+initial_energy_hartree: -1195.847231163449
+final_energy_hartree: -1195.882985764589
+delta_energy_hartree: -0.035754601140
+elapsed_seconds: 664.0
+elapsed_seconds_per_step: 23.7

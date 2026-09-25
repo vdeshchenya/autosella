@@ -1,0 +1,23 @@
+molecule: cys-leu
+input_xyz: inputs/dipeptides/cys-leu.xyz
+final_xyz: results/dipeptides/autosella_a/cys-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 32
+converged: True
+status: ok
+initial_energy_kj_mol: -3305703.092149655335
+final_energy_kj_mol: -3305787.190535754431
+delta_energy_kj_mol: -84.098386099096
+initial_energy_hartree: -1259.075812634467
+final_energy_hartree: -1259.107844018069
+delta_energy_hartree: -0.032031383602
+elapsed_seconds: 616.7
+elapsed_seconds_per_step: 19.3

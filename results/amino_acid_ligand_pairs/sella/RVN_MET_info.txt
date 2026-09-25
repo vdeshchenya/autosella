@@ -1,0 +1,23 @@
+molecule: RVN_MET
+input_xyz: inputs/amino_acid_ligand_pairs/RVN_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/RVN_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 74
+converged: True
+status: ok
+initial_energy_kj_mol: -5402327.381406360306
+final_energy_kj_mol: -5402426.368071169592
+delta_energy_kj_mol: -98.986664809287
+initial_energy_hartree: -2057.637830213733
+final_energy_hartree: -2057.675532243214
+delta_energy_hartree: -0.037702029481
+elapsed_seconds: 2496.4
+elapsed_seconds_per_step: 33.7

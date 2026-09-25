@@ -1,0 +1,23 @@
+molecule: cys-cyx
+input_xyz: inputs/dipeptides/cys-cyx.xyz
+final_xyz: results/dipeptides/sella/cys-cyx_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -4040139.268945484422
+final_energy_kj_mol: -4040205.143695587758
+delta_energy_kj_mol: -65.874750103336
+initial_energy_hartree: -1538.807778981763
+final_energy_hartree: -1538.832869348988
+delta_energy_hartree: -0.025090367225
+elapsed_seconds: 401.8
+elapsed_seconds_per_step: 14.3

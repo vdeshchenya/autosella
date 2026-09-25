@@ -1,0 +1,23 @@
+molecule: R97_SER
+input_xyz: inputs/amino_acid_ligand_pairs/R97_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/R97_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -3847917.722902860492
+final_energy_kj_mol: -3847955.110242650844
+delta_energy_kj_mol: -37.387339790352
+initial_energy_hartree: -1465.594458685630
+final_energy_hartree: -1465.608698771299
+delta_energy_hartree: -0.014240085669
+elapsed_seconds: 737.7
+elapsed_seconds_per_step: 25.4

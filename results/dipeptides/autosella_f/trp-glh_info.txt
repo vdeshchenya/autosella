@@ -1,0 +1,23 @@
+molecule: trp-glh
+input_xyz: inputs/dipeptides/trp-glh.xyz
+final_xyz: results/dipeptides/autosella_f/trp-glh_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 21
+converged: True
+status: ok
+initial_energy_kj_mol: -3500854.486927406862
+final_energy_kj_mol: -3500979.632102455478
+delta_energy_kj_mol: -125.145175048616
+initial_energy_hartree: -1333.405053379063
+final_energy_hartree: -1333.452718658908
+delta_energy_hartree: -0.047665279845
+elapsed_seconds: 562.0
+elapsed_seconds_per_step: 26.8

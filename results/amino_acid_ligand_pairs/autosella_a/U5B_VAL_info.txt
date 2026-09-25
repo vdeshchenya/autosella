@@ -1,0 +1,23 @@
+molecule: U5B_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/U5B_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/U5B_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 99
+converged: True
+status: ok
+initial_energy_kj_mol: -4367663.815436128527
+final_energy_kj_mol: -4367784.020602220669
+delta_energy_kj_mol: -120.205166092142
+initial_energy_hartree: -1663.555290489906
+final_energy_hartree: -1663.601074219709
+delta_energy_hartree: -0.045783729803
+elapsed_seconds: 2804.0
+elapsed_seconds_per_step: 28.3

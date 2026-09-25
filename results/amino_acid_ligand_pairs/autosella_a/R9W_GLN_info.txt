@@ -1,0 +1,23 @@
+molecule: R9W_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/R9W_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/R9W_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 48
+converged: True
+status: ok
+initial_energy_kj_mol: -3360658.642842209898
+final_energy_kj_mol: -3360755.383437050972
+delta_energy_kj_mol: -96.740594841074
+initial_energy_hartree: -1280.007276446605
+final_energy_hartree: -1280.044122993215
+delta_energy_hartree: -0.036846546610
+elapsed_seconds: 1291.6
+elapsed_seconds_per_step: 26.9

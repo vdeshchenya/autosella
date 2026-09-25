@@ -1,0 +1,23 @@
+molecule: RRT_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/RRT_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/RRT_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 52
+converged: True
+status: ok
+initial_energy_kj_mol: -4904110.130932011642
+final_energy_kj_mol: -4904250.602991488762
+delta_energy_kj_mol: -140.472059477121
+initial_energy_hartree: -1867.876901290870
+final_energy_hartree: -1867.930404272689
+delta_energy_hartree: -0.053502981819
+elapsed_seconds: 1496.2
+elapsed_seconds_per_step: 28.8

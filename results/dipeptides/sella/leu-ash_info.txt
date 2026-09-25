@@ -1,0 +1,23 @@
+molecule: leu-ash
+input_xyz: inputs/dipeptides/leu-ash.xyz
+final_xyz: results/dipeptides/sella/leu-ash_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -2755376.237662496045
+final_energy_kj_mol: -2755474.673176813871
+delta_energy_kj_mol: -98.435514317825
+initial_energy_hartree: -1049.467383742747
+final_energy_hartree: -1049.504875850092
+delta_energy_hartree: -0.037492107345
+elapsed_seconds: 719.6
+elapsed_seconds_per_step: 19.4

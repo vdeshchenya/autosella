@@ -1,0 +1,23 @@
+molecule: lys-phe
+input_xyz: inputs/dipeptides/lys-phe.xyz
+final_xyz: results/dipeptides/autosella_a/lys-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 23
+converged: True
+status: ok
+initial_energy_kj_mol: -3013170.900153549854
+final_energy_kj_mol: -3013262.934997864068
+delta_energy_kj_mol: -92.034844314214
+initial_energy_hartree: -1147.656185072052
+final_energy_hartree: -1147.691239292944
+delta_energy_hartree: -0.035054220892
+elapsed_seconds: 641.4
+elapsed_seconds_per_step: 27.9

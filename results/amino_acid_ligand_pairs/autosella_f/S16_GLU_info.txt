@@ -1,0 +1,23 @@
+molecule: S16_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/S16_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/S16_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 82
+converged: True
+status: ok
+initial_energy_kj_mol: -5404346.566438252106
+final_energy_kj_mol: -5404566.856185874902
+delta_energy_kj_mol: -220.289747622795
+initial_energy_hartree: -2058.406897175895
+final_energy_hartree: -2058.490801109573
+delta_energy_hartree: -0.083903933678
+elapsed_seconds: 3091.7
+elapsed_seconds_per_step: 37.7

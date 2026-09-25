@@ -1,0 +1,23 @@
+molecule: hid-met
+input_xyz: inputs/dipeptides/hid-met.xyz
+final_xyz: results/dipeptides/autosella_a/hid-met_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -3793179.686978339218
+final_energy_kj_mol: -3793284.836241877172
+delta_energy_kj_mol: -105.149263537955
+initial_energy_hartree: -1444.745841873264
+final_energy_hartree: -1444.785891112638
+delta_energy_hartree: -0.040049239374
+elapsed_seconds: 617.6
+elapsed_seconds_per_step: 21.3

@@ -1,0 +1,23 @@
+molecule: lyn-val
+input_xyz: inputs/dipeptides/lyn-val.xyz
+final_xyz: results/dipeptides/sella/lyn-val_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -2611736.236420327798
+final_energy_kj_mol: -2612068.209061385132
+delta_energy_kj_mol: -331.972641057335
+initial_energy_hartree: -994.757796629407
+final_energy_hartree: -994.884238330661
+delta_energy_hartree: -0.126441701254
+elapsed_seconds: 762.3
+elapsed_seconds_per_step: 23.1

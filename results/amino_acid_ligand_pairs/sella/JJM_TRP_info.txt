@@ -1,0 +1,23 @@
+molecule: JJM_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/JJM_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/JJM_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 63
+converged: True
+status: ok
+initial_energy_kj_mol: -4292959.537348026410
+final_energy_kj_mol: -4293046.355564495549
+delta_energy_kj_mol: -86.818216469139
+initial_energy_hartree: -1635.101933664117
+final_energy_hartree: -1635.135000976397
+delta_energy_hartree: -0.033067312280
+elapsed_seconds: 2494.2
+elapsed_seconds_per_step: 39.6

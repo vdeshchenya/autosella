@@ -1,0 +1,23 @@
+molecule: OA4_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/OA4_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/OA4_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 72
+converged: True
+status: ok
+initial_energy_kj_mol: -3602244.815658372361
+final_energy_kj_mol: -3602378.098488430493
+delta_energy_kj_mol: -133.282830058131
+initial_energy_hartree: -1372.022590097160
+final_energy_hartree: -1372.073354846107
+delta_energy_hartree: -0.050764748947
+elapsed_seconds: 2108.1
+elapsed_seconds_per_step: 29.3

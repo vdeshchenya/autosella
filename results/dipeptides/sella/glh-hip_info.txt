@@ -1,0 +1,23 @@
+molecule: glh-hip
+input_xyz: inputs/dipeptides/glh-hip.xyz
+final_xyz: results/dipeptides/sella/glh-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 41
+converged: True
+status: ok
+initial_energy_kj_mol: -3140484.462466933299
+final_energy_kj_mol: -3140858.561189823784
+delta_energy_kj_mol: -374.098722890485
+initial_energy_hartree: -1196.147360008417
+final_energy_hartree: -1196.289846686863
+delta_energy_hartree: -0.142486678446
+elapsed_seconds: 904.2
+elapsed_seconds_per_step: 22.1

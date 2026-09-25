@@ -1,0 +1,23 @@
+molecule: AS2_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/AS2_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/AS2_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3494276.148427651729
+final_energy_kj_mol: -3494364.149115299340
+delta_energy_kj_mol: -88.000687647611
+initial_energy_hartree: -1330.899496569671
+final_energy_hartree: -1330.933014261437
+delta_energy_hartree: -0.033517691766
+elapsed_seconds: 629.4
+elapsed_seconds_per_step: 18.5

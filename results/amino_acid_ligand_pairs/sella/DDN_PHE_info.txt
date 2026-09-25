@@ -1,0 +1,23 @@
+molecule: DDN_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/DDN_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/DDN_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 63
+converged: True
+status: ok
+initial_energy_kj_mol: -5595630.578846298158
+final_energy_kj_mol: -5595821.735073027201
+delta_energy_kj_mol: -191.156226729043
+initial_energy_hartree: -2131.263129769375
+final_energy_hartree: -2131.335937330974
+delta_energy_hartree: -0.072807561599
+elapsed_seconds: 2163.2
+elapsed_seconds_per_step: 34.3

@@ -1,0 +1,23 @@
+molecule: H0G_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/H0G_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/H0G_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 72
+converged: True
+status: ok
+initial_energy_kj_mol: -4248530.021949668415
+final_energy_kj_mol: -4248617.546607138589
+delta_energy_kj_mol: -87.524657470174
+initial_energy_hartree: -1618.179624961321
+final_energy_hartree: -1618.212961342768
+delta_energy_hartree: -0.033336381447
+elapsed_seconds: 2084.2
+elapsed_seconds_per_step: 28.9

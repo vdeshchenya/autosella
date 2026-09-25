@@ -1,0 +1,23 @@
+molecule: LJM_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/LJM_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/LJM_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 70
+converged: True
+status: ok
+initial_energy_kj_mol: -4724471.661335160956
+final_energy_kj_mol: -4724557.388903600164
+delta_energy_kj_mol: -85.727568439208
+initial_energy_hartree: -1799.456221700742
+final_energy_hartree: -1799.488873607126
+delta_energy_hartree: -0.032651906384
+elapsed_seconds: 2073.9
+elapsed_seconds_per_step: 29.6

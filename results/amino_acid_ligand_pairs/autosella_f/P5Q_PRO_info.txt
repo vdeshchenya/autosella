@@ -1,0 +1,23 @@
+molecule: P5Q_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/P5Q_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/P5Q_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -2850333.860084179789
+final_energy_kj_mol: -2850371.501593491528
+delta_energy_kj_mol: -37.641509311739
+initial_energy_hartree: -1085.634832023370
+final_energy_hartree: -1085.649168917097
+delta_energy_hartree: -0.014336893727
+elapsed_seconds: 872.1
+elapsed_seconds_per_step: 25.6

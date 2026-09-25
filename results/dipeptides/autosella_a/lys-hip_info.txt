@@ -1,0 +1,23 @@
+molecule: lys-hip
+input_xyz: inputs/dipeptides/lys-hip.xyz
+final_xyz: results/dipeptides/autosella_a/lys-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 2
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 23
+converged: True
+status: ok
+initial_energy_kj_mol: -2998172.799889637623
+final_energy_kj_mol: -2998270.280211684294
+delta_energy_kj_mol: -97.480322046671
+initial_energy_hartree: -1141.943710372614
+final_energy_hartree: -1141.980838666437
+delta_energy_hartree: -0.037128293823
+elapsed_seconds: 555.3
+elapsed_seconds_per_step: 24.1

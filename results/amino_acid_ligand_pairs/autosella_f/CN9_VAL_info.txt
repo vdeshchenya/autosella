@@ -1,0 +1,23 @@
+molecule: CN9_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/CN9_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/CN9_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 46
+converged: True
+status: ok
+initial_energy_kj_mol: -3011562.102749575395
+final_energy_kj_mol: -3011619.158102137037
+delta_energy_kj_mol: -57.055352561641
+initial_energy_hartree: -1147.043426502299
+final_energy_hartree: -1147.065157738405
+delta_energy_hartree: -0.021731236106
+elapsed_seconds: 1233.8
+elapsed_seconds_per_step: 26.8

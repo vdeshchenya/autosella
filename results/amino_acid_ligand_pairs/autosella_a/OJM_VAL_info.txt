@@ -1,0 +1,23 @@
+molecule: OJM_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/OJM_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/OJM_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -3310116.839903216343
+final_energy_kj_mol: -3310235.285430569202
+delta_energy_kj_mol: -118.445527352858
+initial_energy_hartree: -1260.756920369997
+final_energy_hartree: -1260.802033888800
+delta_energy_hartree: -0.045113518803
+elapsed_seconds: 1511.8
+elapsed_seconds_per_step: 22.9

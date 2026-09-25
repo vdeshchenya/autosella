@@ -1,0 +1,23 @@
+molecule: hip-ash
+input_xyz: inputs/dipeptides/hip-ash.xyz
+final_xyz: results/dipeptides/sella/hip-ash_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 39
+converged: True
+status: ok
+initial_energy_kj_mol: -3037238.481029279996
+final_energy_kj_mol: -3037615.492073689122
+delta_energy_kj_mol: -377.011044409126
+initial_energy_hartree: -1156.823042501329
+final_energy_hartree: -1156.966638424459
+delta_energy_hartree: -0.143595923130
+elapsed_seconds: 806.7
+elapsed_seconds_per_step: 20.7

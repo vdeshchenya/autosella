@@ -1,0 +1,23 @@
+molecule: ala-hie
+input_xyz: inputs/dipeptides/ala-hie.xyz
+final_xyz: results/dipeptides/autosella_a/ala-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 24
+converged: True
+status: ok
+initial_energy_kj_mol: -2541469.663539787754
+final_energy_kj_mol: -2541552.767471944448
+delta_energy_kj_mol: -83.103932156693
+initial_energy_hartree: -967.994672451466
+final_energy_hartree: -968.026325067565
+delta_energy_hartree: -0.031652616099
+elapsed_seconds: 399.3
+elapsed_seconds_per_step: 16.6

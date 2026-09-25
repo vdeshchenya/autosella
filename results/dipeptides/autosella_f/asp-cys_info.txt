@@ -1,0 +1,23 @@
+molecule: asp-cys
+input_xyz: inputs/dipeptides/asp-cys.xyz
+final_xyz: results/dipeptides/autosella_f/asp-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -3489767.531136327423
+final_energy_kj_mol: -3489958.644832877442
+delta_energy_kj_mol: -191.113696550019
+initial_energy_hartree: -1329.182254935535
+final_energy_hartree: -1329.255046298244
+delta_energy_hartree: -0.072791362709
+elapsed_seconds: 508.2
+elapsed_seconds_per_step: 17.5

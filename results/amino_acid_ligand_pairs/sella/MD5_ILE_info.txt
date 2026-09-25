@@ -1,0 +1,23 @@
+molecule: MD5_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/MD5_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/MD5_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 127
+converged: True
+status: ok
+initial_energy_kj_mol: -5545479.131277839653
+final_energy_kj_mol: -5545657.212934947573
+delta_energy_kj_mol: -178.081657107919
+initial_energy_hartree: -2112.161452201294
+final_energy_hartree: -2112.229279922323
+delta_energy_hartree: -0.067827721029
+elapsed_seconds: 4462.0
+elapsed_seconds_per_step: 35.1

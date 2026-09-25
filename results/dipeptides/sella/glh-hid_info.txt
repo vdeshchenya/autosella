@@ -1,0 +1,23 @@
+molecule: glh-hid
+input_xyz: inputs/dipeptides/glh-hid.xyz
+final_xyz: results/dipeptides/sella/glh-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 40
+converged: True
+status: ok
+initial_energy_kj_mol: -3139706.258745113388
+final_energy_kj_mol: -3139825.876852381974
+delta_energy_kj_mol: -119.618107268587
+initial_energy_hartree: -1195.850957864567
+final_energy_hartree: -1195.896517995473
+delta_energy_hartree: -0.045560130906
+elapsed_seconds: 865.2
+elapsed_seconds_per_step: 21.6

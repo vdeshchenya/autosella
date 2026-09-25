@@ -1,0 +1,23 @@
+molecule: thr-hie
+input_xyz: inputs/dipeptides/thr-hie.xyz
+final_xyz: results/dipeptides/autosella_a/thr-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -2842159.897545288317
+final_energy_kj_mol: -2842242.131069963798
+delta_energy_kj_mol: -82.233524675481
+initial_energy_hartree: -1082.521534113906
+final_energy_hartree: -1082.552855209304
+delta_energy_hartree: -0.031321095398
+elapsed_seconds: 577.3
+elapsed_seconds_per_step: 23.1

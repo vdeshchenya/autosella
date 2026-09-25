@@ -1,0 +1,23 @@
+molecule: met-thr
+input_xyz: inputs/dipeptides/met-thr.xyz
+final_xyz: results/dipeptides/autosella_f/met-thr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -3503183.491707710549
+final_energy_kj_mol: -3503274.233077736106
+delta_energy_kj_mol: -90.741370025557
+initial_energy_hartree: -1334.292124451282
+final_energy_hartree: -1334.326686013836
+delta_energy_hartree: -0.034561562554
+elapsed_seconds: 651.2
+elapsed_seconds_per_step: 21.0

@@ -1,0 +1,23 @@
+molecule: gly-pro
+input_xyz: inputs/dipeptides/gly-pro.xyz
+final_xyz: results/dipeptides/sella/gly-pro_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2050641.219363667304
+final_energy_kj_mol: -2050843.959495552350
+delta_energy_kj_mol: -202.740131885046
+initial_energy_hartree: -781.047991219641
+final_energy_hartree: -781.125210857700
+delta_energy_hartree: -0.077219638059
+elapsed_seconds: 416.6
+elapsed_seconds_per_step: 14.4

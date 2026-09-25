@@ -1,0 +1,23 @@
+molecule: D9L_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/D9L_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/D9L_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 76
+converged: True
+status: ok
+initial_energy_kj_mol: -4544300.578049751930
+final_energy_kj_mol: -4544483.859309373423
+delta_energy_kj_mol: -183.281259621494
+initial_energy_hartree: -1730.832680270319
+final_energy_hartree: -1730.902488415354
+delta_energy_hartree: -0.069808145035
+elapsed_seconds: 2255.8
+elapsed_seconds_per_step: 29.7

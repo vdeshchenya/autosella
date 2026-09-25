@@ -1,0 +1,23 @@
+molecule: 25O_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/25O_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/25O_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 42
+converged: True
+status: ok
+initial_energy_kj_mol: -3680776.422851743642
+final_energy_kj_mol: -3680842.829143375624
+delta_energy_kj_mol: -66.406291631982
+initial_energy_hartree: -1401.933699591324
+final_energy_hartree: -1401.958992412025
+delta_energy_hartree: -0.025292820701
+elapsed_seconds: 1366.6
+elapsed_seconds_per_step: 32.5

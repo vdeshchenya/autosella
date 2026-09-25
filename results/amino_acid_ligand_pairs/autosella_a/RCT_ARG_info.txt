@@ -1,0 +1,23 @@
+molecule: RCT_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/RCT_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/RCT_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 81
+converged: True
+status: ok
+initial_energy_kj_mol: -5306785.929618043825
+final_energy_kj_mol: -5306921.902804480866
+delta_energy_kj_mol: -135.973186437041
+initial_energy_hartree: -2021.248013071255
+final_energy_hartree: -2021.299802522829
+delta_energy_hartree: -0.051789451574
+elapsed_seconds: 2734.3
+elapsed_seconds_per_step: 33.8

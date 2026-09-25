@@ -1,0 +1,23 @@
+molecule: 4HR_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/4HR_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/4HR_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 54
+converged: True
+status: ok
+initial_energy_kj_mol: -9920514.119553597644
+final_energy_kj_mol: -9920576.800467468798
+delta_energy_kj_mol: -62.680913871154
+initial_energy_hartree: -3778.524274152560
+final_energy_hartree: -3778.548148051809
+delta_energy_hartree: -0.023873899249
+elapsed_seconds: 1612.0
+elapsed_seconds_per_step: 29.9

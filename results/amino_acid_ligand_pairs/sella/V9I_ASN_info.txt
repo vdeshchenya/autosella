@@ -1,0 +1,23 @@
+molecule: V9I_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/V9I_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/V9I_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 53
+converged: True
+status: ok
+initial_energy_kj_mol: -3850367.321305441670
+final_energy_kj_mol: -3850495.214727014303
+delta_energy_kj_mol: -127.893421572633
+initial_energy_hartree: -1466.527461442799
+final_energy_hartree: -1466.576173474463
+delta_energy_hartree: -0.048712031664
+elapsed_seconds: 1779.6
+elapsed_seconds_per_step: 33.6

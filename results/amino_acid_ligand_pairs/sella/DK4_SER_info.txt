@@ -1,0 +1,23 @@
+molecule: DK4_SER
+input_xyz: inputs/amino_acid_ligand_pairs/DK4_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/DK4_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 98
+converged: True
+status: ok
+initial_energy_kj_mol: -4514843.024442766793
+final_energy_kj_mol: -4514989.327110572718
+delta_energy_kj_mol: -146.302667805925
+initial_energy_hartree: -1719.612890648554
+final_energy_hartree: -1719.668614391801
+delta_energy_hartree: -0.055723743247
+elapsed_seconds: 2955.8
+elapsed_seconds_per_step: 30.2

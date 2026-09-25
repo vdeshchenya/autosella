@@ -1,0 +1,23 @@
+molecule: phe-asn
+input_xyz: inputs/dipeptides/phe-asn.xyz
+final_xyz: results/dipeptides/sella/phe-asn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2999767.841683990322
+final_energy_kj_mol: -3000200.159106386825
+delta_energy_kj_mol: -432.317422396503
+initial_energy_hartree: -1142.551229707360
+final_energy_hartree: -1142.715890717362
+delta_energy_hartree: -0.164661010002
+elapsed_seconds: 748.5
+elapsed_seconds_per_step: 25.8

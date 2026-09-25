@@ -1,0 +1,23 @@
+molecule: ala-thr
+input_xyz: inputs/dipeptides/ala-thr.xyz
+final_xyz: results/dipeptides/autosella_a/ala-thr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -2251295.066609275993
+final_energy_kj_mol: -2251513.357054486871
+delta_energy_kj_mol: -218.290445210878
+initial_energy_hartree: -857.473005425835
+final_energy_hartree: -857.556147865441
+delta_energy_hartree: -0.083142439606
+elapsed_seconds: 538.2
+elapsed_seconds_per_step: 14.5

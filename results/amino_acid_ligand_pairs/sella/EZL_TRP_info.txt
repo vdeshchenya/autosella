@@ -1,0 +1,23 @@
+molecule: EZL_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/EZL_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/EZL_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 79
+converged: True
+status: ok
+initial_energy_kj_mol: -6139935.452636439353
+final_energy_kj_mol: -6140070.414100850932
+delta_energy_kj_mol: -134.961464411579
+initial_energy_hartree: -2338.577907347469
+final_energy_hartree: -2338.629311454475
+delta_energy_hartree: -0.051404107006
+elapsed_seconds: 2688.6
+elapsed_seconds_per_step: 34.0

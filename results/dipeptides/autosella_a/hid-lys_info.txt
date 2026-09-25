@@ -1,0 +1,23 @@
+molecule: hid-lys
+input_xyz: inputs/dipeptides/hid-lys.xyz
+final_xyz: results/dipeptides/autosella_a/hid-lys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -2997059.919322820380
+final_energy_kj_mol: -2997441.109123660717
+delta_energy_kj_mol: -381.189800840337
+initial_energy_hartree: -1141.519836550625
+final_energy_hartree: -1141.665024078023
+delta_energy_hartree: -0.145187527398
+elapsed_seconds: 730.0
+elapsed_seconds_per_step: 23.5

@@ -1,0 +1,23 @@
+molecule: 2CH_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/2CH_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/2CH_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -3624824.197530026548
+final_energy_kj_mol: -3624898.781313138083
+delta_energy_kj_mol: -74.583783111535
+initial_energy_hartree: -1380.622622461334
+final_energy_hartree: -1380.651029924047
+delta_energy_hartree: -0.028407462713
+elapsed_seconds: 1338.6
+elapsed_seconds_per_step: 20.3

@@ -1,0 +1,23 @@
+molecule: IKF_THR
+input_xyz: inputs/amino_acid_ligand_pairs/IKF_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/IKF_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -4164282.684347943403
+final_energy_kj_mol: -4164371.391751277260
+delta_energy_kj_mol: -88.707403333858
+initial_energy_hartree: -1586.091508728171
+final_energy_hartree: -1586.125295593726
+delta_energy_hartree: -0.033786865555
+elapsed_seconds: 908.1
+elapsed_seconds_per_step: 25.9

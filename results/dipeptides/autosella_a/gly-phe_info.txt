@@ -1,0 +1,23 @@
+molecule: gly-phe
+input_xyz: inputs/dipeptides/gly-phe.xyz
+final_xyz: results/dipeptides/autosella_a/gly-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2453923.598388889804
+final_energy_kj_mol: -2454137.448974867351
+delta_energy_kj_mol: -213.850585977547
+initial_energy_hartree: -934.650137249686
+final_energy_hartree: -934.731588636219
+delta_energy_hartree: -0.081451386533
+elapsed_seconds: 489.6
+elapsed_seconds_per_step: 16.9

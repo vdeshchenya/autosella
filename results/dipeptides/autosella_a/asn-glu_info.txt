@@ -1,0 +1,23 @@
+molecule: asn-glu
+input_xyz: inputs/dipeptides/asn-glu.xyz
+final_xyz: results/dipeptides/autosella_a/asn-glu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -2990567.255435854662
+final_energy_kj_mol: -2990664.064740435220
+delta_energy_kj_mol: -96.809304580558
+initial_energy_hartree: -1139.046911477875
+final_energy_hartree: -1139.083784194643
+delta_energy_hartree: -0.036872716768
+elapsed_seconds: 519.2
+elapsed_seconds_per_step: 20.0

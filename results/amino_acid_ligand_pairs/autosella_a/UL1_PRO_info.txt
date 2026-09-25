@@ -1,0 +1,23 @@
+molecule: UL1_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/UL1_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/UL1_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 45
+converged: True
+status: ok
+initial_energy_kj_mol: -5549382.877550105564
+final_energy_kj_mol: -5549459.612156681716
+delta_energy_kj_mol: -76.734606576152
+initial_energy_hartree: -2113.648310631425
+final_energy_hartree: -2113.677537299531
+delta_energy_hartree: -0.029226668106
+elapsed_seconds: 1315.7
+elapsed_seconds_per_step: 29.2

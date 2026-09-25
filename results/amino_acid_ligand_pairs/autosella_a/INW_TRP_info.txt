@@ -1,0 +1,23 @@
+molecule: INW_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/INW_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/INW_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 81
+converged: True
+status: ok
+initial_energy_kj_mol: -6122170.322299527936
+final_energy_kj_mol: -6122321.816627891734
+delta_energy_kj_mol: -151.494328363799
+initial_energy_hartree: -2331.811526552829
+final_energy_hartree: -2331.869227695151
+delta_energy_hartree: -0.057701142322
+elapsed_seconds: 3733.8
+elapsed_seconds_per_step: 46.1

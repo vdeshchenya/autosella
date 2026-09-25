@@ -1,0 +1,23 @@
+molecule: hip-pro
+input_xyz: inputs/dipeptides/hip-pro.xyz
+final_xyz: results/dipeptides/sella/hip-pro_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -2745544.693637055345
+final_energy_kj_mol: -2745802.570420758333
+delta_energy_kj_mol: -257.876783702988
+initial_energy_hartree: -1045.722746387783
+final_energy_hartree: -1045.820966467430
+delta_energy_hartree: -0.098220079647
+elapsed_seconds: 743.2
+elapsed_seconds_per_step: 20.1

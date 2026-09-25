@@ -1,0 +1,23 @@
+molecule: glu-pro
+input_xyz: inputs/dipeptides/glu-pro.xyz
+final_xyz: results/dipeptides/sella/glu-pro_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 49
+converged: True
+status: ok
+initial_energy_kj_mol: -2750789.310035743285
+final_energy_kj_mol: -2750896.987349011935
+delta_energy_kj_mol: -107.677313268650
+initial_energy_hartree: -1047.720315277081
+final_energy_hartree: -1047.761327399745
+delta_energy_hartree: -0.041012122664
+elapsed_seconds: 941.8
+elapsed_seconds_per_step: 19.2

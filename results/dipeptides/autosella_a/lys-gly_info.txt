@@ -1,0 +1,23 @@
+molecule: lys-gly
+input_xyz: inputs/dipeptides/lys-gly.xyz
+final_xyz: results/dipeptides/autosella_a/lys-gly_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -2303456.259704587050
+final_energy_kj_mol: -2303531.700562062673
+delta_energy_kj_mol: -75.440857475623
+initial_energy_hartree: -877.340154638487
+final_energy_hartree: -877.368888543585
+delta_energy_hartree: -0.028733905098
+elapsed_seconds: 452.4
+elapsed_seconds_per_step: 18.1

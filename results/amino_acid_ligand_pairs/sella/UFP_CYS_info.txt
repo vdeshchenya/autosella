@@ -1,0 +1,23 @@
+molecule: UFP_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/UFP_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/UFP_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 104
+converged: True
+status: ok
+initial_energy_kj_mol: -6292011.722573558800
+final_energy_kj_mol: -6292237.189367353916
+delta_energy_kj_mol: -225.466793795116
+initial_energy_hartree: -2396.500699508753
+final_energy_hartree: -2396.586575275180
+delta_energy_hartree: -0.085875766427
+elapsed_seconds: 3994.6
+elapsed_seconds_per_step: 38.4

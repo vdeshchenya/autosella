@@ -1,0 +1,23 @@
+molecule: IGX_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/IGX_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/IGX_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3495122.497862181626
+final_energy_kj_mol: -3495230.306185849942
+delta_energy_kj_mol: -107.808323668316
+initial_energy_hartree: -1331.221854044722
+final_energy_hartree: -1331.262916066612
+delta_energy_hartree: -0.041062021890
+elapsed_seconds: 870.3
+elapsed_seconds_per_step: 25.6

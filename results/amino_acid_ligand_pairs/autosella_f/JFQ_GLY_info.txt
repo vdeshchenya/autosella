@@ -1,0 +1,23 @@
+molecule: JFQ_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/JFQ_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/JFQ_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -2562868.798733688891
+final_energy_kj_mol: -2562917.965000264347
+delta_energy_kj_mol: -49.166266575456
+initial_energy_hartree: -976.145172597084
+final_energy_hartree: -976.163899039029
+delta_energy_hartree: -0.018726441945
+elapsed_seconds: 578.0
+elapsed_seconds_per_step: 21.4

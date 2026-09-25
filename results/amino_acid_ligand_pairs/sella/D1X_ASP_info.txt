@@ -1,0 +1,23 @@
+molecule: D1X_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/D1X_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/D1X_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -3337084.221002608538
+final_energy_kj_mol: -3337188.916165940464
+delta_energy_kj_mol: -104.695163331926
+initial_energy_hartree: -1271.028253374154
+final_energy_hartree: -1271.068129655894
+delta_energy_hartree: -0.039876281740
+elapsed_seconds: 1271.5
+elapsed_seconds_per_step: 19.3

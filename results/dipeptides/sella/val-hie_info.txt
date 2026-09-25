@@ -1,0 +1,23 @@
+molecule: val-hie
+input_xyz: inputs/dipeptides/val-hie.xyz
+final_xyz: results/dipeptides/sella/val-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2747841.543423492461
+final_energy_kj_mol: -2747920.536455958616
+delta_energy_kj_mol: -78.993032466155
+initial_energy_hartree: -1046.597570269645
+final_energy_hartree: -1046.627657126744
+delta_energy_hartree: -0.030086857099
+elapsed_seconds: 644.0
+elapsed_seconds_per_step: 22.2

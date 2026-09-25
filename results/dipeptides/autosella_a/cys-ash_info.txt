@@ -1,0 +1,23 @@
+molecule: cys-ash
+input_xyz: inputs/dipeptides/cys-ash.xyz
+final_xyz: results/dipeptides/autosella_a/cys-ash_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -3491231.752208030317
+final_energy_kj_mol: -3491302.415619726293
+delta_energy_kj_mol: -70.663411695976
+initial_energy_hartree: -1329.739947288520
+final_energy_hartree: -1329.766861560620
+delta_energy_hartree: -0.026914272100
+elapsed_seconds: 549.7
+elapsed_seconds_per_step: 15.7

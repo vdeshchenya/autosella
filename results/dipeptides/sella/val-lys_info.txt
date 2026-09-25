@@ -1,0 +1,23 @@
+molecule: val-lys
+input_xyz: inputs/dipeptides/val-lys.xyz
+final_xyz: results/dipeptides/sella/val-lys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 46
+converged: True
+status: ok
+initial_energy_kj_mol: -2612859.403329438530
+final_energy_kj_mol: -2613129.732492105104
+delta_energy_kj_mol: -270.329162666574
+initial_energy_hartree: -995.185588312263
+final_energy_hartree: -995.288551252574
+delta_energy_hartree: -0.102962940311
+elapsed_seconds: 1066.4
+elapsed_seconds_per_step: 23.2

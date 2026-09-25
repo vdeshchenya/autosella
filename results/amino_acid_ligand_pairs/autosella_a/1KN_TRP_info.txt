@@ -1,0 +1,23 @@
+molecule: 1KN_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/1KN_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/1KN_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -4216659.457644229755
+final_energy_kj_mol: -4216757.220800777897
+delta_energy_kj_mol: -97.763156548142
+initial_energy_hartree: -1606.040768102917
+final_energy_hartree: -1606.078004122712
+delta_energy_hartree: -0.037236019795
+elapsed_seconds: 1568.6
+elapsed_seconds_per_step: 42.4

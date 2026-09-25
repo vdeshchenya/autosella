@@ -1,0 +1,23 @@
+molecule: gln-gly
+input_xyz: inputs/dipeptides/gln-gly.xyz
+final_xyz: results/dipeptides/sella/gln-gly_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 39
+converged: True
+status: ok
+initial_energy_kj_mol: -2393506.145396191627
+final_energy_kj_mol: -2393743.959359951317
+delta_energy_kj_mol: -237.813963759691
+initial_energy_hartree: -911.638344719154
+final_energy_hartree: -911.728923274254
+delta_energy_hartree: -0.090578555100
+elapsed_seconds: 604.5
+elapsed_seconds_per_step: 15.5

@@ -1,0 +1,23 @@
+molecule: KCQ_MET
+input_xyz: inputs/amino_acid_ligand_pairs/KCQ_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/KCQ_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 97
+converged: True
+status: ok
+initial_energy_kj_mol: -4058036.538036729675
+final_energy_kj_mol: -4058170.923846157733
+delta_energy_kj_mol: -134.385809428059
+initial_energy_hartree: -1545.624488769920
+final_energy_hartree: -1545.675673621522
+delta_energy_hartree: -0.051184851602
+elapsed_seconds: 2388.0
+elapsed_seconds_per_step: 24.6

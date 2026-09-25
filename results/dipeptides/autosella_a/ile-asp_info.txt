@@ -1,0 +1,23 @@
+molecule: ile-asp
+input_xyz: inputs/dipeptides/ile-asp.xyz
+final_xyz: results/dipeptides/autosella_a/ile-asp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -2754019.278650134802
+final_energy_kj_mol: -2754101.305814810097
+delta_energy_kj_mol: -82.027164675295
+initial_energy_hartree: -1048.950545350558
+final_energy_hartree: -1048.981787847583
+delta_energy_hartree: -0.031242497025
+elapsed_seconds: 632.1
+elapsed_seconds_per_step: 19.2

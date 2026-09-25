@@ -1,0 +1,23 @@
+molecule: 3TV_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/3TV_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/3TV_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 65
+converged: True
+status: ok
+initial_energy_kj_mol: -6387535.229772521183
+final_energy_kj_mol: -6387640.125529618934
+delta_energy_kj_mol: -104.895757097751
+initial_energy_hartree: -2432.883681918107
+final_energy_hartree: -2432.923634601977
+delta_energy_hartree: -0.039952683870
+elapsed_seconds: 2085.5
+elapsed_seconds_per_step: 32.1

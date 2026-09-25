@@ -1,0 +1,23 @@
+molecule: cys-ile
+input_xyz: inputs/dipeptides/cys-ile.xyz
+final_xyz: results/dipeptides/sella/cys-ile_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -3305696.814983545803
+final_energy_kj_mol: -3305794.305897341575
+delta_energy_kj_mol: -97.490913795773
+initial_energy_hartree: -1259.073421788163
+final_energy_hartree: -1259.110554116170
+delta_energy_hartree: -0.037132328007
+elapsed_seconds: 540.2
+elapsed_seconds_per_step: 18.0

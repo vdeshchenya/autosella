@@ -1,0 +1,23 @@
+molecule: BXZ_MET
+input_xyz: inputs/amino_acid_ligand_pairs/BXZ_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/BXZ_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -11558343.761342531070
+final_energy_kj_mol: -11558386.961848421022
+delta_energy_kj_mol: -43.200505889952
+initial_energy_hartree: -4402.340639297207
+final_energy_hartree: -4402.357093500910
+delta_energy_hartree: -0.016454203703
+elapsed_seconds: 970.4
+elapsed_seconds_per_step: 37.3

@@ -1,0 +1,23 @@
+molecule: TVO_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/TVO_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/TVO_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 42
+converged: True
+status: ok
+initial_energy_kj_mol: -3919106.222744484898
+final_energy_kj_mol: -3919183.838475765195
+delta_energy_kj_mol: -77.615731280297
+initial_energy_hartree: -1492.708726298223
+final_energy_hartree: -1492.738288569005
+delta_energy_hartree: -0.029562270782
+elapsed_seconds: 1640.3
+elapsed_seconds_per_step: 39.1

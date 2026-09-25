@@ -1,0 +1,23 @@
+molecule: RNK_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/RNK_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/RNK_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 61
+converged: True
+status: ok
+initial_energy_kj_mol: -5745832.936368380673
+final_energy_kj_mol: -5745945.136852528900
+delta_energy_kj_mol: -112.200484148227
+initial_energy_hartree: -2188.472186386057
+final_energy_hartree: -2188.514921293524
+delta_energy_hartree: -0.042734907467
+elapsed_seconds: 2208.8
+elapsed_seconds_per_step: 36.2

@@ -1,0 +1,23 @@
+molecule: cys-ala
+input_xyz: inputs/dipeptides/cys-ala.xyz
+final_xyz: results/dipeptides/autosella_a/cys-ala_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 44
+converged: True
+status: ok
+initial_energy_kj_mol: -2996010.530307396781
+final_energy_kj_mol: -2996241.148375681136
+delta_energy_kj_mol: -230.618068284355
+initial_energy_hartree: -1141.120145383411
+final_energy_hartree: -1141.207983166672
+delta_energy_hartree: -0.087837783261
+elapsed_seconds: 604.9
+elapsed_seconds_per_step: 13.7

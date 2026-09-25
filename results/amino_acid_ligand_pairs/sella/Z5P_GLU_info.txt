@@ -1,0 +1,23 @@
+molecule: Z5P_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/Z5P_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/Z5P_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 46
+converged: True
+status: ok
+initial_energy_kj_mol: -3347076.730012469925
+final_energy_kj_mol: -3347167.148551624268
+delta_energy_kj_mol: -90.418539154343
+initial_energy_hartree: -1274.834199053827
+final_energy_hartree: -1274.868637656596
+delta_energy_hartree: -0.034438602769
+elapsed_seconds: 1217.9
+elapsed_seconds_per_step: 26.5

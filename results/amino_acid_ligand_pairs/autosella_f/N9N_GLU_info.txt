@@ -1,0 +1,23 @@
+molecule: N9N_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/N9N_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/N9N_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 83
+converged: True
+status: ok
+initial_energy_kj_mol: -4201997.630009780638
+final_energy_kj_mol: -4202198.482116199099
+delta_energy_kj_mol: -200.852106418461
+initial_energy_hartree: -1600.456372883821
+final_energy_hartree: -1600.532873410958
+delta_energy_hartree: -0.076500527137
+elapsed_seconds: 2843.7
+elapsed_seconds_per_step: 34.3

@@ -1,0 +1,23 @@
+molecule: 4JN_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/4JN_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/4JN_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 43
+converged: True
+status: ok
+initial_energy_kj_mol: -9900825.252649830654
+final_energy_kj_mol: -9900867.015718825161
+delta_energy_kj_mol: -41.763068994507
+initial_energy_hartree: -3771.025180796117
+final_energy_hartree: -3771.041087509021
+delta_energy_hartree: -0.015906712904
+elapsed_seconds: 911.4
+elapsed_seconds_per_step: 21.2

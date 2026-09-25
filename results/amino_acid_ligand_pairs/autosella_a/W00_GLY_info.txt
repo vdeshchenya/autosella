@@ -1,0 +1,23 @@
+molecule: W00_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/W00_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/W00_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 74
+converged: True
+status: ok
+initial_energy_kj_mol: -4206009.583176895045
+final_energy_kj_mol: -4206127.822795146145
+delta_energy_kj_mol: -118.239618251100
+initial_energy_hartree: -1601.984445143587
+final_energy_hartree: -1602.029480235755
+delta_energy_hartree: -0.045035092168
+elapsed_seconds: 1756.5
+elapsed_seconds_per_step: 23.7

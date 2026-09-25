@@ -1,0 +1,23 @@
+molecule: glu-cys
+input_xyz: inputs/dipeptides/glu-cys.xyz
+final_xyz: results/dipeptides/sella/glu-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -3593066.697766412515
+final_energy_kj_mol: -3593140.408759851009
+delta_energy_kj_mol: -73.710993438493
+initial_energy_hartree: -1368.526829612585
+final_energy_hartree: -1368.554904647268
+delta_energy_hartree: -0.028075034683
+elapsed_seconds: 550.2
+elapsed_seconds_per_step: 17.7

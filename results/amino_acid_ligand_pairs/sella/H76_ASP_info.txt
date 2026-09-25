@@ -1,0 +1,23 @@
+molecule: H76_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/H76_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/H76_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -3051273.035041840747
+final_energy_kj_mol: -3051351.736577364150
+delta_energy_kj_mol: -78.701535523403
+initial_energy_hartree: -1162.168521815636
+final_energy_hartree: -1162.198497647413
+delta_energy_hartree: -0.029975831777
+elapsed_seconds: 1425.4
+elapsed_seconds_per_step: 21.6

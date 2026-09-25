@@ -1,0 +1,23 @@
+molecule: asp-hid
+input_xyz: inputs/dipeptides/asp-hid.xyz
+final_xyz: results/dipeptides/sella/asp-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3035192.940896507818
+final_energy_kj_mol: -3035295.366578327026
+delta_energy_kj_mol: -102.425681819208
+initial_energy_hartree: -1156.043937411382
+final_energy_hartree: -1156.082949293265
+delta_energy_hartree: -0.039011881883
+elapsed_seconds: 725.9
+elapsed_seconds_per_step: 21.3

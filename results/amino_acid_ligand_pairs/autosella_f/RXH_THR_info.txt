@@ -1,0 +1,23 @@
+molecule: RXH_THR
+input_xyz: inputs/amino_acid_ligand_pairs/RXH_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/RXH_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -3720350.663490651641
+final_energy_kj_mol: -3720453.523372975178
+delta_energy_kj_mol: -102.859882323537
+initial_energy_hartree: -1417.006731803489
+final_energy_hartree: -1417.045909063610
+delta_energy_hartree: -0.039177260121
+elapsed_seconds: 990.5
+elapsed_seconds_per_step: 36.7

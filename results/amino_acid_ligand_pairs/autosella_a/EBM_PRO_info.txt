@@ -1,0 +1,23 @@
+molecule: EBM_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/EBM_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/EBM_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -3646876.470129763708
+final_energy_kj_mol: -3646985.842198797036
+delta_energy_kj_mol: -109.372069033328
+initial_energy_hartree: -1389.021889506789
+final_energy_hartree: -1389.063547127833
+delta_energy_hartree: -0.041657621044
+elapsed_seconds: 2314.4
+elapsed_seconds_per_step: 34.0

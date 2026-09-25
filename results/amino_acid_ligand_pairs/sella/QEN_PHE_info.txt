@@ -1,0 +1,23 @@
+molecule: QEN_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/QEN_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/QEN_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 56
+converged: True
+status: ok
+initial_energy_kj_mol: -12364924.467658562586
+final_energy_kj_mol: -12365030.397698258981
+delta_energy_kj_mol: -105.930039696395
+initial_energy_hartree: -4709.551005730856
+final_energy_hartree: -4709.591352352163
+delta_energy_hartree: -0.040346621307
+elapsed_seconds: 2297.3
+elapsed_seconds_per_step: 41.0

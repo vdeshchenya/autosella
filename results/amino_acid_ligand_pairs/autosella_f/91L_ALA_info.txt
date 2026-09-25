@@ -1,0 +1,23 @@
+molecule: 91L_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/91L_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/91L_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -3947553.732288177591
+final_energy_kj_mol: -3947601.503702742048
+delta_energy_kj_mol: -47.771414564457
+initial_energy_hartree: -1503.543810453606
+final_energy_hartree: -1503.562005624478
+delta_energy_hartree: -0.018195170872
+elapsed_seconds: 836.4
+elapsed_seconds_per_step: 33.5

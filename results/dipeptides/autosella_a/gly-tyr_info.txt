@@ -1,0 +1,23 @@
+molecule: gly-tyr
+input_xyz: inputs/dipeptides/gly-tyr.xyz
+final_xyz: results/dipeptides/autosella_a/gly-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 23
+converged: True
+status: ok
+initial_energy_kj_mol: -2651556.397692901082
+final_energy_kj_mol: -2651644.747294306755
+delta_energy_kj_mol: -88.349601405673
+initial_energy_hartree: -1009.924495064171
+final_energy_hartree: -1009.958145650169
+delta_energy_hartree: -0.033650585998
+elapsed_seconds: 419.2
+elapsed_seconds_per_step: 18.2

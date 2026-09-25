@@ -1,0 +1,23 @@
+molecule: ser-gln
+input_xyz: inputs/dipeptides/ser-gln.xyz
+final_xyz: results/dipeptides/autosella_f/ser-gln_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -2694125.144829676021
+final_energy_kj_mol: -2694393.461529246997
+delta_energy_kj_mol: -268.316699570976
+initial_energy_hartree: -1026.138074566017
+final_energy_hartree: -1026.240270999616
+delta_energy_hartree: -0.102196433599
+elapsed_seconds: 459.1
+elapsed_seconds_per_step: 18.4

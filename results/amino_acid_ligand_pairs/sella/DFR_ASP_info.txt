@@ -1,0 +1,23 @@
+molecule: DFR_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/DFR_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/DFR_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 95
+converged: True
+status: ok
+initial_energy_kj_mol: -3504895.776760064531
+final_energy_kj_mol: -3505070.417214556597
+delta_energy_kj_mol: -174.640454492066
+initial_energy_hartree: -1334.944299384619
+final_energy_hartree: -1335.010816420792
+delta_energy_hartree: -0.066517036173
+elapsed_seconds: 2283.6
+elapsed_seconds_per_step: 24.0

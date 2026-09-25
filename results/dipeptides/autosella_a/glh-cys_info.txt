@@ -1,0 +1,23 @@
+molecule: glh-cys
+input_xyz: inputs/dipeptides/glh-cys.xyz
+final_xyz: results/dipeptides/autosella_a/glh-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -3594243.478889507242
+final_energy_kj_mol: -3594513.152756713796
+delta_energy_kj_mol: -269.673867206555
+initial_energy_hartree: -1368.975041871082
+final_energy_hartree: -1369.077755222534
+delta_energy_hartree: -0.102713351452
+elapsed_seconds: 735.9
+elapsed_seconds_per_step: 19.9

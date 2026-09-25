@@ -1,0 +1,23 @@
+molecule: 9EX_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/9EX_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/9EX_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 69
+converged: True
+status: ok
+initial_energy_kj_mol: -4005684.025414424017
+final_energy_kj_mol: -4005730.409686946776
+delta_energy_kj_mol: -46.384272522759
+initial_energy_hartree: -1525.684469797883
+final_energy_hartree: -1525.702136634254
+delta_energy_hartree: -0.017666836371
+elapsed_seconds: 1029.7
+elapsed_seconds_per_step: 14.9

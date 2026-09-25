@@ -1,0 +1,23 @@
+molecule: phe-ser
+input_xyz: inputs/dipeptides/phe-ser.xyz
+final_xyz: results/dipeptides/sella/phe-ser_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 46
+converged: True
+status: ok
+initial_energy_kj_mol: -2754532.752317159902
+final_energy_kj_mol: -2754800.727159732021
+delta_energy_kj_mol: -267.974842572119
+initial_energy_hartree: -1049.146117141658
+final_energy_hartree: -1049.248183368803
+delta_energy_hartree: -0.102066227145
+elapsed_seconds: 983.1
+elapsed_seconds_per_step: 21.4

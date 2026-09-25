@@ -1,0 +1,23 @@
+molecule: PVK_THR
+input_xyz: inputs/amino_acid_ligand_pairs/PVK_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/PVK_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -3938542.607209476642
+final_energy_kj_mol: -3938642.779752562754
+delta_energy_kj_mol: -100.172543086112
+initial_energy_hartree: -1500.111654172493
+final_energy_hartree: -1500.149807879155
+delta_energy_hartree: -0.038153706662
+elapsed_seconds: 1819.3
+elapsed_seconds_per_step: 27.6

@@ -1,0 +1,23 @@
+molecule: asp-thr
+input_xyz: inputs/dipeptides/asp-thr.xyz
+final_xyz: results/dipeptides/autosella_a/asp-thr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -2745170.423341722693
+final_energy_kj_mol: -2745261.436479877215
+delta_energy_kj_mol: -91.013138154522
+initial_energy_hartree: -1045.580194360845
+final_energy_hartree: -1045.614859434413
+delta_energy_hartree: -0.034665073568
+elapsed_seconds: 445.9
+elapsed_seconds_per_step: 17.8

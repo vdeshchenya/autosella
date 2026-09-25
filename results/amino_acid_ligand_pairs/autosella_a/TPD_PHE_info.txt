@@ -1,0 +1,23 @@
+molecule: TPD_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/TPD_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/TPD_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -8082599.580825056881
+final_energy_kj_mol: -8082780.899982396513
+delta_energy_kj_mol: -181.319157339633
+initial_energy_hartree: -3078.499596528676
+final_energy_hartree: -3078.568657348420
+delta_energy_hartree: -0.069060819744
+elapsed_seconds: 2827.7
+elapsed_seconds_per_step: 41.6

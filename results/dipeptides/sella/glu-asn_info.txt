@@ -1,0 +1,23 @@
+molecule: glu-asn
+input_xyz: inputs/dipeptides/glu-asn.xyz
+final_xyz: results/dipeptides/sella/glu-asn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -2990584.023818326648
+final_energy_kj_mol: -2990680.190817352384
+delta_energy_kj_mol: -96.166999025736
+initial_energy_hartree: -1139.053298217458
+final_energy_hartree: -1139.089926292960
+delta_energy_hartree: -0.036628075502
+elapsed_seconds: 673.0
+elapsed_seconds_per_step: 19.8

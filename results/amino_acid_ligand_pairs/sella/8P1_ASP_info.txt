@@ -1,0 +1,23 @@
+molecule: 8P1_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/8P1_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/8P1_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -3154153.080060144421
+final_energy_kj_mol: -3154258.506033965852
+delta_energy_kj_mol: -105.425973821431
+initial_energy_hartree: -1201.353461501510
+final_energy_hartree: -1201.393616134265
+delta_energy_hartree: -0.040154632755
+elapsed_seconds: 1450.4
+elapsed_seconds_per_step: 21.3

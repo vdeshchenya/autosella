@@ -1,0 +1,23 @@
+molecule: hip-cys
+input_xyz: inputs/dipeptides/hip-cys.xyz
+final_xyz: results/dipeptides/sella/hip-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -3587897.662824741099
+final_energy_kj_mol: -3587995.371565621346
+delta_energy_kj_mol: -97.708740880247
+initial_energy_hartree: -1366.558048179922
+final_energy_hartree: -1366.595263473884
+delta_energy_hartree: -0.037215293962
+elapsed_seconds: 569.2
+elapsed_seconds_per_step: 18.4

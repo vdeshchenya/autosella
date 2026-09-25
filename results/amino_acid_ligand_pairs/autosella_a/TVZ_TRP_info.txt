@@ -1,0 +1,23 @@
+molecule: TVZ_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/TVZ_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/TVZ_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 56
+converged: True
+status: ok
+initial_energy_kj_mol: -4407406.982033695094
+final_energy_kj_mol: -4407540.020685219206
+delta_energy_kj_mol: -133.038651524112
+initial_energy_hartree: -1678.692663201730
+final_energy_hartree: -1678.743334947985
+delta_energy_hartree: -0.050671746255
+elapsed_seconds: 2366.4
+elapsed_seconds_per_step: 42.3

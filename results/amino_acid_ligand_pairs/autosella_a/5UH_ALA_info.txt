@@ -1,0 +1,23 @@
+molecule: 5UH_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/5UH_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/5UH_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -3416528.776327190921
+final_energy_kj_mol: -3416634.426966810133
+delta_energy_kj_mol: -105.650639619213
+initial_energy_hartree: -1301.287086447283
+final_energy_hartree: -1301.327326650721
+delta_energy_hartree: -0.040240203438
+elapsed_seconds: 1351.0
+elapsed_seconds_per_step: 27.0

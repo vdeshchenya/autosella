@@ -1,0 +1,23 @@
+molecule: TGR_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/TGR_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/TGR_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -3514524.425535927992
+final_energy_kj_mol: -3514618.361520457547
+delta_energy_kj_mol: -93.935984529555
+initial_energy_hartree: -1338.611658020315
+final_energy_hartree: -1338.647436347273
+delta_energy_hartree: -0.035778326958
+elapsed_seconds: 905.0
+elapsed_seconds_per_step: 30.2

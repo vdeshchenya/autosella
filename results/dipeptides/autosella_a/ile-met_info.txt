@@ -1,0 +1,23 @@
+molecule: ile-met
+input_xyz: inputs/dipeptides/ile-met.xyz
+final_xyz: results/dipeptides/autosella_a/ile-met_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 24
+converged: True
+status: ok
+initial_energy_kj_mol: -3511841.576503312681
+final_energy_kj_mol: -3512150.401306590065
+delta_energy_kj_mol: -308.824803277384
+initial_energy_hartree: -1337.589814790069
+final_energy_hartree: -1337.707439945538
+delta_energy_hartree: -0.117625155469
+elapsed_seconds: 474.4
+elapsed_seconds_per_step: 19.8

@@ -1,0 +1,23 @@
+molecule: hid-tyr
+input_xyz: inputs/dipeptides/hid-tyr.xyz
+final_xyz: results/dipeptides/autosella_f/hid-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -3345101.459667940624
+final_energy_kj_mol: -3345505.609645393211
+delta_energy_kj_mol: -404.149977452587
+initial_energy_hartree: -1274.081858312725
+final_energy_hartree: -1274.235790909544
+delta_energy_hartree: -0.153932596819
+elapsed_seconds: 645.2
+elapsed_seconds_per_step: 23.9

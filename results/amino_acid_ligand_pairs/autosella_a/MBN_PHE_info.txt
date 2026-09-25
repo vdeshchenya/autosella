@@ -1,0 +1,23 @@
+molecule: MBN_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/MBN_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/MBN_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 49
+converged: True
+status: ok
+initial_energy_kj_mol: -2620863.437878925353
+final_energy_kj_mol: -2620905.016756512690
+delta_energy_kj_mol: -41.578877587337
+initial_energy_hartree: -998.234164068713
+final_energy_hartree: -998.250000626815
+delta_energy_hartree: -0.015836558102
+elapsed_seconds: 981.7
+elapsed_seconds_per_step: 20.0

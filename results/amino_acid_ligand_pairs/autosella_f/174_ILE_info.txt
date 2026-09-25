@@ -1,0 +1,23 @@
+molecule: 174_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/174_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/174_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -3922446.635837509762
+final_energy_kj_mol: -3922475.316174685024
+delta_energy_kj_mol: -28.680337175261
+initial_energy_hartree: -1493.981022451989
+final_energy_hartree: -1493.991946215506
+delta_energy_hartree: -0.010923763517
+elapsed_seconds: 703.3
+elapsed_seconds_per_step: 26.0

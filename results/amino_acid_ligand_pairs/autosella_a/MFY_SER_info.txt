@@ -1,0 +1,23 @@
+molecule: MFY_SER
+input_xyz: inputs/amino_acid_ligand_pairs/MFY_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/MFY_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -5407811.911119397730
+final_energy_kj_mol: -5407952.953239681199
+delta_energy_kj_mol: -141.042120283470
+initial_energy_hartree: -2059.726777258542
+final_energy_hartree: -2059.780497365055
+delta_energy_hartree: -0.053720106513
+elapsed_seconds: 1505.0
+elapsed_seconds_per_step: 22.1

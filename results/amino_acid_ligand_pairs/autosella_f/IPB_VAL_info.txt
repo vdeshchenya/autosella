@@ -1,0 +1,23 @@
+molecule: IPB_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/IPB_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/IPB_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -2727794.538259993307
+final_energy_kj_mol: -2727877.258954618126
+delta_energy_kj_mol: -82.720694624819
+initial_energy_hartree: -1038.962069254124
+final_energy_hartree: -1038.993575902756
+delta_energy_hartree: -0.031506648632
+elapsed_seconds: 1532.4
+elapsed_seconds_per_step: 22.5

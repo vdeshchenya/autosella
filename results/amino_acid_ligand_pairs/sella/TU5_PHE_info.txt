@@ -1,0 +1,23 @@
+molecule: TU5_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/TU5_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/TU5_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 69
+converged: True
+status: ok
+initial_energy_kj_mol: -4241790.305016044527
+final_energy_kj_mol: -4241854.059876617976
+delta_energy_kj_mol: -63.754860573448
+initial_energy_hartree: -1615.612602352642
+final_energy_hartree: -1615.636885296587
+delta_energy_hartree: -0.024282943945
+elapsed_seconds: 2273.5
+elapsed_seconds_per_step: 32.9

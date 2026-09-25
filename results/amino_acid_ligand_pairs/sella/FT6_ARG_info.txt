@@ -1,0 +1,23 @@
+molecule: FT6_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/FT6_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/FT6_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 92
+converged: True
+status: ok
+initial_energy_kj_mol: -4107183.821889766492
+final_energy_kj_mol: -4107381.929273028858
+delta_energy_kj_mol: -198.107383262366
+initial_energy_hartree: -1564.343700577838
+final_energy_hartree: -1564.419155695136
+delta_energy_hartree: -0.075455117298
+elapsed_seconds: 2986.1
+elapsed_seconds_per_step: 32.5

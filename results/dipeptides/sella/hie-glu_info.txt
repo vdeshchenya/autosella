@@ -1,0 +1,23 @@
+molecule: hie-glu
+input_xyz: inputs/dipeptides/hie-glu.xyz
+final_xyz: results/dipeptides/sella/hie-glu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 51
+converged: True
+status: ok
+initial_energy_kj_mol: -3138328.732875681017
+final_energy_kj_mol: -3138432.731872470118
+delta_energy_kj_mol: -103.998996789102
+initial_energy_hartree: -1195.326285970228
+final_energy_hartree: -1195.365897096135
+delta_energy_hartree: -0.039611125907
+elapsed_seconds: 1116.2
+elapsed_seconds_per_step: 21.9

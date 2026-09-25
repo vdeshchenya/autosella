@@ -1,0 +1,23 @@
+molecule: 848_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/848_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/848_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 56
+converged: True
+status: ok
+initial_energy_kj_mol: -3551748.486519655678
+final_energy_kj_mol: -3551825.160397662781
+delta_energy_kj_mol: -76.673878007103
+initial_energy_hartree: -1352.789554076359
+final_energy_hartree: -1352.818757614175
+delta_energy_hartree: -0.029203537816
+elapsed_seconds: 1767.0
+elapsed_seconds_per_step: 31.6

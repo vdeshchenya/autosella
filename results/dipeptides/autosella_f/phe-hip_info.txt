@@ -1,0 +1,23 @@
+molecule: phe-hip
+input_xyz: inputs/dipeptides/phe-hip.xyz
+final_xyz: results/dipeptides/autosella_f/phe-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 70
+converged: True
+status: ok
+initial_energy_kj_mol: -3148860.883612749632
+final_energy_kj_mol: -3149108.502143628430
+delta_energy_kj_mol: -247.618530878797
+initial_energy_hartree: -1199.337770328746
+final_energy_hartree: -1199.432083246240
+delta_energy_hartree: -0.094312917494
+elapsed_seconds: 1829.4
+elapsed_seconds_per_step: 26.1

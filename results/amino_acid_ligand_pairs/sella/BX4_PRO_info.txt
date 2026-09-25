@@ -1,0 +1,23 @@
+molecule: BX4_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/BX4_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/BX4_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -4451740.836615535431
+final_energy_kj_mol: -4451818.901268607005
+delta_energy_kj_mol: -78.064653071575
+initial_energy_hartree: -1695.578536623759
+final_energy_hartree: -1695.608269879821
+delta_energy_hartree: -0.029733256062
+elapsed_seconds: 1876.9
+elapsed_seconds_per_step: 28.4

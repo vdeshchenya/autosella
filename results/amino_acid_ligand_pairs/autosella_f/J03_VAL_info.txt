@@ -1,0 +1,23 @@
+molecule: J03_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/J03_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/J03_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 56
+converged: True
+status: ok
+initial_energy_kj_mol: -4140441.756840142887
+final_energy_kj_mol: -4140593.634373144247
+delta_energy_kj_mol: -151.877533001360
+initial_energy_hartree: -1577.010979007541
+final_energy_hartree: -1577.068826104801
+delta_energy_hartree: -0.057847097260
+elapsed_seconds: 1840.4
+elapsed_seconds_per_step: 32.9

@@ -1,0 +1,23 @@
+molecule: O6M_MET
+input_xyz: inputs/amino_acid_ligand_pairs/O6M_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/O6M_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 71
+converged: True
+status: ok
+initial_energy_kj_mol: -6287782.843111163005
+final_energy_kj_mol: -6287896.932080439292
+delta_energy_kj_mol: -114.088969276287
+initial_energy_hartree: -2394.890004386649
+final_energy_hartree: -2394.933458580114
+delta_energy_hartree: -0.043454193465
+elapsed_seconds: 3616.0
+elapsed_seconds_per_step: 50.9

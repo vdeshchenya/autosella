@@ -1,0 +1,23 @@
+molecule: 4UB_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/4UB_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/4UB_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 84
+converged: True
+status: ok
+initial_energy_kj_mol: -3744234.678759934846
+final_energy_kj_mol: -3744340.811072880402
+delta_energy_kj_mol: -106.132312945556
+initial_energy_hartree: -1426.103672785745
+final_energy_hartree: -1426.144096448864
+delta_energy_hartree: -0.040423663119
+elapsed_seconds: 2960.5
+elapsed_seconds_per_step: 35.2

@@ -1,0 +1,23 @@
+molecule: thr-cyx
+input_xyz: inputs/dipeptides/thr-cyx.xyz
+final_xyz: results/dipeptides/autosella_a/thr-cyx_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -3295249.541669593193
+final_energy_kj_mol: -3295522.232098005712
+delta_energy_kj_mol: -272.690428412519
+initial_energy_hartree: -1255.094265532776
+final_energy_hartree: -1255.198127831712
+delta_energy_hartree: -0.103862298936
+elapsed_seconds: 457.2
+elapsed_seconds_per_step: 17.6

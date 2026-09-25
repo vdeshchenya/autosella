@@ -1,0 +1,23 @@
+molecule: val-arg
+input_xyz: inputs/dipeptides/val-arg.xyz
+final_xyz: results/dipeptides/autosella_f/val-arg_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -2900303.723981858697
+final_energy_kj_mol: -2900690.793808620423
+delta_energy_kj_mol: -387.069826761726
+initial_energy_hartree: -1104.667348023859
+final_energy_hartree: -1104.814775134852
+delta_energy_hartree: -0.147427110993
+elapsed_seconds: 829.7
+elapsed_seconds_per_step: 23.7

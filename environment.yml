@@ -1,0 +1,43 @@
+name: autogeomopt
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+
+  # Numerical optimization and molecular simulation
+  # Interchange 0.5.x does not support NumPy 2.5, while Interchange 0.4.10
+  # crashes on Python 3.12 when its annotations are evaluated.
+  - numpy<2.5
+  - scipy
+  # Sella's optimization path is sensitive to the BLAS implementation.
+  - mkl=2026.1
+  - libtorch=2.10=cpu_mkl_*
+  - pytorch=2.10=cpu_mkl_*
+  - ase
+  - openmm=8.5
+  - openff-toolkit=0.18
+  - openff-interchange>=0.5,<0.6
+  # OPI 2.0 supports RDKit 2025.x; keep pip from replacing Conda's RDKit.
+  - rdkit>=2025.03.2,<2026
+  - xyz2mol
+  - xtb=6.7.1
+  - dftd4
+
+  # Dataset preparation and runtime services
+  - h5py
+  - pandas
+  - tqdm
+  - requests
+  - psutil
+  - cloudpickle
+  - redis-py
+  - redis-server
+
+  # Sella and the bundled optimizer use JAX directly.
+  - pip
+  - pip:
+      - jax==0.4.38
+      - jaxlib==0.4.38
+      # ORCA Python Interface; OPI 2.x requires ORCA >=6.1.1.
+      - orca-pi==2.0.0
+      - sella==2.5.0

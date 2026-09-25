@@ -1,0 +1,23 @@
+molecule: hip-glu
+input_xyz: inputs/dipeptides/hip-glu.xyz
+final_xyz: results/dipeptides/autosella_a/hip-glu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 40
+converged: True
+status: ok
+initial_energy_kj_mol: -3139661.760831390042
+final_energy_kj_mol: -3139823.675183807034
+delta_energy_kj_mol: -161.914352416992
+initial_energy_hartree: -1195.834009504318
+final_energy_hartree: -1195.895679424200
+delta_energy_hartree: -0.061669919882
+elapsed_seconds: 879.2
+elapsed_seconds_per_step: 22.0

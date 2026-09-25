@@ -1,0 +1,23 @@
+molecule: glh-ile
+input_xyz: inputs/dipeptides/glh-ile.xyz
+final_xyz: results/dipeptides/autosella_f/glh-ile_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 20
+converged: True
+status: ok
+initial_energy_kj_mol: -2858574.358983338811
+final_energy_kj_mol: -2858667.339067350607
+delta_energy_kj_mol: -92.980084011797
+initial_energy_hartree: -1088.773472294062
+final_energy_hartree: -1088.808886537741
+delta_energy_hartree: -0.035414243679
+elapsed_seconds: 415.9
+elapsed_seconds_per_step: 20.8

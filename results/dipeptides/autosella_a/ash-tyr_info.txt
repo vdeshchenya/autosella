@@ -1,0 +1,23 @@
+molecule: ash-tyr
+input_xyz: inputs/dipeptides/ash-tyr.xyz
+final_xyz: results/dipeptides/autosella_a/ash-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -3249608.128667557612
+final_energy_kj_mol: -3249927.708002046682
+delta_energy_kj_mol: -319.579334489070
+initial_energy_hartree: -1237.710369410407
+final_energy_hartree: -1237.832090750484
+delta_energy_hartree: -0.121721340077
+elapsed_seconds: 748.8
+elapsed_seconds_per_step: 22.7

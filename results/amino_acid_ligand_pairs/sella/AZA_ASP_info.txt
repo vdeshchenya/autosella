@@ -1,0 +1,23 @@
+molecule: AZA_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/AZA_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/AZA_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 73
+converged: True
+status: ok
+initial_energy_kj_mol: -3313635.655315604527
+final_energy_kj_mol: -3313908.669025496580
+delta_energy_kj_mol: -273.013709892053
+initial_energy_hartree: -1262.097166378595
+final_energy_hartree: -1262.201151808944
+delta_energy_hartree: -0.103985430349
+elapsed_seconds: 1406.1
+elapsed_seconds_per_step: 19.3

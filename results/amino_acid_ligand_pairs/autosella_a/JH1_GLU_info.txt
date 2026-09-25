@@ -1,0 +1,23 @@
+molecule: JH1_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/JH1_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/JH1_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 81
+converged: True
+status: ok
+initial_energy_kj_mol: -4111574.859802888706
+final_energy_kj_mol: -4111748.695338453632
+delta_energy_kj_mol: -173.835535564926
+initial_energy_hartree: -1566.016158591960
+final_energy_hartree: -1566.082369050705
+delta_energy_hartree: -0.066210458745
+elapsed_seconds: 2654.7
+elapsed_seconds_per_step: 32.8

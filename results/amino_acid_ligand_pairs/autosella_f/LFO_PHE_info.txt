@@ -1,0 +1,23 @@
+molecule: LFO_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/LFO_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/LFO_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 73
+converged: True
+status: ok
+initial_energy_kj_mol: -3512218.048459894955
+final_energy_kj_mol: -3512324.686466395389
+delta_energy_kj_mol: -106.638006500434
+initial_energy_hartree: -1337.733205385490
+final_energy_hartree: -1337.773821657112
+delta_energy_hartree: -0.040616271622
+elapsed_seconds: 2540.8
+elapsed_seconds_per_step: 34.8

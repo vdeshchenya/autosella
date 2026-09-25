@@ -1,0 +1,23 @@
+molecule: tyr-glu
+input_xyz: inputs/dipeptides/tyr-glu.xyz
+final_xyz: results/dipeptides/sella/tyr-glu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -3351599.948125872295
+final_energy_kj_mol: -3351716.995295287576
+delta_energy_kj_mol: -117.047169415280
+initial_energy_hartree: -1276.557001847393
+final_energy_hartree: -1276.601582759786
+delta_energy_hartree: -0.044580912393
+elapsed_seconds: 809.5
+elapsed_seconds_per_step: 27.9

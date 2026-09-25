@@ -1,0 +1,23 @@
+molecule: T3N_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/T3N_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/T3N_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 32
+converged: True
+status: ok
+initial_energy_kj_mol: -3562428.370481124148
+final_energy_kj_mol: -3562505.125261101872
+delta_energy_kj_mol: -76.754779977724
+initial_energy_hartree: -1356.857307048355
+final_energy_hartree: -1356.886541400104
+delta_energy_hartree: -0.029234351749
+elapsed_seconds: 939.1
+elapsed_seconds_per_step: 29.3

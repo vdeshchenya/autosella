@@ -1,0 +1,23 @@
+molecule: ile-ash
+input_xyz: inputs/dipeptides/ile-ash.xyz
+final_xyz: results/dipeptides/sella/ile-ash_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 46
+converged: True
+status: ok
+initial_energy_kj_mol: -2755216.018371272832
+final_energy_kj_mol: -2755486.354338270612
+delta_energy_kj_mol: -270.335966997780
+initial_energy_hartree: -1049.406359437577
+final_energy_hartree: -1049.509324969521
+delta_energy_hartree: -0.102965531944
+elapsed_seconds: 887.3
+elapsed_seconds_per_step: 19.3

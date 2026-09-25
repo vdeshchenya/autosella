@@ -1,0 +1,23 @@
+molecule: trp-cys
+input_xyz: inputs/dipeptides/trp-cys.xyz
+final_xyz: results/dipeptides/sella/trp-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -3948033.893780125771
+final_energy_kj_mol: -3948121.828616835177
+delta_energy_kj_mol: -87.934836709406
+initial_energy_hartree: -1503.726694307303
+final_energy_hartree: -1503.760186917771
+delta_energy_hartree: -0.033492610468
+elapsed_seconds: 967.9
+elapsed_seconds_per_step: 26.2

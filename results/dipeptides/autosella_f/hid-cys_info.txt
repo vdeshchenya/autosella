@@ -1,0 +1,23 @@
+molecule: hid-cys
+input_xyz: inputs/dipeptides/hid-cys.xyz
+final_xyz: results/dipeptides/autosella_f/hid-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 21
+converged: True
+status: ok
+initial_energy_kj_mol: -3586724.976259476040
+final_energy_kj_mol: -3586943.338142959401
+delta_energy_kj_mol: -218.361883483361
+initial_energy_hartree: -1366.111395456139
+final_energy_hartree: -1366.194565105146
+delta_energy_hartree: -0.083169649007
+elapsed_seconds: 380.6
+elapsed_seconds_per_step: 18.1

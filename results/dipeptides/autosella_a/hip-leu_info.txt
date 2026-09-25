@@ -1,0 +1,23 @@
+molecule: hip-leu
+input_xyz: inputs/dipeptides/hip-leu.xyz
+final_xyz: results/dipeptides/autosella_a/hip-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -2852042.953795101028
+final_energy_kj_mol: -2852150.437783392612
+delta_energy_kj_mol: -107.483988291584
+initial_energy_hartree: -1086.285791438950
+final_energy_hartree: -1086.326729928019
+delta_energy_hartree: -0.040938489069
+elapsed_seconds: 665.3
+elapsed_seconds_per_step: 22.2

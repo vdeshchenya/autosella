@@ -1,0 +1,23 @@
+molecule: EDU_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/EDU_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/EDU_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -4005038.169419319369
+final_energy_kj_mol: -4005154.564705729019
+delta_energy_kj_mol: -116.395286409650
+initial_energy_hartree: -1525.438476240926
+final_energy_hartree: -1525.482808864195
+delta_energy_hartree: -0.044332623269
+elapsed_seconds: 2448.1
+elapsed_seconds_per_step: 36.0

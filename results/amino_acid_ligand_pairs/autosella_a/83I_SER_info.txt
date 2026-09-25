@@ -1,0 +1,23 @@
+molecule: 83I_SER
+input_xyz: inputs/amino_acid_ligand_pairs/83I_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/83I_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 64
+converged: True
+status: ok
+initial_energy_kj_mol: -3914018.044771989342
+final_energy_kj_mol: -3914112.365478353575
+delta_energy_kj_mol: -94.320706364233
+initial_energy_hartree: -1490.770741658658
+final_energy_hartree: -1490.806666518424
+delta_energy_hartree: -0.035924859766
+elapsed_seconds: 1106.0
+elapsed_seconds_per_step: 17.3

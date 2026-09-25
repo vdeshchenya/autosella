@@ -1,0 +1,23 @@
+molecule: GA2_MET
+input_xyz: inputs/amino_acid_ligand_pairs/GA2_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/GA2_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 65
+converged: True
+status: ok
+initial_energy_kj_mol: -4982609.943716961890
+final_energy_kj_mol: -4982746.815231694840
+delta_energy_kj_mol: -136.871514732949
+initial_energy_hartree: -1897.775900934420
+final_energy_hartree: -1897.828032541172
+delta_energy_hartree: -0.052131606752
+elapsed_seconds: 2053.0
+elapsed_seconds_per_step: 31.6

@@ -1,0 +1,23 @@
+molecule: 58L_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/58L_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/58L_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -4213121.902797362767
+final_energy_kj_mol: -4213208.555366841145
+delta_energy_kj_mol: -86.652569478378
+initial_energy_hartree: -1604.693384620675
+final_energy_hartree: -1604.726388841348
+delta_energy_hartree: -0.033004220673
+elapsed_seconds: 1717.6
+elapsed_seconds_per_step: 47.7

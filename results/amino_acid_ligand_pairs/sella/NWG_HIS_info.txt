@@ -1,0 +1,23 @@
+molecule: NWG_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/NWG_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/NWG_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 102
+converged: True
+status: ok
+initial_energy_kj_mol: -3534436.876940570306
+final_energy_kj_mol: -3534561.497240575962
+delta_energy_kj_mol: -124.620300005656
+initial_energy_hartree: -1346.195910215675
+final_energy_hartree: -1346.243375581174
+delta_energy_hartree: -0.047465365499
+elapsed_seconds: 2386.0
+elapsed_seconds_per_step: 23.4

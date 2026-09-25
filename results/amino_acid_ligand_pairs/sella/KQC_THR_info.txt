@@ -1,0 +1,23 @@
+molecule: KQC_THR
+input_xyz: inputs/amino_acid_ligand_pairs/KQC_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/KQC_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 105
+converged: True
+status: ok
+initial_energy_kj_mol: -3469211.883255136199
+final_energy_kj_mol: -3469352.161804139614
+delta_energy_kj_mol: -140.278549003415
+initial_energy_hartree: -1321.353022140339
+final_energy_hartree: -1321.406451417911
+delta_energy_hartree: -0.053429277572
+elapsed_seconds: 2246.1
+elapsed_seconds_per_step: 21.4

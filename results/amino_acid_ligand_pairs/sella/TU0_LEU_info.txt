@@ -1,0 +1,23 @@
+molecule: TU0_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/TU0_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/TU0_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 70
+converged: True
+status: ok
+initial_energy_kj_mol: -11015935.687754893675
+final_energy_kj_mol: -11016054.491577675566
+delta_energy_kj_mol: -118.803822781891
+initial_energy_hartree: -4195.748314761568
+final_energy_hartree: -4195.793564747893
+delta_energy_hartree: -0.045249986325
+elapsed_seconds: 2178.1
+elapsed_seconds_per_step: 31.1

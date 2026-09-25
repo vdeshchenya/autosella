@@ -1,0 +1,23 @@
+molecule: 3BH_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/3BH_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/3BH_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 77
+converged: True
+status: ok
+initial_energy_kj_mol: -4573045.177540055476
+final_energy_kj_mol: -4573205.350433157757
+delta_energy_kj_mol: -160.172893102281
+initial_energy_hartree: -1741.780920010317
+final_energy_hartree: -1741.841926643376
+delta_energy_hartree: -0.061006633059
+elapsed_seconds: 2807.4
+elapsed_seconds_per_step: 36.5

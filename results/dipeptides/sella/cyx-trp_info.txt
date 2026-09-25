@@ -1,0 +1,23 @@
+molecule: cyx-trp
+input_xyz: inputs/dipeptides/cyx-trp.xyz
+final_xyz: results/dipeptides/sella/cyx-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 48
+converged: True
+status: ok
+initial_energy_kj_mol: -3946362.491452073678
+final_energy_kj_mol: -3946705.961484752130
+delta_energy_kj_mol: -343.470032678451
+initial_energy_hartree: -1503.090090781285
+final_energy_hartree: -1503.220911607734
+delta_energy_hartree: -0.130820826449
+elapsed_seconds: 1033.1
+elapsed_seconds_per_step: 21.5

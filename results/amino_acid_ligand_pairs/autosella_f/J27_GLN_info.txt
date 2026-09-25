@@ -1,0 +1,23 @@
+molecule: J27_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/J27_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/J27_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 65
+converged: True
+status: ok
+initial_energy_kj_mol: -4883625.304280122742
+final_energy_kj_mol: -4883698.592153199017
+delta_energy_kj_mol: -73.287873076275
+initial_energy_hartree: -1860.074642877326
+final_energy_hartree: -1860.102556753974
+delta_energy_hartree: -0.027913876648
+elapsed_seconds: 1965.9
+elapsed_seconds_per_step: 30.2

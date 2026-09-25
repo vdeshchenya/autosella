@@ -1,0 +1,23 @@
+molecule: 8PO_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/8PO_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/8PO_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 84
+converged: True
+status: ok
+initial_energy_kj_mol: -5456542.902589408681
+final_energy_kj_mol: -5456689.196130008437
+delta_energy_kj_mol: -146.293540599756
+initial_energy_hartree: -2078.287431671606
+final_energy_hartree: -2078.343151938484
+delta_energy_hartree: -0.055720266878
+elapsed_seconds: 3280.8
+elapsed_seconds_per_step: 39.1

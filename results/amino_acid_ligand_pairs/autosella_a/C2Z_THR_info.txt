@@ -1,0 +1,23 @@
+molecule: C2Z_THR
+input_xyz: inputs/amino_acid_ligand_pairs/C2Z_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/C2Z_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 52
+converged: True
+status: ok
+initial_energy_kj_mol: -4536665.378235540353
+final_energy_kj_mol: -4536828.177132176235
+delta_energy_kj_mol: -162.798896635883
+initial_energy_hartree: -1727.924586245319
+final_energy_hartree: -1727.986593070301
+delta_energy_hartree: -0.062006824982
+elapsed_seconds: 1179.3
+elapsed_seconds_per_step: 22.7

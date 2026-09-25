@@ -1,0 +1,23 @@
+molecule: hid-hip
+input_xyz: inputs/dipeptides/hid-hip.xyz
+final_xyz: results/dipeptides/sella/hid-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -3132893.357566107996
+final_energy_kj_mol: -3133270.577577563934
+delta_energy_kj_mol: -377.220011455938
+initial_energy_hartree: -1193.256060848944
+final_energy_hartree: -1193.399736363419
+delta_energy_hartree: -0.143675514475
+elapsed_seconds: 762.0
+elapsed_seconds_per_step: 23.1

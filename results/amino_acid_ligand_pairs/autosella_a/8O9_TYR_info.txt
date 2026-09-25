@@ -1,0 +1,23 @@
+molecule: 8O9_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/8O9_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/8O9_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 96
+converged: True
+status: ok
+initial_energy_kj_mol: -2964197.093244920019
+final_energy_kj_mol: -2964275.595563606359
+delta_energy_kj_mol: -78.502318686340
+initial_energy_hartree: -1129.003047142720
+final_energy_hartree: -1129.032947096811
+delta_energy_hartree: -0.029899954091
+elapsed_seconds: 2097.3
+elapsed_seconds_per_step: 21.8

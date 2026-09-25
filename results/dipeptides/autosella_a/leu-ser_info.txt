@@ -1,0 +1,23 @@
+molecule: leu-ser
+input_xyz: inputs/dipeptides/leu-ser.xyz
+final_xyz: results/dipeptides/autosella_a/leu-ser_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2457802.538432565052
+final_energy_kj_mol: -2457888.349705705885
+delta_energy_kj_mol: -85.811273140833
+initial_energy_hartree: -936.127547486331
+final_energy_hartree: -936.160231274152
+delta_energy_hartree: -0.032683787821
+elapsed_seconds: 575.3
+elapsed_seconds_per_step: 19.8

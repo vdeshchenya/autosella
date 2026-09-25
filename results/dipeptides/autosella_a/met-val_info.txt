@@ -1,0 +1,23 @@
+molecule: met-val
+input_xyz: inputs/dipeptides/met-val.xyz
+final_xyz: results/dipeptides/autosella_a/met-val_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -3408749.532164562028
+final_energy_kj_mol: -3408988.115371570457
+delta_energy_kj_mol: -238.583207008429
+initial_energy_hartree: -1298.324128827464
+final_energy_hartree: -1298.415000371844
+delta_energy_hartree: -0.090871544380
+elapsed_seconds: 636.5
+elapsed_seconds_per_step: 21.2

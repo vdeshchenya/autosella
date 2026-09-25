@@ -1,0 +1,23 @@
+molecule: EQR_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/EQR_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/EQR_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 61
+converged: True
+status: ok
+initial_energy_kj_mol: -4726127.875532043166
+final_energy_kj_mol: -4726364.874321446754
+delta_energy_kj_mol: -236.998789403588
+initial_energy_hartree: -1800.087040373111
+final_energy_hartree: -1800.177308444696
+delta_energy_hartree: -0.090268071585
+elapsed_seconds: 2562.2
+elapsed_seconds_per_step: 42.0

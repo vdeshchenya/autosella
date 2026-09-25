@@ -1,0 +1,23 @@
+molecule: ADB_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/ADB_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/ADB_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 52
+converged: True
+status: ok
+initial_energy_kj_mol: -7000545.419663064182
+final_energy_kj_mol: -7000677.304632770829
+delta_energy_kj_mol: -131.884969706647
+initial_energy_hartree: -2666.366932371715
+final_energy_hartree: -2666.417164703772
+delta_energy_hartree: -0.050232332057
+elapsed_seconds: 2141.5
+elapsed_seconds_per_step: 41.2

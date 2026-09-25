@@ -1,0 +1,23 @@
+molecule: 388_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/388_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/388_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 55
+converged: True
+status: ok
+initial_energy_kj_mol: -12289729.584488293156
+final_energy_kj_mol: -12289827.080222338438
+delta_energy_kj_mol: -97.495734045282
+initial_energy_hartree: -4680.910787297931
+final_energy_hartree: -4680.947921461874
+delta_energy_hartree: -0.037134163943
+elapsed_seconds: 2244.8
+elapsed_seconds_per_step: 40.8

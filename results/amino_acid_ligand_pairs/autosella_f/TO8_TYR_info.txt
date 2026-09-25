@@ -1,0 +1,23 @@
+molecule: TO8_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/TO8_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/TO8_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -4958517.835754415020
+final_energy_kj_mol: -4958587.761226607487
+delta_energy_kj_mol: -69.925472192466
+initial_energy_hartree: -1888.599701631144
+final_energy_hartree: -1888.626334836931
+delta_energy_hartree: -0.026633205787
+elapsed_seconds: 1100.4
+elapsed_seconds_per_step: 32.4

@@ -1,0 +1,23 @@
+molecule: JHD_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/JHD_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/JHD_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 63
+converged: True
+status: ok
+initial_energy_kj_mol: -3306957.622059662361
+final_energy_kj_mol: -3307055.931701932568
+delta_energy_kj_mol: -98.309642270207
+initial_energy_hartree: -1259.553637841960
+final_energy_hartree: -1259.591082007174
+delta_energy_hartree: -0.037444165214
+elapsed_seconds: 1581.6
+elapsed_seconds_per_step: 25.1

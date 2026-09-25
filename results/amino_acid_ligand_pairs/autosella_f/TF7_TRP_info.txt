@@ -1,0 +1,23 @@
+molecule: TF7_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/TF7_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/TF7_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -5385089.517655889504
+final_energy_kj_mol: -5385675.616888888180
+delta_energy_kj_mol: -586.099232998677
+initial_energy_hartree: -2051.072274655750
+final_energy_hartree: -2051.295508064045
+delta_energy_hartree: -0.223233408295
+elapsed_seconds: 1730.6
+elapsed_seconds_per_step: 49.4

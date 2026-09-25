@@ -1,0 +1,23 @@
+molecule: phe-met
+input_xyz: inputs/dipeptides/phe-met.xyz
+final_xyz: results/dipeptides/autosella_f/phe-met_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -3809043.057276711799
+final_energy_kj_mol: -3809107.623324405402
+delta_energy_kj_mol: -64.566047693603
+initial_energy_hartree: -1450.787880523673
+final_energy_hartree: -1450.812472432475
+delta_energy_hartree: -0.024591908802
+elapsed_seconds: 609.2
+elapsed_seconds_per_step: 24.4

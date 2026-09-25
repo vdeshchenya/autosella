@@ -1,0 +1,23 @@
+molecule: asn-thr
+input_xyz: inputs/dipeptides/asn-thr.xyz
+final_xyz: results/dipeptides/autosella_f/asn-thr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -2694323.587021998595
+final_energy_kj_mol: -2694427.855094661005
+delta_energy_kj_mol: -104.268072662409
+initial_energy_hartree: -1026.213657205351
+final_energy_hartree: -1026.253370816846
+delta_energy_hartree: -0.039713611495
+elapsed_seconds: 471.8
+elapsed_seconds_per_step: 18.9

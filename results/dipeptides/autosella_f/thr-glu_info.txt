@@ -1,0 +1,23 @@
+molecule: thr-glu
+input_xyz: inputs/dipeptides/thr-glu.xyz
+final_xyz: results/dipeptides/autosella_f/thr-glu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -2848105.149218813982
+final_energy_kj_mol: -2848403.697404083796
+delta_energy_kj_mol: -298.548185269814
+initial_energy_hartree: -1084.785960885910
+final_energy_hartree: -1084.899671884297
+delta_energy_hartree: -0.113710998387
+elapsed_seconds: 561.5
+elapsed_seconds_per_step: 18.7

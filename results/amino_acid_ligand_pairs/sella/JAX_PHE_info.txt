@@ -1,0 +1,23 @@
+molecule: JAX_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/JAX_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/JAX_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -3861936.120149451308
+final_energy_kj_mol: -3862022.657333528623
+delta_energy_kj_mol: -86.537184077315
+initial_energy_hartree: -1470.933784212777
+final_energy_hartree: -1470.966744485472
+delta_energy_hartree: -0.032960272695
+elapsed_seconds: 1560.1
+elapsed_seconds_per_step: 31.2

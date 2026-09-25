@@ -1,0 +1,23 @@
+molecule: trp-ash
+input_xyz: inputs/dipeptides/trp-ash.xyz
+final_xyz: results/dipeptides/autosella_f/trp-ash_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -3397441.438069189433
+final_energy_kj_mol: -3397799.957700263709
+delta_energy_kj_mol: -358.519631074276
+initial_energy_hartree: -1294.017103252091
+final_energy_hartree: -1294.153656167842
+delta_energy_hartree: -0.136552915751
+elapsed_seconds: 751.3
+elapsed_seconds_per_step: 25.0

@@ -1,0 +1,23 @@
+molecule: met-hie
+input_xyz: inputs/dipeptides/met-hie.xyz
+final_xyz: results/dipeptides/sella/met-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -3793171.523379798513
+final_energy_kj_mol: -3793273.131987155415
+delta_energy_kj_mol: -101.608607356902
+initial_energy_hartree: -1444.742732522793
+final_energy_hartree: -1444.781433197449
+delta_energy_hartree: -0.038700674656
+elapsed_seconds: 753.1
+elapsed_seconds_per_step: 24.3

@@ -1,0 +1,23 @@
+molecule: gly-hie
+input_xyz: inputs/dipeptides/gly-hie.xyz
+final_xyz: results/dipeptides/autosella_a/gly-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 40
+converged: True
+status: ok
+initial_energy_kj_mol: -2438291.786691676825
+final_energy_kj_mol: -2438359.859828194603
+delta_energy_kj_mol: -68.073136517778
+initial_energy_hartree: -928.696294612591
+final_energy_hartree: -928.722222300980
+delta_energy_hartree: -0.025927688389
+elapsed_seconds: 1090.0
+elapsed_seconds_per_step: 27.2

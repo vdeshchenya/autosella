@@ -1,0 +1,23 @@
+molecule: BT9_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/BT9_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/BT9_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 64
+converged: True
+status: ok
+initial_energy_kj_mol: -4485887.124591290951
+final_energy_kj_mol: -4485985.274721829221
+delta_energy_kj_mol: -98.150130538270
+initial_energy_hartree: -1708.584170851353
+final_energy_hartree: -1708.621554261757
+delta_energy_hartree: -0.037383410404
+elapsed_seconds: 2336.8
+elapsed_seconds_per_step: 36.5

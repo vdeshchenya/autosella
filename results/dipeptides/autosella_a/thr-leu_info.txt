@@ -1,0 +1,23 @@
+molecule: thr-leu
+input_xyz: inputs/dipeptides/thr-leu.xyz
+final_xyz: results/dipeptides/autosella_a/thr-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 40
+converged: True
+status: ok
+initial_energy_kj_mol: -2560983.639108742122
+final_energy_kj_mol: -2561083.785239516757
+delta_energy_kj_mol: -100.146130774636
+initial_energy_hartree: -975.427153216468
+final_energy_hartree: -975.465296863212
+delta_energy_hartree: -0.038143646744
+elapsed_seconds: 867.7
+elapsed_seconds_per_step: 21.7

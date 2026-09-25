@@ -1,0 +1,23 @@
+molecule: lyn-trp
+input_xyz: inputs/dipeptides/lyn-trp.xyz
+final_xyz: results/dipeptides/autosella_f/lyn-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -3357209.008444872685
+final_energy_kj_mol: -3357541.859994505998
+delta_energy_kj_mol: -332.851549633313
+initial_energy_hartree: -1278.693380095044
+final_energy_hartree: -1278.820156554895
+delta_energy_hartree: -0.126776459851
+elapsed_seconds: 907.6
+elapsed_seconds_per_step: 30.3

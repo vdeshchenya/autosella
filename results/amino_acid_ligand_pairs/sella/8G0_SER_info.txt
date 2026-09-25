@@ -1,0 +1,23 @@
+molecule: 8G0_SER
+input_xyz: inputs/amino_acid_ligand_pairs/8G0_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/8G0_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 111
+converged: True
+status: ok
+initial_energy_kj_mol: -3098812.168351881206
+final_energy_kj_mol: -3098905.007338216063
+delta_energy_kj_mol: -92.838986334857
+initial_energy_hartree: -1180.275221430136
+final_energy_hartree: -1180.310581932548
+delta_energy_hartree: -0.035360502412
+elapsed_seconds: 2002.7
+elapsed_seconds_per_step: 18.0

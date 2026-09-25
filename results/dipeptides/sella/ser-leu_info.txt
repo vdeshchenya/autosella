@@ -1,0 +1,23 @@
+molecule: ser-leu
+input_xyz: inputs/dipeptides/ser-leu.xyz
+final_xyz: results/dipeptides/sella/ser-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -2457632.474887243472
+final_energy_kj_mol: -2457888.677401199937
+delta_energy_kj_mol: -256.202513956465
+initial_energy_hartree: -936.062773702795
+final_energy_hartree: -936.160356086774
+delta_energy_hartree: -0.097582383979
+elapsed_seconds: 524.4
+elapsed_seconds_per_step: 19.4

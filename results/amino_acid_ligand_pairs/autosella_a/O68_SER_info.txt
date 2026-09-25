@@ -1,0 +1,23 @@
+molecule: O68_SER
+input_xyz: inputs/amino_acid_ligand_pairs/O68_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/O68_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 87
+converged: True
+status: ok
+initial_energy_kj_mol: -4166941.324386648368
+final_energy_kj_mol: -4167057.150359193794
+delta_energy_kj_mol: -115.825972545426
+initial_energy_hartree: -1587.104131239607
+final_energy_hartree: -1587.148247022677
+delta_energy_hartree: -0.044115783070
+elapsed_seconds: 2015.6
+elapsed_seconds_per_step: 23.2

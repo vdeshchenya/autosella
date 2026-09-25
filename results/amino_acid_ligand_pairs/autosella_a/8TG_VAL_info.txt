@@ -1,0 +1,23 @@
+molecule: 8TG_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/8TG_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/8TG_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -10157346.438532376662
+final_energy_kj_mol: -10157432.080320505425
+delta_energy_kj_mol: -85.641788128763
+initial_energy_hartree: -3868.728940501589
+final_energy_hartree: -3868.761559735978
+delta_energy_hartree: -0.032619234389
+elapsed_seconds: 1073.2
+elapsed_seconds_per_step: 29.0

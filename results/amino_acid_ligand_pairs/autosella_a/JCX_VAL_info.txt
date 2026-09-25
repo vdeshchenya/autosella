@@ -1,0 +1,23 @@
+molecule: JCX_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/JCX_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/JCX_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 60
+converged: True
+status: ok
+initial_energy_kj_mol: -3067451.146691280417
+final_energy_kj_mol: -3067522.098071401939
+delta_energy_kj_mol: -70.951380121522
+initial_energy_hartree: -1168.330439115554
+final_energy_hartree: -1168.357463069035
+delta_energy_hartree: -0.027023953481
+elapsed_seconds: 1678.9
+elapsed_seconds_per_step: 28.0

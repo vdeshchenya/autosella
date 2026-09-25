@@ -1,0 +1,23 @@
+molecule: EDP_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/EDP_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/EDP_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 61
+converged: True
+status: ok
+initial_energy_kj_mol: -4158170.300443449989
+final_energy_kj_mol: -4158304.546370870434
+delta_energy_kj_mol: -134.245927420445
+initial_energy_hartree: -1583.763424651304
+final_energy_hartree: -1583.814556224663
+delta_energy_hartree: -0.051131573359
+elapsed_seconds: 1837.2
+elapsed_seconds_per_step: 30.1

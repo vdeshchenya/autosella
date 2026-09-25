@@ -1,0 +1,23 @@
+molecule: cys-gly
+input_xyz: inputs/dipeptides/cys-gly.xyz
+final_xyz: results/dipeptides/autosella_a/cys-gly_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 40
+converged: True
+status: ok
+initial_energy_kj_mol: -2892831.463121514302
+final_energy_kj_mol: -2893043.305236384273
+delta_energy_kj_mol: -211.842114869971
+initial_energy_hartree: -1101.821314168823
+final_energy_hartree: -1101.902000569112
+delta_energy_hartree: -0.080686400289
+elapsed_seconds: 585.0
+elapsed_seconds_per_step: 14.6

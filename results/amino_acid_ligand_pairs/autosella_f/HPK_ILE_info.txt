@@ -1,0 +1,23 @@
+molecule: HPK_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/HPK_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/HPK_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 71
+converged: True
+status: ok
+initial_energy_kj_mol: -3615643.188247572631
+final_energy_kj_mol: -3615870.341915197205
+delta_energy_kj_mol: -227.153667624574
+initial_energy_hartree: -1377.125760704281
+final_energy_hartree: -1377.212278967018
+delta_energy_hartree: -0.086518262737
+elapsed_seconds: 2000.3
+elapsed_seconds_per_step: 28.2

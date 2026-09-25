@@ -1,0 +1,23 @@
+molecule: BBL_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/BBL_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/BBL_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 98
+converged: True
+status: ok
+initial_energy_kj_mol: -3947793.197050320916
+final_energy_kj_mol: -3947988.051090604160
+delta_energy_kj_mol: -194.854040283244
+initial_energy_hartree: -1503.635017764604
+final_energy_hartree: -1503.709233749003
+delta_energy_hartree: -0.074215984399
+elapsed_seconds: 2786.5
+elapsed_seconds_per_step: 28.4

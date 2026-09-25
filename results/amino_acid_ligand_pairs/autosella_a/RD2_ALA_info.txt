@@ -1,0 +1,23 @@
+molecule: RD2_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/RD2_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/RD2_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 57
+converged: True
+status: ok
+initial_energy_kj_mol: -5595983.659543760121
+final_energy_kj_mol: -5596201.810458790511
+delta_energy_kj_mol: -218.150915030390
+initial_energy_hartree: -2131.397611104719
+final_energy_hartree: -2131.480700400086
+delta_energy_hartree: -0.083089295367
+elapsed_seconds: 1625.1
+elapsed_seconds_per_step: 28.5

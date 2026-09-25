@@ -1,0 +1,23 @@
+molecule: HAV_MET
+input_xyz: inputs/amino_acid_ligand_pairs/HAV_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/HAV_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -3754658.219572199043
+final_energy_kj_mol: -3754754.350848621223
+delta_energy_kj_mol: -96.131276422180
+initial_energy_hartree: -1430.073789808625
+final_energy_hartree: -1430.110404278106
+delta_energy_hartree: -0.036614469481
+elapsed_seconds: 688.6
+elapsed_seconds_per_step: 22.2

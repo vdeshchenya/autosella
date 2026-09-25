@@ -1,0 +1,23 @@
+molecule: VFJ_THR
+input_xyz: inputs/amino_acid_ligand_pairs/VFJ_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/VFJ_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 72
+converged: True
+status: ok
+initial_energy_kj_mol: -5476115.039603553712
+final_energy_kj_mol: -5476249.350555074401
+delta_energy_kj_mol: -134.310951520689
+initial_energy_hartree: -2085.742064961147
+final_energy_hartree: -2085.793221300878
+delta_energy_hartree: -0.051156339731
+elapsed_seconds: 2146.9
+elapsed_seconds_per_step: 29.8

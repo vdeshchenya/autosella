@@ -1,0 +1,23 @@
+molecule: 7RN_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/7RN_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/7RN_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 55
+converged: True
+status: ok
+initial_energy_kj_mol: -4196446.085851631127
+final_energy_kj_mol: -4196525.148269791156
+delta_energy_kj_mol: -79.062418160029
+initial_energy_hartree: -1598.341901384884
+final_energy_hartree: -1598.372014669598
+delta_energy_hartree: -0.030113284714
+elapsed_seconds: 1645.0
+elapsed_seconds_per_step: 29.9

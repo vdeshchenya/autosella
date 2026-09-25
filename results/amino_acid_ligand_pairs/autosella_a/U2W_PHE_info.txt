@@ -1,0 +1,23 @@
+molecule: U2W_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/U2W_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/U2W_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 48
+converged: True
+status: ok
+initial_energy_kj_mol: -5749425.157127978280
+final_energy_kj_mol: -5749519.517588389106
+delta_energy_kj_mol: -94.360460410826
+initial_energy_hartree: -2189.840391014837
+final_energy_hartree: -2189.876331016120
+delta_energy_hartree: -0.035940001283
+elapsed_seconds: 1359.3
+elapsed_seconds_per_step: 28.3

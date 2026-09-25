@@ -1,0 +1,23 @@
+molecule: ser-thr
+input_xyz: inputs/dipeptides/ser-thr.xyz
+final_xyz: results/dipeptides/autosella_a/ser-thr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -2448727.081477510277
+final_energy_kj_mol: -2449013.575802169275
+delta_energy_kj_mol: -286.494324658997
+initial_energy_hartree: -932.670888487569
+final_energy_hartree: -932.780008412916
+delta_energy_hartree: -0.109119925347
+elapsed_seconds: 536.3
+elapsed_seconds_per_step: 17.9

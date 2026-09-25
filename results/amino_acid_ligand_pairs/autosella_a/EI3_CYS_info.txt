@@ -1,0 +1,23 @@
+molecule: EI3_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/EI3_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/EI3_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -3853613.490162125789
+final_energy_kj_mol: -3853727.311791652814
+delta_energy_kj_mol: -113.821629527025
+initial_energy_hartree: -1467.763861862693
+final_energy_hartree: -1467.807214231825
+delta_energy_hartree: -0.043352369132
+elapsed_seconds: 1753.3
+elapsed_seconds_per_step: 25.8

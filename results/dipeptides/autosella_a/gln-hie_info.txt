@@ -1,0 +1,23 @@
+molecule: gln-hie
+input_xyz: inputs/dipeptides/gln-hie.xyz
+final_xyz: results/dipeptides/autosella_a/gln-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -3087532.116912901867
+final_energy_kj_mol: -3087629.620008931495
+delta_energy_kj_mol: -97.503096029628
+initial_energy_hartree: -1175.978876738497
+final_energy_hartree: -1176.016013706472
+delta_energy_hartree: -0.037136967975
+elapsed_seconds: 655.6
+elapsed_seconds_per_step: 23.4

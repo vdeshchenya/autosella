@@ -1,0 +1,23 @@
+molecule: FDP_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/FDP_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/FDP_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -6829784.786821134388
+final_energy_kj_mol: -6830063.027659218758
+delta_energy_kj_mol: -278.240838084370
+initial_energy_hartree: -2601.327642221305
+final_energy_hartree: -2601.433618559637
+delta_energy_hartree: -0.105976338332
+elapsed_seconds: 1203.6
+elapsed_seconds_per_step: 33.4

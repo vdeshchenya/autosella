@@ -1,0 +1,23 @@
+molecule: UJ6_MET
+input_xyz: inputs/amino_acid_ligand_pairs/UJ6_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/UJ6_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 49
+converged: True
+status: ok
+initial_energy_kj_mol: -5405460.079125247896
+final_energy_kj_mol: -5405599.369906384498
+delta_energy_kj_mol: -139.290781136602
+initial_energy_hartree: -2058.831011759745
+final_energy_hartree: -2058.884064816406
+delta_energy_hartree: -0.053053056661
+elapsed_seconds: 2292.7
+elapsed_seconds_per_step: 46.8

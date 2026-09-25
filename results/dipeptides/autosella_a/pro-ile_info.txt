@@ -1,0 +1,23 @@
+molecule: pro-ile
+input_xyz: inputs/dipeptides/pro-ile.xyz
+final_xyz: results/dipeptides/autosella_a/pro-ile_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -2463229.313855269924
+final_energy_kj_mol: -2463592.555547729600
+delta_energy_kj_mol: -363.241692459676
+initial_energy_hartree: -938.194497083696
+final_energy_hartree: -938.332848537643
+delta_energy_hartree: -0.138351453947
+elapsed_seconds: 662.8
+elapsed_seconds_per_step: 21.4

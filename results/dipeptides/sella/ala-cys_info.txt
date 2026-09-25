@@ -1,0 +1,23 @@
+molecule: ala-cys
+input_xyz: inputs/dipeptides/ala-cys.xyz
+final_xyz: results/dipeptides/sella/ala-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -2995971.751031533815
+final_energy_kj_mol: -2996233.636933665723
+delta_energy_kj_mol: -261.885902131908
+initial_energy_hartree: -1141.105375137291
+final_energy_hartree: -1141.205122209503
+delta_energy_hartree: -0.099747072212
+elapsed_seconds: 421.1
+elapsed_seconds_per_step: 15.0

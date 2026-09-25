@@ -1,0 +1,23 @@
+molecule: ala-glu
+input_xyz: inputs/dipeptides/ala-glu.xyz
+final_xyz: results/dipeptides/autosella_a/ala-glu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2547545.998402664438
+final_energy_kj_mol: -2547726.840043337550
+delta_energy_kj_mol: -180.841640673112
+initial_energy_hartree: -970.309026173518
+final_energy_hartree: -970.377905116769
+delta_energy_hartree: -0.068878943251
+elapsed_seconds: 451.0
+elapsed_seconds_per_step: 15.6

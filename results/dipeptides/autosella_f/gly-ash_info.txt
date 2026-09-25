@@ -1,0 +1,23 @@
+molecule: gly-ash
+input_xyz: inputs/dipeptides/gly-ash.xyz
+final_xyz: results/dipeptides/autosella_f/gly-ash_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -2342467.342483606189
+final_energy_kj_mol: -2342715.260304113384
+delta_energy_kj_mol: -247.917820507195
+initial_energy_hartree: -892.198691349902
+final_energy_hartree: -892.293118260795
+delta_energy_hartree: -0.094426910893
+elapsed_seconds: 459.4
+elapsed_seconds_per_step: 13.9

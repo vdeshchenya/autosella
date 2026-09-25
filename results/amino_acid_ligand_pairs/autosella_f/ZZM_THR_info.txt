@@ -1,0 +1,23 @@
+molecule: ZZM_THR
+input_xyz: inputs/amino_acid_ligand_pairs/ZZM_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/ZZM_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 54
+converged: True
+status: ok
+initial_energy_kj_mol: -3986892.315877628978
+final_energy_kj_mol: -3987009.349943986628
+delta_energy_kj_mol: -117.034066357650
+initial_energy_hartree: -1518.527085635942
+final_energy_hartree: -1518.571661557644
+delta_energy_hartree: -0.044575921702
+elapsed_seconds: 2088.7
+elapsed_seconds_per_step: 38.7

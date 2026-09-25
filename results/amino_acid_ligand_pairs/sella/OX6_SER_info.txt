@@ -1,0 +1,23 @@
+molecule: OX6_SER
+input_xyz: inputs/amino_acid_ligand_pairs/OX6_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/OX6_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -3652900.433691000566
+final_energy_kj_mol: -3653009.647647784557
+delta_energy_kj_mol: -109.213956783991
+initial_energy_hartree: -1391.316296053510
+final_energy_hartree: -1391.357893452779
+delta_energy_hartree: -0.041597399269
+elapsed_seconds: 1288.3
+elapsed_seconds_per_step: 25.8

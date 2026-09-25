@@ -1,0 +1,23 @@
+molecule: 4NF_SER
+input_xyz: inputs/amino_acid_ligand_pairs/4NF_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/4NF_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 48
+converged: True
+status: ok
+initial_energy_kj_mol: -3936280.126711359713
+final_energy_kj_mol: -3936357.648260756396
+delta_energy_kj_mol: -77.521549396683
+initial_energy_hartree: -1499.249920861204
+final_energy_hartree: -1499.279447260001
+delta_energy_hartree: -0.029526398797
+elapsed_seconds: 1036.9
+elapsed_seconds_per_step: 21.6

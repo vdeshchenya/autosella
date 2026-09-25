@@ -1,0 +1,23 @@
+molecule: 4NA_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/4NA_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/4NA_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 45
+converged: True
+status: ok
+initial_energy_kj_mol: -5119491.453115830198
+final_energy_kj_mol: -5119555.720019900240
+delta_energy_kj_mol: -64.266904070042
+initial_energy_hartree: -1949.911314453648
+final_energy_hartree: -1949.935792424661
+delta_energy_hartree: -0.024477971013
+elapsed_seconds: 1557.0
+elapsed_seconds_per_step: 34.6

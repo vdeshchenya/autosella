@@ -1,0 +1,23 @@
+molecule: 7WH_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/7WH_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/7WH_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 78
+converged: True
+status: ok
+initial_energy_kj_mol: -4541852.396701949649
+final_energy_kj_mol: -4542033.889385726303
+delta_energy_kj_mol: -181.492683776654
+initial_energy_hartree: -1729.900217240811
+final_energy_hartree: -1729.969344153284
+delta_energy_hartree: -0.069126912473
+elapsed_seconds: 2401.0
+elapsed_seconds_per_step: 30.8

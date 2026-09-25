@@ -1,0 +1,23 @@
+molecule: BWM_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/BWM_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/BWM_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -4203510.415265511721
+final_energy_kj_mol: -4203593.312534730881
+delta_energy_kj_mol: -82.897269219160
+initial_energy_hartree: -1601.032562357620
+final_energy_hartree: -1601.064136259963
+delta_energy_hartree: -0.031573902343
+elapsed_seconds: 1199.0
+elapsed_seconds_per_step: 44.4

@@ -1,0 +1,23 @@
+molecule: hip-gln
+input_xyz: inputs/dipeptides/hip-gln.xyz
+final_xyz: results/dipeptides/autosella_a/hip-gln_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -3088321.574970268644
+final_energy_kj_mol: -3088710.770442921668
+delta_energy_kj_mol: -389.195472653024
+initial_energy_hartree: -1176.279565432373
+final_energy_hartree: -1176.427802159128
+delta_energy_hartree: -0.148236726755
+elapsed_seconds: 819.3
+elapsed_seconds_per_step: 22.1

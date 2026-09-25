@@ -1,0 +1,23 @@
+molecule: hid-pro
+input_xyz: inputs/dipeptides/hid-pro.xyz
+final_xyz: results/dipeptides/sella/hid-pro_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -2744376.211109943222
+final_energy_kj_mol: -2744728.574423933867
+delta_energy_kj_mol: -352.363313990645
+initial_energy_hartree: -1045.277694897567
+final_energy_hartree: -1045.411902995977
+delta_energy_hartree: -0.134208098410
+elapsed_seconds: 571.8
+elapsed_seconds_per_step: 21.2

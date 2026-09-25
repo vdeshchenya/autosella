@@ -1,0 +1,23 @@
+molecule: FHB_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/FHB_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/FHB_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 42
+converged: True
+status: ok
+initial_energy_kj_mol: -2761113.068394338246
+final_energy_kj_mol: -2761167.165101601742
+delta_energy_kj_mol: -54.096707263496
+initial_energy_hartree: -1051.652427170511
+final_energy_hartree: -1051.673031518137
+delta_energy_hartree: -0.020604347626
+elapsed_seconds: 795.6
+elapsed_seconds_per_step: 18.9

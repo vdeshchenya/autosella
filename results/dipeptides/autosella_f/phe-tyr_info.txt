@@ -1,0 +1,23 @@
+molecule: phe-tyr
+input_xyz: inputs/dipeptides/phe-tyr.xyz
+final_xyz: results/dipeptides/autosella_f/phe-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -3361048.838128489908
+final_energy_kj_mol: -3361326.306122269016
+delta_energy_kj_mol: -277.467993779108
+initial_energy_hartree: -1280.155893982259
+final_energy_hartree: -1280.261575959741
+delta_energy_hartree: -0.105681977482
+elapsed_seconds: 760.7
+elapsed_seconds_per_step: 30.4

@@ -1,0 +1,23 @@
+molecule: gln-glu
+input_xyz: inputs/dipeptides/gln-glu.xyz
+final_xyz: results/dipeptides/autosella_f/gln-glu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -3093719.505901030265
+final_energy_kj_mol: -3093820.925577973947
+delta_energy_kj_mol: -101.419676943682
+initial_energy_hartree: -1178.335528742972
+final_energy_hartree: -1178.374157457834
+delta_energy_hartree: -0.038628714862
+elapsed_seconds: 585.2
+elapsed_seconds_per_step: 21.7

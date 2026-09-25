@@ -1,0 +1,23 @@
+molecule: UUV_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/UUV_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/UUV_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 53
+converged: True
+status: ok
+initial_energy_kj_mol: -9362289.188848547637
+final_energy_kj_mol: -9362365.955846674740
+delta_energy_kj_mol: -76.766998127103
+initial_energy_hartree: -3565.907626901513
+final_energy_hartree: -3565.936865906909
+delta_energy_hartree: -0.029239005396
+elapsed_seconds: 1148.0
+elapsed_seconds_per_step: 21.7

@@ -1,0 +1,23 @@
+molecule: 4SW_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/4SW_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/4SW_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 40
+converged: True
+status: ok
+initial_energy_kj_mol: -3413784.527321495116
+final_energy_kj_mol: -3413878.725519375876
+delta_energy_kj_mol: -94.198197880760
+initial_energy_hartree: -1300.241857202369
+final_energy_hartree: -1300.277735401118
+delta_energy_hartree: -0.035878198749
+elapsed_seconds: 1261.6
+elapsed_seconds_per_step: 31.5

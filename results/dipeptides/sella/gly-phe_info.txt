@@ -1,0 +1,23 @@
+molecule: gly-phe
+input_xyz: inputs/dipeptides/gly-phe.xyz
+final_xyz: results/dipeptides/sella/gly-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -2453923.598388897721
+final_energy_kj_mol: -2454136.724861856550
+delta_energy_kj_mol: -213.126472958829
+initial_energy_hartree: -934.650137249689
+final_energy_hartree: -934.731312836139
+delta_energy_hartree: -0.081175586450
+elapsed_seconds: 527.8
+elapsed_seconds_per_step: 17.0

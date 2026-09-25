@@ -1,0 +1,23 @@
+molecule: trp-hid
+input_xyz: inputs/dipeptides/trp-hid.xyz
+final_xyz: results/dipeptides/sella/trp-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 44
+converged: True
+status: ok
+initial_energy_kj_mol: -3493071.325597214047
+final_energy_kj_mol: -3493433.558380777482
+delta_energy_kj_mol: -362.232783563435
+initial_energy_hartree: -1330.440603788914
+final_energy_hartree: -1330.578570969757
+delta_energy_hartree: -0.137967180843
+elapsed_seconds: 1354.0
+elapsed_seconds_per_step: 30.8

@@ -1,0 +1,23 @@
+molecule: hie-lyn
+input_xyz: inputs/dipeptides/hie-lyn.xyz
+final_xyz: results/dipeptides/autosella_a/hie-lyn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -2996284.585761539638
+final_energy_kj_mol: -2996395.278950379696
+delta_energy_kj_mol: -110.693188840058
+initial_energy_hartree: -1141.224527593190
+final_energy_hartree: -1141.266688402194
+delta_energy_hartree: -0.042160809004
+elapsed_seconds: 778.3
+elapsed_seconds_per_step: 22.2

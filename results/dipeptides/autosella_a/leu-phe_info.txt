@@ -1,0 +1,23 @@
+molecule: leu-phe
+input_xyz: inputs/dipeptides/leu-phe.xyz
+final_xyz: results/dipeptides/autosella_a/leu-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -2866581.333866266534
+final_energy_kj_mol: -2866875.795209735166
+delta_energy_kj_mol: -294.461343468633
+initial_energy_hartree: -1091.823167964374
+final_energy_hartree: -1091.935322366927
+delta_energy_hartree: -0.112154402553
+elapsed_seconds: 847.6
+elapsed_seconds_per_step: 25.7

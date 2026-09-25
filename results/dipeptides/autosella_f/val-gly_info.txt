@@ -1,0 +1,23 @@
+molecule: val-gly
+input_xyz: inputs/dipeptides/val-gly.xyz
+final_xyz: results/dipeptides/autosella_f/val-gly_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -2053800.183354613371
+final_energy_kj_mol: -2054006.360970370239
+delta_energy_kj_mol: -206.177615756867
+initial_energy_hartree: -782.251177060326
+final_energy_hartree: -782.329705966846
+delta_energy_hartree: -0.078528906520
+elapsed_seconds: 355.9
+elapsed_seconds_per_step: 14.2

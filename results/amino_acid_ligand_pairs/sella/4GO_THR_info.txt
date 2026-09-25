@@ -1,0 +1,23 @@
+molecule: 4GO_THR
+input_xyz: inputs/amino_acid_ligand_pairs/4GO_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/4GO_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 58
+converged: True
+status: ok
+initial_energy_kj_mol: -3354904.229904405307
+final_energy_kj_mol: -3354986.479871708434
+delta_energy_kj_mol: -82.249967303127
+initial_energy_hartree: -1277.815536310261
+final_energy_hartree: -1277.846863668325
+delta_energy_hartree: -0.031327358064
+elapsed_seconds: 1569.8
+elapsed_seconds_per_step: 27.1

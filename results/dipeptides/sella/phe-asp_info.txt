@@ -1,0 +1,23 @@
+molecule: phe-asp
+input_xyz: inputs/dipeptides/phe-asp.xyz
+final_xyz: results/dipeptides/sella/phe-asp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -3050914.355628733989
+final_energy_kj_mol: -3050992.618406429421
+delta_energy_kj_mol: -78.262777695432
+initial_energy_hartree: -1162.031908042123
+final_energy_hartree: -1162.061716759869
+delta_energy_hartree: -0.029808717746
+elapsed_seconds: 771.0
+elapsed_seconds_per_step: 24.9

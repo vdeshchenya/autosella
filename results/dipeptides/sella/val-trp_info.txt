@@ -1,0 +1,23 @@
+molecule: val-trp
+input_xyz: inputs/dipeptides/val-trp.xyz
+final_xyz: results/dipeptides/sella/val-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3108721.224282896612
+final_energy_kj_mol: -3109102.428602012340
+delta_energy_kj_mol: -381.204319115728
+initial_energy_hartree: -1184.049381510759
+final_energy_hartree: -1184.194574567876
+delta_energy_hartree: -0.145193057117
+elapsed_seconds: 914.2
+elapsed_seconds_per_step: 26.9

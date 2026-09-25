@@ -1,0 +1,23 @@
+molecule: cyx-gly
+input_xyz: inputs/dipeptides/cyx-gly.xyz
+final_xyz: results/dipeptides/autosella_f/cyx-gly_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 19
+converged: True
+status: ok
+initial_energy_kj_mol: -2891484.601122648455
+final_energy_kj_mol: -2891678.938743503764
+delta_energy_kj_mol: -194.337620855309
+initial_energy_hartree: -1101.308321525970
+final_energy_hartree: -1101.382340816597
+delta_energy_hartree: -0.074019290627
+elapsed_seconds: 243.5
+elapsed_seconds_per_step: 12.8

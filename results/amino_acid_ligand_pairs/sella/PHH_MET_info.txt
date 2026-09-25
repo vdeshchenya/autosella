@@ -1,0 +1,23 @@
+molecule: PHH_MET
+input_xyz: inputs/amino_acid_ligand_pairs/PHH_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/PHH_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 67
+converged: True
+status: ok
+initial_energy_kj_mol: -8584474.419155776501
+final_energy_kj_mol: -8584526.784076943994
+delta_energy_kj_mol: -52.364921167493
+initial_energy_hartree: -3269.653627092603
+final_energy_hartree: -3269.673571837740
+delta_energy_hartree: -0.019944745137
+elapsed_seconds: 1411.9
+elapsed_seconds_per_step: 21.1

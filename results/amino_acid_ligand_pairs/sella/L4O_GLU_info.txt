@@ -1,0 +1,23 @@
+molecule: L4O_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/L4O_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/L4O_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 121
+converged: True
+status: ok
+initial_energy_kj_mol: -3609524.455891294405
+final_energy_kj_mol: -3609616.610172018409
+delta_energy_kj_mol: -92.154280724004
+initial_energy_hartree: -1374.795258629830
+final_energy_hartree: -1374.830358341648
+delta_energy_hartree: -0.035099711818
+elapsed_seconds: 3160.2
+elapsed_seconds_per_step: 26.1

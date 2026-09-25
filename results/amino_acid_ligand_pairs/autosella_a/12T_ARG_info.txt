@@ -1,0 +1,23 @@
+molecule: 12T_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/12T_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/12T_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 81
+converged: True
+status: ok
+initial_energy_kj_mol: -3789994.211490545422
+final_energy_kj_mol: -3790211.882188483607
+delta_energy_kj_mol: -217.670697938185
+initial_energy_hartree: -1443.532558336716
+final_energy_hartree: -1443.615464727052
+delta_energy_hartree: -0.082906390336
+elapsed_seconds: 2518.7
+elapsed_seconds_per_step: 31.1

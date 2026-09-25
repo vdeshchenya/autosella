@@ -1,0 +1,23 @@
+molecule: OTW_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/OTW_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/OTW_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 53
+converged: True
+status: ok
+initial_energy_kj_mol: -3795823.973693974316
+final_energy_kj_mol: -3795891.508907340467
+delta_energy_kj_mol: -67.535213366151
+initial_energy_hartree: -1445.752997492664
+final_energy_hartree: -1445.778720296945
+delta_energy_hartree: -0.025722804281
+elapsed_seconds: 1175.6
+elapsed_seconds_per_step: 22.2

@@ -1,0 +1,23 @@
+molecule: 5Q0_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/5Q0_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/5Q0_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -2863608.205107334070
+final_energy_kj_mol: -2863648.523164683487
+delta_energy_kj_mol: -40.318057349417
+initial_energy_hartree: -1090.690763025434
+final_energy_hartree: -1090.706119362469
+delta_energy_hartree: -0.015356337035
+elapsed_seconds: 650.8
+elapsed_seconds_per_step: 21.7

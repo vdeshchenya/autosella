@@ -1,0 +1,23 @@
+molecule: YHX_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/YHX_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/YHX_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 55
+converged: True
+status: ok
+initial_energy_kj_mol: -3697257.875616456382
+final_energy_kj_mol: -3697345.833165441174
+delta_energy_kj_mol: -87.957548984792
+initial_energy_hartree: -1408.211153420256
+final_energy_hartree: -1408.244654681373
+delta_energy_hartree: -0.033501261117
+elapsed_seconds: 1813.4
+elapsed_seconds_per_step: 33.0

@@ -1,0 +1,23 @@
+molecule: glh-hie
+input_xyz: inputs/dipeptides/glh-hie.xyz
+final_xyz: results/dipeptides/autosella_f/glh-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -3139584.560297715012
+final_energy_kj_mol: -3139862.981557942461
+delta_energy_kj_mol: -278.421260227449
+initial_energy_hartree: -1195.804605373952
+final_energy_hartree: -1195.910650431449
+delta_energy_hartree: -0.106045057497
+elapsed_seconds: 771.6
+elapsed_seconds_per_step: 23.4

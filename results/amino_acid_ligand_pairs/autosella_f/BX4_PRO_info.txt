@@ -1,0 +1,23 @@
+molecule: BX4_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/BX4_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/BX4_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 58
+converged: True
+status: ok
+initial_energy_kj_mol: -4451750.874332710169
+final_energy_kj_mol: -4451814.656160280108
+delta_energy_kj_mol: -63.781827569939
+initial_energy_hartree: -1695.582359788319
+final_energy_hartree: -1695.606653003451
+delta_energy_hartree: -0.024293215132
+elapsed_seconds: 1947.8
+elapsed_seconds_per_step: 33.6

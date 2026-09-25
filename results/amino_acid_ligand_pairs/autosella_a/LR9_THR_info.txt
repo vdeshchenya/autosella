@@ -1,0 +1,23 @@
+molecule: LR9_THR
+input_xyz: inputs/amino_acid_ligand_pairs/LR9_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/LR9_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 44
+converged: True
+status: ok
+initial_energy_kj_mol: -3109508.987474806141
+final_energy_kj_mol: -3109558.608457576483
+delta_energy_kj_mol: -49.620982770342
+initial_energy_hartree: -1184.349424664475
+final_energy_hartree: -1184.368324298672
+delta_energy_hartree: -0.018899634197
+elapsed_seconds: 1032.2
+elapsed_seconds_per_step: 23.5

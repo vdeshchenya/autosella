@@ -1,0 +1,23 @@
+molecule: hie-tyr
+input_xyz: inputs/dipeptides/hie-tyr.xyz
+final_xyz: results/dipeptides/autosella_f/hie-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -3345452.035037767142
+final_energy_kj_mol: -3345557.168988716789
+delta_energy_kj_mol: -105.133950949647
+initial_energy_hartree: -1274.215385419168
+final_energy_hartree: -1274.255428826285
+delta_energy_hartree: -0.040043407117
+elapsed_seconds: 749.2
+elapsed_seconds_per_step: 24.2

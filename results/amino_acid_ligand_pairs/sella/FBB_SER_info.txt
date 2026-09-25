@@ -1,0 +1,23 @@
+molecule: FBB_SER
+input_xyz: inputs/amino_acid_ligand_pairs/FBB_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/FBB_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -3802145.134742673486
+final_energy_kj_mol: -3802209.658339619171
+delta_energy_kj_mol: -64.523596945684
+initial_energy_hartree: -1448.160600584147
+final_energy_hartree: -1448.185176324313
+delta_energy_hartree: -0.024575740166
+elapsed_seconds: 980.1
+elapsed_seconds_per_step: 19.6

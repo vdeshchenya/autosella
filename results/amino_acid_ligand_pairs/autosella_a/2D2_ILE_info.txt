@@ -1,0 +1,23 @@
+molecule: 2D2_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/2D2_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/2D2_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 53
+converged: True
+status: ok
+initial_energy_kj_mol: -3419696.308141145855
+final_energy_kj_mol: -3419770.902799383737
+delta_energy_kj_mol: -74.594658237882
+initial_energy_hartree: -1302.493535599408
+final_energy_hartree: -1302.521947204238
+delta_energy_hartree: -0.028411604830
+elapsed_seconds: 1583.1
+elapsed_seconds_per_step: 29.9

@@ -1,0 +1,23 @@
+molecule: 4GU_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/4GU_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/4GU_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 51
+converged: True
+status: ok
+initial_energy_kj_mol: -4440638.659478738904
+final_energy_kj_mol: -4440707.660518689081
+delta_energy_kj_mol: -69.001039950177
+initial_energy_hartree: -1691.349940675829
+final_energy_hartree: -1691.376221783970
+delta_energy_hartree: -0.026281108141
+elapsed_seconds: 1317.4
+elapsed_seconds_per_step: 25.8

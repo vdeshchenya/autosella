@@ -1,0 +1,23 @@
+molecule: 1LK_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/1LK_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/1LK_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 56
+converged: True
+status: ok
+initial_energy_kj_mol: -5960723.699680030346
+final_energy_kj_mol: -5961082.799936790019
+delta_energy_kj_mol: -359.100256759673
+initial_energy_hartree: -2270.319755542158
+final_energy_hartree: -2270.456529606553
+delta_energy_hartree: -0.136774064395
+elapsed_seconds: 2124.5
+elapsed_seconds_per_step: 37.9

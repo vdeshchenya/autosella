@@ -1,0 +1,23 @@
+molecule: QKV_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/QKV_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/QKV_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 71
+converged: True
+status: ok
+initial_energy_kj_mol: -10728146.356222582981
+final_energy_kj_mol: -10728224.650010038167
+delta_energy_kj_mol: -78.293787455186
+initial_energy_hartree: -4086.135147345814
+final_energy_hartree: -4086.164967874554
+delta_energy_hartree: -0.029820528740
+elapsed_seconds: 2437.9
+elapsed_seconds_per_step: 34.3

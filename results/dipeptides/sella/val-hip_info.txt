@@ -1,0 +1,23 @@
+molecule: val-hip
+input_xyz: inputs/dipeptides/val-hip.xyz
+final_xyz: results/dipeptides/sella/val-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -2748883.216729121283
+final_energy_kj_mol: -2748982.695400373545
+delta_energy_kj_mol: -99.478671252262
+initial_energy_hartree: -1046.994322678202
+final_energy_hartree: -1047.032212103040
+delta_energy_hartree: -0.037889424838
+elapsed_seconds: 839.6
+elapsed_seconds_per_step: 24.0

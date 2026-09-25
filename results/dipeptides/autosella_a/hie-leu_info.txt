@@ -1,0 +1,23 @@
+molecule: hie-leu
+input_xyz: inputs/dipeptides/hie-leu.xyz
+final_xyz: results/dipeptides/autosella_a/hie-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 24
+converged: True
+status: ok
+initial_energy_kj_mol: -2851009.841283787508
+final_energy_kj_mol: -2851098.265766929835
+delta_energy_kj_mol: -88.424483142328
+initial_energy_hartree: -1085.892299664745
+final_energy_hartree: -1085.925978771690
+delta_energy_hartree: -0.033679106945
+elapsed_seconds: 517.8
+elapsed_seconds_per_step: 21.6

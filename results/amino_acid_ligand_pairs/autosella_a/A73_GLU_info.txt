@@ -1,0 +1,23 @@
+molecule: A73_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/A73_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/A73_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 61
+converged: True
+status: ok
+initial_energy_kj_mol: -10566349.918786557391
+final_energy_kj_mol: -10566419.024895887822
+delta_energy_kj_mol: -69.106109330431
+initial_energy_hartree: -4024.510138908153
+final_energy_hartree: -4024.536460035108
+delta_energy_hartree: -0.026321126955
+elapsed_seconds: 1566.4
+elapsed_seconds_per_step: 25.7

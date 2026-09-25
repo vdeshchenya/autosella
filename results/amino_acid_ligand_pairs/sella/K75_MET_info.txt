@@ -1,0 +1,23 @@
+molecule: K75_MET
+input_xyz: inputs/amino_acid_ligand_pairs/K75_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/K75_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 72
+converged: True
+status: ok
+initial_energy_kj_mol: -4737997.260268350132
+final_energy_kj_mol: -4738086.634822193533
+delta_energy_kj_mol: -89.374553843401
+initial_energy_hartree: -1804.607850263094
+final_energy_hartree: -1804.641891232858
+delta_energy_hartree: -0.034040969764
+elapsed_seconds: 2448.5
+elapsed_seconds_per_step: 34.0

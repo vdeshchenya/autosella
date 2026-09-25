@@ -1,0 +1,23 @@
+molecule: tyr-asp
+input_xyz: inputs/dipeptides/tyr-asp.xyz
+final_xyz: results/dipeptides/sella/tyr-asp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 42
+converged: True
+status: ok
+initial_energy_kj_mol: -3248253.889711370226
+final_energy_kj_mol: -3248527.597839845810
+delta_energy_kj_mol: -273.708128475584
+initial_energy_hartree: -1237.194567032900
+final_energy_hartree: -1237.298816953319
+delta_energy_hartree: -0.104249920419
+elapsed_seconds: 1041.8
+elapsed_seconds_per_step: 24.8

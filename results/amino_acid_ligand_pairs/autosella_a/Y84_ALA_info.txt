@@ -1,0 +1,23 @@
+molecule: Y84_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/Y84_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/Y84_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -2575036.235524350312
+final_energy_kj_mol: -2575080.110847552773
+delta_energy_kj_mol: -43.875323202461
+initial_energy_hartree: -980.779504519168
+final_energy_hartree: -980.796215747211
+delta_energy_hartree: -0.016711228043
+elapsed_seconds: 720.2
+elapsed_seconds_per_step: 20.0

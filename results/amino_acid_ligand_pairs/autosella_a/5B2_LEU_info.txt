@@ -1,0 +1,23 @@
+molecule: 5B2_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/5B2_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/5B2_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -3359990.450561757665
+final_energy_kj_mol: -3360034.873039985541
+delta_energy_kj_mol: -44.422478227876
+initial_energy_hartree: -1279.752775447860
+final_energy_hartree: -1279.769695076246
+delta_energy_hartree: -0.016919628386
+elapsed_seconds: 979.8
+elapsed_seconds_per_step: 27.2

@@ -1,0 +1,23 @@
+molecule: 6JD_THR
+input_xyz: inputs/amino_acid_ligand_pairs/6JD_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/6JD_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 73
+converged: True
+status: ok
+initial_energy_kj_mol: -4653516.653477220796
+final_energy_kj_mol: -4653589.361745319329
+delta_energy_kj_mol: -72.708268098533
+initial_energy_hartree: -1772.430886487976
+final_energy_hartree: -1772.458579604747
+delta_energy_hartree: -0.027693116771
+elapsed_seconds: 2007.6
+elapsed_seconds_per_step: 27.5

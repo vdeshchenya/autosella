@@ -1,0 +1,23 @@
+molecule: HRJ_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/HRJ_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/HRJ_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 74
+converged: True
+status: ok
+initial_energy_kj_mol: -5178834.853434285149
+final_energy_kj_mol: -5179022.134252043441
+delta_energy_kj_mol: -187.280817758292
+initial_energy_hartree: -1972.514021925438
+final_energy_hartree: -1972.585353421715
+delta_energy_hartree: -0.071331496277
+elapsed_seconds: 2748.8
+elapsed_seconds_per_step: 37.1

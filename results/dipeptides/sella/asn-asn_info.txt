@@ -1,0 +1,23 @@
+molecule: asn-asn
+input_xyz: inputs/dipeptides/asn-asn.xyz
+final_xyz: results/dipeptides/sella/asn-asn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -2836532.448193112388
+final_energy_kj_mol: -2836650.017161853611
+delta_energy_kj_mol: -117.568968741223
+initial_energy_hartree: -1080.378151853419
+final_energy_hartree: -1080.422931508679
+delta_energy_hartree: -0.044779655260
+elapsed_seconds: 674.2
+elapsed_seconds_per_step: 18.7

@@ -1,0 +1,23 @@
+molecule: NXL_THR
+input_xyz: inputs/amino_acid_ligand_pairs/NXL_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/NXL_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 70
+converged: True
+status: ok
+initial_energy_kj_mol: -4984171.484689785168
+final_energy_kj_mol: -4984357.417158212513
+delta_energy_kj_mol: -185.932468427345
+initial_energy_hartree: -1898.370660480124
+final_energy_hartree: -1898.441478417263
+delta_energy_hartree: -0.070817937139
+elapsed_seconds: 1975.5
+elapsed_seconds_per_step: 28.2

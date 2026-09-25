@@ -1,0 +1,23 @@
+molecule: TCZ_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/TCZ_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/TCZ_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 44
+converged: True
+status: ok
+initial_energy_kj_mol: -5737413.116633992642
+final_energy_kj_mol: -5737444.389032129198
+delta_energy_kj_mol: -31.272398136556
+initial_energy_hartree: -2185.265246416316
+final_energy_hartree: -2185.277157443713
+delta_energy_hartree: -0.011911027397
+elapsed_seconds: 824.5
+elapsed_seconds_per_step: 18.7

@@ -1,0 +1,23 @@
+molecule: FUY_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/FUY_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/FUY_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -4092536.707269398030
+final_energy_kj_mol: -4092799.623249847442
+delta_energy_kj_mol: -262.915980449412
+initial_energy_hartree: -1558.764909249849
+final_energy_hartree: -1558.865048658172
+delta_energy_hartree: -0.100139408323
+elapsed_seconds: 3063.5
+elapsed_seconds_per_step: 46.4

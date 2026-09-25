@@ -1,0 +1,23 @@
+molecule: 5FX_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/5FX_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/5FX_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 58
+converged: True
+status: ok
+initial_energy_kj_mol: -3819786.901083372533
+final_energy_kj_mol: -3819845.485532301012
+delta_energy_kj_mol: -58.584448928479
+initial_energy_hartree: -1454.879994514132
+final_energy_hartree: -1454.902308152286
+delta_energy_hartree: -0.022313638154
+elapsed_seconds: 1822.0
+elapsed_seconds_per_step: 31.4

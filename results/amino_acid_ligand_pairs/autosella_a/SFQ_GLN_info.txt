@@ -1,0 +1,23 @@
+molecule: SFQ_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/SFQ_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/SFQ_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 83
+converged: True
+status: ok
+initial_energy_kj_mol: -5924418.831819065847
+final_energy_kj_mol: -5924556.617000568658
+delta_energy_kj_mol: -137.785181502812
+initial_energy_hartree: -2256.491961656741
+final_energy_hartree: -2256.544441260787
+delta_energy_hartree: -0.052479604046
+elapsed_seconds: 3567.4
+elapsed_seconds_per_step: 43.0

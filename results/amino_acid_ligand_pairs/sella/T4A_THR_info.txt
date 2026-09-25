@@ -1,0 +1,23 @@
+molecule: T4A_THR
+input_xyz: inputs/amino_acid_ligand_pairs/T4A_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/T4A_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 55
+converged: True
+status: ok
+initial_energy_kj_mol: -6931957.137872812338
+final_energy_kj_mol: -6932095.156976544298
+delta_energy_kj_mol: -138.019103731960
+initial_energy_hartree: -2640.243035510758
+final_energy_hartree: -2640.295604211076
+delta_energy_hartree: -0.052568700318
+elapsed_seconds: 2707.1
+elapsed_seconds_per_step: 49.2

@@ -1,0 +1,23 @@
+molecule: leu-ash
+input_xyz: inputs/dipeptides/leu-ash.xyz
+final_xyz: results/dipeptides/autosella_a/leu-ash_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -2755376.237662496045
+final_energy_kj_mol: -2755474.682400233112
+delta_energy_kj_mol: -98.444737737067
+initial_energy_hartree: -1049.467383742747
+final_energy_hartree: -1049.504879363107
+delta_energy_hartree: -0.037495620360
+elapsed_seconds: 592.0
+elapsed_seconds_per_step: 19.7

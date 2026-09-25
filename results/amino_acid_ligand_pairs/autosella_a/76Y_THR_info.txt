@@ -1,0 +1,23 @@
+molecule: 76Y_THR
+input_xyz: inputs/amino_acid_ligand_pairs/76Y_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/76Y_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 38
+converged: True
+status: ok
+initial_energy_kj_mol: -4513012.092289863154
+final_energy_kj_mol: -4513126.173575204797
+delta_energy_kj_mol: -114.081285341643
+initial_energy_hartree: -1718.915525421238
+final_energy_hartree: -1718.958976688047
+delta_energy_hartree: -0.043451266809
+elapsed_seconds: 943.0
+elapsed_seconds_per_step: 24.8

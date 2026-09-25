@@ -1,0 +1,23 @@
+molecule: NCA_MET
+input_xyz: inputs/amino_acid_ligand_pairs/NCA_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/NCA_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -3647910.316295193043
+final_energy_kj_mol: -3647970.171073857229
+delta_energy_kj_mol: -59.854778664187
+initial_energy_hartree: -1389.415660715089
+final_energy_hartree: -1389.438458196286
+delta_energy_hartree: -0.022797481197
+elapsed_seconds: 672.8
+elapsed_seconds_per_step: 24.0

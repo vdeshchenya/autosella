@@ -1,0 +1,23 @@
+molecule: 7BI_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/7BI_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/7BI_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 72
+converged: True
+status: ok
+initial_energy_kj_mol: -4454059.765254409984
+final_energy_kj_mol: -4454268.444104194641
+delta_energy_kj_mol: -208.678849784657
+initial_energy_hartree: -1696.461769896392
+final_energy_hartree: -1696.541251472640
+delta_energy_hartree: -0.079481576248
+elapsed_seconds: 2147.8
+elapsed_seconds_per_step: 29.8

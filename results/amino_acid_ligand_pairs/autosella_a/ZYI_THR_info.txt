@@ -1,0 +1,23 @@
+molecule: ZYI_THR
+input_xyz: inputs/amino_acid_ligand_pairs/ZYI_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/ZYI_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 58
+converged: True
+status: ok
+initial_energy_kj_mol: -4916928.776659091003
+final_energy_kj_mol: -4917042.380525317043
+delta_energy_kj_mol: -113.603866226040
+initial_energy_hartree: -1872.759265597581
+final_energy_hartree: -1872.802535025052
+delta_energy_hartree: -0.043269427471
+elapsed_seconds: 1879.1
+elapsed_seconds_per_step: 32.4

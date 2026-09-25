@@ -1,0 +1,23 @@
+molecule: C2N_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/C2N_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/C2N_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 59
+converged: True
+status: ok
+initial_energy_kj_mol: -3358051.218606880866
+final_energy_kj_mol: -3358126.220569598023
+delta_energy_kj_mol: -75.001962717157
+initial_energy_hartree: -1279.014161004454
+final_energy_hartree: -1279.042727743367
+delta_energy_hartree: -0.028566738913
+elapsed_seconds: 844.3
+elapsed_seconds_per_step: 14.3

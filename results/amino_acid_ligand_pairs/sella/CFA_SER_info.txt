@@ -1,0 +1,23 @@
+molecule: CFA_SER
+input_xyz: inputs/amino_acid_ligand_pairs/CFA_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/CFA_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 54
+converged: True
+status: ok
+initial_energy_kj_mol: -5317610.680373894982
+final_energy_kj_mol: -5317688.038767222315
+delta_energy_kj_mol: -77.358393327333
+initial_energy_hartree: -2025.370942891194
+final_energy_hartree: -2025.400407147126
+delta_energy_hartree: -0.029464255932
+elapsed_seconds: 1120.8
+elapsed_seconds_per_step: 20.8

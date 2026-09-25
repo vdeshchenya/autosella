@@ -1,0 +1,23 @@
+molecule: val-cys
+input_xyz: inputs/dipeptides/val-cys.xyz
+final_xyz: results/dipeptides/autosella_a/val-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -3202381.700022273697
+final_energy_kj_mol: -3202606.034285660833
+delta_energy_kj_mol: -224.334263387136
+initial_energy_hartree: -1219.722772712569
+final_energy_hartree: -1219.808217120945
+delta_energy_hartree: -0.085444408376
+elapsed_seconds: 584.8
+elapsed_seconds_per_step: 18.9

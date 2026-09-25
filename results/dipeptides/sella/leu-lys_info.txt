@@ -1,0 +1,23 @@
+molecule: leu-lys
+input_xyz: inputs/dipeptides/leu-lys.xyz
+final_xyz: results/dipeptides/sella/leu-lys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 45
+converged: True
+status: ok
+initial_energy_kj_mol: -2715992.250681053847
+final_energy_kj_mol: -2716320.733324710280
+delta_energy_kj_mol: -328.482643656433
+initial_energy_hartree: -1034.466815321704
+final_energy_hartree: -1034.591927753150
+delta_energy_hartree: -0.125112431446
+elapsed_seconds: 1167.9
+elapsed_seconds_per_step: 26.0

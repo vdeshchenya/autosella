@@ -1,0 +1,23 @@
+molecule: 3V4_THR
+input_xyz: inputs/amino_acid_ligand_pairs/3V4_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/3V4_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -2627582.574673813302
+final_energy_kj_mol: -2627644.211543627549
+delta_energy_kj_mol: -61.636869814247
+initial_energy_hartree: -1000.793348116523
+final_energy_hartree: -1000.816824360392
+delta_energy_hartree: -0.023476243869
+elapsed_seconds: 836.3
+elapsed_seconds_per_step: 25.3

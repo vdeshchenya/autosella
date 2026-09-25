@@ -1,0 +1,23 @@
+molecule: asp-arg
+input_xyz: inputs/dipeptides/asp-arg.xyz
+final_xyz: results/dipeptides/sella/asp-arg_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 45
+converged: True
+status: ok
+initial_energy_kj_mol: -3188221.108446868602
+final_energy_kj_mol: -3188329.058773471043
+delta_energy_kj_mol: -107.950326602440
+initial_energy_hartree: -1214.329288225856
+final_energy_hartree: -1214.370404333807
+delta_energy_hartree: -0.041116107951
+elapsed_seconds: 1158.8
+elapsed_seconds_per_step: 25.8

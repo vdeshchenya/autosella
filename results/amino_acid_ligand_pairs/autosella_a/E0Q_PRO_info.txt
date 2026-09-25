@@ -1,0 +1,23 @@
+molecule: E0Q_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/E0Q_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/E0Q_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -4865943.865183439106
+final_energy_kj_mol: -4866007.602005070075
+delta_energy_kj_mol: -63.736821630970
+initial_energy_hartree: -1853.340138392615
+final_energy_hartree: -1853.364414465890
+delta_energy_hartree: -0.024276073275
+elapsed_seconds: 805.0
+elapsed_seconds_per_step: 27.8

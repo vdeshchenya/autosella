@@ -1,0 +1,23 @@
+molecule: FHZ_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/FHZ_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/FHZ_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 69
+converged: True
+status: ok
+initial_energy_kj_mol: -4277833.910662694834
+final_energy_kj_mol: -4277996.234409002587
+delta_energy_kj_mol: -162.323746307753
+initial_energy_hartree: -1629.340886715991
+final_energy_hartree: -1629.402712565771
+delta_energy_hartree: -0.061825849780
+elapsed_seconds: 2231.6
+elapsed_seconds_per_step: 32.3

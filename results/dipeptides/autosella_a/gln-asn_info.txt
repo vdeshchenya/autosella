@@ -1,0 +1,23 @@
+molecule: gln-asn
+input_xyz: inputs/dipeptides/gln-asn.xyz
+final_xyz: results/dipeptides/autosella_a/gln-asn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -2939744.186941042077
+final_energy_kj_mol: -2939855.228014460299
+delta_energy_kj_mol: -111.041073418222
+initial_energy_hartree: -1119.689427008793
+final_energy_hartree: -1119.731720320035
+delta_energy_hartree: -0.042293311242
+elapsed_seconds: 578.3
+elapsed_seconds_per_step: 22.2

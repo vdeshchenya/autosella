@@ -1,0 +1,23 @@
+molecule: PZ4_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/PZ4_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/PZ4_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 53
+converged: True
+status: ok
+initial_energy_kj_mol: -4585961.745122908615
+final_energy_kj_mol: -4586028.268990662880
+delta_energy_kj_mol: -66.523867754266
+initial_energy_hartree: -1746.700580782166
+final_energy_hartree: -1746.725918385247
+delta_energy_hartree: -0.025337603081
+elapsed_seconds: 1404.5
+elapsed_seconds_per_step: 26.5

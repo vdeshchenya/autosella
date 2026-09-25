@@ -1,0 +1,23 @@
+molecule: ST4_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/ST4_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/ST4_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 76
+converged: True
+status: ok
+initial_energy_kj_mol: -4088163.273636225611
+final_energy_kj_mol: -4088414.836419101339
+delta_energy_kj_mol: -251.562782875728
+initial_energy_hartree: -1557.099156351845
+final_energy_hartree: -1557.194971555585
+delta_energy_hartree: -0.095815203740
+elapsed_seconds: 2629.3
+elapsed_seconds_per_step: 34.6

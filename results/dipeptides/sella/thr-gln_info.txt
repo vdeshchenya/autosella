@@ -1,0 +1,23 @@
+molecule: thr-gln
+input_xyz: inputs/dipeptides/thr-gln.xyz
+final_xyz: results/dipeptides/sella/thr-gln_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -2797524.168513967656
+final_energy_kj_mol: -2797615.477409170009
+delta_energy_kj_mol: -91.308895202354
+initial_energy_hartree: -1065.520682786361
+final_energy_hartree: -1065.555460507839
+delta_energy_hartree: -0.034777721478
+elapsed_seconds: 659.0
+elapsed_seconds_per_step: 21.3

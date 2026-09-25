@@ -1,0 +1,23 @@
+molecule: met-met
+input_xyz: inputs/dipeptides/met-met.xyz
+final_xyz: results/dipeptides/sella/met-met_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 32
+converged: True
+status: ok
+initial_energy_kj_mol: -4454245.912693076767
+final_energy_kj_mol: -4454338.208289840259
+delta_energy_kj_mol: -92.295596763492
+initial_energy_hartree: -1696.532669711371
+final_energy_hartree: -1696.567823247626
+delta_energy_hartree: -0.035153536255
+elapsed_seconds: 704.6
+elapsed_seconds_per_step: 22.0

@@ -1,0 +1,23 @@
+molecule: PNW_THR
+input_xyz: inputs/amino_acid_ligand_pairs/PNW_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/PNW_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 109
+converged: True
+status: ok
+initial_energy_kj_mol: -4549529.777405905537
+final_energy_kj_mol: -4549674.497420285828
+delta_energy_kj_mol: -144.720014380291
+initial_energy_hartree: -1732.824377118234
+final_energy_hartree: -1732.879498060627
+delta_energy_hartree: -0.055120942393
+elapsed_seconds: 3613.1
+elapsed_seconds_per_step: 33.1

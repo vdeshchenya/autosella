@@ -1,0 +1,23 @@
+molecule: 46J_SER
+input_xyz: inputs/amino_acid_ligand_pairs/46J_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/46J_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -3115830.969311508350
+final_energy_kj_mol: -3115899.220061816741
+delta_energy_kj_mol: -68.250750308391
+initial_energy_hartree: -1186.757340377598
+final_energy_hartree: -1186.783335715507
+delta_energy_hartree: -0.025995337909
+elapsed_seconds: 1016.5
+elapsed_seconds_per_step: 30.8

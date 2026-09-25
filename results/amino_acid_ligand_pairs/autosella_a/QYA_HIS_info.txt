@@ -1,0 +1,23 @@
+molecule: QYA_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/QYA_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/QYA_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 55
+converged: True
+status: ok
+initial_energy_kj_mol: -5720223.221517766826
+final_energy_kj_mol: -5720408.706056273542
+delta_energy_kj_mol: -185.484538506716
+initial_energy_hartree: -2178.717961146214
+final_energy_hartree: -2178.788608475856
+delta_energy_hartree: -0.070647329643
+elapsed_seconds: 1897.7
+elapsed_seconds_per_step: 34.5

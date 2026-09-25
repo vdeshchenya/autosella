@@ -1,0 +1,23 @@
+molecule: ash-asp
+input_xyz: inputs/dipeptides/ash-asp.xyz
+final_xyz: results/dipeptides/sella/ash-asp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -2939537.484293937683
+final_energy_kj_mol: -2939630.796387603506
+delta_energy_kj_mol: -93.312093665823
+initial_energy_hartree: -1119.610698128394
+final_energy_hartree: -1119.646238827872
+delta_energy_hartree: -0.035540699478
+elapsed_seconds: 656.5
+elapsed_seconds_per_step: 19.3

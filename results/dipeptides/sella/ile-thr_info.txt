@@ -1,0 +1,23 @@
+molecule: ile-thr
+input_xyz: inputs/dipeptides/ile-thr.xyz
+final_xyz: results/dipeptides/sella/ile-thr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2560994.117771935184
+final_energy_kj_mol: -2561083.895551939961
+delta_energy_kj_mol: -89.777780004777
+initial_energy_hartree: -975.431144328497
+final_energy_hartree: -975.465338878995
+delta_energy_hartree: -0.034194550498
+elapsed_seconds: 538.7
+elapsed_seconds_per_step: 18.6

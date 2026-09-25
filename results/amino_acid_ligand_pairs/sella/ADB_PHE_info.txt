@@ -1,0 +1,23 @@
+molecule: ADB_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/ADB_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/ADB_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 59
+converged: True
+status: ok
+initial_energy_kj_mol: -7000545.419681978412
+final_energy_kj_mol: -7000677.305564510636
+delta_energy_kj_mol: -131.885882532224
+initial_energy_hartree: -2666.366932378919
+final_energy_hartree: -2666.417165058653
+delta_energy_hartree: -0.050232679734
+elapsed_seconds: 2402.8
+elapsed_seconds_per_step: 40.7

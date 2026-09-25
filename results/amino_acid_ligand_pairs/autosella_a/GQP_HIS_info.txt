@@ -1,0 +1,23 @@
+molecule: GQP_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/GQP_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/GQP_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 113
+converged: True
+status: ok
+initial_energy_kj_mol: -3860633.111035739537
+final_energy_kj_mol: -3860748.781303483061
+delta_energy_kj_mol: -115.670267743524
+initial_energy_hartree: -1470.437494251766
+final_energy_hartree: -1470.481550730009
+delta_energy_hartree: -0.044056478243
+elapsed_seconds: 3912.4
+elapsed_seconds_per_step: 34.6

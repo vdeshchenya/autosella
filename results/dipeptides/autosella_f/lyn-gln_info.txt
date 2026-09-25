@@ -1,0 +1,23 @@
+molecule: lyn-gln
+input_xyz: inputs/dipeptides/lyn-gln.xyz
+final_xyz: results/dipeptides/autosella_f/lyn-gln_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -2951479.536635828670
+final_energy_kj_mol: -2951790.994509412907
+delta_energy_kj_mol: -311.457873584237
+initial_energy_hartree: -1124.159185647614
+final_energy_hartree: -1124.277813686598
+delta_energy_hartree: -0.118628038984
+elapsed_seconds: 648.4
+elapsed_seconds_per_step: 24.9

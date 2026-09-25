@@ -1,0 +1,23 @@
+molecule: tyr-ala
+input_xyz: inputs/dipeptides/tyr-ala.xyz
+final_xyz: results/dipeptides/autosella_a/tyr-ala_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 23
+converged: True
+status: ok
+initial_energy_kj_mol: -2754762.871715851594
+final_energy_kj_mol: -2754845.494617315009
+delta_energy_kj_mol: -82.622901463415
+initial_energy_hartree: -1049.233764991702
+final_energy_hartree: -1049.265234392886
+delta_energy_hartree: -0.031469401184
+elapsed_seconds: 505.4
+elapsed_seconds_per_step: 22.0

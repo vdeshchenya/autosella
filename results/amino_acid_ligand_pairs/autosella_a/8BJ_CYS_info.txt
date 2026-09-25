@@ -1,0 +1,23 @@
+molecule: 8BJ_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/8BJ_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/8BJ_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 83
+converged: True
+status: ok
+initial_energy_kj_mol: -5395121.503688930534
+final_energy_kj_mol: -5395229.762936748564
+delta_energy_kj_mol: -108.259247818030
+initial_energy_hartree: -2054.893256339460
+final_energy_hartree: -2054.934490109288
+delta_energy_hartree: -0.041233769828
+elapsed_seconds: 1980.5
+elapsed_seconds_per_step: 23.9

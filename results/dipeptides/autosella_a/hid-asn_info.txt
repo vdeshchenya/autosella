@@ -1,0 +1,23 @@
+molecule: hid-asn
+input_xyz: inputs/dipeptides/hid-asn.xyz
+final_xyz: results/dipeptides/autosella_a/hid-asn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 24
+converged: True
+status: ok
+initial_energy_kj_mol: -2984342.526939253788
+final_energy_kj_mol: -2984437.736502883956
+delta_energy_kj_mol: -95.209563630167
+initial_energy_hartree: -1136.676037605718
+final_energy_hartree: -1136.712301013337
+delta_energy_hartree: -0.036263407619
+elapsed_seconds: 506.0
+elapsed_seconds_per_step: 21.1

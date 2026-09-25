@@ -1,0 +1,23 @@
+molecule: cyx-phe
+input_xyz: inputs/dipeptides/cyx-phe.xyz
+final_xyz: results/dipeptides/sella/cyx-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 43
+converged: True
+status: ok
+initial_energy_kj_mol: -3601028.647949403618
+final_energy_kj_mol: -3601316.916671031155
+delta_energy_kj_mol: -288.268721627537
+initial_energy_hartree: -1371.559376280376
+final_energy_hartree: -1371.669172037836
+delta_energy_hartree: -0.109795757460
+elapsed_seconds: 840.2
+elapsed_seconds_per_step: 19.5

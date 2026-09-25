@@ -1,0 +1,23 @@
+molecule: 7I3_SER
+input_xyz: inputs/amino_acid_ligand_pairs/7I3_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/7I3_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 39
+converged: True
+status: ok
+initial_energy_kj_mol: -3111339.070841922425
+final_energy_kj_mol: -3111392.888044435997
+delta_energy_kj_mol: -53.817202513572
+initial_energy_hartree: -1185.046466606358
+final_energy_hartree: -1185.066964496247
+delta_energy_hartree: -0.020497889889
+elapsed_seconds: 867.6
+elapsed_seconds_per_step: 22.2

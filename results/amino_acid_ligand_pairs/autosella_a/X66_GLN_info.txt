@@ -1,0 +1,23 @@
+molecule: X66_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/X66_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/X66_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 106
+converged: True
+status: ok
+initial_energy_kj_mol: -3875743.724723767955
+final_energy_kj_mol: -3875947.378622595221
+delta_energy_kj_mol: -203.653898827266
+initial_energy_hartree: -1476.192823051210
+final_energy_hartree: -1476.270390724717
+delta_energy_hartree: -0.077567673507
+elapsed_seconds: 3269.2
+elapsed_seconds_per_step: 30.8

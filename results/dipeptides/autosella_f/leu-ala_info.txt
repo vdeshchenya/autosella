@@ -1,0 +1,23 @@
+molecule: leu-ala
+input_xyz: inputs/dipeptides/leu-ala.xyz
+final_xyz: results/dipeptides/autosella_f/leu-ala_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 23
+converged: True
+status: ok
+initial_energy_kj_mol: -2260120.491582708433
+final_energy_kj_mol: -2260408.388304008171
+delta_energy_kj_mol: -287.896721299738
+initial_energy_hartree: -860.834432272262
+final_energy_hartree: -860.944086342280
+delta_energy_hartree: -0.109654070018
+elapsed_seconds: 379.7
+elapsed_seconds_per_step: 16.5

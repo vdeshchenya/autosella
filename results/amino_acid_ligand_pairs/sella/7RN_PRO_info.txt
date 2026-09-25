@@ -1,0 +1,23 @@
+molecule: 7RN_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/7RN_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/7RN_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 67
+converged: True
+status: ok
+initial_energy_kj_mol: -4196421.915957132354
+final_energy_kj_mol: -4196522.684724803083
+delta_energy_kj_mol: -100.768767670728
+initial_energy_hartree: -1598.332695558254
+final_energy_hartree: -1598.371076354867
+delta_energy_hartree: -0.038380796613
+elapsed_seconds: 1693.8
+elapsed_seconds_per_step: 25.3

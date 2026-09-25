@@ -1,0 +1,23 @@
+molecule: 252644397
+input_xyz: inputs/test/252644397.xyz
+final_xyz: results/test/sella/252644397_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 18
+converged: True
+status: ok
+initial_energy_kj_mol: -4220341.716336887330
+final_energy_kj_mol: -4220559.253624458797
+delta_energy_kj_mol: -217.537287571467
+initial_energy_hartree: -1607.443266369261
+final_energy_hartree: -1607.526121946272
+delta_energy_hartree: -0.082855577011
+elapsed_seconds: 417.5
+elapsed_seconds_per_step: 23.2

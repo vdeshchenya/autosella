@@ -1,0 +1,23 @@
+molecule: LT5_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/LT5_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/LT5_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 90
+converged: True
+status: ok
+initial_energy_kj_mol: -4088589.568083208986
+final_energy_kj_mol: -4088699.106904332060
+delta_energy_kj_mol: -109.538821123075
+initial_energy_hartree: -1557.261523331666
+final_energy_hartree: -1557.303244465227
+delta_energy_hartree: -0.041721133561
+elapsed_seconds: 2438.1
+elapsed_seconds_per_step: 27.1

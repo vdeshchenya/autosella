@@ -1,0 +1,23 @@
+molecule: glu-asp
+input_xyz: inputs/dipeptides/glu-asp.xyz
+final_xyz: results/dipeptides/sella/glu-asp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -2
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 59
+converged: True
+status: ok
+initial_energy_kj_mol: -3040873.198421649169
+final_energy_kj_mol: -3041214.173463895917
+delta_energy_kj_mol: -340.975042246748
+initial_energy_hartree: -1158.207433242700
+final_energy_hartree: -1158.337303777481
+delta_energy_hartree: -0.129870534781
+elapsed_seconds: 1137.8
+elapsed_seconds_per_step: 19.3

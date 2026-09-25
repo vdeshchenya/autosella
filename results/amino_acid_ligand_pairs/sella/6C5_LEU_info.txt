@@ -1,0 +1,23 @@
+molecule: 6C5_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/6C5_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/6C5_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 97
+converged: True
+status: ok
+initial_energy_kj_mol: -3227931.339317124803
+final_energy_kj_mol: -3228030.328056048136
+delta_energy_kj_mol: -98.988738923334
+initial_energy_hartree: -1229.454116381659
+final_energy_hartree: -1229.491819201128
+delta_energy_hartree: -0.037702819469
+elapsed_seconds: 3057.1
+elapsed_seconds_per_step: 31.5

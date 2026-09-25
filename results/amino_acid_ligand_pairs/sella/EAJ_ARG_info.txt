@@ -1,0 +1,23 @@
+molecule: EAJ_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/EAJ_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/EAJ_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 109
+converged: True
+status: ok
+initial_energy_kj_mol: -4056775.734071764629
+final_energy_kj_mol: -4056873.520262997132
+delta_energy_kj_mol: -97.786191232502
+initial_energy_hartree: -1545.144273901098
+final_energy_hartree: -1545.181518694341
+delta_energy_hartree: -0.037244793243
+elapsed_seconds: 3608.3
+elapsed_seconds_per_step: 33.1

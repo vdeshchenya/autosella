@@ -1,0 +1,23 @@
+molecule: lys-asn
+input_xyz: inputs/dipeptides/lys-asn.xyz
+final_xyz: results/dipeptides/autosella_f/lys-asn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -2849568.977072984912
+final_energy_kj_mol: -2849661.245439602993
+delta_energy_kj_mol: -92.268366618082
+initial_energy_hartree: -1085.343503470247
+final_energy_hartree: -1085.378646635087
+delta_energy_hartree: -0.035143164840
+elapsed_seconds: 810.0
+elapsed_seconds_per_step: 23.8

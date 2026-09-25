@@ -1,0 +1,23 @@
+molecule: I2B_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/I2B_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/I2B_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 81
+converged: True
+status: ok
+initial_energy_kj_mol: -5164715.331084102392
+final_energy_kj_mol: -5164778.252938778140
+delta_energy_kj_mol: -62.921854675747
+initial_energy_hartree: -1967.136179880493
+final_energy_hartree: -1967.160145549248
+delta_energy_hartree: -0.023965668755
+elapsed_seconds: 2420.5
+elapsed_seconds_per_step: 29.9

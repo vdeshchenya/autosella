@@ -1,0 +1,23 @@
+molecule: glu-hid
+input_xyz: inputs/dipeptides/glu-hid.xyz
+final_xyz: results/dipeptides/autosella_a/glu-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3138179.447861320805
+final_energy_kj_mol: -3138464.450359147508
+delta_energy_kj_mol: -285.002497826703
+initial_energy_hartree: -1195.269426311169
+final_energy_hartree: -1195.377978029684
+delta_energy_hartree: -0.108551718515
+elapsed_seconds: 790.0
+elapsed_seconds_per_step: 23.2

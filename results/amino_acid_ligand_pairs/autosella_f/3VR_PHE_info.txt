@@ -1,0 +1,23 @@
+molecule: 3VR_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/3VR_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/3VR_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 56
+converged: True
+status: ok
+initial_energy_kj_mol: -3563078.995300280396
+final_energy_kj_mol: -3563140.059413534123
+delta_energy_kj_mol: -61.064113253728
+initial_energy_hartree: -1357.105116954467
+final_energy_hartree: -1357.128375046883
+delta_energy_hartree: -0.023258092416
+elapsed_seconds: 2081.0
+elapsed_seconds_per_step: 37.2

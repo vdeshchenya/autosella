@@ -1,0 +1,23 @@
+molecule: asp-trp
+input_xyz: inputs/dipeptides/asp-trp.xyz
+final_xyz: results/dipeptides/sella/asp-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 45
+converged: True
+status: ok
+initial_energy_kj_mol: -3396137.576590506360
+final_energy_kj_mol: -3396432.329568985384
+delta_energy_kj_mol: -294.752978479024
+initial_energy_hartree: -1293.520488642408
+final_energy_hartree: -1293.632754122870
+delta_energy_hartree: -0.112265480462
+elapsed_seconds: 1164.0
+elapsed_seconds_per_step: 25.9

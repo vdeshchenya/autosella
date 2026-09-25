@@ -1,0 +1,23 @@
+molecule: B7S_MET
+input_xyz: inputs/amino_acid_ligand_pairs/B7S_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/B7S_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -4253020.436101172119
+final_energy_kj_mol: -4253085.615477769636
+delta_energy_kj_mol: -65.179376597516
+initial_energy_hartree: -1619.889933385661
+final_energy_hartree: -1619.914758899105
+delta_energy_hartree: -0.024825513444
+elapsed_seconds: 942.5
+elapsed_seconds_per_step: 28.6

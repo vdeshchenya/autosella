@@ -1,0 +1,23 @@
+molecule: VNN_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/VNN_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/VNN_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 47
+converged: True
+status: ok
+initial_energy_kj_mol: -4163678.085269889794
+final_energy_kj_mol: -4163754.407892818097
+delta_energy_kj_mol: -76.322622928303
+initial_energy_hartree: -1585.861229101024
+final_energy_hartree: -1585.890298852846
+delta_energy_hartree: -0.029069751822
+elapsed_seconds: 1291.4
+elapsed_seconds_per_step: 27.5

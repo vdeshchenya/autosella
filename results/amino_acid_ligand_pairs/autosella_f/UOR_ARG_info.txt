@@ -1,0 +1,23 @@
+molecule: UOR_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/UOR_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/UOR_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 54
+converged: True
+status: ok
+initial_energy_kj_mol: -4904720.262123319320
+final_energy_kj_mol: -4904894.093198367395
+delta_energy_kj_mol: -173.831075048074
+initial_energy_hartree: -1868.109287988675
+final_energy_hartree: -1868.175496748499
+delta_energy_hartree: -0.066208759824
+elapsed_seconds: 2032.9
+elapsed_seconds_per_step: 37.6

@@ -1,0 +1,23 @@
+molecule: I8J_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/I8J_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/I8J_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 45
+converged: True
+status: ok
+initial_energy_kj_mol: -4813162.774247537367
+final_energy_kj_mol: -4813345.898785890080
+delta_energy_kj_mol: -183.124538352713
+initial_energy_hartree: -1833.236882561905
+final_energy_hartree: -1833.306631014961
+delta_energy_hartree: -0.069748453056
+elapsed_seconds: 1421.5
+elapsed_seconds_per_step: 31.6

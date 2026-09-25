@@ -1,0 +1,23 @@
+molecule: 4GO_THR
+input_xyz: inputs/amino_acid_ligand_pairs/4GO_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/4GO_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -3354915.284889622591
+final_energy_kj_mol: -3355020.245610496961
+delta_energy_kj_mol: -104.960720874369
+initial_energy_hartree: -1277.819746931756
+final_energy_hartree: -1277.859724359022
+delta_energy_hartree: -0.039977427266
+elapsed_seconds: 1698.8
+elapsed_seconds_per_step: 34.0

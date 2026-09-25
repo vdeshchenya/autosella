@@ -1,0 +1,23 @@
+molecule: DN6_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/DN6_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/DN6_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 41
+converged: True
+status: ok
+initial_energy_kj_mol: -4417113.911802235059
+final_energy_kj_mol: -4417212.428977512754
+delta_energy_kj_mol: -98.517175277695
+initial_energy_hartree: -1682.389837492892
+final_energy_hartree: -1682.427360703254
+delta_energy_hartree: -0.037523210362
+elapsed_seconds: 1421.3
+elapsed_seconds_per_step: 34.7

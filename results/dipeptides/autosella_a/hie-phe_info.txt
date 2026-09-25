@@ -1,0 +1,23 @@
+molecule: hie-phe
+input_xyz: inputs/dipeptides/hie-phe.xyz
+final_xyz: results/dipeptides/autosella_a/hie-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 32
+converged: True
+status: ok
+initial_energy_kj_mol: -3147697.194476350211
+final_energy_kj_mol: -3148031.794068796560
+delta_energy_kj_mol: -334.599592446350
+initial_energy_hartree: -1198.894544544632
+final_energy_hartree: -1199.021986798828
+delta_energy_hartree: -0.127442254196
+elapsed_seconds: 736.5
+elapsed_seconds_per_step: 23.0

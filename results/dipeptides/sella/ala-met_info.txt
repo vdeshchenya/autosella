@@ -1,0 +1,23 @@
+molecule: ala-met
+input_xyz: inputs/dipeptides/ala-met.xyz
+final_xyz: results/dipeptides/sella/ala-met_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 49
+converged: True
+status: ok
+initial_energy_kj_mol: -3202539.457940897439
+final_energy_kj_mol: -3202613.701981767081
+delta_energy_kj_mol: -74.244040869642
+initial_energy_hartree: -1219.782859530427
+final_energy_hartree: -1219.811137592154
+delta_energy_hartree: -0.028278061727
+elapsed_seconds: 836.0
+elapsed_seconds_per_step: 17.1

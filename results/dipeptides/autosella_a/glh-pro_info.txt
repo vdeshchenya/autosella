@@ -1,0 +1,23 @@
+molecule: glh-pro
+input_xyz: inputs/dipeptides/glh-pro.xyz
+final_xyz: results/dipeptides/autosella_a/glh-pro_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -2752004.522088680416
+final_energy_kj_mol: -2752320.111857345793
+delta_energy_kj_mol: -315.589768665377
+initial_energy_hartree: -1048.183165103706
+final_energy_hartree: -1048.303366898412
+delta_energy_hartree: -0.120201794706
+elapsed_seconds: 739.5
+elapsed_seconds_per_step: 21.8

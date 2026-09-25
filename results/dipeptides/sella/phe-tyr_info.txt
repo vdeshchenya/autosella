@@ -1,0 +1,23 @@
+molecule: phe-tyr
+input_xyz: inputs/dipeptides/phe-tyr.xyz
+final_xyz: results/dipeptides/sella/phe-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 38
+converged: True
+status: ok
+initial_energy_kj_mol: -3361048.838128489908
+final_energy_kj_mol: -3361326.306977288797
+delta_energy_kj_mol: -277.468848798890
+initial_energy_hartree: -1280.155893982259
+final_energy_hartree: -1280.261576285401
+delta_energy_hartree: -0.105682303142
+elapsed_seconds: 1189.4
+elapsed_seconds_per_step: 31.3

@@ -1,0 +1,23 @@
+molecule: ser-ile
+input_xyz: inputs/dipeptides/ser-ile.xyz
+final_xyz: results/dipeptides/autosella_a/ser-ile_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 22
+converged: True
+status: ok
+initial_energy_kj_mol: -2457777.780515207443
+final_energy_kj_mol: -2457851.398264848161
+delta_energy_kj_mol: -73.617749640718
+initial_energy_hartree: -936.118117693622
+final_energy_hartree: -936.146157213618
+delta_energy_hartree: -0.028039519996
+elapsed_seconds: 436.0
+elapsed_seconds_per_step: 19.8

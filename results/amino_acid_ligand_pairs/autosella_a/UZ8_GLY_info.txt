@@ -1,0 +1,23 @@
+molecule: UZ8_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/UZ8_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/UZ8_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 49
+converged: True
+status: ok
+initial_energy_kj_mol: -3851076.270609213039
+final_energy_kj_mol: -3851164.442314860411
+delta_energy_kj_mol: -88.171705647372
+initial_energy_hartree: -1466.797485971887
+final_energy_hartree: -1466.831068800969
+delta_energy_hartree: -0.033582829082
+elapsed_seconds: 1195.5
+elapsed_seconds_per_step: 24.4

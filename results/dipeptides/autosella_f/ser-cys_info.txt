@@ -1,0 +1,23 @@
+molecule: ser-cys
+input_xyz: inputs/dipeptides/ser-cys.xyz
+final_xyz: results/dipeptides/autosella_f/ser-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -3193449.045832230244
+final_energy_kj_mol: -3193690.168614054564
+delta_energy_kj_mol: -241.122781824321
+initial_energy_hartree: -1216.320504414481
+final_energy_hartree: -1216.412343231824
+delta_energy_hartree: -0.091838817343
+elapsed_seconds: 377.1
+elapsed_seconds_per_step: 15.1

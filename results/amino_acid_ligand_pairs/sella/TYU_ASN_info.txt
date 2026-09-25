@@ -1,0 +1,23 @@
+molecule: TYU_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/TYU_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/TYU_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 60
+converged: True
+status: ok
+initial_energy_kj_mol: -4142273.590400471818
+final_energy_kj_mol: -4142390.354256017599
+delta_energy_kj_mol: -116.763855545782
+initial_energy_hartree: -1577.708687562813
+final_energy_hartree: -1577.753160566652
+delta_energy_hartree: -0.044473003839
+elapsed_seconds: 1986.3
+elapsed_seconds_per_step: 33.1

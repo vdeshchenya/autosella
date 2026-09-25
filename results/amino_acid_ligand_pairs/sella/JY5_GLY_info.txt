@@ -1,0 +1,23 @@
+molecule: JY5_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/JY5_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/JY5_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 74
+converged: True
+status: ok
+initial_energy_kj_mol: -3635831.248192897066
+final_energy_kj_mol: -3635919.244830026757
+delta_energy_kj_mol: -87.996637129690
+initial_energy_hartree: -1384.814986648842
+final_energy_hartree: -1384.848502797847
+delta_energy_hartree: -0.033516149005
+elapsed_seconds: 2190.4
+elapsed_seconds_per_step: 29.6

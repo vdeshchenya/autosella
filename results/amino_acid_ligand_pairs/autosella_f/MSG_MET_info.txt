@@ -1,0 +1,23 @@
+molecule: MSG_MET
+input_xyz: inputs/amino_acid_ligand_pairs/MSG_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/MSG_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -6231164.748982775025
+final_energy_kj_mol: -6231307.473250161856
+delta_energy_kj_mol: -142.724267386831
+initial_energy_hartree: -2373.325311222340
+final_energy_hartree: -2373.379672024848
+delta_energy_hartree: -0.054360802508
+elapsed_seconds: 1393.6
+elapsed_seconds_per_step: 48.1

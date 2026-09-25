@@ -1,0 +1,23 @@
+molecule: glh-asn
+input_xyz: inputs/dipeptides/glh-asn.xyz
+final_xyz: results/dipeptides/autosella_a/glh-asn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 24
+converged: True
+status: ok
+initial_energy_kj_mol: -2991927.299664700404
+final_energy_kj_mol: -2992013.440782141872
+delta_energy_kj_mol: -86.141117441468
+initial_energy_hartree: -1139.564924966963
+final_energy_hartree: -1139.597734385843
+delta_energy_hartree: -0.032809418880
+elapsed_seconds: 533.2
+elapsed_seconds_per_step: 22.2

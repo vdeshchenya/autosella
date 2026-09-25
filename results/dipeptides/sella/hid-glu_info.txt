@@ -1,0 +1,23 @@
+molecule: hid-glu
+input_xyz: inputs/dipeptides/hid-glu.xyz
+final_xyz: results/dipeptides/sella/hid-glu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -3138109.773150321096
+final_energy_kj_mol: -3138461.648112885654
+delta_energy_kj_mol: -351.874962564558
+initial_energy_hartree: -1195.242888615276
+final_energy_hartree: -1195.376910710451
+delta_energy_hartree: -0.134022095175
+elapsed_seconds: 1096.8
+elapsed_seconds_per_step: 21.9

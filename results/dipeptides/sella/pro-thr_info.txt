@@ -1,0 +1,23 @@
+molecule: pro-thr
+input_xyz: inputs/dipeptides/pro-thr.xyz
+final_xyz: results/dipeptides/sella/pro-thr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 41
+converged: True
+status: ok
+initial_energy_kj_mol: -2454460.723447013646
+final_energy_kj_mol: -2454736.242619298398
+delta_energy_kj_mol: -275.519172284752
+initial_energy_hartree: -934.854717379901
+final_energy_hartree: -934.959657090477
+delta_energy_hartree: -0.104939710576
+elapsed_seconds: 792.6
+elapsed_seconds_per_step: 19.3

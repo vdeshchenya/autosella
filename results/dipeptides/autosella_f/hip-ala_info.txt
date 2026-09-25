@@ -1,0 +1,23 @@
+molecule: hip-ala
+input_xyz: inputs/dipeptides/hip-ala.xyz
+final_xyz: results/dipeptides/autosella_f/hip-ala_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 49
+converged: True
+status: ok
+initial_energy_kj_mol: -2542497.227016813122
+final_energy_kj_mol: -2542597.419501085766
+delta_energy_kj_mol: -100.192484272644
+initial_energy_hartree: -968.386050710131
+final_energy_hartree: -968.424212011990
+delta_energy_hartree: -0.038161301859
+elapsed_seconds: 876.5
+elapsed_seconds_per_step: 17.9

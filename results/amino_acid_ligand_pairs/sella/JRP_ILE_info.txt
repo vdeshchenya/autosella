@@ -1,0 +1,23 @@
+molecule: JRP_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/JRP_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/JRP_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 99
+converged: True
+status: ok
+initial_energy_kj_mol: -3470628.123944410589
+final_energy_kj_mol: -3470712.026231032796
+delta_energy_kj_mol: -83.902286622208
+initial_energy_hartree: -1321.892439730796
+final_energy_hartree: -1321.924396424052
+delta_energy_hartree: -0.031956693256
+elapsed_seconds: 2874.1
+elapsed_seconds_per_step: 29.0

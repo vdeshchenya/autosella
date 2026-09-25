@@ -1,0 +1,23 @@
+molecule: phe-thr
+input_xyz: inputs/dipeptides/phe-thr.xyz
+final_xyz: results/dipeptides/autosella_f/phe-thr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 22
+converged: True
+status: ok
+initial_energy_kj_mol: -2857920.597268824466
+final_energy_kj_mol: -2858001.611014791764
+delta_energy_kj_mol: -81.013745967299
+initial_energy_hartree: -1088.524467607608
+final_energy_hartree: -1088.555324113832
+delta_energy_hartree: -0.030856506224
+elapsed_seconds: 492.7
+elapsed_seconds_per_step: 22.4

@@ -1,0 +1,23 @@
+molecule: CBQ_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/CBQ_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/CBQ_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 89
+converged: True
+status: ok
+initial_energy_kj_mol: -6980887.678697519936
+final_energy_kj_mol: -6981175.725881434046
+delta_energy_kj_mol: -288.047183914110
+initial_energy_hartree: -2658.879694259034
+final_energy_hartree: -2658.989405637235
+delta_energy_hartree: -0.109711378201
+elapsed_seconds: 2829.0
+elapsed_seconds_per_step: 31.8

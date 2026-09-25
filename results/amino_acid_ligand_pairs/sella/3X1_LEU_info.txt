@@ -1,0 +1,23 @@
+molecule: 3X1_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/3X1_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/3X1_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 62
+converged: True
+status: ok
+initial_energy_kj_mol: -3241105.231026004069
+final_energy_kj_mol: -3241163.962961516809
+delta_energy_kj_mol: -58.731935512740
+initial_energy_hartree: -1234.471786736963
+final_energy_hartree: -1234.494156549790
+delta_energy_hartree: -0.022369812827
+elapsed_seconds: 1630.7
+elapsed_seconds_per_step: 26.3

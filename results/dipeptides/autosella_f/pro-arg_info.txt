@@ -1,0 +1,23 @@
+molecule: pro-arg
+input_xyz: inputs/dipeptides/pro-arg.xyz
+final_xyz: results/dipeptides/autosella_f/pro-arg_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -2897206.106005961075
+final_energy_kj_mol: -2897517.487438769545
+delta_energy_kj_mol: -311.381432808470
+initial_energy_hartree: -1103.487527646313
+final_energy_hartree: -1103.606126570543
+delta_energy_hartree: -0.118598924230
+elapsed_seconds: 683.2
+elapsed_seconds_per_step: 25.3

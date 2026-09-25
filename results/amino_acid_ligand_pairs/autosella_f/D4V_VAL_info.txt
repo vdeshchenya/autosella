@@ -1,0 +1,23 @@
+molecule: D4V_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/D4V_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/D4V_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -2460362.247310382780
+final_energy_kj_mol: -2460447.884995325468
+delta_energy_kj_mol: -85.637684942689
+initial_energy_hartree: -937.102489108614
+final_energy_hartree: -937.135106780182
+delta_energy_hartree: -0.032617671568
+elapsed_seconds: 1389.9
+elapsed_seconds_per_step: 20.4

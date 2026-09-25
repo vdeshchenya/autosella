@@ -1,0 +1,23 @@
+molecule: asp-tyr
+input_xyz: inputs/dipeptides/asp-tyr.xyz
+final_xyz: results/dipeptides/autosella_f/asp-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -3248228.862797837704
+final_energy_kj_mol: -3248554.095634462778
+delta_energy_kj_mol: -325.232836625073
+initial_energy_hartree: -1237.185034784959
+final_energy_hartree: -1237.308909430278
+delta_energy_hartree: -0.123874645319
+elapsed_seconds: 692.0
+elapsed_seconds_per_step: 23.9

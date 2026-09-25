@@ -1,0 +1,23 @@
+molecule: JKJ_SER
+input_xyz: inputs/amino_acid_ligand_pairs/JKJ_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/JKJ_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 32
+converged: True
+status: ok
+initial_energy_kj_mol: -4508149.201720698737
+final_energy_kj_mol: -4508232.855739864521
+delta_energy_kj_mol: -83.654019165784
+initial_energy_hartree: -1717.063348221881
+final_energy_hartree: -1717.095210355057
+delta_energy_hartree: -0.031862133176
+elapsed_seconds: 890.1
+elapsed_seconds_per_step: 27.8

@@ -1,0 +1,23 @@
+molecule: ala-ash
+input_xyz: inputs/dipeptides/ala-ash.xyz
+final_xyz: results/dipeptides/sella/ala-ash_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -2445747.371551077347
+final_energy_kj_mol: -2445932.545820918400
+delta_energy_kj_mol: -185.174269841053
+initial_energy_hartree: -931.535976914310
+final_energy_hartree: -931.606506068859
+delta_energy_hartree: -0.070529154549
+elapsed_seconds: 588.4
+elapsed_seconds_per_step: 16.3

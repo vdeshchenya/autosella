@@ -1,0 +1,23 @@
+molecule: VWS_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/VWS_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/VWS_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 81
+converged: True
+status: ok
+initial_energy_kj_mol: -6615181.593215683475
+final_energy_kj_mol: -6615278.976395136677
+delta_energy_kj_mol: -97.383179453202
+initial_energy_hartree: -2519.589602581748
+final_energy_hartree: -2519.626693875911
+delta_energy_hartree: -0.037091294163
+elapsed_seconds: 3560.3
+elapsed_seconds_per_step: 44.0

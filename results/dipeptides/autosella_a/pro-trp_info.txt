@@ -1,0 +1,23 @@
+molecule: pro-trp
+input_xyz: inputs/dipeptides/pro-trp.xyz
+final_xyz: results/dipeptides/autosella_a/pro-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 19
+converged: True
+status: ok
+initial_energy_kj_mol: -3105844.840565177612
+final_energy_kj_mol: -3105942.575049244799
+delta_energy_kj_mol: -97.734484067187
+initial_energy_hartree: -1182.953824811963
+final_energy_hartree: -1182.991049910987
+delta_energy_hartree: -0.037225099024
+elapsed_seconds: 578.5
+elapsed_seconds_per_step: 30.4

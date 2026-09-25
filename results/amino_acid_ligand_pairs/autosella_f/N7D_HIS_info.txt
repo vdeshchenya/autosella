@@ -1,0 +1,23 @@
+molecule: N7D_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/N7D_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/N7D_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 80
+converged: True
+status: ok
+initial_energy_kj_mol: -5286770.248818913475
+final_energy_kj_mol: -5286911.817632184364
+delta_energy_kj_mol: -141.568813270889
+initial_energy_hartree: -2013.624442876023
+final_energy_hartree: -2013.678363589301
+delta_energy_hartree: -0.053920713278
+elapsed_seconds: 3062.1
+elapsed_seconds_per_step: 38.3

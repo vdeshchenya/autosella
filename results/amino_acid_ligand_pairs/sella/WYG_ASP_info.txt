@@ -1,0 +1,23 @@
+molecule: WYG_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/WYG_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/WYG_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 70
+converged: True
+status: ok
+initial_energy_kj_mol: -4184983.925641999580
+final_energy_kj_mol: -4185134.354063301347
+delta_energy_kj_mol: -150.428421301767
+initial_energy_hartree: -1593.976195125674
+final_energy_hartree: -1594.033490285437
+delta_energy_hartree: -0.057295159763
+elapsed_seconds: 2282.7
+elapsed_seconds_per_step: 32.6

@@ -1,0 +1,23 @@
+molecule: leu-gly
+input_xyz: inputs/dipeptides/leu-gly.xyz
+final_xyz: results/dipeptides/autosella_a/leu-gly_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -2156891.838525080122
+final_energy_kj_mol: -2157197.306240933947
+delta_energy_kj_mol: -305.467715853825
+initial_energy_hartree: -821.516714796560
+final_energy_hartree: -821.633061304958
+delta_energy_hartree: -0.116346508398
+elapsed_seconds: 774.2
+elapsed_seconds_per_step: 15.5

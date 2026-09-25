@@ -1,0 +1,23 @@
+molecule: 9HB_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/9HB_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/9HB_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 69
+converged: True
+status: ok
+initial_energy_kj_mol: -2707499.399457454681
+final_energy_kj_mol: -2707557.562928935513
+delta_energy_kj_mol: -58.163471480832
+initial_energy_hartree: -1031.232059126772
+final_energy_hartree: -1031.254212423084
+delta_energy_hartree: -0.022153296312
+elapsed_seconds: 1193.2
+elapsed_seconds_per_step: 17.3

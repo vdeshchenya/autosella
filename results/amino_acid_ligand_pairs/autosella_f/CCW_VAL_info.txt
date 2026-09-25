@@ -1,0 +1,23 @@
+molecule: CCW_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/CCW_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/CCW_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 42
+converged: True
+status: ok
+initial_energy_kj_mol: -4601346.884907905012
+final_energy_kj_mol: -4601449.745051057078
+delta_energy_kj_mol: -102.860143152066
+initial_energy_hartree: -1752.560471049774
+final_energy_hartree: -1752.599648409239
+delta_energy_hartree: -0.039177359465
+elapsed_seconds: 1369.6
+elapsed_seconds_per_step: 32.6

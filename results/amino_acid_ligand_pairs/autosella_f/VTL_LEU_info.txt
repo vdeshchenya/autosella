@@ -1,0 +1,23 @@
+molecule: VTL_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/VTL_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/VTL_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 41
+converged: True
+status: ok
+initial_energy_kj_mol: -3122659.220424188301
+final_energy_kj_mol: -3122701.086743922904
+delta_energy_kj_mol: -41.866319734603
+initial_energy_hartree: -1189.358083874189
+final_energy_hartree: -1189.374029913223
+delta_energy_hartree: -0.015946039034
+elapsed_seconds: 962.8
+elapsed_seconds_per_step: 23.5

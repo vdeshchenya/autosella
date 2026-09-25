@@ -1,0 +1,23 @@
+molecule: ash-arg
+input_xyz: inputs/dipeptides/ash-arg.xyz
+final_xyz: results/dipeptides/autosella_a/ash-arg_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -3188987.295284521300
+final_energy_kj_mol: -3189350.969113345724
+delta_energy_kj_mol: -363.673828824423
+initial_energy_hartree: -1214.621113380250
+final_energy_hartree: -1214.759629426246
+delta_energy_hartree: -0.138516045996
+elapsed_seconds: 879.4
+elapsed_seconds_per_step: 23.8

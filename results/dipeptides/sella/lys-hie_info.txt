@@ -1,0 +1,23 @@
+molecule: lys-hie
+input_xyz: inputs/dipeptides/lys-hie.xyz
+final_xyz: results/dipeptides/sella/lys-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 40
+converged: True
+status: ok
+initial_energy_kj_mol: -2996988.451583752409
+final_energy_kj_mol: -2997452.414257850964
+delta_energy_kj_mol: -463.962674098555
+initial_energy_hartree: -1141.492615926408
+final_energy_hartree: -1141.669329976230
+delta_energy_hartree: -0.176714049822
+elapsed_seconds: 1027.5
+elapsed_seconds_per_step: 25.7

@@ -1,0 +1,23 @@
+molecule: LFK_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/LFK_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/LFK_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 103
+converged: True
+status: ok
+initial_energy_kj_mol: -4448590.170582906343
+final_energy_kj_mol: -4448825.177256095223
+delta_energy_kj_mol: -235.006673188880
+initial_energy_hartree: -1694.378511308481
+final_energy_hartree: -1694.468020623072
+delta_energy_hartree: -0.089509314591
+elapsed_seconds: 3409.8
+elapsed_seconds_per_step: 33.1

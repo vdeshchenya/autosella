@@ -1,0 +1,23 @@
+molecule: W2B_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/W2B_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/W2B_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3260456.082745480817
+final_energy_kj_mol: -3260526.066495286766
+delta_energy_kj_mol: -69.983749805950
+initial_energy_hartree: -1241.842136908982
+final_energy_hartree: -1241.868792311540
+delta_energy_hartree: -0.026655402558
+elapsed_seconds: 959.3
+elapsed_seconds_per_step: 28.2

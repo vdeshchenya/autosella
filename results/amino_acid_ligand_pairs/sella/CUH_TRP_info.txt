@@ -1,0 +1,23 @@
+molecule: CUH_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/CUH_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/CUH_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 43
+converged: True
+status: ok
+initial_energy_kj_mol: -4359580.189402870834
+final_energy_kj_mol: -4359663.362035875209
+delta_energy_kj_mol: -83.172633004375
+initial_energy_hartree: -1660.476399938293
+final_energy_hartree: -1660.508078721163
+delta_energy_hartree: -0.031678782870
+elapsed_seconds: 1504.3
+elapsed_seconds_per_step: 35.0

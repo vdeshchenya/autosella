@@ -1,0 +1,23 @@
+molecule: 7XM_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/7XM_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/7XM_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2544072.763111660257
+final_energy_kj_mol: -2544135.432957467157
+delta_energy_kj_mol: -62.669845806900
+initial_energy_hartree: -968.986140716298
+final_energy_hartree: -969.010010399944
+delta_energy_hartree: -0.023869683646
+elapsed_seconds: 560.3
+elapsed_seconds_per_step: 19.3

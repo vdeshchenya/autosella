@@ -1,0 +1,23 @@
+molecule: 56Q_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/56Q_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/56Q_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 40
+converged: True
+status: ok
+initial_energy_kj_mol: -5016520.837773097679
+final_energy_kj_mol: -5016634.405807485804
+delta_energy_kj_mol: -113.568034388125
+initial_energy_hartree: -1910.691878353047
+final_energy_hartree: -1910.735134132892
+delta_energy_hartree: -0.043255779845
+elapsed_seconds: 1737.1
+elapsed_seconds_per_step: 43.4

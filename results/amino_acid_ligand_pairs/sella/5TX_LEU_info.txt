@@ -1,0 +1,23 @@
+molecule: 5TX_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/5TX_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/5TX_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 77
+converged: True
+status: ok
+initial_energy_kj_mol: -4351901.538924614899
+final_energy_kj_mol: -4352045.820033811033
+delta_energy_kj_mol: -144.281109196134
+initial_energy_hartree: -1657.551756429381
+final_energy_hartree: -1657.606710201618
+delta_energy_hartree: -0.054953772237
+elapsed_seconds: 2035.7
+elapsed_seconds_per_step: 26.4

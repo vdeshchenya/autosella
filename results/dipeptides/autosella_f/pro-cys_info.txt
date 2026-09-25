@@ -1,0 +1,23 @@
+molecule: pro-cys
+input_xyz: inputs/dipeptides/pro-cys.xyz
+final_xyz: results/dipeptides/autosella_f/pro-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 23
+converged: True
+status: ok
+initial_energy_kj_mol: -3199197.591991518158
+final_energy_kj_mol: -3199442.343371857423
+delta_energy_kj_mol: -244.751380339265
+initial_energy_hartree: -1218.510010012900
+final_energy_hartree: -1218.603230890427
+delta_energy_hartree: -0.093220877527
+elapsed_seconds: 411.0
+elapsed_seconds_per_step: 17.9

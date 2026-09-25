@@ -1,0 +1,23 @@
+molecule: gly-leu
+input_xyz: inputs/dipeptides/gly-leu.xyz
+final_xyz: results/dipeptides/sella/gly-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -2156977.979695487767
+final_energy_kj_mol: -2157211.801714802627
+delta_energy_kj_mol: -233.822019314859
+initial_energy_hartree: -821.549524235614
+final_energy_hartree: -821.638582339374
+delta_energy_hartree: -0.089058103760
+elapsed_seconds: 522.6
+elapsed_seconds_per_step: 15.4

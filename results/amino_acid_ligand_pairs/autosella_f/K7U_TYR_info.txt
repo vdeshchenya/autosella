@@ -1,0 +1,23 @@
+molecule: K7U_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/K7U_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/K7U_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 51
+converged: True
+status: ok
+initial_energy_kj_mol: -4281553.753072640859
+final_energy_kj_mol: -4281650.022551913746
+delta_energy_kj_mol: -96.269479272887
+initial_energy_hartree: -1630.757699864243
+final_energy_hartree: -1630.794366972410
+delta_energy_hartree: -0.036667108167
+elapsed_seconds: 2156.1
+elapsed_seconds_per_step: 42.3

@@ -1,0 +1,23 @@
+molecule: RCQ_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/RCQ_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/RCQ_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -4699897.844330305234
+final_energy_kj_mol: -4699959.200691299513
+delta_energy_kj_mol: -61.356360994279
+initial_energy_hartree: -1790.096549112966
+final_energy_hartree: -1790.119918516668
+delta_energy_hartree: -0.023369403702
+elapsed_seconds: 1221.4
+elapsed_seconds_per_step: 34.9

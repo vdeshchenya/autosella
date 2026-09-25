@@ -1,0 +1,23 @@
+molecule: 1MU_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/1MU_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/1MU_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 46
+converged: True
+status: ok
+initial_energy_kj_mol: -6945787.893742318265
+final_energy_kj_mol: -6945909.840896655805
+delta_energy_kj_mol: -121.947154337540
+initial_energy_hartree: -2645.510892211834
+final_energy_hartree: -2645.557339429919
+delta_energy_hartree: -0.046447218085
+elapsed_seconds: 2061.8
+elapsed_seconds_per_step: 44.8

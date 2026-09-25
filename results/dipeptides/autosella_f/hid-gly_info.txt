@@ -1,0 +1,23 @@
+molecule: hid-gly
+input_xyz: inputs/dipeptides/hid-gly.xyz
+final_xyz: results/dipeptides/autosella_f/hid-gly_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -2438257.400635241065
+final_energy_kj_mol: -2438343.675469073933
+delta_energy_kj_mol: -86.274833832867
+initial_energy_hartree: -928.683197655380
+final_energy_hartree: -928.716058004144
+delta_energy_hartree: -0.032860348764
+elapsed_seconds: 495.0
+elapsed_seconds_per_step: 16.0

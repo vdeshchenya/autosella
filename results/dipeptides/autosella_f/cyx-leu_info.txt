@@ -1,0 +1,23 @@
+molecule: cyx-leu
+input_xyz: inputs/dipeptides/cyx-leu.xyz
+final_xyz: results/dipeptides/autosella_f/cyx-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 44
+converged: True
+status: ok
+initial_energy_kj_mol: -3304088.793527679052
+final_energy_kj_mol: -3304406.480692626908
+delta_energy_kj_mol: -317.687164947856
+initial_energy_hartree: -1258.460958761436
+final_energy_hartree: -1258.581959412196
+delta_energy_hartree: -0.121000650760
+elapsed_seconds: 769.6
+elapsed_seconds_per_step: 17.5

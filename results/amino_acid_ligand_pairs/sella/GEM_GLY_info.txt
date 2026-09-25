@@ -1,0 +1,23 @@
+molecule: GEM_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/GEM_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/GEM_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 86
+converged: True
+status: ok
+initial_energy_kj_mol: -4185618.431493803393
+final_energy_kj_mol: -4185771.921328240540
+delta_energy_kj_mol: -153.489834437147
+initial_energy_hartree: -1594.217865641359
+final_energy_hartree: -1594.276326831804
+delta_energy_hartree: -0.058461190445
+elapsed_seconds: 1827.4
+elapsed_seconds_per_step: 21.2

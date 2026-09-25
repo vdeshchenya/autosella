@@ -1,0 +1,23 @@
+molecule: lyn-ile
+input_xyz: inputs/dipeptides/lyn-ile.xyz
+final_xyz: results/dipeptides/autosella_a/lyn-ile_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -2715120.427920469549
+final_energy_kj_mol: -2715236.200611602981
+delta_energy_kj_mol: -115.772691133432
+initial_energy_hartree: -1034.134755569162
+final_energy_hartree: -1034.178851058414
+delta_energy_hartree: -0.044095489252
+elapsed_seconds: 665.0
+elapsed_seconds_per_step: 23.7

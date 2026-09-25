@@ -1,0 +1,23 @@
+molecule: VCO_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/VCO_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/VCO_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 45
+converged: True
+status: ok
+initial_energy_kj_mol: -3852871.432887855452
+final_energy_kj_mol: -3853042.902713797987
+delta_energy_kj_mol: -171.469825942535
+initial_energy_hartree: -1467.481227173618
+final_energy_hartree: -1467.546536581155
+delta_energy_hartree: -0.065309407537
+elapsed_seconds: 1618.8
+elapsed_seconds_per_step: 36.0

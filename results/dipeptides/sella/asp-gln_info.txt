@@ -1,0 +1,23 @@
+molecule: asp-gln
+input_xyz: inputs/dipeptides/asp-gln.xyz
+final_xyz: results/dipeptides/sella/asp-gln_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -2990548.161348508205
+final_energy_kj_mol: -2990634.674092713278
+delta_energy_kj_mol: -86.512744205073
+initial_energy_hartree: -1139.039638924088
+final_energy_hartree: -1139.072589888127
+delta_energy_hartree: -0.032950964039
+elapsed_seconds: 685.1
+elapsed_seconds_per_step: 20.1

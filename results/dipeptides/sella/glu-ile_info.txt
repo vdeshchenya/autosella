@@ -1,0 +1,23 @@
+molecule: glu-ile
+input_xyz: inputs/dipeptides/glu-ile.xyz
+final_xyz: results/dipeptides/sella/glu-ile_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2857227.303196722176
+final_energy_kj_mol: -2857307.378408050165
+delta_energy_kj_mol: -80.075211327989
+initial_energy_hartree: -1088.260405841353
+final_energy_hartree: -1088.290904878612
+delta_energy_hartree: -0.030499037259
+elapsed_seconds: 597.7
+elapsed_seconds_per_step: 20.6

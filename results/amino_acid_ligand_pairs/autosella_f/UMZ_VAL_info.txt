@@ -1,0 +1,23 @@
+molecule: UMZ_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/UMZ_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/UMZ_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 39
+converged: True
+status: ok
+initial_energy_kj_mol: -3359977.944160062354
+final_energy_kj_mol: -3360039.957748968154
+delta_energy_kj_mol: -62.013588905800
+initial_energy_hartree: -1279.748012011024
+final_energy_hartree: -1279.771631739617
+delta_energy_hartree: -0.023619728593
+elapsed_seconds: 1206.4
+elapsed_seconds_per_step: 30.9

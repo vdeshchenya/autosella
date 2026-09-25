@@ -1,0 +1,23 @@
+molecule: ile-gln
+input_xyz: inputs/dipeptides/ile-gln.xyz
+final_xyz: results/dipeptides/autosella_a/ile-gln_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -2806412.235715318937
+final_energy_kj_mol: -2806496.565121229272
+delta_energy_kj_mol: -84.329405910335
+initial_energy_hartree: -1068.905968797336
+final_energy_hartree: -1068.938088171737
+delta_energy_hartree: -0.032119374401
+elapsed_seconds: 561.9
+elapsed_seconds_per_step: 21.6

@@ -1,0 +1,23 @@
+molecule: GHQ_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/GHQ_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/GHQ_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 85
+converged: True
+status: ok
+initial_energy_kj_mol: -3888217.452699711546
+final_energy_kj_mol: -3888333.671467036009
+delta_energy_kj_mol: -116.218767324463
+initial_energy_hartree: -1480.943815124633
+final_energy_hartree: -1480.988080515333
+delta_energy_hartree: -0.044265390700
+elapsed_seconds: 2473.5
+elapsed_seconds_per_step: 29.1

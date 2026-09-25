@@ -1,0 +1,23 @@
+molecule: 7JQ_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/7JQ_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/7JQ_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -3666484.437078580260
+final_energy_kj_mol: -3666526.627377075609
+delta_energy_kj_mol: -42.190298495349
+initial_energy_hartree: -1396.490169697717
+final_energy_hartree: -1396.506239133744
+delta_energy_hartree: -0.016069436027
+elapsed_seconds: 1760.2
+elapsed_seconds_per_step: 26.7

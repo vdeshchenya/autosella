@@ -1,0 +1,23 @@
+molecule: C9H_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/C9H_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/C9H_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 118
+converged: True
+status: ok
+initial_energy_kj_mol: -3992405.095917547122
+final_energy_kj_mol: -3992552.226083978079
+delta_energy_kj_mol: -147.130166430958
+initial_energy_hartree: -1520.626792661996
+final_energy_hartree: -1520.682831582824
+delta_energy_hartree: -0.056038920828
+elapsed_seconds: 2502.1
+elapsed_seconds_per_step: 21.2

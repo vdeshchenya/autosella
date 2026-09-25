@@ -1,0 +1,23 @@
+molecule: 5F8_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/5F8_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/5F8_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 32
+converged: True
+status: ok
+initial_energy_kj_mol: -3364370.112917254679
+final_energy_kj_mol: -3364421.379254729021
+delta_energy_kj_mol: -51.266337474342
+initial_energy_hartree: -1281.420900740905
+final_energy_hartree: -1281.440427057612
+delta_energy_hartree: -0.019526316707
+elapsed_seconds: 942.2
+elapsed_seconds_per_step: 29.4

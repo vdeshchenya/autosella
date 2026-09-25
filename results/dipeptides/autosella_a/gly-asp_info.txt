@@ -1,0 +1,23 @@
+molecule: gly-asp
+input_xyz: inputs/dipeptides/gly-asp.xyz
+final_xyz: results/dipeptides/autosella_a/gly-asp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -2341303.246677529067
+final_energy_kj_mol: -2341358.926584382076
+delta_energy_kj_mol: -55.679906853009
+initial_energy_hartree: -891.755310673488
+final_energy_hartree: -891.776518029991
+delta_energy_hartree: -0.021207356503
+elapsed_seconds: 414.4
+elapsed_seconds_per_step: 15.9

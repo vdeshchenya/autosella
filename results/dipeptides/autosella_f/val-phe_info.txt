@@ -1,0 +1,23 @@
+molecule: val-phe
+input_xyz: inputs/dipeptides/val-phe.xyz
+final_xyz: results/dipeptides/autosella_f/val-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -2763641.431224357337
+final_energy_kj_mol: -2763716.780522831250
+delta_energy_kj_mol: -75.349298473913
+initial_energy_hartree: -1052.615429713722
+final_energy_hartree: -1052.644128745838
+delta_energy_hartree: -0.028699032116
+elapsed_seconds: 548.5
+elapsed_seconds_per_step: 21.1

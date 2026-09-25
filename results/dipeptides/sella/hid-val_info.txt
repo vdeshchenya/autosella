@@ -1,0 +1,23 @@
+molecule: hid-val
+input_xyz: inputs/dipeptides/hid-val.xyz
+final_xyz: results/dipeptides/sella/hid-val_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -2747849.740581402555
+final_energy_kj_mol: -2747931.674669671804
+delta_energy_kj_mol: -81.934088269249
+initial_energy_hartree: -1046.600692402205
+final_energy_hartree: -1046.631899448299
+delta_energy_hartree: -0.031207046094
+elapsed_seconds: 744.1
+elapsed_seconds_per_step: 20.7

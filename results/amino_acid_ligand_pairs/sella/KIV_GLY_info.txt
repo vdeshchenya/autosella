@@ -1,0 +1,23 @@
+molecule: KIV_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/KIV_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/KIV_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 49
+converged: True
+status: ok
+initial_energy_kj_mol: -2303648.587570589501
+final_energy_kj_mol: -2303717.451388167217
+delta_energy_kj_mol: -68.863817577716
+initial_energy_hartree: -877.413408453917
+final_energy_hartree: -877.439637296817
+delta_energy_hartree: -0.026228842900
+elapsed_seconds: 686.2
+elapsed_seconds_per_step: 14.0

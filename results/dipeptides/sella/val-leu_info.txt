@@ -1,0 +1,23 @@
+molecule: val-leu
+input_xyz: inputs/dipeptides/val-leu.xyz
+final_xyz: results/dipeptides/sella/val-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -2466691.366179144941
+final_energy_kj_mol: -2466782.951447417028
+delta_energy_kj_mol: -91.585268272087
+initial_energy_hartree: -939.513123173685
+final_energy_hartree: -939.548006160106
+delta_energy_hartree: -0.034882986421
+elapsed_seconds: 671.2
+elapsed_seconds_per_step: 21.7

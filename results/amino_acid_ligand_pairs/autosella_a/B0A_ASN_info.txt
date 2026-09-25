@@ -1,0 +1,23 @@
+molecule: B0A_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/B0A_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/B0A_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -3713484.639437945094
+final_energy_kj_mol: -3713581.252493826207
+delta_energy_kj_mol: -96.613055881113
+initial_energy_hartree: -1414.391601353855
+final_energy_hartree: -1414.428399323441
+delta_energy_hartree: -0.036797969586
+elapsed_seconds: 1503.3
+elapsed_seconds_per_step: 30.1

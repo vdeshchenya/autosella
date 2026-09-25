@@ -1,0 +1,23 @@
+molecule: ile-phe
+input_xyz: inputs/dipeptides/ile-phe.xyz
+final_xyz: results/dipeptides/autosella_a/ile-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -2866810.149750201963
+final_energy_kj_mol: -2866886.828687029891
+delta_energy_kj_mol: -76.678936827928
+initial_energy_hartree: -1091.910319331868
+final_energy_hartree: -1091.939524796487
+delta_energy_hartree: -0.029205464619
+elapsed_seconds: 574.6
+elapsed_seconds_per_step: 23.0

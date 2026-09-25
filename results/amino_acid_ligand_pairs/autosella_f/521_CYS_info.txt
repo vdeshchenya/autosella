@@ -1,0 +1,23 @@
+molecule: 521_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/521_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/521_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 69
+converged: True
+status: ok
+initial_energy_kj_mol: -7740136.340989673510
+final_energy_kj_mol: -7740260.786220042035
+delta_energy_kj_mol: -124.445230368525
+initial_energy_hartree: -2948.062237221621
+final_energy_hartree: -2948.109635906617
+delta_energy_hartree: -0.047398684996
+elapsed_seconds: 2526.7
+elapsed_seconds_per_step: 36.6

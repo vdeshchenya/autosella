@@ -1,0 +1,23 @@
+molecule: phe-pro
+input_xyz: inputs/dipeptides/phe-pro.xyz
+final_xyz: results/dipeptides/autosella_f/phe-pro_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 20
+converged: True
+status: ok
+initial_energy_kj_mol: -2760235.213708240539
+final_energy_kj_mol: -2760528.112915249076
+delta_energy_kj_mol: -292.899207008537
+initial_energy_hartree: -1051.318069978875
+final_energy_hartree: -1051.429629395073
+delta_energy_hartree: -0.111559416198
+elapsed_seconds: 476.2
+elapsed_seconds_per_step: 23.8

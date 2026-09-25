@@ -1,0 +1,23 @@
+molecule: cyx-hip
+input_xyz: inputs/dipeptides/cyx-hip.xyz
+final_xyz: results/dipeptides/autosella_f/cyx-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 23
+converged: True
+status: ok
+initial_energy_kj_mol: -3586581.671569670085
+final_energy_kj_mol: -3586896.241919410415
+delta_energy_kj_mol: -314.570349740330
+initial_energy_hartree: -1366.056813582407
+final_energy_hartree: -1366.176627100950
+delta_energy_hartree: -0.119813518543
+elapsed_seconds: 429.8
+elapsed_seconds_per_step: 18.7

@@ -1,0 +1,23 @@
+molecule: S4I_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/S4I_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/S4I_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 60
+converged: True
+status: ok
+initial_energy_kj_mol: -4855682.463159294799
+final_energy_kj_mol: -4855835.519047010690
+delta_energy_kj_mol: -153.055887715891
+initial_energy_hartree: -1849.431776772662
+final_energy_hartree: -1849.490072681530
+delta_energy_hartree: -0.058295908868
+elapsed_seconds: 1754.3
+elapsed_seconds_per_step: 29.2

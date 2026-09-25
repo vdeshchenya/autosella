@@ -1,0 +1,23 @@
+molecule: I06_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/I06_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/I06_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 59
+converged: True
+status: ok
+initial_energy_kj_mol: -4410482.268737627193
+final_energy_kj_mol: -4410582.884749275632
+delta_energy_kj_mol: -100.616011648439
+initial_energy_hartree: -1679.863978046984
+final_energy_hartree: -1679.902300661901
+delta_energy_hartree: -0.038322614917
+elapsed_seconds: 2257.5
+elapsed_seconds_per_step: 38.3

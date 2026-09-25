@@ -1,0 +1,23 @@
+molecule: H4K_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/H4K_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/H4K_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -4681660.980577324517
+final_energy_kj_mol: -4681764.082865632139
+delta_energy_kj_mol: -103.102288307622
+initial_energy_hartree: -1783.150494549198
+final_energy_hartree: -1783.189764136882
+delta_energy_hartree: -0.039269587684
+elapsed_seconds: 1211.7
+elapsed_seconds_per_step: 39.1

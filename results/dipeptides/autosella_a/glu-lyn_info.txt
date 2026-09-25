@@ -1,0 +1,23 @@
+molecule: glu-lyn
+input_xyz: inputs/dipeptides/glu-lyn.xyz
+final_xyz: results/dipeptides/autosella_a/glu-lyn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -3002200.076074903831
+final_energy_kj_mol: -3002620.327183684334
+delta_energy_kj_mol: -420.251108780503
+initial_energy_hartree: -1143.477618861767
+final_energy_hartree: -1143.637684055630
+delta_energy_hartree: -0.160065193863
+elapsed_seconds: 634.3
+elapsed_seconds_per_step: 25.4

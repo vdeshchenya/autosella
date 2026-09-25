@@ -1,0 +1,23 @@
+molecule: leu-glh
+input_xyz: inputs/dipeptides/leu-glh.xyz
+final_xyz: results/dipeptides/sella/leu-glh_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -2858604.855124250986
+final_energy_kj_mol: -2858689.221120295115
+delta_energy_kj_mol: -84.365996044129
+initial_energy_hartree: -1088.785087660697
+final_energy_hartree: -1088.817220971544
+delta_energy_hartree: -0.032133310847
+elapsed_seconds: 766.5
+elapsed_seconds_per_step: 20.7

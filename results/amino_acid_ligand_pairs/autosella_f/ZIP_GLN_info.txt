@@ -1,0 +1,23 @@
+molecule: ZIP_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/ZIP_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/ZIP_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 70
+converged: True
+status: ok
+initial_energy_kj_mol: -3586972.979622297920
+final_energy_kj_mol: -3587106.673721678089
+delta_energy_kj_mol: -133.694099380169
+initial_energy_hartree: -1366.205854948379
+final_energy_hartree: -1366.256776341538
+delta_energy_hartree: -0.050921393159
+elapsed_seconds: 2198.1
+elapsed_seconds_per_step: 31.4

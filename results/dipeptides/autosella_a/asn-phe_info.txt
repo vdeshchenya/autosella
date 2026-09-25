@@ -1,0 +1,23 @@
+molecule: asn-phe
+input_xyz: inputs/dipeptides/asn-phe.xyz
+final_xyz: results/dipeptides/autosella_a/asn-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 24
+converged: True
+status: ok
+initial_energy_kj_mol: -3000149.030419565737
+final_energy_kj_mol: -3000230.305943604559
+delta_energy_kj_mol: -81.275524038821
+initial_energy_hartree: -1142.696416829020
+final_energy_hartree: -1142.727373041246
+delta_energy_hartree: -0.030956212226
+elapsed_seconds: 521.8
+elapsed_seconds_per_step: 21.7

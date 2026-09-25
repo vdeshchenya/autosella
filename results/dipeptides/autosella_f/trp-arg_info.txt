@@ -1,0 +1,23 @@
+molecule: trp-arg
+input_xyz: inputs/dipeptides/trp-arg.xyz
+final_xyz: results/dipeptides/autosella_f/trp-arg_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 23
+converged: True
+status: ok
+initial_energy_kj_mol: -3646051.970186010469
+final_energy_kj_mol: -3646181.856176714413
+delta_energy_kj_mol: -129.885990703944
+initial_energy_hartree: -1388.707854063266
+final_energy_hartree: -1388.757325024431
+delta_energy_hartree: -0.049470961165
+elapsed_seconds: 684.2
+elapsed_seconds_per_step: 29.7

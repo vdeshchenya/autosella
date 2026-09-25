@@ -1,0 +1,23 @@
+molecule: ser-glu
+input_xyz: inputs/dipeptides/ser-glu.xyz
+final_xyz: results/dipeptides/autosella_f/ser-glu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 17
+converged: True
+status: ok
+initial_energy_kj_mol: -2745151.525214155205
+final_energy_kj_mol: -2745231.436318964697
+delta_energy_kj_mol: -79.911104809493
+initial_energy_hartree: -1045.572996444196
+final_energy_hartree: -1045.603432976583
+delta_energy_hartree: -0.030436532387
+elapsed_seconds: 290.4
+elapsed_seconds_per_step: 17.1

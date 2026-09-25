@@ -1,0 +1,23 @@
+molecule: pro-hie
+input_xyz: inputs/dipeptides/pro-hie.xyz
+final_xyz: results/dipeptides/autosella_a/pro-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 21
+converged: True
+status: ok
+initial_energy_kj_mol: -2744650.314839284401
+final_energy_kj_mol: -2744755.291681569070
+delta_energy_kj_mol: -104.976842284668
+initial_energy_hartree: -1045.382095494398
+final_energy_hartree: -1045.422079061985
+delta_energy_hartree: -0.039983567587
+elapsed_seconds: 444.3
+elapsed_seconds_per_step: 21.2

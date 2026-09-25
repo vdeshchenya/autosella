@@ -1,0 +1,23 @@
+molecule: MBE_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/MBE_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/MBE_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 38
+converged: True
+status: ok
+initial_energy_kj_mol: -5200718.459254157729
+final_energy_kj_mol: -5200830.890490281396
+delta_energy_kj_mol: -112.431236123666
+initial_energy_hartree: -1980.849047187223
+final_energy_hartree: -1980.891869983476
+delta_energy_hartree: -0.042822796253
+elapsed_seconds: 1930.9
+elapsed_seconds_per_step: 50.8

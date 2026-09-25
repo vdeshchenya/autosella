@@ -1,0 +1,23 @@
+molecule: OTW_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/OTW_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/OTW_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3795823.973693974316
+final_energy_kj_mol: -3795891.441594433971
+delta_energy_kj_mol: -67.467900459655
+initial_energy_hartree: -1445.752997492664
+final_energy_hartree: -1445.778694658813
+delta_energy_hartree: -0.025697166149
+elapsed_seconds: 790.1
+elapsed_seconds_per_step: 23.2

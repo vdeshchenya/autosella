@@ -1,0 +1,23 @@
+molecule: OCH_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/OCH_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/OCH_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -3047797.844975720160
+final_energy_kj_mol: -3047865.865617094561
+delta_energy_kj_mol: -68.020641374402
+initial_energy_hartree: -1160.844891823895
+final_energy_hartree: -1160.870799517940
+delta_energy_hartree: -0.025907694045
+elapsed_seconds: 746.7
+elapsed_seconds_per_step: 22.6

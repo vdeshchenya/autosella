@@ -1,0 +1,23 @@
+molecule: OMD_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/OMD_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/OMD_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 92
+converged: True
+status: ok
+initial_energy_kj_mol: -3856245.754793409258
+final_energy_kj_mol: -3856359.125194869004
+delta_energy_kj_mol: -113.370401459746
+initial_energy_hartree: -1468.766438511991
+final_energy_hartree: -1468.809619017429
+delta_energy_hartree: -0.043180505438
+elapsed_seconds: 2724.5
+elapsed_seconds_per_step: 29.6

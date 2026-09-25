@@ -1,0 +1,23 @@
+molecule: hip-ser
+input_xyz: inputs/dipeptides/hip-ser.xyz
+final_xyz: results/dipeptides/sella/hip-ser_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -2739901.638226933777
+final_energy_kj_mol: -2740014.463843535632
+delta_energy_kj_mol: -112.825616601855
+initial_energy_hartree: -1043.573420093745
+final_energy_hartree: -1043.616393101589
+delta_energy_hartree: -0.042973007844
+elapsed_seconds: 634.4
+elapsed_seconds_per_step: 18.7

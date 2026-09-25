@@ -1,0 +1,23 @@
+molecule: 0LV_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/0LV_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/0LV_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -3261784.805231455248
+final_energy_kj_mol: -3261840.186450704932
+delta_energy_kj_mol: -55.381219249684
+initial_energy_hartree: -1242.348220576256
+final_energy_hartree: -1242.369314168659
+delta_energy_hartree: -0.021093592403
+elapsed_seconds: 1260.5
+elapsed_seconds_per_step: 25.2

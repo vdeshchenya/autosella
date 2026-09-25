@@ -1,0 +1,23 @@
+molecule: solvated_135177856
+input_xyz: inputs/solvated_pubchem/solvated_135177856.xyz
+final_xyz: results/solvated_pubchem/sella/solvated_135177856_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 500
+n_calls: 258
+converged: True
+status: ok
+initial_energy_kj_mol: -6533747.460761993192
+final_energy_kj_mol: -6534747.738283074461
+delta_energy_kj_mol: -1000.277521081269
+initial_energy_hartree: -2488.572979601056
+final_energy_hartree: -2488.953965187967
+delta_energy_hartree: -0.380985586911
+elapsed_seconds: 16499.7
+elapsed_seconds_per_step: 64.0

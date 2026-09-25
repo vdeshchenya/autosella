@@ -1,0 +1,23 @@
+molecule: 372_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/372_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/372_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 70
+converged: True
+status: ok
+initial_energy_kj_mol: -3994667.751176796854
+final_energy_kj_mol: -3994814.341365538538
+delta_energy_kj_mol: -146.590188741684
+initial_energy_hartree: -1521.488592536285
+final_energy_hartree: -1521.544425790473
+delta_energy_hartree: -0.055833254188
+elapsed_seconds: 2596.3
+elapsed_seconds_per_step: 37.1

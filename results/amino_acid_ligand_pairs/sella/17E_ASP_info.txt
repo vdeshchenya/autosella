@@ -1,0 +1,23 @@
+molecule: 17E_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/17E_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/17E_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 59
+converged: True
+status: ok
+initial_energy_kj_mol: -2935147.002144604456
+final_energy_kj_mol: -2935218.735956906807
+delta_energy_kj_mol: -71.733812302351
+initial_energy_hartree: -1117.938451793520
+final_energy_hartree: -1117.965773759680
+delta_energy_hartree: -0.027321966160
+elapsed_seconds: 1161.2
+elapsed_seconds_per_step: 19.7

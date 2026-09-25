@@ -1,0 +1,23 @@
+molecule: 2NA_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/2NA_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/2NA_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 72
+converged: True
+status: ok
+initial_energy_kj_mol: -3161223.359287044965
+final_energy_kj_mol: -3161279.799699909519
+delta_energy_kj_mol: -56.440412864555
+initial_energy_hartree: -1204.046388638343
+final_energy_hartree: -1204.067885656288
+delta_energy_hartree: -0.021497017945
+elapsed_seconds: 2255.6
+elapsed_seconds_per_step: 31.3

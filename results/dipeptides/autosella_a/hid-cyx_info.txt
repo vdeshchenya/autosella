@@ -1,0 +1,23 @@
+molecule: hid-cyx
+input_xyz: inputs/dipeptides/hid-cyx.xyz
+final_xyz: results/dipeptides/autosella_a/hid-cyx_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -3585478.239818694070
+final_energy_kj_mol: -3585565.816099158488
+delta_energy_kj_mol: -87.576280464418
+initial_energy_hartree: -1365.636538624306
+final_energy_hartree: -1365.669894667913
+delta_energy_hartree: -0.033356043607
+elapsed_seconds: 476.0
+elapsed_seconds_per_step: 18.3

@@ -1,0 +1,23 @@
+molecule: asp-hie
+input_xyz: inputs/dipeptides/asp-hie.xyz
+final_xyz: results/dipeptides/autosella_f/asp-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 20
+converged: True
+status: ok
+initial_energy_kj_mol: -3034955.427254407201
+final_energy_kj_mol: -3035260.996905715205
+delta_energy_kj_mol: -305.569651308004
+initial_energy_hartree: -1155.953473242761
+final_energy_hartree: -1156.069858576323
+delta_energy_hartree: -0.116385333562
+elapsed_seconds: 435.8
+elapsed_seconds_per_step: 21.8

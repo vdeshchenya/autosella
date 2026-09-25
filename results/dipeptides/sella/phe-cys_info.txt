@@ -1,0 +1,23 @@
+molecule: phe-cys
+input_xyz: inputs/dipeptides/phe-cys.xyz
+final_xyz: results/dipeptides/sella/phe-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 43
+converged: True
+status: ok
+initial_energy_kj_mol: -3602618.961532455869
+final_energy_kj_mol: -3602714.435769624542
+delta_energy_kj_mol: -95.474237168673
+initial_energy_hartree: -1372.165094734547
+final_energy_hartree: -1372.201458950993
+delta_energy_hartree: -0.036364216446
+elapsed_seconds: 951.8
+elapsed_seconds_per_step: 22.1

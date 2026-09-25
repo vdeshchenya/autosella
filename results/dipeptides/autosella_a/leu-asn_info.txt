@@ -1,0 +1,23 @@
+molecule: leu-asn
+input_xyz: inputs/dipeptides/leu-asn.xyz
+final_xyz: results/dipeptides/autosella_a/leu-asn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -2702990.212847332936
+final_energy_kj_mol: -2703285.331374935806
+delta_energy_kj_mol: -295.118527602870
+initial_energy_hartree: -1029.514600650558
+final_energy_hartree: -1029.627005361328
+delta_energy_hartree: -0.112404710770
+elapsed_seconds: 538.9
+elapsed_seconds_per_step: 19.2

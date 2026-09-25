@@ -1,0 +1,23 @@
+molecule: GKU_MET
+input_xyz: inputs/amino_acid_ligand_pairs/GKU_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/GKU_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 56
+converged: True
+status: ok
+initial_energy_kj_mol: -3918442.846616877243
+final_energy_kj_mol: -3918500.479517363477
+delta_energy_kj_mol: -57.632900486235
+initial_energy_hartree: -1492.456059675218
+final_energy_hartree: -1492.478010887711
+delta_energy_hartree: -0.021951212493
+elapsed_seconds: 1472.0
+elapsed_seconds_per_step: 26.3

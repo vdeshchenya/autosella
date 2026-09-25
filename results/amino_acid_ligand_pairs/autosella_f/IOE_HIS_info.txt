@@ -1,0 +1,23 @@
+molecule: IOE_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/IOE_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/IOE_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 71
+converged: True
+status: ok
+initial_energy_kj_mol: -6022527.668712790124
+final_energy_kj_mol: -6022756.896619510837
+delta_energy_kj_mol: -229.227906720713
+initial_energy_hartree: -2293.859644142182
+final_energy_hartree: -2293.946952440867
+delta_energy_hartree: -0.087308298685
+elapsed_seconds: 2550.7
+elapsed_seconds_per_step: 35.9

@@ -1,0 +1,23 @@
+molecule: met-hie
+input_xyz: inputs/dipeptides/met-hie.xyz
+final_xyz: results/dipeptides/autosella_f/met-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 18
+converged: True
+status: ok
+initial_energy_kj_mol: -3793171.523379798513
+final_energy_kj_mol: -3793273.128030711319
+delta_energy_kj_mol: -101.604650912806
+initial_energy_hartree: -1444.742732522793
+final_energy_hartree: -1444.781431690519
+delta_energy_hartree: -0.038699167726
+elapsed_seconds: 432.5
+elapsed_seconds_per_step: 24.0

@@ -1,0 +1,23 @@
+molecule: hip-trp
+input_xyz: inputs/dipeptides/hip-trp.xyz
+final_xyz: results/dipeptides/autosella_f/hip-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -3494313.255746489856
+final_energy_kj_mol: -3494440.226023109164
+delta_energy_kj_mol: -126.970276619308
+initial_energy_hartree: -1330.913630000992
+final_energy_hartree: -1330.961990425313
+delta_energy_hartree: -0.048360424321
+elapsed_seconds: 645.5
+elapsed_seconds_per_step: 24.8

@@ -1,0 +1,23 @@
+molecule: val-glh
+input_xyz: inputs/dipeptides/val-glh.xyz
+final_xyz: results/dipeptides/sella/val-glh_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -2755374.058583940379
+final_energy_kj_mol: -2755463.070476289839
+delta_energy_kj_mol: -89.011892349459
+initial_energy_hartree: -1049.466553775558
+final_energy_hartree: -1049.500456614854
+delta_energy_hartree: -0.033902839296
+elapsed_seconds: 613.5
+elapsed_seconds_per_step: 21.2

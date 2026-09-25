@@ -1,0 +1,23 @@
+molecule: RVZ_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/RVZ_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/RVZ_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 52
+converged: True
+status: ok
+initial_energy_kj_mol: -5880489.804299471900
+final_energy_kj_mol: -5880625.201906356961
+delta_energy_kj_mol: -135.397606885061
+initial_energy_hartree: -2239.760278719509
+final_energy_hartree: -2239.811848944410
+delta_energy_hartree: -0.051570224901
+elapsed_seconds: 2690.3
+elapsed_seconds_per_step: 51.7

@@ -1,0 +1,23 @@
+molecule: 34L_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/34L_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/34L_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -4432442.137322814204
+final_energy_kj_mol: -4432529.750860389322
+delta_energy_kj_mol: -87.613537575118
+initial_energy_hartree: -1688.228050262030
+final_energy_hartree: -1688.261420496121
+delta_energy_hartree: -0.033370234091
+elapsed_seconds: 2258.6
+elapsed_seconds_per_step: 34.2

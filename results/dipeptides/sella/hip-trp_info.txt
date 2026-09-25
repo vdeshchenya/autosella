@@ -1,0 +1,23 @@
+molecule: hip-trp
+input_xyz: inputs/dipeptides/hip-trp.xyz
+final_xyz: results/dipeptides/sella/hip-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -3494313.496458077338
+final_energy_kj_mol: -3494440.229168906808
+delta_energy_kj_mol: -126.732710829470
+initial_energy_hartree: -1330.913721683194
+final_energy_hartree: -1330.961991623484
+delta_energy_hartree: -0.048269940290
+elapsed_seconds: 706.9
+elapsed_seconds_per_step: 25.2

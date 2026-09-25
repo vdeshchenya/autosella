@@ -1,0 +1,23 @@
+molecule: pro-leu
+input_xyz: inputs/dipeptides/pro-leu.xyz
+final_xyz: results/dipeptides/autosella_f/pro-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -2463359.196197608020
+final_energy_kj_mol: -2463620.172931243666
+delta_energy_kj_mol: -260.976733635645
+initial_energy_hartree: -938.243966655272
+final_energy_hartree: -938.343367443492
+delta_energy_hartree: -0.099400788220
+elapsed_seconds: 738.2
+elapsed_seconds_per_step: 21.1

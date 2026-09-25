@@ -1,0 +1,23 @@
+molecule: 272_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/272_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/272_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 55
+converged: True
+status: ok
+initial_energy_kj_mol: -4293118.426559974439
+final_energy_kj_mol: -4293245.002831098624
+delta_energy_kj_mol: -126.576271124184
+initial_energy_hartree: -1635.162451368846
+final_energy_hartree: -1635.210661724399
+delta_energy_hartree: -0.048210355553
+elapsed_seconds: 2367.1
+elapsed_seconds_per_step: 43.0

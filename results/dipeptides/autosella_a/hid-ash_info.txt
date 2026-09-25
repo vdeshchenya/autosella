@@ -1,0 +1,23 @@
+molecule: hid-ash
+input_xyz: inputs/dipeptides/hid-ash.xyz
+final_xyz: results/dipeptides/autosella_a/hid-ash_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -3036350.419670210220
+final_energy_kj_mol: -3036621.721167779993
+delta_energy_kj_mol: -271.301497569773
+initial_energy_hartree: -1156.484797793268
+final_energy_hartree: -1156.588131076385
+delta_energy_hartree: -0.103333283117
+elapsed_seconds: 513.1
+elapsed_seconds_per_step: 20.5

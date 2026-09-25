@@ -1,0 +1,23 @@
+molecule: gln-phe
+input_xyz: inputs/dipeptides/gln-phe.xyz
+final_xyz: results/dipeptides/sella/gln-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 48
+converged: True
+status: ok
+initial_energy_kj_mol: -3103299.892123415135
+final_energy_kj_mol: -3103421.006828904152
+delta_energy_kj_mol: -121.114705489017
+initial_energy_hartree: -1181.984505142863
+final_energy_hartree: -1182.030635297927
+delta_energy_hartree: -0.046130155064
+elapsed_seconds: 1158.5
+elapsed_seconds_per_step: 24.1

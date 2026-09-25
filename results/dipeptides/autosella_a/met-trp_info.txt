@@ -1,0 +1,23 @@
+molecule: met-trp
+input_xyz: inputs/dipeptides/met-trp.xyz
+final_xyz: results/dipeptides/autosella_a/met-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -4154118.564664226025
+final_energy_kj_mol: -4154485.201956715435
+delta_energy_kj_mol: -366.637292489409
+initial_energy_hartree: -1582.220199994824
+final_energy_hartree: -1582.359844764519
+delta_energy_hartree: -0.139644769695
+elapsed_seconds: 899.5
+elapsed_seconds_per_step: 30.0

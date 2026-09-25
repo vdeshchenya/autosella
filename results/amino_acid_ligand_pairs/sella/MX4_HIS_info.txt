@@ -1,0 +1,23 @@
+molecule: MX4_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/MX4_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/MX4_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 100
+converged: True
+status: ok
+initial_energy_kj_mol: -4493806.383082464337
+final_energy_kj_mol: -4493945.019846605137
+delta_energy_kj_mol: -138.636764140800
+initial_energy_hartree: -1711.600457112486
+final_energy_hartree: -1711.653261067229
+delta_energy_hartree: -0.052803954743
+elapsed_seconds: 3540.5
+elapsed_seconds_per_step: 35.4

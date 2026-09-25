@@ -1,0 +1,23 @@
+molecule: B21_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/B21_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/B21_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 71
+converged: True
+status: ok
+initial_energy_kj_mol: -4259411.590306763537
+final_energy_kj_mol: -4259534.427170242183
+delta_energy_kj_mol: -122.836863478646
+initial_energy_hartree: -1622.324195462672
+final_energy_hartree: -1622.370981553072
+delta_energy_hartree: -0.046786090400
+elapsed_seconds: 2343.5
+elapsed_seconds_per_step: 33.0

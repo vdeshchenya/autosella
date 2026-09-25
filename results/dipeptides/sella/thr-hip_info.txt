@@ -1,0 +1,23 @@
+molecule: thr-hip
+input_xyz: inputs/dipeptides/thr-hip.xyz
+final_xyz: results/dipeptides/sella/thr-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -2843144.437980765011
+final_energy_kj_mol: -2843246.873899226077
+delta_energy_kj_mol: -102.435918461066
+initial_energy_hartree: -1082.896525761466
+final_energy_hartree: -1082.935541542280
+delta_energy_hartree: -0.039015780814
+elapsed_seconds: 604.5
+elapsed_seconds_per_step: 23.3

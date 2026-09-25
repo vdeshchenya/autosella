@@ -1,0 +1,23 @@
+molecule: ser-hie
+input_xyz: inputs/dipeptides/ser-hie.xyz
+final_xyz: results/dipeptides/sella/ser-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -2738918.704950336833
+final_energy_kj_mol: -2739017.376335013658
+delta_energy_kj_mol: -98.671384676825
+initial_energy_hartree: -1043.199040580674
+final_energy_hartree: -1043.236622526294
+delta_energy_hartree: -0.037581945620
+elapsed_seconds: 706.7
+elapsed_seconds_per_step: 19.6

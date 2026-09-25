@@ -1,0 +1,23 @@
+molecule: lys-ser
+input_xyz: inputs/dipeptides/lys-ser.xyz
+final_xyz: results/dipeptides/autosella_a/lys-ser_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 20
+converged: True
+status: ok
+initial_energy_kj_mol: -2604089.540962477215
+final_energy_kj_mol: -2604210.848268293310
+delta_energy_kj_mol: -121.307305816095
+initial_energy_hartree: -991.845324144983
+final_energy_hartree: -991.891527657637
+delta_energy_hartree: -0.046203512654
+elapsed_seconds: 440.3
+elapsed_seconds_per_step: 22.0

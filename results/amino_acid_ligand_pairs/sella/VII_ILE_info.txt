@@ -1,0 +1,23 @@
+molecule: VII_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/VII_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/VII_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 81
+converged: True
+status: ok
+initial_energy_kj_mol: -4418050.425413731486
+final_energy_kj_mol: -4418128.064469703473
+delta_energy_kj_mol: -77.639055971988
+initial_energy_hartree: -1682.746536689271
+final_energy_hartree: -1682.776107843959
+delta_energy_hartree: -0.029571154688
+elapsed_seconds: 3025.5
+elapsed_seconds_per_step: 37.4

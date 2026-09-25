@@ -1,0 +1,23 @@
+molecule: KI5_MET
+input_xyz: inputs/amino_acid_ligand_pairs/KI5_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/KI5_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 94
+converged: True
+status: ok
+initial_energy_kj_mol: -4902810.162805764936
+final_energy_kj_mol: -4902886.303538835607
+delta_energy_kj_mol: -76.140733070672
+initial_energy_hartree: -1867.381769580814
+final_energy_hartree: -1867.410770054448
+delta_energy_hartree: -0.029000473634
+elapsed_seconds: 2186.1
+elapsed_seconds_per_step: 23.3

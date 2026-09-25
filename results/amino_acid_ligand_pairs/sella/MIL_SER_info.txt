@@ -1,0 +1,23 @@
+molecule: MIL_SER
+input_xyz: inputs/amino_acid_ligand_pairs/MIL_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/MIL_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 86
+converged: True
+status: ok
+initial_energy_kj_mol: -3342224.519238330424
+final_energy_kj_mol: -3342310.456217629369
+delta_energy_kj_mol: -85.936979298946
+initial_energy_hartree: -1272.986089573568
+final_energy_hartree: -1273.018821240336
+delta_energy_hartree: -0.032731666768
+elapsed_seconds: 2122.7
+elapsed_seconds_per_step: 24.7

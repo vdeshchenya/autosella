@@ -1,0 +1,23 @@
+molecule: lyn-cyx
+input_xyz: inputs/dipeptides/lyn-cyx.xyz
+final_xyz: results/dipeptides/autosella_a/lyn-cyx_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3449415.093264535535
+final_energy_kj_mol: -3449668.849385982845
+delta_energy_kj_mol: -253.756121447310
+initial_energy_hartree: -1313.812823051025
+final_energy_hartree: -1313.909473653307
+delta_energy_hartree: -0.096650602282
+elapsed_seconds: 714.0
+elapsed_seconds_per_step: 21.0

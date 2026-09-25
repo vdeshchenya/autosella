@@ -1,0 +1,23 @@
+molecule: 0TK_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/0TK_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/0TK_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 131
+converged: True
+status: ok
+initial_energy_kj_mol: -4539504.682243348099
+final_energy_kj_mol: -4539747.395769733936
+delta_energy_kj_mol: -242.713526385836
+initial_energy_hartree: -1729.006020028479
+final_energy_hartree: -1729.098464728427
+delta_energy_hartree: -0.092444699948
+elapsed_seconds: 3786.1
+elapsed_seconds_per_step: 28.9

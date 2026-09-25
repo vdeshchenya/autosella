@@ -1,0 +1,23 @@
+molecule: AOJ_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/AOJ_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/AOJ_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 61
+converged: True
+status: ok
+initial_energy_kj_mol: -3770275.364767876454
+final_energy_kj_mol: -3770428.486219162587
+delta_energy_kj_mol: -153.121451286133
+initial_energy_hartree: -1436.022046270306
+final_energy_hartree: -1436.080367151019
+delta_energy_hartree: -0.058320880713
+elapsed_seconds: 1690.7
+elapsed_seconds_per_step: 27.7

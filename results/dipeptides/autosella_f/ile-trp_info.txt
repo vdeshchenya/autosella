@@ -1,0 +1,23 @@
+molecule: ile-trp
+input_xyz: inputs/dipeptides/ile-trp.xyz
+final_xyz: results/dipeptides/autosella_f/ile-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3211888.248313949443
+final_energy_kj_mol: -3212285.511069539469
+delta_energy_kj_mol: -397.262755590025
+initial_energy_hartree: -1223.343625729924
+final_energy_hartree: -1223.494935122474
+delta_energy_hartree: -0.151309392550
+elapsed_seconds: 912.3
+elapsed_seconds_per_step: 26.8

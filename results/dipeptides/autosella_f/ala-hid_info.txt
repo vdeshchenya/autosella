@@ -1,0 +1,23 @@
+molecule: ala-hid
+input_xyz: inputs/dipeptides/ala-hid.xyz
+final_xyz: results/dipeptides/autosella_f/ala-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -2541491.899778421037
+final_energy_kj_mol: -2541569.389595908113
+delta_energy_kj_mol: -77.489817487076
+initial_energy_hartree: -968.003141787473
+final_energy_hartree: -968.032656100224
+delta_energy_hartree: -0.029514312751
+elapsed_seconds: 599.9
+elapsed_seconds_per_step: 18.2

@@ -1,0 +1,23 @@
+molecule: OCZ_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/OCZ_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/OCZ_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 51
+converged: True
+status: ok
+initial_energy_kj_mol: -4922096.526668744162
+final_energy_kj_mol: -4922203.987262549810
+delta_energy_kj_mol: -107.460593805648
+initial_energy_hartree: -1874.727557625485
+final_energy_hartree: -1874.768487204065
+delta_energy_hartree: -0.040929578580
+elapsed_seconds: 1619.8
+elapsed_seconds_per_step: 31.8

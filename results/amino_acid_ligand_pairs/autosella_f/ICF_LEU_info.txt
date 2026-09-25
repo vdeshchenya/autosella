@@ -1,0 +1,23 @@
+molecule: ICF_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/ICF_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/ICF_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 29
+converged: True
+status: ok
+initial_energy_kj_mol: -4630754.179317672737
+final_energy_kj_mol: -4630829.829994973727
+delta_energy_kj_mol: -75.650677300990
+initial_energy_hartree: -1763.761117954297
+final_energy_hartree: -1763.789931775546
+delta_energy_hartree: -0.028813821249
+elapsed_seconds: 577.1
+elapsed_seconds_per_step: 19.9

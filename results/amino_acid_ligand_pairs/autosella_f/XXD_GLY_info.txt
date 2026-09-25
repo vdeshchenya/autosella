@@ -1,0 +1,23 @@
+molecule: XXD_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/XXD_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/XXD_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -2309871.792664675508
+final_energy_kj_mol: -2309912.748508901335
+delta_energy_kj_mol: -40.955844225828
+initial_energy_hartree: -879.783702092700
+final_energy_hartree: -879.799301349927
+delta_energy_hartree: -0.015599257227
+elapsed_seconds: 547.4
+elapsed_seconds_per_step: 16.1

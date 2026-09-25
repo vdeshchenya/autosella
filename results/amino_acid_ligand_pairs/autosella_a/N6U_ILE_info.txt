@@ -1,0 +1,23 @@
+molecule: N6U_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/N6U_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/N6U_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 63
+converged: True
+status: ok
+initial_energy_kj_mol: -4400134.234760076739
+final_energy_kj_mol: -4400226.956630039960
+delta_energy_kj_mol: -92.721869963221
+initial_energy_hartree: -1675.922620058605
+final_energy_hartree: -1675.957935953747
+delta_energy_hartree: -0.035315895142
+elapsed_seconds: 1762.5
+elapsed_seconds_per_step: 28.0

@@ -1,0 +1,23 @@
+molecule: glu-val
+input_xyz: inputs/dipeptides/glu-val.xyz
+final_xyz: results/dipeptides/autosella_f/glu-val_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 16
+converged: True
+status: ok
+initial_energy_kj_mol: -2753867.569234662224
+final_energy_kj_mol: -2754129.883205199614
+delta_energy_kj_mol: -262.313970537391
+initial_energy_hartree: -1048.892762285883
+final_energy_hartree: -1048.992672400740
+delta_energy_hartree: -0.099910114857
+elapsed_seconds: 316.1
+elapsed_seconds_per_step: 19.8

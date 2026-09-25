@@ -1,0 +1,23 @@
+molecule: 8HK_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/8HK_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/8HK_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 46
+converged: True
+status: ok
+initial_energy_kj_mol: -4737033.949044264853
+final_energy_kj_mol: -4737132.155837826431
+delta_energy_kj_mol: -98.206793561578
+initial_energy_hartree: -1804.240944395121
+final_energy_hartree: -1804.278349387331
+delta_energy_hartree: -0.037404992210
+elapsed_seconds: 1393.8
+elapsed_seconds_per_step: 30.3

@@ -1,0 +1,23 @@
+molecule: gly-ala
+input_xyz: inputs/dipeptides/gly-ala.xyz
+final_xyz: results/dipeptides/autosella_f/gly-ala_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 39
+converged: True
+status: ok
+initial_energy_kj_mol: -1847602.450607762439
+final_energy_kj_mol: -1847655.315980207408
+delta_energy_kj_mol: -52.865372444969
+initial_energy_hartree: -703.714608383555
+final_energy_hartree: -703.734743740517
+delta_energy_hartree: -0.020135356962
+elapsed_seconds: 456.0
+elapsed_seconds_per_step: 11.7

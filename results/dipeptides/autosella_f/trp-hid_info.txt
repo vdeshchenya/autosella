@@ -1,0 +1,23 @@
+molecule: trp-hid
+input_xyz: inputs/dipeptides/trp-hid.xyz
+final_xyz: results/dipeptides/autosella_f/trp-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 54
+converged: True
+status: ok
+initial_energy_kj_mol: -3493071.325597214047
+final_energy_kj_mol: -3493433.577147286851
+delta_energy_kj_mol: -362.251550072804
+initial_energy_hartree: -1330.440603788914
+final_energy_hartree: -1330.578578117543
+delta_energy_hartree: -0.137974328629
+elapsed_seconds: 1459.0
+elapsed_seconds_per_step: 27.0

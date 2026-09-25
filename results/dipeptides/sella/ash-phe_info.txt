@@ -1,0 +1,23 @@
+molecule: ash-phe
+input_xyz: inputs/dipeptides/ash-phe.xyz
+final_xyz: results/dipeptides/sella/ash-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 38
+converged: True
+status: ok
+initial_energy_kj_mol: -3052320.834995470010
+final_energy_kj_mol: -3052417.205063990783
+delta_energy_kj_mol: -96.370068520773
+initial_energy_hartree: -1162.567607741177
+final_energy_hartree: -1162.604313161765
+delta_energy_hartree: -0.036705420588
+elapsed_seconds: 878.8
+elapsed_seconds_per_step: 23.1

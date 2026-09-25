@@ -1,0 +1,23 @@
+molecule: LGC_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/LGC_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/LGC_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 41
+converged: True
+status: ok
+initial_energy_kj_mol: -4054238.866336984560
+final_energy_kj_mol: -4054339.770740371197
+delta_energy_kj_mol: -100.904403386638
+initial_energy_hartree: -1544.178032010742
+final_energy_hartree: -1544.216464468271
+delta_energy_hartree: -0.038432457529
+elapsed_seconds: 1478.5
+elapsed_seconds_per_step: 36.1

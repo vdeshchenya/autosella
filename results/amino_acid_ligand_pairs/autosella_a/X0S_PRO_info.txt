@@ -1,0 +1,23 @@
+molecule: X0S_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/X0S_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/X0S_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -5009654.095421139151
+final_energy_kj_mol: -5009729.682686436921
+delta_energy_kj_mol: -75.587265297771
+initial_energy_hartree: -1908.076474317677
+final_energy_hartree: -1908.105263986569
+delta_energy_hartree: -0.028789668892
+elapsed_seconds: 804.9
+elapsed_seconds_per_step: 23.0

@@ -1,0 +1,23 @@
+molecule: 4E3_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/4E3_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/4E3_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 59
+converged: True
+status: ok
+initial_energy_kj_mol: -11137280.026691993698
+final_energy_kj_mol: -11137395.995698163286
+delta_energy_kj_mol: -115.969006169587
+initial_energy_hartree: -4241.965932586546
+final_energy_hartree: -4242.010102848246
+delta_energy_hartree: -0.044170261700
+elapsed_seconds: 2092.4
+elapsed_seconds_per_step: 35.5

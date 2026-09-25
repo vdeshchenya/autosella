@@ -1,0 +1,23 @@
+molecule: P4T_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/P4T_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/P4T_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 73
+converged: True
+status: ok
+initial_energy_kj_mol: -4642878.381383921020
+final_energy_kj_mol: -4643037.252435933799
+delta_energy_kj_mol: -158.871052012779
+initial_energy_hartree: -1768.378982639531
+final_energy_hartree: -1768.439493427506
+delta_energy_hartree: -0.060510787975
+elapsed_seconds: 1973.2
+elapsed_seconds_per_step: 27.0

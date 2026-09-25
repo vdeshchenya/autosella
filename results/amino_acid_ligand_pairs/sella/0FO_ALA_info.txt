@@ -1,0 +1,23 @@
+molecule: 0FO_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/0FO_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/0FO_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 46
+converged: True
+status: ok
+initial_energy_kj_mol: -9560567.019148850814
+final_energy_kj_mol: -9560637.822831884027
+delta_energy_kj_mol: -70.803683033213
+initial_energy_hartree: -3641.427664047502
+final_energy_hartree: -3641.454631746133
+delta_energy_hartree: -0.026967698631
+elapsed_seconds: 904.4
+elapsed_seconds_per_step: 19.7

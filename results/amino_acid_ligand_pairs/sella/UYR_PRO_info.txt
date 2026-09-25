@@ -1,0 +1,23 @@
+molecule: UYR_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/UYR_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/UYR_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 64
+converged: True
+status: ok
+initial_energy_kj_mol: -3844730.994132924359
+final_energy_kj_mol: -3844802.989774134476
+delta_energy_kj_mol: -71.995641210116
+initial_energy_hartree: -1464.380697799124
+final_energy_hartree: -1464.408119490648
+delta_energy_hartree: -0.027421691524
+elapsed_seconds: 1492.8
+elapsed_seconds_per_step: 23.3

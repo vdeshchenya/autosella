@@ -1,0 +1,23 @@
+molecule: 7QE_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/7QE_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/7QE_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 86
+converged: True
+status: ok
+initial_energy_kj_mol: -3931243.704714241438
+final_energy_kj_mol: -3931399.027768449392
+delta_energy_kj_mol: -155.323054207955
+initial_energy_hartree: -1497.331649031574
+final_energy_hartree: -1497.390808458554
+delta_energy_hartree: -0.059159426980
+elapsed_seconds: 2205.4
+elapsed_seconds_per_step: 25.6

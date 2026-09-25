@@ -1,0 +1,23 @@
+molecule: lyn-hid
+input_xyz: inputs/dipeptides/lyn-hid.xyz
+final_xyz: results/dipeptides/autosella_f/lyn-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -2996251.290333114099
+final_energy_kj_mol: -2996378.139622604474
+delta_energy_kj_mol: -126.849289490376
+initial_energy_hartree: -1141.211846034250
+final_energy_hartree: -1141.260160377007
+delta_energy_hartree: -0.048314342757
+elapsed_seconds: 775.9
+elapsed_seconds_per_step: 25.9

@@ -1,0 +1,23 @@
+molecule: FWL_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/FWL_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/FWL_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 42
+converged: True
+status: ok
+initial_energy_kj_mol: -4675265.557859350927
+final_energy_kj_mol: -4675361.834579777904
+delta_energy_kj_mol: -96.276720426977
+initial_energy_hartree: -1780.714606681683
+final_energy_hartree: -1780.751276547860
+delta_energy_hartree: -0.036669866177
+elapsed_seconds: 1602.8
+elapsed_seconds_per_step: 38.2

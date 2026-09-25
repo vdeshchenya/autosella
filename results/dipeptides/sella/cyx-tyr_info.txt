@@ -1,0 +1,23 @@
+molecule: cyx-tyr
+input_xyz: inputs/dipeptides/cyx-tyr.xyz
+final_xyz: results/dipeptides/sella/cyx-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3798731.047756605316
+final_energy_kj_mol: -3798838.290354054887
+delta_energy_kj_mol: -107.242597449571
+initial_energy_hartree: -1446.860243526492
+final_energy_hartree: -1446.901090074645
+delta_energy_hartree: -0.040846548153
+elapsed_seconds: 704.5
+elapsed_seconds_per_step: 20.7

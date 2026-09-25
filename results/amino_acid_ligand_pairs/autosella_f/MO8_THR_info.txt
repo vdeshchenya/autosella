@@ -1,0 +1,23 @@
+molecule: MO8_THR
+input_xyz: inputs/amino_acid_ligand_pairs/MO8_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/MO8_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -3896429.428885571659
+final_energy_kj_mol: -3896496.207412177231
+delta_energy_kj_mol: -66.778526605573
+initial_energy_hartree: -1484.071591667572
+final_energy_hartree: -1484.097026265087
+delta_energy_hartree: -0.025434597515
+elapsed_seconds: 991.3
+elapsed_seconds_per_step: 27.5

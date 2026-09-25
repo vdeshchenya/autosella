@@ -1,0 +1,23 @@
+molecule: HN9_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/HN9_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/HN9_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 52
+converged: True
+status: ok
+initial_energy_kj_mol: -4342966.699386356398
+final_energy_kj_mol: -4343079.998742898926
+delta_energy_kj_mol: -113.299356542528
+initial_energy_hartree: -1654.148655776117
+final_energy_hartree: -1654.191809221975
+delta_energy_hartree: -0.043153445858
+elapsed_seconds: 1234.7
+elapsed_seconds_per_step: 23.7

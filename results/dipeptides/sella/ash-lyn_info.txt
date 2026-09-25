@@ -1,0 +1,23 @@
+molecule: ash-lyn
+input_xyz: inputs/dipeptides/ash-lyn.xyz
+final_xyz: results/dipeptides/sella/ash-lyn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -2900718.925954892766
+final_energy_kj_mol: -2900818.385178563185
+delta_energy_kj_mol: -99.459223670419
+initial_energy_hartree: -1104.825490103481
+final_energy_hartree: -1104.863372121126
+delta_energy_hartree: -0.037882017645
+elapsed_seconds: 799.6
+elapsed_seconds_per_step: 21.6

@@ -1,0 +1,23 @@
+molecule: cyx-pro
+input_xyz: inputs/dipeptides/cyx-pro.xyz
+final_xyz: results/dipeptides/autosella_a/cyx-pro_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -3197949.674771912862
+final_energy_kj_mol: -3198032.982237588149
+delta_energy_kj_mol: -83.307465675287
+initial_energy_hartree: -1218.034703446165
+final_energy_hartree: -1218.066433584087
+delta_energy_hartree: -0.031730137922
+elapsed_seconds: 455.8
+elapsed_seconds_per_step: 18.2

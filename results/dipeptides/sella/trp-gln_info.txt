@@ -1,0 +1,23 @@
+molecule: trp-gln
+input_xyz: inputs/dipeptides/trp-gln.xyz
+final_xyz: results/dipeptides/sella/trp-gln_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 44
+converged: True
+status: ok
+initial_energy_kj_mol: -3448451.229791629128
+final_energy_kj_mol: -3448831.700752518140
+delta_energy_kj_mol: -380.470960889012
+initial_energy_hartree: -1313.445706842585
+final_energy_hartree: -1313.590620578305
+delta_energy_hartree: -0.144913735720
+elapsed_seconds: 1385.0
+elapsed_seconds_per_step: 31.5

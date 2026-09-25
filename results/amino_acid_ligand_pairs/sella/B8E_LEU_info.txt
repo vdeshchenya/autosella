@@ -1,0 +1,23 @@
+molecule: B8E_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/B8E_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/B8E_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -4516071.367977377959
+final_energy_kj_mol: -4516147.321620946750
+delta_energy_kj_mol: -75.953643568791
+initial_energy_hartree: -1720.080741992405
+final_energy_hartree: -1720.109671207411
+delta_energy_hartree: -0.028929215006
+elapsed_seconds: 1973.7
+elapsed_seconds_per_step: 29.9

@@ -1,0 +1,23 @@
+molecule: 9VZ_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/9VZ_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/9VZ_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 44
+converged: True
+status: ok
+initial_energy_kj_mol: -4616199.861911704764
+final_energy_kj_mol: -4616268.992371390574
+delta_energy_kj_mol: -69.130459685810
+initial_energy_hartree: -1758.217671218631
+final_energy_hartree: -1758.244001620146
+delta_energy_hartree: -0.026330401515
+elapsed_seconds: 1545.5
+elapsed_seconds_per_step: 35.1

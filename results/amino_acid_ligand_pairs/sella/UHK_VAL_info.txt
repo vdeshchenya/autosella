@@ -1,0 +1,23 @@
+molecule: UHK_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/UHK_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/UHK_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 63
+converged: True
+status: ok
+initial_energy_kj_mol: -4224890.980242284015
+final_energy_kj_mol: -4224961.703583193943
+delta_energy_kj_mol: -70.723340909928
+initial_energy_hartree: -1609.175989481079
+final_energy_hartree: -1609.202926579011
+delta_energy_hartree: -0.026937097932
+elapsed_seconds: 1940.6
+elapsed_seconds_per_step: 30.8

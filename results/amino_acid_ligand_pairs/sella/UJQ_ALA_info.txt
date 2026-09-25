@@ -1,0 +1,23 @@
+molecule: UJQ_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/UJQ_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/UJQ_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 45
+converged: True
+status: ok
+initial_energy_kj_mol: -3310284.631888815667
+final_energy_kj_mol: -3310336.965377004817
+delta_energy_kj_mol: -52.333488189150
+initial_energy_hartree: -1260.820828962128
+final_energy_hartree: -1260.840761735076
+delta_energy_hartree: -0.019932772948
+elapsed_seconds: 1251.5
+elapsed_seconds_per_step: 27.8

@@ -1,0 +1,23 @@
+molecule: N6D_LEU
+input_xyz: inputs/amino_acid_ligand_pairs/N6D_LEU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/N6D_LEU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 51
+converged: True
+status: ok
+initial_energy_kj_mol: -3958665.357324766926
+final_energy_kj_mol: -3958740.401581650134
+delta_energy_kj_mol: -75.044256883208
+initial_energy_hartree: -1507.776004916520
+final_energy_hartree: -1507.804587764430
+delta_energy_hartree: -0.028582847910
+elapsed_seconds: 2020.2
+elapsed_seconds_per_step: 39.6

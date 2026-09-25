@@ -1,0 +1,23 @@
+molecule: hip-tyr
+input_xyz: inputs/dipeptides/hip-tyr.xyz
+final_xyz: results/dipeptides/sella/hip-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -3346461.823361783288
+final_energy_kj_mol: -3346562.267794244923
+delta_energy_kj_mol: -100.444432461634
+initial_energy_hartree: -1274.599993479604
+final_energy_hartree: -1274.638250743460
+delta_energy_hartree: -0.038257263856
+elapsed_seconds: 882.1
+elapsed_seconds_per_step: 23.8

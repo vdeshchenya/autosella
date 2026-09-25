@@ -1,0 +1,23 @@
+molecule: trp-phe
+input_xyz: inputs/dipeptides/trp-phe.xyz
+final_xyz: results/dipeptides/autosella_a/trp-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -3508788.541421587579
+final_energy_kj_mol: -3509225.720779981464
+delta_energy_kj_mol: -437.179358393885
+initial_energy_hartree: -1336.426975140116
+final_energy_hartree: -1336.593487963740
+delta_energy_hartree: -0.166512823624
+elapsed_seconds: 1189.9
+elapsed_seconds_per_step: 33.1

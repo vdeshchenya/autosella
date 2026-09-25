@@ -1,0 +1,23 @@
+molecule: OJM_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/OJM_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/OJM_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 113
+converged: True
+status: ok
+initial_energy_kj_mol: -3310116.839903216343
+final_energy_kj_mol: -3310235.382398265414
+delta_energy_kj_mol: -118.542495049071
+initial_energy_hartree: -1260.756920369997
+final_energy_hartree: -1260.802070821845
+delta_energy_hartree: -0.045150451848
+elapsed_seconds: 2515.0
+elapsed_seconds_per_step: 22.3

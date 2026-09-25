@@ -1,0 +1,23 @@
+molecule: R4E_PHE
+input_xyz: inputs/amino_acid_ligand_pairs/R4E_PHE.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/R4E_PHE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 49
+converged: True
+status: ok
+initial_energy_kj_mol: -3821853.414326665457
+final_energy_kj_mol: -3821924.486722960137
+delta_energy_kj_mol: -71.072396294679
+initial_energy_hartree: -1455.667087839996
+final_energy_hartree: -1455.694157886103
+delta_energy_hartree: -0.027070046107
+elapsed_seconds: 1462.4
+elapsed_seconds_per_step: 29.8

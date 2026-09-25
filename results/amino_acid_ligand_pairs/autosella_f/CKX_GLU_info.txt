@@ -1,0 +1,23 @@
+molecule: CKX_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/CKX_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/CKX_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -3759191.585190828890
+final_energy_kj_mol: -3759268.550495996140
+delta_energy_kj_mol: -76.965305167250
+initial_energy_hartree: -1431.800457582812
+final_energy_hartree: -1431.829772119371
+delta_energy_hartree: -0.029314536559
+elapsed_seconds: 932.1
+elapsed_seconds_per_step: 33.3

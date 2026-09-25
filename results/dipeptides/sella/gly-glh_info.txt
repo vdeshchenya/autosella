@@ -1,0 +1,23 @@
+molecule: gly-glh
+input_xyz: inputs/dipeptides/gly-glh.xyz
+final_xyz: results/dipeptides/sella/gly-glh_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -2445748.912083361764
+final_energy_kj_mol: -2445901.604508974589
+delta_energy_kj_mol: -152.692425612826
+initial_energy_hartree: -931.536563672069
+final_energy_hartree: -931.594721145533
+delta_energy_hartree: -0.058157473464
+elapsed_seconds: 388.3
+elapsed_seconds_per_step: 15.5

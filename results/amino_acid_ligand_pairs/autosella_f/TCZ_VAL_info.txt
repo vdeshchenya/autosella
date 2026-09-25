@@ -1,0 +1,23 @@
+molecule: TCZ_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/TCZ_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/TCZ_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -5737434.979866108857
+final_energy_kj_mol: -5737467.369950655848
+delta_energy_kj_mol: -32.390084546991
+initial_energy_hartree: -2185.273573681644
+final_energy_hartree: -2185.285910413312
+delta_energy_hartree: -0.012336731668
+elapsed_seconds: 1418.3
+elapsed_seconds_per_step: 21.5

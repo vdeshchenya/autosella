@@ -1,0 +1,23 @@
+molecule: thr-lyn
+input_xyz: inputs/dipeptides/thr-lyn.xyz
+final_xyz: results/dipeptides/sella/thr-lyn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 30
+converged: True
+status: ok
+initial_energy_kj_mol: -2706263.674629512709
+final_energy_kj_mol: -2706355.856715955306
+delta_energy_kj_mol: -92.182086442597
+initial_energy_hartree: -1030.761396396768
+final_energy_hartree: -1030.796506699225
+delta_energy_hartree: -0.035110302457
+elapsed_seconds: 684.2
+elapsed_seconds_per_step: 22.8

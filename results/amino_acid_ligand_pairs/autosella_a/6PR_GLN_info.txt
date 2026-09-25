@@ -1,0 +1,23 @@
+molecule: 6PR_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/6PR_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/6PR_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -5031494.790279383771
+final_energy_kj_mol: -5031759.186742383055
+delta_energy_kj_mol: -264.396462999284
+initial_energy_hartree: -1916.395155657344
+final_energy_hartree: -1916.495858951690
+delta_energy_hartree: -0.100703294346
+elapsed_seconds: 1377.5
+elapsed_seconds_per_step: 27.6

@@ -1,0 +1,23 @@
+molecule: 84W_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/84W_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/84W_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 73
+converged: True
+status: ok
+initial_energy_kj_mol: -4085526.283671820071
+final_energy_kj_mol: -4085627.575470209587
+delta_energy_kj_mol: -101.291798389517
+initial_energy_hartree: -1556.094779918212
+final_energy_hartree: -1556.133359926705
+delta_energy_hartree: -0.038580008493
+elapsed_seconds: 2218.8
+elapsed_seconds_per_step: 30.4

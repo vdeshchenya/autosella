@@ -1,0 +1,23 @@
+molecule: lys-pro
+input_xyz: inputs/dipeptides/lys-pro.xyz
+final_xyz: results/dipeptides/autosella_a/lys-pro_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -2609609.110886371695
+final_energy_kj_mol: -2609949.977752052248
+delta_energy_kj_mol: -340.866865680553
+initial_energy_hartree: -993.947617301263
+final_energy_hartree: -994.077446633766
+delta_energy_hartree: -0.129829332503
+elapsed_seconds: 799.0
+elapsed_seconds_per_step: 22.8

@@ -1,0 +1,23 @@
+molecule: gly-lyn
+input_xyz: inputs/dipeptides/gly-lyn.xyz
+final_xyz: results/dipeptides/sella/gly-lyn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -2302430.262722935062
+final_energy_kj_mol: -2302487.293799843639
+delta_energy_kj_mol: -57.031076908577
+initial_energy_hartree: -876.949373026399
+final_energy_hartree: -876.971095016397
+delta_energy_hartree: -0.021721989998
+elapsed_seconds: 535.0
+elapsed_seconds_per_step: 15.3

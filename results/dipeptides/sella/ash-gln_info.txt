@@ -1,0 +1,23 @@
+molecule: ash-gln
+input_xyz: inputs/dipeptides/ash-gln.xyz
+final_xyz: results/dipeptides/sella/ash-gln_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 47
+converged: True
+status: ok
+initial_energy_kj_mol: -2991759.749156888574
+final_energy_kj_mol: -2992014.739011273254
+delta_energy_kj_mol: -254.989854384679
+initial_energy_hartree: -1139.501108348864
+final_energy_hartree: -1139.598228855205
+delta_energy_hartree: -0.097120506341
+elapsed_seconds: 1037.3
+elapsed_seconds_per_step: 22.1

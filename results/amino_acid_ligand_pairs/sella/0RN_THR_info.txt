@@ -1,0 +1,23 @@
+molecule: 0RN_THR
+input_xyz: inputs/amino_acid_ligand_pairs/0RN_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/0RN_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -4596096.893222500570
+final_energy_kj_mol: -4596257.352108006366
+delta_energy_kj_mol: -160.458885505795
+initial_energy_hartree: -1750.560854821891
+final_energy_hartree: -1750.621970383704
+delta_energy_hartree: -0.061115561813
+elapsed_seconds: 996.6
+elapsed_seconds_per_step: 27.7

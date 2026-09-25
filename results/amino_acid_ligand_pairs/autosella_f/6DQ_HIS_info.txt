@@ -1,0 +1,23 @@
+molecule: 6DQ_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/6DQ_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/6DQ_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 54
+converged: True
+status: ok
+initial_energy_kj_mol: -4736491.410243926570
+final_energy_kj_mol: -4736652.339551874436
+delta_energy_kj_mol: -160.929307947867
+initial_energy_hartree: -1804.034302279396
+final_energy_hartree: -1804.095597015654
+delta_energy_hartree: -0.061294736258
+elapsed_seconds: 2023.0
+elapsed_seconds_per_step: 37.5

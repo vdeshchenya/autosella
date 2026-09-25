@@ -1,0 +1,23 @@
+molecule: pro-tyr
+input_xyz: inputs/dipeptides/pro-tyr.xyz
+final_xyz: results/dipeptides/autosella_f/pro-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -2957929.657964149956
+final_energy_kj_mol: -2958025.273460634984
+delta_energy_kj_mol: -95.615496485028
+initial_energy_hartree: -1126.615907115532
+final_energy_hartree: -1126.652325134810
+delta_energy_hartree: -0.036418019278
+elapsed_seconds: 819.4
+elapsed_seconds_per_step: 22.8

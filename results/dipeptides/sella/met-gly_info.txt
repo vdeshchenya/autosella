@@ -1,0 +1,23 @@
+molecule: met-gly
+input_xyz: inputs/dipeptides/met-gly.xyz
+final_xyz: results/dipeptides/sella/met-gly_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -3099158.721322467551
+final_energy_kj_mol: -3099385.487047365401
+delta_energy_kj_mol: -226.765724897850
+initial_energy_hartree: -1180.407216485620
+final_energy_hartree: -1180.493586988776
+delta_energy_hartree: -0.086370503156
+elapsed_seconds: 605.0
+elapsed_seconds_per_step: 16.8

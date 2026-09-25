@@ -1,0 +1,23 @@
+molecule: 7XA_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/7XA_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/7XA_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 70
+converged: True
+status: ok
+initial_energy_kj_mol: -3202962.692655330524
+final_energy_kj_mol: -3203061.357319494709
+delta_energy_kj_mol: -98.664664164186
+initial_energy_hartree: -1219.944061119667
+final_energy_hartree: -1219.981640505579
+delta_energy_hartree: -0.037579385912
+elapsed_seconds: 1486.7
+elapsed_seconds_per_step: 21.2

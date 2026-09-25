@@ -1,0 +1,23 @@
+molecule: 6J1_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/6J1_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/6J1_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 32
+converged: True
+status: ok
+initial_energy_kj_mol: -3285618.300933653954
+final_energy_kj_mol: -3285691.730374938343
+delta_energy_kj_mol: -73.429441284388
+initial_energy_hartree: -1251.425919671625
+final_energy_hartree: -1251.453887468756
+delta_energy_hartree: -0.027967797131
+elapsed_seconds: 817.5
+elapsed_seconds_per_step: 25.5

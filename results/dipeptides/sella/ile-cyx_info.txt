@@ -1,0 +1,23 @@
+molecule: ile-cyx
+input_xyz: inputs/dipeptides/ile-cyx.xyz
+final_xyz: results/dipeptides/sella/ile-cyx_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -3304325.530170571059
+final_energy_kj_mol: -3304407.638700089417
+delta_energy_kj_mol: -82.108529518358
+initial_energy_hartree: -1258.551126986688
+final_energy_hartree: -1258.582400473945
+delta_energy_hartree: -0.031273487257
+elapsed_seconds: 531.6
+elapsed_seconds_per_step: 17.1

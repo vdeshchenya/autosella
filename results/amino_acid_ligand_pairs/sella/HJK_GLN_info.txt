@@ -1,0 +1,23 @@
+molecule: HJK_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/HJK_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/HJK_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 106
+converged: True
+status: ok
+initial_energy_kj_mol: -4279068.247507088818
+final_energy_kj_mol: -4279205.075127436779
+delta_energy_kj_mol: -136.827620347962
+initial_energy_hartree: -1629.811020790981
+final_energy_hartree: -1629.863135679245
+delta_energy_hartree: -0.052114888264
+elapsed_seconds: 3512.7
+elapsed_seconds_per_step: 33.1

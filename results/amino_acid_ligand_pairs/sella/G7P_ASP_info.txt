@@ -1,0 +1,23 @@
+molecule: G7P_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/G7P_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/G7P_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -4995294.095112492330
+final_energy_kj_mol: -4995523.000953144394
+delta_energy_kj_mol: -228.905840652063
+initial_energy_hartree: -1902.607039055636
+final_energy_hartree: -1902.694224685834
+delta_energy_hartree: -0.087185630198
+elapsed_seconds: 1915.4
+elapsed_seconds_per_step: 28.2

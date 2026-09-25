@@ -1,0 +1,23 @@
+molecule: TH7_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/TH7_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/TH7_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 69
+converged: True
+status: ok
+initial_energy_kj_mol: -4140639.817156638019
+final_energy_kj_mol: -4140791.525974386372
+delta_energy_kj_mol: -151.708817748353
+initial_energy_hartree: -1577.086416198054
+final_energy_hartree: -1577.144199035068
+delta_energy_hartree: -0.057782837014
+elapsed_seconds: 1774.1
+elapsed_seconds_per_step: 25.7

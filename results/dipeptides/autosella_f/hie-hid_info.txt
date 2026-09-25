@@ -1,0 +1,23 @@
+molecule: hie-hid
+input_xyz: inputs/dipeptides/hie-hid.xyz
+final_xyz: results/dipeptides/autosella_f/hie-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -3131937.925520824268
+final_energy_kj_mol: -3132259.642195020337
+delta_energy_kj_mol: -321.716674196068
+initial_energy_hartree: -1192.892156001685
+final_energy_hartree: -1193.014691411463
+delta_energy_hartree: -0.122535409778
+elapsed_seconds: 753.5
+elapsed_seconds_per_step: 22.8

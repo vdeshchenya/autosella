@@ -1,0 +1,23 @@
+molecule: lys-leu
+input_xyz: inputs/dipeptides/lys-leu.xyz
+final_xyz: results/dipeptides/autosella_f/lys-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 21
+converged: True
+status: ok
+initial_energy_kj_mol: -2715854.027602842543
+final_energy_kj_mol: -2716325.801191781648
+delta_energy_kj_mol: -471.773588939104
+initial_energy_hartree: -1034.414168931610
+final_energy_hartree: -1034.593858001776
+delta_energy_hartree: -0.179689070166
+elapsed_seconds: 537.3
+elapsed_seconds_per_step: 25.6

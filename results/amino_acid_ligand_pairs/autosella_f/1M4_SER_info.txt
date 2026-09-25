@@ -1,0 +1,23 @@
+molecule: 1M4_SER
+input_xyz: inputs/amino_acid_ligand_pairs/1M4_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/1M4_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -10509325.356249762699
+final_energy_kj_mol: -10509376.394603988156
+delta_energy_kj_mol: -51.038354225457
+initial_energy_hartree: -4002.790630103310
+final_energy_hartree: -4002.810069585783
+delta_energy_hartree: -0.019439482473
+elapsed_seconds: 1543.7
+elapsed_seconds_per_step: 41.7

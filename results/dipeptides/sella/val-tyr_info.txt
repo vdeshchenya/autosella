@@ -1,0 +1,23 @@
+molecule: val-tyr
+input_xyz: inputs/dipeptides/val-tyr.xyz
+final_xyz: results/dipeptides/sella/val-tyr_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -2961108.612531042192
+final_energy_kj_mol: -2961202.030284549575
+delta_energy_kj_mol: -93.417753507383
+initial_energy_hartree: -1127.826706964479
+final_energy_hartree: -1127.862287907665
+delta_energy_hartree: -0.035580943186
+elapsed_seconds: 892.3
+elapsed_seconds_per_step: 25.5

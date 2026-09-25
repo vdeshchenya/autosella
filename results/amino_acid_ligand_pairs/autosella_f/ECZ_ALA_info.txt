@@ -1,0 +1,23 @@
+molecule: ECZ_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/ECZ_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/ECZ_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -4388337.299634257331
+final_energy_kj_mol: -4388405.417775471695
+delta_energy_kj_mol: -68.118141214363
+initial_energy_hartree: -1671.429404767912
+final_energy_hartree: -1671.455349597685
+delta_energy_hartree: -0.025944829773
+elapsed_seconds: 2115.7
+elapsed_seconds_per_step: 31.1

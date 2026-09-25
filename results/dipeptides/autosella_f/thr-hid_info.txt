@@ -1,0 +1,23 @@
+molecule: thr-hid
+input_xyz: inputs/dipeptides/thr-hid.xyz
+final_xyz: results/dipeptides/autosella_f/thr-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 23
+converged: True
+status: ok
+initial_energy_kj_mol: -2841872.294344574679
+final_energy_kj_mol: -2842221.027776703704
+delta_energy_kj_mol: -348.733432129025
+initial_energy_hartree: -1082.411991839975
+final_energy_hartree: -1082.544817389400
+delta_energy_hartree: -0.132825549425
+elapsed_seconds: 449.0
+elapsed_seconds_per_step: 19.5

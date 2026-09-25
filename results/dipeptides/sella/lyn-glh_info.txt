@@ -1,0 +1,23 @@
+molecule: lyn-glh
+input_xyz: inputs/dipeptides/lyn-glh.xyz
+final_xyz: results/dipeptides/sella/lyn-glh_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 38
+converged: True
+status: ok
+initial_energy_kj_mol: -3003840.912456308957
+final_energy_kj_mol: -3003943.261845251545
+delta_energy_kj_mol: -102.349388942588
+initial_energy_hartree: -1144.102580433550
+final_energy_hartree: -1144.141563257011
+delta_energy_hartree: -0.038982823461
+elapsed_seconds: 934.1
+elapsed_seconds_per_step: 24.6

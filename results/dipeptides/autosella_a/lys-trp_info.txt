@@ -1,0 +1,23 @@
+molecule: lys-trp
+input_xyz: inputs/dipeptides/lys-trp.xyz
+final_xyz: results/dipeptides/autosella_a/lys-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -3358536.031290816609
+final_energy_kj_mol: -3358657.280206168536
+delta_energy_kj_mol: -121.248915351927
+initial_energy_hartree: -1279.198816403619
+final_energy_hartree: -1279.244997676520
+delta_energy_hartree: -0.046181272901
+elapsed_seconds: 1181.5
+elapsed_seconds_per_step: 32.8

@@ -1,0 +1,23 @@
+molecule: asn-arg
+input_xyz: inputs/dipeptides/asn-arg.xyz
+final_xyz: results/dipeptides/autosella_f/asn-arg_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 44
+converged: True
+status: ok
+initial_energy_kj_mol: -3137078.811257210094
+final_energy_kj_mol: -3137201.262901350390
+delta_energy_kj_mol: -122.451644140296
+initial_energy_hartree: -1194.850215968284
+final_energy_hartree: -1194.896855336387
+delta_energy_hartree: -0.046639368103
+elapsed_seconds: 1125.1
+elapsed_seconds_per_step: 25.6

@@ -1,0 +1,23 @@
+molecule: glu-lys
+input_xyz: inputs/dipeptides/glu-lys.xyz
+final_xyz: results/dipeptides/sella/glu-lys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -3003623.994186542463
+final_energy_kj_mol: -3003972.129346378148
+delta_energy_kj_mol: -348.135159835685
+initial_energy_hartree: -1144.019960627969
+final_energy_hartree: -1144.152558307512
+delta_energy_hartree: -0.132597679543
+elapsed_seconds: 847.6
+elapsed_seconds_per_step: 23.5

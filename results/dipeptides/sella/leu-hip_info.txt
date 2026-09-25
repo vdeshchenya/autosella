@@ -1,0 +1,23 @@
+molecule: leu-hip
+input_xyz: inputs/dipeptides/leu-hip.xyz
+final_xyz: results/dipeptides/sella/leu-hip_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 38
+converged: True
+status: ok
+initial_energy_kj_mol: -2851872.733089510817
+final_energy_kj_mol: -2852158.319610124454
+delta_energy_kj_mol: -285.586520613637
+initial_energy_hartree: -1086.220957796229
+final_energy_hartree: -1086.329731957276
+delta_energy_hartree: -0.108774161047
+elapsed_seconds: 860.6
+elapsed_seconds_per_step: 22.6

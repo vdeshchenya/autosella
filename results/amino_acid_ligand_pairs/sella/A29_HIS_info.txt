@@ -1,0 +1,23 @@
+molecule: A29_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/A29_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/A29_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -3492977.415010122117
+final_energy_kj_mol: -3493079.948670544196
+delta_energy_kj_mol: -102.533660422079
+initial_energy_hartree: -1330.404835135329
+final_energy_hartree: -1330.443888144090
+delta_energy_hartree: -0.039053008761
+elapsed_seconds: 1641.3
+elapsed_seconds_per_step: 24.1

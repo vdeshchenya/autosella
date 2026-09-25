@@ -1,0 +1,23 @@
+molecule: hie-asn
+input_xyz: inputs/dipeptides/hie-asn.xyz
+final_xyz: results/dipeptides/autosella_a/hie-asn_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -2984085.568851124030
+final_energy_kj_mol: -2984440.741288859397
+delta_energy_kj_mol: -355.172437735368
+initial_energy_hartree: -1136.578167438735
+final_energy_hartree: -1136.713445475873
+delta_energy_hartree: -0.135278037138
+elapsed_seconds: 698.6
+elapsed_seconds_per_step: 21.2

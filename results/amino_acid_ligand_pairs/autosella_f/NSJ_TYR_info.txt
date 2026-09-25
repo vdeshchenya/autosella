@@ -1,0 +1,23 @@
+molecule: NSJ_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/NSJ_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/NSJ_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 41
+converged: True
+status: ok
+initial_energy_kj_mol: -4615987.736584309489
+final_energy_kj_mol: -4616102.788291906007
+delta_energy_kj_mol: -115.051707596518
+initial_energy_hartree: -1758.136876948388
+final_energy_hartree: -1758.180697829513
+delta_energy_hartree: -0.043820881125
+elapsed_seconds: 1531.3
+elapsed_seconds_per_step: 37.3

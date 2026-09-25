@@ -1,0 +1,23 @@
+molecule: HRS_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/HRS_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/HRS_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 73
+converged: True
+status: ok
+initial_energy_kj_mol: -12982405.579729756340
+final_energy_kj_mol: -12982559.808483982459
+delta_energy_kj_mol: -154.228754226118
+initial_energy_hartree: -4944.737140509193
+final_energy_hartree: -4944.795883139322
+delta_energy_hartree: -0.058742630129
+elapsed_seconds: 2550.7
+elapsed_seconds_per_step: 34.9

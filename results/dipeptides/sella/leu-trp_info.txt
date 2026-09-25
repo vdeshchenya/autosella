@@ -1,0 +1,23 @@
+molecule: leu-trp
+input_xyz: inputs/dipeptides/leu-trp.xyz
+final_xyz: results/dipeptides/sella/leu-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 31
+converged: True
+status: ok
+initial_energy_kj_mol: -3211930.745592187624
+final_energy_kj_mol: -3212288.365532291587
+delta_energy_kj_mol: -357.619940103963
+initial_energy_hartree: -1223.359812088360
+final_energy_hartree: -1223.496022329918
+delta_energy_hartree: -0.136210241558
+elapsed_seconds: 978.1
+elapsed_seconds_per_step: 31.6

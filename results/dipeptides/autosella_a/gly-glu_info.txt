@@ -1,0 +1,23 @@
+molecule: gly-glu
+input_xyz: inputs/dipeptides/gly-glu.xyz
+final_xyz: results/dipeptides/autosella_a/gly-glu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -2444466.122966357972
+final_energy_kj_mol: -2444560.623042318039
+delta_energy_kj_mol: -94.500075960066
+initial_energy_hartree: -931.047975101073
+final_energy_hartree: -931.083968279110
+delta_energy_hartree: -0.035993178037
+elapsed_seconds: 472.5
+elapsed_seconds_per_step: 17.5

@@ -1,0 +1,23 @@
+molecule: cyx-hie
+input_xyz: inputs/dipeptides/cyx-hie.xyz
+final_xyz: results/dipeptides/autosella_a/cyx-hie_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 18
+converged: True
+status: ok
+initial_energy_kj_mol: -3585482.002170426305
+final_energy_kj_mol: -3585584.216201414354
+delta_energy_kj_mol: -102.214030988049
+initial_energy_hartree: -1365.637971628400
+final_energy_hartree: -1365.676902896739
+delta_energy_hartree: -0.038931268339
+elapsed_seconds: 387.6
+elapsed_seconds_per_step: 21.5

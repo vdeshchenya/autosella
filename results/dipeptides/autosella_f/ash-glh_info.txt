@@ -1,0 +1,23 @@
+molecule: ash-glh
+input_xyz: inputs/dipeptides/ash-glh.xyz
+final_xyz: results/dipeptides/autosella_f/ash-glh_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -3043901.445617714897
+final_energy_kj_mol: -3044167.689217261504
+delta_energy_kj_mol: -266.243599546608
+initial_energy_hartree: -1159.360831685621
+final_energy_hartree: -1159.462238517122
+delta_energy_hartree: -0.101406831501
+elapsed_seconds: 487.3
+elapsed_seconds_per_step: 19.5

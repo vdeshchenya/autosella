@@ -1,0 +1,23 @@
+molecule: GNG_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/GNG_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/GNG_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -4427730.034760092385
+final_energy_kj_mol: -4428001.132486396469
+delta_energy_kj_mol: -271.097726304084
+initial_energy_hartree: -1686.433305181183
+final_energy_hartree: -1686.536560851924
+delta_energy_hartree: -0.103255670741
+elapsed_seconds: 2282.5
+elapsed_seconds_per_step: 33.6

@@ -1,0 +1,23 @@
+molecule: 521_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/521_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/521_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 137
+converged: True
+status: ok
+initial_energy_kj_mol: -7740136.457673157565
+final_energy_kj_mol: -7740275.620519853197
+delta_energy_kj_mol: -139.162846695632
+initial_energy_hartree: -2948.062281664013
+final_energy_hartree: -2948.115285993019
+delta_energy_hartree: -0.053004329006
+elapsed_seconds: 4226.0
+elapsed_seconds_per_step: 30.8

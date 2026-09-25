@@ -1,0 +1,23 @@
+molecule: 5P1_MET
+input_xyz: inputs/amino_acid_ligand_pairs/5P1_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/5P1_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 74
+converged: True
+status: ok
+initial_energy_kj_mol: -5436803.555225457996
+final_energy_kj_mol: -5436881.001315295696
+delta_energy_kj_mol: -77.446089837700
+initial_energy_hartree: -2070.769111323308
+final_energy_hartree: -2070.798608981077
+delta_energy_hartree: -0.029497657769
+elapsed_seconds: 2403.2
+elapsed_seconds_per_step: 32.5

@@ -1,0 +1,23 @@
+molecule: 5NB_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/5NB_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/5NB_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 107
+converged: True
+status: ok
+initial_energy_kj_mol: -11029107.760817805305
+final_energy_kj_mol: -11029339.139157399535
+delta_energy_kj_mol: -231.378339594230
+initial_energy_hartree: -4200.765292431205
+final_energy_hartree: -4200.853419786515
+delta_energy_hartree: -0.088127355310
+elapsed_seconds: 3545.6
+elapsed_seconds_per_step: 33.1

@@ -1,0 +1,23 @@
+molecule: 6LH_TRP
+input_xyz: inputs/amino_acid_ligand_pairs/6LH_TRP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/6LH_TRP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 59
+converged: True
+status: ok
+initial_energy_kj_mol: -4697001.700221447274
+final_energy_kj_mol: -4697129.367740863934
+delta_energy_kj_mol: -127.667519416660
+initial_energy_hartree: -1788.993466078671
+final_energy_hartree: -1789.042092068748
+delta_energy_hartree: -0.048625990077
+elapsed_seconds: 1919.2
+elapsed_seconds_per_step: 32.5

@@ -1,0 +1,23 @@
+molecule: ZJR_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/ZJR_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/ZJR_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 54
+converged: True
+status: ok
+initial_energy_kj_mol: -3852183.841759940609
+final_energy_kj_mol: -3852283.713075099979
+delta_energy_kj_mol: -99.871315159369
+initial_energy_hartree: -1467.219337544088
+final_energy_hartree: -1467.257376519092
+delta_energy_hartree: -0.038038975004
+elapsed_seconds: 1751.3
+elapsed_seconds_per_step: 32.4

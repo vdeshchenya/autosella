@@ -1,0 +1,23 @@
+molecule: 124_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/124_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/124_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 39
+converged: True
+status: ok
+initial_energy_kj_mol: -4256262.029269336723
+final_energy_kj_mol: -4256416.232871136628
+delta_energy_kj_mol: -154.203601799905
+initial_energy_hartree: -1621.124591017839
+final_energy_hartree: -1621.183324067915
+delta_energy_hartree: -0.058733050076
+elapsed_seconds: 1507.9
+elapsed_seconds_per_step: 38.7

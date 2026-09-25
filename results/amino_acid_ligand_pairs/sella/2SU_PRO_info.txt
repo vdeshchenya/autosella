@@ -1,0 +1,23 @@
+molecule: 2SU_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/2SU_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/2SU_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 33
+converged: True
+status: ok
+initial_energy_kj_mol: -3670206.981323759072
+final_energy_kj_mol: -3670275.953042367473
+delta_energy_kj_mol: -68.971718608402
+initial_energy_hartree: -1397.908011920661
+final_energy_hartree: -1397.934281860893
+delta_energy_hartree: -0.026269940232
+elapsed_seconds: 954.1
+elapsed_seconds_per_step: 28.9

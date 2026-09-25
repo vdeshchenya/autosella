@@ -1,0 +1,23 @@
+molecule: thr-val
+input_xyz: inputs/dipeptides/thr-val.xyz
+final_xyz: results/dipeptides/sella/thr-val_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -2457814.932236032560
+final_energy_kj_mol: -2457900.146952508017
+delta_energy_kj_mol: -85.214716475457
+initial_energy_hartree: -936.132268036767
+final_energy_hartree: -936.164724608154
+delta_energy_hartree: -0.032456571387
+elapsed_seconds: 546.5
+elapsed_seconds_per_step: 19.5

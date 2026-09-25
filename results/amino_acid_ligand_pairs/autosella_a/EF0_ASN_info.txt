@@ -1,0 +1,23 @@
+molecule: EF0_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/EF0_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/EF0_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 48
+converged: True
+status: ok
+initial_energy_kj_mol: -4553220.689881341532
+final_energy_kj_mol: -4553332.000340067782
+delta_energy_kj_mol: -111.310458726250
+initial_energy_hartree: -1734.230171436365
+final_energy_hartree: -1734.272567351052
+delta_energy_hartree: -0.042395914687
+elapsed_seconds: 1624.0
+elapsed_seconds_per_step: 33.8

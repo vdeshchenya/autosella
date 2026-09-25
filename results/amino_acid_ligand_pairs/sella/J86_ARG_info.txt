@@ -1,0 +1,23 @@
+molecule: J86_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/J86_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/J86_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 88
+converged: True
+status: ok
+initial_energy_kj_mol: -12239172.260745275766
+final_energy_kj_mol: -12239439.347114073113
+delta_energy_kj_mol: -267.086368797347
+initial_energy_hartree: -4661.654519659276
+final_energy_hartree: -4661.756247484632
+delta_energy_hartree: -0.101727825356
+elapsed_seconds: 3453.9
+elapsed_seconds_per_step: 39.2

@@ -1,0 +1,23 @@
+molecule: DER_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/DER_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/DER_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 66
+converged: True
+status: ok
+initial_energy_kj_mol: -4088996.162465237081
+final_energy_kj_mol: -4089159.080461210106
+delta_energy_kj_mol: -162.917995973025
+initial_energy_hartree: -1557.416386953018
+final_energy_hartree: -1557.478439140542
+delta_energy_hartree: -0.062052187524
+elapsed_seconds: 1462.2
+elapsed_seconds_per_step: 22.2

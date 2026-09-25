@@ -1,0 +1,23 @@
+molecule: JBU_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/JBU_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/JBU_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 91
+converged: True
+status: ok
+initial_energy_kj_mol: -3648435.058310265653
+final_energy_kj_mol: -3648563.811092822812
+delta_energy_kj_mol: -128.752782557160
+initial_energy_hartree: -1389.615524393294
+final_energy_hartree: -1389.664563738271
+delta_energy_hartree: -0.049039344977
+elapsed_seconds: 2285.6
+elapsed_seconds_per_step: 25.1

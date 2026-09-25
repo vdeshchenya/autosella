@@ -1,0 +1,23 @@
+molecule: DJP_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/DJP_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/DJP_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 40
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -3257465.589429885149
+final_energy_kj_mol: -3257521.425508453511
+delta_energy_kj_mol: -55.836078568362
+initial_energy_hartree: -1240.703118159702
+final_energy_hartree: -1240.724384998870
+delta_energy_hartree: -0.021266839168
+elapsed_seconds: 927.7
+elapsed_seconds_per_step: 18.6

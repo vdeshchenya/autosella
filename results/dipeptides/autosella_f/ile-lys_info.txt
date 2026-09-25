@@ -1,0 +1,23 @@
+molecule: ile-lys
+input_xyz: inputs/dipeptides/ile-lys.xyz
+final_xyz: results/dipeptides/autosella_f/ile-lys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -2715855.951652584597
+final_energy_kj_mol: -2716332.305194478016
+delta_energy_kj_mol: -476.353541893419
+initial_energy_hartree: -1034.414901763454
+final_energy_hartree: -1034.596335245573
+delta_energy_hartree: -0.181433482119
+elapsed_seconds: 559.2
+elapsed_seconds_per_step: 22.4

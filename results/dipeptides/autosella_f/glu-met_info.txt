@@ -1,0 +1,23 @@
+molecule: glu-met
+input_xyz: inputs/dipeptides/glu-met.xyz
+final_xyz: results/dipeptides/autosella_f/glu-met_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 23
+converged: True
+status: ok
+initial_energy_kj_mol: -3799180.787815256044
+final_energy_kj_mol: -3799477.111125514377
+delta_energy_kj_mol: -296.323310258333
+initial_energy_hartree: -1447.031540468182
+final_energy_hartree: -1447.144404056431
+delta_energy_hartree: -0.112863588249
+elapsed_seconds: 487.3
+elapsed_seconds_per_step: 21.2

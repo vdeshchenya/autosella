@@ -1,0 +1,23 @@
+molecule: glu-ash
+input_xyz: inputs/dipeptides/glu-ash.xyz
+final_xyz: results/dipeptides/autosella_a/glu-ash_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -3042511.728295256849
+final_energy_kj_mol: -3042831.669478157070
+delta_energy_kj_mol: -319.941182900220
+initial_energy_hartree: -1158.831516312059
+final_energy_hartree: -1158.953375472917
+delta_energy_hartree: -0.121859160858
+elapsed_seconds: 591.8
+elapsed_seconds_per_step: 21.9

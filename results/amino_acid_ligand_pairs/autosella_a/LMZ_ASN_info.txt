@@ -1,0 +1,23 @@
+molecule: LMZ_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/LMZ_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/LMZ_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 111
+converged: True
+status: ok
+initial_energy_kj_mol: -4623965.306965762749
+final_energy_kj_mol: -4624162.684250025079
+delta_energy_kj_mol: -197.377284262329
+initial_energy_hartree: -1761.175373035568
+final_energy_hartree: -1761.250550072843
+delta_energy_hartree: -0.075177037275
+elapsed_seconds: 3535.9
+elapsed_seconds_per_step: 31.9

@@ -1,0 +1,23 @@
+molecule: 3BT_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/3BT_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/3BT_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 56
+converged: True
+status: ok
+initial_energy_kj_mol: -5741974.895597537979
+final_energy_kj_mol: -5742153.350303409621
+delta_energy_kj_mol: -178.454705871642
+initial_energy_hartree: -2187.002736262039
+final_energy_hartree: -2187.070706069838
+delta_energy_hartree: -0.067969807799
+elapsed_seconds: 2373.4
+elapsed_seconds_per_step: 42.4

@@ -1,0 +1,23 @@
+molecule: cys-trp
+input_xyz: inputs/dipeptides/cys-trp.xyz
+final_xyz: results/dipeptides/autosella_a/cys-trp_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 39
+converged: True
+status: ok
+initial_energy_kj_mol: -3947758.302226822823
+final_energy_kj_mol: -3948110.520164960995
+delta_energy_kj_mol: -352.217938138172
+initial_energy_hartree: -1503.621727028253
+final_energy_hartree: -1503.755879755925
+delta_energy_hartree: -0.134152727672
+elapsed_seconds: 1033.7
+elapsed_seconds_per_step: 26.5

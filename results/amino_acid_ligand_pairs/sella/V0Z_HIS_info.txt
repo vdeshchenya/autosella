@@ -1,0 +1,23 @@
+molecule: V0Z_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/V0Z_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/V0Z_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 59
+converged: True
+status: ok
+initial_energy_kj_mol: -4427769.074270081706
+final_energy_kj_mol: -4427913.775713888928
+delta_energy_kj_mol: -144.701443807222
+initial_energy_hartree: -1686.448174545247
+final_energy_hartree: -1686.503288414482
+delta_energy_hartree: -0.055113869235
+elapsed_seconds: 2163.0
+elapsed_seconds_per_step: 36.7

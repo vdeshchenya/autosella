@@ -1,0 +1,23 @@
+molecule: FDM_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/FDM_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/FDM_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 45
+converged: True
+status: ok
+initial_energy_kj_mol: -5355594.288262425922
+final_energy_kj_mol: -5355830.055262031034
+delta_energy_kj_mol: -235.766999605112
+initial_energy_hartree: -2039.838135084774
+final_energy_hartree: -2039.927933992403
+delta_energy_hartree: -0.089798907629
+elapsed_seconds: 1589.7
+elapsed_seconds_per_step: 35.3

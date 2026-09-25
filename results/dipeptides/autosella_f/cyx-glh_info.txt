@@ -1,0 +1,23 @@
+molecule: cyx-glh
+input_xyz: inputs/dipeptides/cyx-glh.xyz
+final_xyz: results/dipeptides/autosella_f/cyx-glh_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 19
+converged: True
+status: ok
+initial_energy_kj_mol: -3592888.331439705100
+final_energy_kj_mol: -3593144.855567372404
+delta_energy_kj_mol: -256.524127667304
+initial_energy_hartree: -1368.458893466632
+final_energy_hartree: -1368.556598346804
+delta_energy_hartree: -0.097704880172
+elapsed_seconds: 330.8
+elapsed_seconds_per_step: 17.4

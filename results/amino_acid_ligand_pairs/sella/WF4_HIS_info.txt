@@ -1,0 +1,23 @@
+molecule: WF4_HIS
+input_xyz: inputs/amino_acid_ligand_pairs/WF4_HIS.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/WF4_HIS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 58
+converged: True
+status: ok
+initial_energy_kj_mol: -5476858.806182828732
+final_energy_kj_mol: -5476980.459407148883
+delta_energy_kj_mol: -121.653224320151
+initial_energy_hartree: -2086.025350690115
+final_energy_hartree: -2086.071685956169
+delta_energy_hartree: -0.046335266054
+elapsed_seconds: 2226.4
+elapsed_seconds_per_step: 38.4

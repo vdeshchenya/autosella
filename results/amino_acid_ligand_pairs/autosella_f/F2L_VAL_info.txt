@@ -1,0 +1,23 @@
+molecule: F2L_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/F2L_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/F2L_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 24
+converged: True
+status: ok
+initial_energy_kj_mol: -3184728.075996384956
+final_energy_kj_mol: -3184784.088450542651
+delta_energy_kj_mol: -56.012454157695
+initial_energy_hartree: -1212.998862428816
+final_energy_hartree: -1213.020196445898
+delta_energy_hartree: -0.021334017082
+elapsed_seconds: 546.2
+elapsed_seconds_per_step: 22.8

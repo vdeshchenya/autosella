@@ -1,0 +1,23 @@
+molecule: H2B_SER
+input_xyz: inputs/amino_acid_ligand_pairs/H2B_SER.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/H2B_SER_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 46
+converged: True
+status: ok
+initial_energy_kj_mol: -3730852.129756391980
+final_energy_kj_mol: -3730957.165197189432
+delta_energy_kj_mol: -105.035440797452
+initial_energy_hartree: -1421.006529064105
+final_energy_hartree: -1421.046534950687
+delta_energy_hartree: -0.040005886582
+elapsed_seconds: 1141.7
+elapsed_seconds_per_step: 24.8

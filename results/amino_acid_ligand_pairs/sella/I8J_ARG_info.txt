@@ -1,0 +1,23 @@
+molecule: I8J_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/I8J_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/I8J_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 62
+converged: True
+status: ok
+initial_energy_kj_mol: -4813163.035124219954
+final_energy_kj_mol: -4813345.794571964070
+delta_energy_kj_mol: -182.759447744116
+initial_energy_hartree: -1833.236981924586
+final_energy_hartree: -1833.306591321973
+delta_energy_hartree: -0.069609397387
+elapsed_seconds: 2009.6
+elapsed_seconds_per_step: 32.4

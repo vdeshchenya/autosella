@@ -1,0 +1,23 @@
+molecule: lys-hid
+input_xyz: inputs/dipeptides/lys-hid.xyz
+final_xyz: results/dipeptides/sella/lys-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 39
+converged: True
+status: ok
+initial_energy_kj_mol: -2997136.849992068019
+final_energy_kj_mol: -2997467.850021615159
+delta_energy_kj_mol: -331.000029547140
+initial_energy_hartree: -1141.549137895059
+final_energy_hartree: -1141.675209148153
+delta_energy_hartree: -0.126071253094
+elapsed_seconds: 1071.0
+elapsed_seconds_per_step: 27.5

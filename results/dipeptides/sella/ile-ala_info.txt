@@ -1,0 +1,23 @@
+molecule: ile-ala
+input_xyz: inputs/dipeptides/ile-ala.xyz
+final_xyz: results/dipeptides/sella/ile-ala_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 38
+converged: True
+status: ok
+initial_energy_kj_mol: -2260192.547194244806
+final_energy_kj_mol: -2260391.867904206272
+delta_energy_kj_mol: -199.320709961466
+initial_energy_hartree: -860.861876805277
+final_energy_hartree: -860.937794054308
+delta_energy_hartree: -0.075917249031
+elapsed_seconds: 627.8
+elapsed_seconds_per_step: 16.5

@@ -1,0 +1,23 @@
+molecule: OWH_MET
+input_xyz: inputs/amino_acid_ligand_pairs/OWH_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/OWH_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 100
+converged: True
+status: ok
+initial_energy_kj_mol: -4598929.851367958821
+final_energy_kj_mol: -4599003.545281107537
+delta_energy_kj_mol: -73.693913148716
+initial_energy_hartree: -1751.639871593731
+final_energy_hartree: -1751.667940122875
+delta_energy_hartree: -0.028068529144
+elapsed_seconds: 2012.2
+elapsed_seconds_per_step: 20.1

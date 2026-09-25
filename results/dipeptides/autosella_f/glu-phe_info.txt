@@ -1,0 +1,23 @@
+molecule: glu-phe
+input_xyz: inputs/dipeptides/glu-phe.xyz
+final_xyz: results/dipeptides/autosella_f/glu-phe_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 40
+converged: True
+status: ok
+initial_energy_kj_mol: -3153967.428934952710
+final_energy_kj_mol: -3154240.307191031054
+delta_energy_kj_mol: -272.878256078344
+initial_energy_hartree: -1201.282750722350
+final_energy_hartree: -1201.386684561066
+delta_energy_hartree: -0.103933838716
+elapsed_seconds: 913.0
+elapsed_seconds_per_step: 22.8

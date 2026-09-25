@@ -1,0 +1,23 @@
+molecule: 1FK_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/1FK_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/1FK_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 69
+converged: True
+status: ok
+initial_energy_kj_mol: -4297247.094791537151
+final_energy_kj_mol: -4297350.220967041329
+delta_energy_kj_mol: -103.126175504178
+initial_energy_hartree: -1636.734978048903
+final_energy_hartree: -1636.774256734740
+delta_energy_hartree: -0.039278685837
+elapsed_seconds: 2446.0
+elapsed_seconds_per_step: 35.4

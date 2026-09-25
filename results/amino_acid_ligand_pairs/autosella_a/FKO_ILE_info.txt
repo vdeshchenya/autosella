@@ -1,0 +1,23 @@
+molecule: FKO_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/FKO_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/FKO_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -5485790.654582136311
+final_energy_kj_mol: -5485887.847805003636
+delta_energy_kj_mol: -97.193222867325
+initial_energy_hartree: -2089.427312078720
+final_energy_hartree: -2089.464331022241
+delta_energy_hartree: -0.037018943521
+elapsed_seconds: 3052.5
+elapsed_seconds_per_step: 44.9

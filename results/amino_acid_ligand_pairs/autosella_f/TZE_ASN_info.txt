@@ -1,0 +1,23 @@
+molecule: TZE_ASN
+input_xyz: inputs/amino_acid_ligand_pairs/TZE_ASN.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/TZE_ASN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 38
+converged: True
+status: ok
+initial_energy_kj_mol: -3745403.621784741990
+final_energy_kj_mol: -3745473.154099594802
+delta_energy_kj_mol: -69.532314852811
+initial_energy_hartree: -1426.548899670270
+final_energy_hartree: -1426.575383130335
+delta_energy_hartree: -0.026483460065
+elapsed_seconds: 832.6
+elapsed_seconds_per_step: 21.9

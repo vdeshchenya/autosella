@@ -1,0 +1,23 @@
+molecule: arg-cys
+input_xyz: inputs/dipeptides/arg-cys.xyz
+final_xyz: results/dipeptides/autosella_a/arg-cys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 37
+converged: True
+status: ok
+initial_energy_kj_mol: -3739577.708249699324
+final_energy_kj_mol: -3739690.686726434156
+delta_energy_kj_mol: -112.978476734832
+initial_energy_hartree: -1424.329926394693
+final_energy_hartree: -1424.372957623887
+delta_energy_hartree: -0.043031229194
+elapsed_seconds: 800.7
+elapsed_seconds_per_step: 21.6

@@ -1,0 +1,23 @@
+molecule: ILO_CYS
+input_xyz: inputs/amino_acid_ligand_pairs/ILO_CYS.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/ILO_CYS_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 49
+converged: True
+status: ok
+initial_energy_kj_mol: -3896964.119265501853
+final_energy_kj_mol: -3897074.730170177296
+delta_energy_kj_mol: -110.610904675443
+initial_energy_hartree: -1484.275244477837
+final_energy_hartree: -1484.317373946458
+delta_energy_hartree: -0.042129468621
+elapsed_seconds: 1201.5
+elapsed_seconds_per_step: 24.5

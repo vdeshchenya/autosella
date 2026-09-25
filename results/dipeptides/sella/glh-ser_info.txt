@@ -1,0 +1,23 @@
+molecule: glh-ser
+input_xyz: inputs/dipeptides/glh-ser.xyz
+final_xyz: results/dipeptides/sella/glh-ser_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 32
+converged: True
+status: ok
+initial_energy_kj_mol: -2746320.947674115654
+final_energy_kj_mol: -2746575.809263548814
+delta_energy_kj_mol: -254.861589433160
+initial_energy_hartree: -1046.018405935927
+final_energy_hartree: -1046.115477588728
+delta_energy_hartree: -0.097071652801
+elapsed_seconds: 574.4
+elapsed_seconds_per_step: 18.0

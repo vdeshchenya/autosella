@@ -1,0 +1,23 @@
+molecule: phe-leu
+input_xyz: inputs/dipeptides/phe-leu.xyz
+final_xyz: results/dipeptides/sella/phe-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 26
+converged: True
+status: ok
+initial_energy_kj_mol: -2866523.286144574173
+final_energy_kj_mol: -2866881.908992619254
+delta_energy_kj_mol: -358.622848045081
+initial_energy_hartree: -1091.801058754828
+final_energy_hartree: -1091.937650983847
+delta_energy_hartree: -0.136592229019
+elapsed_seconds: 644.6
+elapsed_seconds_per_step: 24.8

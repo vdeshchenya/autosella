@@ -1,0 +1,23 @@
+molecule: FWO_THR
+input_xyz: inputs/amino_acid_ligand_pairs/FWO_THR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/FWO_THR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 120
+converged: True
+status: ok
+initial_energy_kj_mol: -3905913.323503833264
+final_energy_kj_mol: -3906035.381738875061
+delta_energy_kj_mol: -122.058235041797
+initial_energy_hartree: -1487.683816356409
+final_energy_hartree: -1487.730305882900
+delta_energy_hartree: -0.046489526491
+elapsed_seconds: 3311.1
+elapsed_seconds_per_step: 27.6

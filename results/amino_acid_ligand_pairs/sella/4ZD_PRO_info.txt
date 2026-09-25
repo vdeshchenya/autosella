@@ -1,0 +1,23 @@
+molecule: 4ZD_PRO
+input_xyz: inputs/amino_acid_ligand_pairs/4ZD_PRO.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/4ZD_PRO_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 78
+converged: True
+status: ok
+initial_energy_kj_mol: -3857961.253408046439
+final_energy_kj_mol: -3858092.853382014204
+delta_energy_kj_mol: -131.599973967765
+initial_energy_hartree: -1469.419837426560
+final_energy_hartree: -1469.469961209473
+delta_energy_hartree: -0.050123782913
+elapsed_seconds: 1713.5
+elapsed_seconds_per_step: 22.0

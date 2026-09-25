@@ -1,0 +1,23 @@
+molecule: gly-ser
+input_xyz: inputs/dipeptides/gly-ser.xyz
+final_xyz: results/dipeptides/sella/gly-ser_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 36
+converged: True
+status: ok
+initial_energy_kj_mol: -2044944.965001474367
+final_energy_kj_mol: -2045134.596350964857
+delta_energy_kj_mol: -189.631349490490
+initial_energy_hartree: -778.878402514871
+final_energy_hartree: -778.950629281403
+delta_energy_hartree: -0.072226766532
+elapsed_seconds: 464.3
+elapsed_seconds_per_step: 12.9

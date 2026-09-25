@@ -1,0 +1,23 @@
+molecule: phe-ala
+input_xyz: inputs/dipeptides/phe-ala.xyz
+final_xyz: results/dipeptides/autosella_f/phe-ala_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 22
+converged: True
+status: ok
+initial_energy_kj_mol: -2557248.511656433344
+final_energy_kj_mol: -2557329.926209549420
+delta_energy_kj_mol: -81.414553116076
+initial_energy_hartree: -974.004518303043
+final_energy_hartree: -974.035527468648
+delta_energy_hartree: -0.031009165605
+elapsed_seconds: 452.5
+elapsed_seconds_per_step: 20.6

@@ -1,0 +1,23 @@
+molecule: F07_GLN
+input_xyz: inputs/amino_acid_ligand_pairs/F07_GLN.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/F07_GLN_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 54
+converged: True
+status: ok
+initial_energy_kj_mol: -4190237.883798333816
+final_energy_kj_mol: -4190299.426020566374
+delta_energy_kj_mol: -61.542222232558
+initial_energy_hartree: -1595.977322102547
+final_energy_hartree: -1596.000762297056
+delta_energy_hartree: -0.023440194509
+elapsed_seconds: 1291.5
+elapsed_seconds_per_step: 23.9

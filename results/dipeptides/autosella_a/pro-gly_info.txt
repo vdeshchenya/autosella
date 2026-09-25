@@ -1,0 +1,23 @@
+molecule: pro-gly
+input_xyz: inputs/dipeptides/pro-gly.xyz
+final_xyz: results/dipeptides/autosella_a/pro-gly_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 18
+converged: True
+status: ok
+initial_energy_kj_mol: -2050614.180092324270
+final_energy_kj_mol: -2050852.620270545594
+delta_energy_kj_mol: -238.440178221324
+initial_energy_hartree: -781.037692505089
+final_energy_hartree: -781.128509572681
+delta_energy_hartree: -0.090817067592
+elapsed_seconds: 279.2
+elapsed_seconds_per_step: 15.5

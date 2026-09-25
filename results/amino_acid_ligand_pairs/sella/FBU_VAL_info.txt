@@ -1,0 +1,23 @@
+molecule: FBU_VAL
+input_xyz: inputs/amino_acid_ligand_pairs/FBU_VAL.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/FBU_VAL_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 58
+converged: True
+status: ok
+initial_energy_kj_mol: -4224168.755325620994
+final_energy_kj_mol: -4224267.518764570355
+delta_energy_kj_mol: -98.763438949361
+initial_energy_hartree: -1608.900908538083
+final_energy_hartree: -1608.938525545324
+delta_energy_hartree: -0.037617007241
+elapsed_seconds: 1277.6
+elapsed_seconds_per_step: 22.0

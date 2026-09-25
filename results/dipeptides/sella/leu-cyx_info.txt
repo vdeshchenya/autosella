@@ -1,0 +1,23 @@
+molecule: leu-cyx
+input_xyz: inputs/dipeptides/leu-cyx.xyz
+final_xyz: results/dipeptides/sella/leu-cyx_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -3304331.862886332441
+final_energy_kj_mol: -3304408.679878195748
+delta_energy_kj_mol: -76.816991863307
+initial_energy_hartree: -1258.553538990737
+final_energy_hartree: -1258.582797037742
+delta_energy_hartree: -0.029258047005
+elapsed_seconds: 427.0
+elapsed_seconds_per_step: 17.1

@@ -1,0 +1,23 @@
+molecule: L4O_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/L4O_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/L4O_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 56
+converged: True
+status: ok
+initial_energy_kj_mol: -3609524.556099954993
+final_energy_kj_mol: -3609616.643091956154
+delta_energy_kj_mol: -92.086992001161
+initial_energy_hartree: -1374.795296797293
+final_energy_hartree: -1374.830370880190
+delta_energy_hartree: -0.035074082897
+elapsed_seconds: 1767.1
+elapsed_seconds_per_step: 31.6

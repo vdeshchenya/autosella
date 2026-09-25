@@ -1,0 +1,23 @@
+molecule: asp-lys
+input_xyz: inputs/dipeptides/asp-lys.xyz
+final_xyz: results/dipeptides/autosella_a/asp-lys_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 32
+converged: True
+status: ok
+initial_energy_kj_mol: -2900610.570209487807
+final_energy_kj_mol: -2900715.552688121796
+delta_energy_kj_mol: -104.982478633989
+initial_energy_hartree: -1104.784219579663
+final_energy_hartree: -1104.824205294022
+delta_energy_hartree: -0.039985714359
+elapsed_seconds: 666.8
+elapsed_seconds_per_step: 20.8

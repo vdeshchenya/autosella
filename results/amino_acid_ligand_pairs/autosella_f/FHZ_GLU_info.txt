@@ -1,0 +1,23 @@
+molecule: FHZ_GLU
+input_xyz: inputs/amino_acid_ligand_pairs/FHZ_GLU.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/FHZ_GLU_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 52
+converged: True
+status: ok
+initial_energy_kj_mol: -4277833.758372404613
+final_energy_kj_mol: -4277996.347236693837
+delta_energy_kj_mol: -162.588864289224
+initial_energy_hartree: -1629.340828711683
+final_energy_hartree: -1629.402755539569
+delta_energy_hartree: -0.061926827886
+elapsed_seconds: 1615.6
+elapsed_seconds_per_step: 31.1

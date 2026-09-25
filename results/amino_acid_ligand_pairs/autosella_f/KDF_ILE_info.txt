@@ -1,0 +1,23 @@
+molecule: KDF_ILE
+input_xyz: inputs/amino_acid_ligand_pairs/KDF_ILE.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/KDF_ILE_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 34
+converged: True
+status: ok
+initial_energy_kj_mol: -3412016.644636882935
+final_energy_kj_mol: -3412086.766737458296
+delta_energy_kj_mol: -70.122100575361
+initial_energy_hartree: -1299.568506249267
+final_energy_hartree: -1299.595214346850
+delta_energy_hartree: -0.026708097583
+elapsed_seconds: 963.1
+elapsed_seconds_per_step: 28.3

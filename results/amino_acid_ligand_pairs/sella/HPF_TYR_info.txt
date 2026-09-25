@@ -1,0 +1,23 @@
+molecule: HPF_TYR
+input_xyz: inputs/amino_acid_ligand_pairs/HPF_TYR.xyz
+final_xyz: results/amino_acid_ligand_pairs/sella/HPF_TYR_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 53
+converged: True
+status: ok
+initial_energy_kj_mol: -5450380.576536735520
+final_energy_kj_mol: -5450521.164718698710
+delta_energy_kj_mol: -140.588181963190
+initial_energy_hartree: -2075.940325635098
+final_energy_hartree: -2075.993872845636
+delta_energy_hartree: -0.053547210538
+elapsed_seconds: 1861.7
+elapsed_seconds_per_step: 35.1

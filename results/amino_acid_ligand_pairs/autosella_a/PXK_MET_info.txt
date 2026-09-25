@@ -1,0 +1,23 @@
+molecule: PXK_MET
+input_xyz: inputs/amino_acid_ligand_pairs/PXK_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/PXK_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 65
+converged: True
+status: ok
+initial_energy_kj_mol: -5108358.412915633991
+final_energy_kj_mol: -5108429.735447503626
+delta_energy_kj_mol: -71.322531869635
+initial_energy_hartree: -1945.670963385688
+final_energy_hartree: -1945.698128703404
+delta_energy_hartree: -0.027165317716
+elapsed_seconds: 1759.9
+elapsed_seconds_per_step: 27.1

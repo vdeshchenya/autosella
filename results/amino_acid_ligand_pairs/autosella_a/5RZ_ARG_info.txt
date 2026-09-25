@@ -1,0 +1,23 @@
+molecule: 5RZ_ARG
+input_xyz: inputs/amino_acid_ligand_pairs/5RZ_ARG.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/5RZ_ARG_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 1
+multiplicity: 1
+ncores: 44
+max_force_calls: 200
+n_calls: 52
+converged: True
+status: ok
+initial_energy_kj_mol: -12278572.155915576965
+final_energy_kj_mol: -12278793.048788478598
+delta_energy_kj_mol: -220.892872901633
+initial_energy_hartree: -4676.661147189458
+final_energy_hartree: -4676.745280841423
+delta_energy_hartree: -0.084133651965
+elapsed_seconds: 2258.6
+elapsed_seconds_per_step: 43.4

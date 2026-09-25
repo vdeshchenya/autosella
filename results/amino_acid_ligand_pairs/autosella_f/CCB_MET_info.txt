@@ -1,0 +1,23 @@
+molecule: CCB_MET
+input_xyz: inputs/amino_acid_ligand_pairs/CCB_MET.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/CCB_MET_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 28
+converged: True
+status: ok
+initial_energy_kj_mol: -3921501.535801171325
+final_energy_kj_mol: -3921556.942781274673
+delta_energy_kj_mol: -55.406980103347
+initial_energy_hartree: -1493.621052859106
+final_energy_hartree: -1493.642156263300
+delta_energy_hartree: -0.021103404194
+elapsed_seconds: 754.3
+elapsed_seconds_per_step: 26.9

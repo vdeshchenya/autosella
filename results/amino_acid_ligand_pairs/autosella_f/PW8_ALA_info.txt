@@ -1,0 +1,23 @@
+molecule: PW8_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/PW8_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/PW8_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 81
+converged: True
+status: ok
+initial_energy_kj_mol: -10257713.118741758168
+final_energy_kj_mol: -10257776.016925809905
+delta_energy_kj_mol: -62.898184051737
+initial_energy_hartree: -3906.956590088798
+final_energy_hartree: -3906.980546741888
+delta_energy_hartree: -0.023956653090
+elapsed_seconds: 2321.6
+elapsed_seconds_per_step: 28.7

@@ -1,0 +1,23 @@
+molecule: lys-pro
+input_xyz: inputs/dipeptides/lys-pro.xyz
+final_xyz: results/dipeptides/sella/lys-pro_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 50
+converged: True
+status: ok
+initial_energy_kj_mol: -2609609.110886371695
+final_energy_kj_mol: -2609949.994653086644
+delta_energy_kj_mol: -340.883766714949
+initial_energy_hartree: -993.947617301263
+final_energy_hartree: -994.077453071030
+delta_energy_hartree: -0.129835769767
+elapsed_seconds: 1161.8
+elapsed_seconds_per_step: 23.2

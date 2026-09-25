@@ -1,0 +1,23 @@
+molecule: H75_GLY
+input_xyz: inputs/amino_acid_ligand_pairs/H75_GLY.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/H75_GLY_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -9762659.888811226934
+final_energy_kj_mol: -9762731.703859914094
+delta_energy_kj_mol: -71.815048687160
+initial_energy_hartree: -3718.400772945894
+final_energy_hartree: -3718.428125853359
+delta_energy_hartree: -0.027352907465
+elapsed_seconds: 1983.1
+elapsed_seconds_per_step: 29.2

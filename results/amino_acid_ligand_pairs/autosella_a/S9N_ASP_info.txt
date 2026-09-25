@@ -1,0 +1,23 @@
+molecule: S9N_ASP
+input_xyz: inputs/amino_acid_ligand_pairs/S9N_ASP.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_a/S9N_ASP_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 68
+converged: True
+status: ok
+initial_energy_kj_mol: -5294608.744430420920
+final_energy_kj_mol: -5294746.434325168841
+delta_energy_kj_mol: -137.689894747920
+initial_energy_hartree: -2016.609968180860
+final_energy_hartree: -2016.662411492098
+delta_energy_hartree: -0.052443311238
+elapsed_seconds: 2195.6
+elapsed_seconds_per_step: 32.3

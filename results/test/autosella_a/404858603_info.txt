@@ -1,0 +1,23 @@
+molecule: 404858603
+input_xyz: inputs/test/404858603.xyz
+final_xyz: results/test/autosella_a/404858603_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -2697629.609102122020
+final_energy_kj_mol: -2697982.739872010890
+delta_energy_kj_mol: -353.130769888870
+initial_energy_hartree: -1027.472854514088
+final_energy_hartree: -1027.607354921012
+delta_energy_hartree: -0.134500406924
+elapsed_seconds: 776.3
+elapsed_seconds_per_step: 22.2

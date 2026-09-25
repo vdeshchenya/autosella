@@ -1,0 +1,23 @@
+molecule: asp-leu
+input_xyz: inputs/dipeptides/asp-leu.xyz
+final_xyz: results/dipeptides/autosella_a/asp-leu_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_a.py
+charge: -1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 25
+converged: True
+status: ok
+initial_energy_kj_mol: -2753798.409460722469
+final_energy_kj_mol: -2754080.382251876406
+delta_energy_kj_mol: -281.972791153938
+initial_energy_hartree: -1048.866420719158
+final_energy_hartree: -1048.973818483345
+delta_energy_hartree: -0.107397764187
+elapsed_seconds: 479.0
+elapsed_seconds_per_step: 19.2

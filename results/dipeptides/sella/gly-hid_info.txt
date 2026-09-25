@@ -1,0 +1,23 @@
+molecule: gly-hid
+input_xyz: inputs/dipeptides/gly-hid.xyz
+final_xyz: results/dipeptides/sella/gly-hid_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 27
+converged: True
+status: ok
+initial_energy_kj_mol: -2438103.472340510692
+final_energy_kj_mol: -2438351.033581805881
+delta_energy_kj_mol: -247.561241295189
+initial_energy_hartree: -928.624569464229
+final_energy_hartree: -928.718860561273
+delta_energy_hartree: -0.094291097044
+elapsed_seconds: 467.3
+elapsed_seconds_per_step: 17.3

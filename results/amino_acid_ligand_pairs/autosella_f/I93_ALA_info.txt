@@ -1,0 +1,23 @@
+molecule: I93_ALA
+input_xyz: inputs/amino_acid_ligand_pairs/I93_ALA.xyz
+final_xyz: results/amino_acid_ligand_pairs/autosella_f/I93_ALA_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/autosella_f.py
+charge: 0
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 35
+converged: True
+status: ok
+initial_energy_kj_mol: -4674777.386425401084
+final_energy_kj_mol: -4674873.527983834036
+delta_energy_kj_mol: -96.141558432952
+initial_energy_hartree: -1780.528672002200
+final_energy_hartree: -1780.565290387892
+delta_energy_hartree: -0.036618385692
+elapsed_seconds: 881.7
+elapsed_seconds_per_step: 25.2

@@ -1,0 +1,23 @@
+molecule: hie-arg
+input_xyz: inputs/dipeptides/hie-arg.xyz
+final_xyz: results/dipeptides/sella/hie-arg_final.xyz
+method: r2SCAN-3c
+basis: r2SCAN-3c default
+task: ENGRAD
+scf: TightSCF
+minimizer: minimizers/sella_baseline.py
+charge: 1
+multiplicity: 1
+ncores: 48
+max_force_calls: 200
+n_calls: 39
+converged: True
+status: ok
+initial_energy_kj_mol: -3284652.681393813808
+final_energy_kj_mol: -3285009.827411815058
+delta_energy_kj_mol: -357.146018001251
+initial_energy_hartree: -1251.058134612614
+final_energy_hartree: -1251.194164346776
+delta_energy_hartree: -0.136029734162
+elapsed_seconds: 961.5
+elapsed_seconds_per_step: 24.7
