@@ -2,7 +2,7 @@
 
 AutoSella is a family of molecular geometry optimizers discovered through evaluator-grounded LLM autoresearch. The optimizers retain Sella's redundant-internal-coordinate foundation while reducing the number of expensive energy-and-force evaluations needed to reach a local minimum.
 
-The accompanying manuscript is titled *Optimizing the Optimizer: Language Models Discover Faster Molecular Relaxation*.
+The accompanying manuscript is titled *Optimizing the Optimizer: Language Models Discover Faster Molecular Relaxation Algorithms*.
 
 ## Optimizers
 
